@@ -28,9 +28,13 @@ namespace DynamicBoltzmann {
 	********************/
 
 	template <typename T> void safeDel(T*& p) { 
-		delete p; p=0; 
+		if (p != nullptr) {
+			delete p; p=nullptr;
+		};
 	};
 	template <typename T> void safeDelArr(T*& p) { 
-		delete[] p; p=0;
+		if (p != nullptr) {
+			delete[] p; p=nullptr;
+		};
 	};
 };

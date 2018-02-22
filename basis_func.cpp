@@ -32,8 +32,14 @@ namespace DynamicBoltzmann {
 		// All zeros by default
 		this->_vals = new double[n_nu];
 		std::fill_n(this->_vals, n_nu, 0.0);
+		/*
+		for (int i=0; i<_n; i++) {
+			_vals[i] = 0.1*sin(2.0*M_PI*i/(_n-1))+0.1;
+		};
+		*/
 		this->_deriv = new double[n_nu];
-		std::fill_n(this->_deriv, n_nu, 0.0);
+		// Update derivs
+		_update_derivs();
 
 		// TEMP: fill the basis func with sin
 		// test_fill_sin();

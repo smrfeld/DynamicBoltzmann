@@ -8,6 +8,16 @@
 #include <map>
 #endif
 
+#ifndef LIST_h
+#define LIST_h
+#include <list>
+#endif
+
+#ifndef SPECIES_h
+#define SPECIES_h
+#include "species.hpp"
+#endif
+
 #ifndef LATTICE_h
 #define LATTICE_h
 #include "lattice.hpp"
@@ -37,7 +47,10 @@ namespace DynamicBoltzmann {
 		double* _nu_grid;
 
 		// Species present
-		std::vector<std::string> _species;
+		std::list<Species> _species;
+
+		// Filenames to choose from
+		std::vector<std::string> _fnames;
 
 		// Nu range
 		double _nu_min,_nu_max;
@@ -73,42 +86,69 @@ namespace DynamicBoltzmann {
 		int _n_annealing;
 
 		// Moments from data, annealing
-		std::map<std::string,double> _moms_awake;
-		std::map<std::string,double> _moms_asleep;
+		std::map<Species*,double> _moms_awake;
+		std::map<Species*,double> _moms_asleep;
 
 		// Lattice size
 		int _box_length;
 
-		// Data batch
-		Lattice* _data;
+		// Lattice to hold the current sample of the batch
+		Lattice _latt;
 
 		// Update step for optimization
 		double _dopt;
 
+		// Number opt steps
+		int _n_opt;
+
 	public:
 
-		// Constructor
-		OptProblem(double nu_min, double nu_max, int n_nu, double t_max, int n_t, double nu_init, int batch_size, int n_annealing, std::vector<std::string> species_list, int box_length, double dopt);
-		// Destructor
+		/********************
+		Constructor
+		********************/
+
+		OptProblem(double nu_min, double nu_max, int n_nu, double t_max, int n_t, double nu_init, int batch_size, int n_annealing, int box_length, double dopt, int n_opt);
 		~OptProblem();
 
-		// Solve for nu
+		/********************
+		Set properties	
+		********************/
+
+		void add_species(std::string sp);
+		void add_fname(std::string f);
+
+		/********************
+		Solve for nu
+		********************/
+
 		void solve_nu_traj();
 
-		// Solve for variational trajectory
+		/********************
+		Solve for variational trajectory
+		********************/
+
 		void solve_var_traj();
 
-		// Print nu solution
+		/********************
+		Print nu solution
+		********************/
+
 		void print_nu_traj();
 		void print_var_traj();
 
-		// Write
+		/********************
+		Write
+		********************/
+
 		void write_nu_traj(std::string fname);
 		void write_var_traj(std::string fname);
 		void write_bfs(std::string fname);
 
-		// Run
-		void solve();
+		/********************
+		Solve
+		********************/
+
+		void solve(bool verbose=false);
 	};
 
 };

@@ -4,6 +4,8 @@
 #include <numeric>
 #include "general.hpp"
 #include "math.h"
+#include <ctime>
+#include "species.hpp"
 
 /************************************
 * Namespace for DynamicBoltzmann
@@ -12,58 +14,18 @@
 namespace DynamicBoltzmann {
 
 	/****************************************
-	Ordered string pair
-	****************************************/
-
-	StrPair::StrPair(std::string r1, std::string r2)
-	{
-		if (r1 < r2) {
-			s1 = r1;
-			s2 = r2;
-		} else {
-			s1 = r2;
-			s2 = r1;
-		};
-	};
-	bool operator <(const StrPair& a, const StrPair& b) {
-    	return std::tie(a.s1, a.s2) < std::tie(b.s1, b.s2);
-	};
-	bool operator==(const StrPair& a, const StrPair& b) {
-		return std::tie(a.s1, a.s2) == std::tie(b.s1, b.s2);
-	};
-
-	/****************************************
-	Structure to hold a lattice site iterator
-	****************************************/
-
-	SiteIt::SiteIt() {};
-	SiteIt::SiteIt(lattice_map::iterator itIn, lattice_map_1::iterator it_1In, lattice_map_2::iterator it_2In) 
-	{
-		this->it = itIn;
-		this->it_1 = it_1In;
-		this->it_2 = it_2In;
-	};
-	std::ostream& operator<<(std::ostream& os, const SiteIt& sit)
-	{
-	    return os << sit.it->first << " " << sit.it_1->first << " " << sit.it_2->first;
-	};
-
-	/****************************************
 	Struct to hold a lattice Site
 	****************************************/
 
 	// Constructor
-	Site::Site() {};
-	Site::Site(int xIn, int yIn, int zIn) {
+	Site::Site() : Site(0,0,0,nullptr) {};
+	Site::Site(int xIn, int yIn, int zIn) : Site(xIn, yIn, zIn, nullptr) {};	
+	Site::Site(int xIn, int yIn, int zIn, Species *spIn) {
 		this->x = xIn;
 		this->y = yIn;
 		this->z = zIn;
-	};
-	Site::Site(SiteIt sit) {
-		this->x = sit.it->first;
-		this->y = sit.it_1->first;
-		this->z = sit.it_2->first;
-	};
+		this->sp = spIn;
+	};	
 
 	// Comparator
 	bool operator <(const Site& a, const Site& b) {
@@ -74,7 +36,11 @@ namespace DynamicBoltzmann {
 	}; 
 	std::ostream& operator<<(std::ostream& os, const Site& s)
 	{
-	    return os << s.x << " " << s.y << " " << s.z;
+		if (s.sp) {
+		    return os << s.x << " " << s.y << " " << s.z << " " << s.sp->name;
+		} else {
+		    return os << s.x << " " << s.y << " " << s.z << " empty";
+		};
 	};
 
 	/****************************************
@@ -89,6 +55,50 @@ namespace DynamicBoltzmann {
 	Lattice::Lattice(int box_length)
 	{
 		this->_box_length = box_length;
+
+		// Make a fully linked list of sites
+		for (int x=1; x<=box_length; x++) {
+			for (int y=1; y<=box_length; y++) {
+				for (int z=1; z<=box_length; z++) {
+					_latt.push_back(Site(x,y,z));					
+				};
+			};
+		};
+
+		// Set up neighbors
+		std::vector<Site> nbrs;
+		latt_it lit = _latt.begin();
+		while (lit != _latt.end()) {
+			// Neighbors
+			nbrs.clear();
+			if (lit->x-1 >= 1) {
+				nbrs.push_back(Site(lit->x-1,lit->y,lit->z));
+			};
+			if (lit->x+1 <= box_length) {
+				nbrs.push_back(Site(lit->x+1,lit->y,lit->z));
+			};
+			if (lit->y-1 >= 1) {
+				nbrs.push_back(Site(lit->x,lit->y-1,lit->z));
+			};
+			if (lit->y+1 <= box_length) {
+				nbrs.push_back(Site(lit->x,lit->y+1,lit->z));
+			};
+			if (lit->z-1 >= 1) {
+				nbrs.push_back(Site(lit->x,lit->y,lit->z-1));
+			};
+			if (lit->z+1 <= box_length) {
+				nbrs.push_back(Site(lit->x,lit->y,lit->z+1));
+			};
+
+			// Go through neighbors
+			for (auto nbr: nbrs) {
+				// Add as nbr
+				lit->nbrs.push_back(_look_up(nbr.x,nbr.y,nbr.z));
+			};
+
+			// Next
+			lit++;
+		};
 	};
 	Lattice::Lattice()
 	{
@@ -99,326 +109,71 @@ namespace DynamicBoltzmann {
 	Lattice::~Lattice() {};
 
 	/********************
+	Add a species
+	********************/
+
+	void Lattice::add_species(Species *sp) {
+		if (sp) {
+			_sp_map[sp->name] = sp;
+		};
+	};
+
+	/********************
 	Clear, size
 	********************/
 
-	void Lattice::clear() { this->_map.clear(); };
-	int Lattice::size() { return this->_map.size(); };
+	void Lattice::clear() { 
+		// Reset the counts and nns
+		for (auto sp_pair: _sp_map) {
+			sp_pair.second->count = 0;
+		};
+
+		// Clear the lattice
+		for (auto it = _latt.begin(); it != _latt.end(); it++) {
+			it->sp = nullptr;
+		};
+	};
+	int Lattice::size() { return _latt.size(); };
 
 	/********************
 	Make a mol
 	********************/
 
-	std::pair<bool,SiteIt> Lattice::make_mol(Site s, std::string sp) 
-	{
-		// Check if the site is empty
-		std::pair<bool,SiteIt> spair = get_mol_it(s);
-		if (spair.first) {
-			// Not empty
-			return std::make_pair(false,SiteIt());
-		};
-
-		// Update counts
-		// To-do?
-		// sp->count++;
-
-		// Make
-		lattice_map::iterator it;
-		lattice_map_1::iterator it_1;
-		lattice_map_2::iterator it_2;
-		it = this->_map.find(s.x);
-		if (it == this->_map.end()) {
-			auto ret = this->_map.insert(std::make_pair(s.x,lattice_map_1()));
-			it = ret.first;
-		};
-		it_1 = it->second.find(s.y);
-		if (it_1 == it->second.end()) {
-			auto ret_1 = it->second.insert(std::make_pair(s.y,lattice_map_2()));
-			it_1 = ret_1.first;
-		};
-		auto ret_2 = it_1->second.insert(std::make_pair(s.z,sp));
-		it_2 = ret_2.first;
-
-		return std::make_pair(true,SiteIt(it,it_1,it_2));
-	};
-
-	std::pair<bool,SiteIt> Lattice::make_mol_random(std::string sp) 
-	{
-		// Get a random free site
-		std::pair<bool,Site> spair = get_free_site();
-
-		if (!(spair.first)) {
-			// No free sites at all
-			return std::make_pair(false,SiteIt());
+	bool Lattice::make_mol(latt_it s, Species *sp) {
+		// Check not already occupide
+		if (s->sp) {
+			std::cerr << "ERROR site already occupied" << std::endl;
+			return false;
 		};
 
 		// Make
-		std::pair<bool,SiteIt> ret = make_mol(spair.second,sp);
-		return ret;
+		s->sp = sp;
+
+		// Update count and nns
+		sp->count++;
+
+		return true;
 	};
 
 	/********************
 	Erase a mol
 	********************/
 
-	bool Lattice::erase_mol(Site s) 
+	bool Lattice::erase_mol(latt_it s)
 	{
-		// Get an iterator to the site
-		std::pair<bool,SiteIt> spair = get_mol_it(s);
-		if (spair.first) {
-			return erase_mol_it(spair.second);
-		} else {
+		// Check not empty
+		if (!(s->sp)) {
+			std::cerr << "ERROR site not occupied" << std::endl;
 			return false;
 		};
-	};
 
-	bool Lattice::erase_mol_it(SiteIt sit) 
-	{
-		// Update counts on species
-		// To-do?
-		// sit.it_2->second.sp->count--;
+		// Update count and nns
+		s->sp->count--;
 
-		// Erase inner_2 from inner_1
-		sit.it_1->second.erase(sit.it_2);
-		if (sit.it_1->second.size() == 0)
-		{
-			// Erase inner_1 from outer
-			sit.it->second.erase(sit.it_1);
-			if (sit.it->second.size() == 0)
-			{
-				// Erase outer from map
-				this->_map.erase(sit.it);
-				return true;
-			};
-		};
-		return true; // Nonsense; it can't fail?!
-	};
+		// Erase
+		s->sp = nullptr;
 
-	std::pair<bool,Site> Lattice::erase_mol_random(std::string sp) 
-	{
-		// Get an iterator to a random site
-		std::pair<bool,SiteIt> spair = get_mol_random_it(sp);
-		if (spair.first) {
-			Site s = Site(spair.second.it->first,spair.second.it_1->first,spair.second.it_2->first);
-			bool succ = erase_mol_it(spair.second);
-			if (succ) {
-				return std::make_pair(true,s);
-			};
-		};
-		return std::make_pair(false,Site());
-	};
-
-	/********************
-	Get a mol
-	********************/
-
-	std::pair<bool,SiteIt> Lattice::get_mol_it(Site s) 
-	{
-		auto it = this->_map.find(s.x);
-		if (it != this->_map.end()) {
-			auto it_1 = it->second.find(s.y);
-			if (it_1 != it->second.end()) {
-				auto it_2 = it_1->second.find(s.z);
-				if (it_2 != it_1->second.end()) {
-					return std::make_pair(true,SiteIt(it,it_1,it_2));
-				};
-			};
-		};
-		return std::make_pair(false,SiteIt());	
-	};
-
-	std::pair<bool,SiteIt> Lattice::get_mol_it(Site s, std::string sp) {
-		std::pair<bool,SiteIt> ret = get_mol_it(s);
-		if (ret.first) {
-			if (ret.second.it_2->second == sp) {
-				return ret;
-			};
-		};
-		return std::make_pair(false,SiteIt());
-	};
-
-	std::pair<bool,SiteIt> Lattice::get_mol_random_it() {
-		// Get random indexes to search
-		std::map<int,std::vector<int>> idxs = _get_random_idxs();
-
-		// Try all sites
-		std::pair<bool,SiteIt> spair;
-		for (auto i1=0; i1 < this->_box_length; i1++) {
-			for (auto i2=0; i2 < this->_box_length; i2++) {
-				for (auto i3=0; i3 < this->_box_length; i3++) {
-					spair = get_mol_it(Site(idxs[0][i1],idxs[1][i2],idxs[2][i3]));
-					if (spair.first) 
-					{
-						return spair;
-					};
-				};
-			};
-		};
-		return std::make_pair(false,SiteIt());
-	};
-
-	std::pair<bool,SiteIt> Lattice::get_mol_random_it(std::string sp) 
-	{
-		// Get random indexes to search
-		std::map<int,std::vector<int>> idxs = _get_random_idxs();
-
-		// Try all sites
-		std::pair<bool,SiteIt> spair;
-		for (auto i1=0; i1 < this->_box_length; i1++) {
-			for (auto i2=0; i2 < this->_box_length; i2++) {
-				for (auto i3=0; i3 < this->_box_length; i3++) {
-					spair = get_mol_it(Site(idxs[0][i1],idxs[1][i2],idxs[2][i3]),sp);
-					if (spair.first) 
-					{
-						return spair;
-					};
-				};
-			};
-		};
-		return std::make_pair(false,SiteIt());
-	};
-
-	/********************
-	Get a free site
-	********************/
-
-	std::pair<bool,Site> Lattice::get_free_site() 
-	{
-		// Get random indexes to search
-		std::map<int,std::vector<int>> idxs = _get_random_idxs();
-
-		// Try all sites
-		Site s;
-		std::pair<bool,SiteIt> spair;
-		for (auto i1=0; i1 < this->_box_length; i1++) {
-			for (auto i2=0; i2 < this->_box_length; i2++) {
-				for (auto i3=0; i3 < this->_box_length; i3++) {
-					s = Site(idxs[0][i1],idxs[1][i2],idxs[2][i3]);
-					spair = get_mol_it(s);
-					if (!(spair.first)) {
-						return std::make_pair(true,s);
-					};
-				};
-			};
-		};
-
-		return std::make_pair(false,s);
-	};
-
-	/********************
-	Get neighbors of a site
-	********************/
-
-	std::pair<Site,std::pair<bool,SiteIt>> Lattice::get_neighbor_random(Site s)
-	{
-		// All neighbors
-		std::vector<Site> nbrs = _get_all_neighbors(s);
-
-		// Shuffle
-		std::random_shuffle(nbrs.begin(),nbrs.end());
-
-		// Random choice
-		auto it = nbrs.begin();
-		std::advance(it,randI(0,nbrs.size()-1));
-
-		// Check if occupied
-		std::pair<bool,SiteIt> occ = get_mol_it(*it);
-		if (occ.first) {
-			// Yes
-			return std::make_pair(Site(occ.second),std::make_pair(true,occ.second));
-		} else {
-			// No
-			return std::make_pair(*it,std::make_pair(false,SiteIt()));
-		};
-	};
-
-	std::pair<Site,std::pair<bool,SiteIt>> Lattice::get_neighbor_random(SiteIt sit)
-	{
-		return get_neighbor_random(Site(sit));
-	};
-
-	std::pair<bool,Site> Lattice::get_free_neighbor_random(Site s) 
-	{
-		// All allowed nbrs
-		std::vector<Site> nbrs = _get_all_neighbors(s);
-
-		// Shuffle
-		std::random_shuffle(nbrs.begin(),nbrs.end());
-
-		// Check all neighbors
-		std::pair<bool,SiteIt> spair;
-		for (auto n: nbrs) {
-			spair = get_mol_it(n);
-			if (!(spair.first)) {
-				return std::make_pair(true,n);
-			};
-		};
-
-		return std::make_pair(false,Site());
-	};
-
-	std::pair<bool,Site> Lattice::get_free_neighbor_random(SiteIt sit) 
-	{
-		return get_free_neighbor_random(Site(sit));
-	};
-
-	/********************
-	Get count, NN of species
-	********************/
-
-	int Lattice::get_count(std::string sp)
-	{
-		int c = 0;
-		// Go through all sites
-		Site s;
-		std::pair<bool,SiteIt> spair;
-		for (auto i1=1; i1 <= this->_box_length; i1++) {
-			for (auto i2=1; i2 <= this->_box_length; i2++) {
-				for (auto i3=1; i3 <= this->_box_length; i3++) {
-					s = Site(i1,i2,i3);
-					spair = get_mol_it(s,sp);
-					if (spair.first) {
-						c++;
-					};
-				};
-			};
-		};
-		return c;
-	};
-
-	int Lattice::get_nn(std::string sa, std::string sb)
-	{
-		int nn = 0;
-		// Go through all sites
-		Site s;
-		std::pair<bool,SiteIt> spair;
-		std::vector<Site> nbrs;
-		for (auto i1=1; i1 <= this->_box_length; i1++) {
-			for (auto i2=1; i2 <= this->_box_length; i2++) {
-				for (auto i3=1; i3 <= this->_box_length; i3++) {
-					s = Site(i1,i2,i3);
-					spair = get_mol_it(s,sa);
-					if (spair.first) {
-						// This one is species A
-						// Now search all neigbors
-						nbrs = _get_all_neighbors(s);
-						// Go through all neighbors
-						for (auto nbr: nbrs) {
-							spair = get_mol_it(nbr,sb);
-							if (spair.first) {
-								// Ok!
-								nn++;
-							};
-						};
-					};
-				};
-			};
-		};
-		// Double counting?
-		if (sa == sb) {
-			nn /= 2;
-		};
-		return nn;
+		return true;
 	};
 
 	/********************
@@ -429,11 +184,9 @@ namespace DynamicBoltzmann {
 	{
 		std::ofstream f;
 		f.open (fname);
-		for (auto it = this->_map.begin(); it != this->_map.end(); it++) {
-			for (auto it_1 = it->second.begin(); it_1 != it->second.end(); it_1++) {
-				for (auto it_2 = it_1->second.begin(); it_2 != it_1->second.end(); it_2++) {
-					f << it->first << " " << it_1->first << " " << it_2->first << " " << it_2->second << "\n";
-				};
+		for (auto l: _latt) {
+			if (l.sp) {
+				f << l.x << " " << l.y << " " << l.z << " " << l.sp->name << "\n";
 			};
 		};
 		f.close();
@@ -466,8 +219,7 @@ namespace DynamicBoltzmann {
 			    } else if (i_frag==3) {
 			    	sp += frag;
 			    	// Add to map
-			    	make_mol(Site(atoi(x.c_str()),atoi(y.c_str()),atoi(z.c_str())),sp);
-			    	//std::cout << "Got: " << atoi(x.c_str()) << " " << atoi(y.c_str()) << " " << atoi(z.c_str()) << " " << sp << std::endl;
+			    	make_mol(_look_up(atoi(x.c_str()),atoi(y.c_str()),atoi(z.c_str())),_sp_map[sp]);
 			    	i_frag = 0;
 			    	sp=""; x=""; y=""; z="";
 			    };
@@ -480,84 +232,90 @@ namespace DynamicBoltzmann {
 	Anneal
 	********************/
 
-	void Lattice::anneal(std::map<std::string,double> &h_dict,std::map<StrPair,double> &j_dict, int n_steps) {
+	void Lattice::anneal(int n_steps) {
 
-		Site s;
+		// Annealing temperature
+		// double temp0 = 3.0;
+		// double temp;
+		// Formula:
+		// temp0 * exp( - log(temp0) * i / (n_steps-1) )
+		// Such that final temp is 1
 
-		std::pair<bool,SiteIt> ret_site;
-		std::string sp;
+		// Timing
+		
+		// std::clock_t    start;
 
-		std::vector<Site> nbrs;
-		std::vector<std::string> nbrs_occ;
-		std::vector<Site>::iterator it_nbr;
-		std::pair<bool,SiteIt> ret_nbr;
-
-		std::map<std::string,double>::iterator ith;
+		// Declarations
 
 		double hOld,jOld,hNew,jNew,energy_diff;
+		latt_it it_flip;
+		std::map<std::string,Species*>::iterator it_sp;
+		Species *sp_new = nullptr;
 
 		// Go through the steps
 		for (int i=0; i<n_steps; i++) {
 
-			// Pick a site to flip randomly
-			s = Site(randI(1,_box_length),randI(1,_box_length),randI(1,_box_length));
+			// Annealing temp
+			// temp = temp0 * exp( - log(temp0) * i / (n_steps-1) );
 
-			// Get occupied neighbors 
-			nbrs = _get_all_neighbors(s);
-			it_nbr = nbrs.begin();
-			while (it_nbr != nbrs.end()) {
-				ret_nbr = get_mol_it(*it_nbr);
-				if (ret_nbr.first) {
-					// Occupied
-					nbrs_occ.push_back(ret_nbr.second.it_2->second);
-					it_nbr++;
-				} else {
-					// Empty
-					it_nbr = nbrs.erase(it_nbr);
-				};
-			};
+			// start = std::clock();
+
+			// Pick a site to flip randomly
+			it_flip = _latt.begin();
+			std::advance(it_flip,randI(0,_latt.size()-1));
+
+			//std::cout << "NBRS Time: " << (std::clock() - start) / (double)(CLOCKS_PER_SEC / 1000) << " ms" << std::endl;
+			//start = std::clock();
 
 			// Check if this site is occupied
-			ret_site = get_mol_it(s);
-			if (ret_site.first) {
-				// Occupied, flip down
-				sp = ret_site.second.it_2->second;
-				hOld = -h_dict[sp];
+			if (it_flip->sp) {
+				// Occupied - flip down
+				hOld = -it_flip->sp->h;
 				jOld = 0.0;
-				for (auto nbr: nbrs_occ) {
-					jOld -= j_dict[StrPair(sp,nbr)];
+				for (auto it_nbr: it_flip->nbrs) {
+					if (it_nbr->sp) {
+						jOld -= it_flip->sp->j[it_nbr->sp];
+					};
 				};
 				// New couplings
 				hNew = 0.0;
 				jNew = 0.0;
 			} else {
-				// Unoccupied, flip up
+				// Unoccupied - flip up
 				hOld = 0.0;
 				jOld = 0.0;
 				// Random species
-				ith = h_dict.begin();
-				std::advance(ith, randI(0,h_dict.size()-1));
-				sp = ith->first;
+				it_sp = _sp_map.begin();
+				std::advance(it_sp, randI(0,_sp_map.size()-1));
+				sp_new = it_sp->second;
 				// New couplings
-				hNew = -ith->second;
+				hNew = -sp_new->h;
 				jNew = 0.0;
-				for (auto nbr: nbrs_occ) {
-					jNew -= j_dict[StrPair(sp,nbr)];
+				for (auto it_nbr: it_flip->nbrs) {
+					if (it_nbr->sp) {
+						jNew -= sp_new->j[it_nbr->sp];
+					};
 				};
 			};
+
+			//std::cout << "CALC Time: " << (std::clock() - start) / (double)(CLOCKS_PER_SEC / 1000) << " ms" << std::endl;
+			//start = std::clock();
 
 			// Energy difference
 			energy_diff = hNew + jNew - hOld - jOld;
 			if (energy_diff < 0.0 || exp(-energy_diff) > randD(0.0,1.0)) {
 				// Accept the flip!
-				if (ret_site.first) {
-					// Occupied, flip down
-					erase_mol_it(ret_site.second);
+				if (it_flip->sp) {
+					// Occupied - flip down
+					erase_mol(it_flip);
 				} else {
-					// Unoccupied, flip up
-					make_mol(s,sp);
+					// Unoccupied - flip up
+					make_mol(it_flip,sp_new);
 				};
 			};
+
+			//std::cout << "FLIP Time: " << (std::clock() - start) / (double)(CLOCKS_PER_SEC / 1000) << " ms" << std::endl;
+			//start = std::clock();
 		};
 	};
 
@@ -566,72 +324,17 @@ namespace DynamicBoltzmann {
 	****************************************/
 
 	/********************
-	Get random indexes
+	Lookup a site iterator from x,y,z
 	********************/
 
-	std::map<int,std::vector<int>> Lattice::_get_random_idxs()
-	{
-		// Vectors of sites
-		std::vector<int> x1(this->_box_length);
-		std::iota(std::begin(x1), std::end(x1), 1);
-		std::vector<int> x2 = x1, x3 = x1;
+	latt_it Lattice::_look_up(int x, int y, int z) {
+		// Figure out index in list
+		int n = (x-1)*_box_length*_box_length + (y-1)*_box_length + z-1;
 
-		// Shuffle
-		std::random_shuffle(x1.begin(),x1.end());
-		std::random_shuffle(x2.begin(),x2.end());
-		std::random_shuffle(x3.begin(),x3.end());
-
-		// Return
-		std::map<int,std::vector<int>> m;
-		m[0] = x1;
-		m[1] = x2;
-		m[2] = x3;
-		return m;
-	};
-
-	/********************
-	Get all neighbors of a site
-	********************/
-
-	std::vector<Site> Lattice::_get_all_neighbors(Site s)
-	{
-		std::vector<Site> nbrs;
-
-		// 6 are possible
-		Site nbr_Site = s;
-
-		// x
-		nbr_Site.x += 1;
-		if (nbr_Site.x <= this->_box_length) {
-			nbrs.push_back(nbr_Site);
-		};
-		nbr_Site.x -= 2;
-		if (nbr_Site.x >= 1) {
-			nbrs.push_back(nbr_Site);
-		};
-		nbr_Site.x += 1;
-		// y
-		nbr_Site.y += 1;
-		if (nbr_Site.y <= this->_box_length) {
-			nbrs.push_back(nbr_Site);
-		};
-		nbr_Site.y -= 2;
-		if (nbr_Site.y >= 1) {
-			nbrs.push_back(nbr_Site);
-		};
-		nbr_Site.y += 1;
-		// z
-		nbr_Site.z += 1;
-		if (nbr_Site.z <= this->_box_length) {
-			nbrs.push_back(nbr_Site);
-		};
-		nbr_Site.z -= 2;
-		if (nbr_Site.z >= 1) {
-			nbrs.push_back(nbr_Site);
-		};
-		nbr_Site.z += 1;
-
-		return nbrs;
+		// Grab
+		latt_it it = _latt.begin();
+		std::advance(it,n);
+		return it;
 	};
 
 };

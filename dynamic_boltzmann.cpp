@@ -18,7 +18,7 @@ namespace DynamicBoltzmann {
 	Constructor
 	********************/
 
-	OptProblem::OptProblem(double nu_min, double nu_max, int n_nu, double t_max, int n_t, double nu_init, int batch_size, int n_annealing, std::vector<std::string> species_list, int box_length, double dopt) : _f(nu_min,nu_max,n_nu)
+	OptProblem::OptProblem(double nu_min, double nu_max, int n_nu, double t_max, int n_t, double nu_init, int batch_size, int n_annealing, int box_length, double dopt, int n_opt) : _f(nu_min,nu_max,n_nu), _latt(box_length)
 	{
 		this->_t_max = t_max;
 		this->_n_t = n_t;
@@ -32,20 +32,8 @@ namespace DynamicBoltzmann {
 		this->_n_batch = batch_size;
 		this->_n_annealing = n_annealing;
 		this->_box_length = box_length;
-		this->_species = species_list;
 		this->_dopt = dopt;
-
-		// Species
-		for (auto s: species_list) {
-			this->_moms_awake[s] = 0.0;
-			this->_moms_asleep[s] = 0.0;
-		};
-
-		// Data
-		this->_data = new Lattice[batch_size];
-		for (int i=0; i<batch_size; i++) {
-			this->_data[i] = Lattice(box_length);
-		};
+		this->_n_opt = n_opt;
 
 		// Fill the _nu_grid, _t_grid incrementally	
 		this->_nu_grid = new double[n_nu];
@@ -76,7 +64,25 @@ namespace DynamicBoltzmann {
 			};
 			delete[] this->_var_traj;
 		};
-		safeDelArr(this->_data);
+	};
+
+	/********************
+	Set properties
+	********************/
+
+	void OptProblem::add_species(std::string sp) {
+		_species.push_back(sp);
+
+		// Add to the lattice
+		_latt.add_species(&(_species.back()));
+
+		// Add entry for the moments
+		_moms_awake[&(_species.back())] = 0.0;
+		_moms_asleep[&(_species.back())] = 0.0;
+	};
+
+	void OptProblem::add_fname(std::string f) {
+		_fnames.push_back(f);
 	};
 
 	/********************
@@ -172,66 +178,139 @@ namespace DynamicBoltzmann {
 	Run main optimization loop
 	********************/
 
-	void OptProblem::solve() {
+	void OptProblem::solve(bool verbose) {
+		
+		// Write the moments
+		std::ofstream fmoments;
 
-		// Solve the current nu trajectory
-		solve_nu_traj();
-
-		// Solve the variational problem traj
-		solve_var_traj();
-
-		// Pick random batch indexes
-		// ...
+		// Filename to read
+		std::string fname;
 
 		// Map of interactions
 		std::map<std::string,double> h_dict;
-		std::map<StrPair,double> j_dict;
+		std::map<std::string,std::map<std::string,double>> j_dict;
 
 		// BFs update
 		double *df = new double[_n_nu];
-		std::fill_n(df, _n_nu, 0.);
 
-		// Go through all times
-		for (int i_time=0; i_time < _n_t_soln; i_time++)
+		// Iterate over optimization steps
+		for (int i_opt=0; i_opt<_n_opt; i_opt++)
 		{
-			std::cout << "time: " << i_time << std::endl;
+			std::cout << "Opt step " << i_opt << " / " << _n_opt-1 << std::endl;
 
-			// Read in batch at this timestep
+			// Write the current basis funcs
+			write_bfs("data/F/"+pad_str(i_opt,4)+".txt");
+
+			// Solve the current nu trajectory
+			solve_nu_traj();
+			if (verbose) {
+				for (int i=0; i<_n_t; i++) {
+					std::cout << _nu_traj[i] << " ";
+				};
+				std::cout << std::endl;
+			};
+
+			// Write the nu trajectory
+			write_nu_traj("data/nu_traj/"+pad_str(i_opt,4)+".txt");
+
+			// Solve the variational problem traj
+			solve_var_traj();
+
+			// Write the nu trajectory
+			write_var_traj("data/var_traj/"+pad_str(i_opt,4)+".txt");
+
+			// Pick a random batch
+			std::vector<std::string> fnames, fnames_possible=_fnames;
+			std::vector<std::string>::iterator itf;
 			for (int i_batch=0; i_batch<_n_batch; i_batch++) {
-				_data[i_batch].read_from_file("latt_st_test.txt");
+				itf = fnames_possible.begin();
+				std::advance(itf,randI(0,fnames_possible.size()-1));
+				fnames.push_back(*itf);
+				fnames_possible.erase(itf);
+			};
 
-				// Record the moments
-				for (auto sp: _species) {
-					_moms_awake[sp] += _data[i_batch].get_count(sp) / _n_batch;
+			// Reset update
+			std::fill_n(df, _n_nu, 0.);
+
+			// Get ready to write the moments
+			fmoments.open("data/moments/"+pad_str(i_opt,4)+".txt");
+
+			// Go through all times
+			for (int i_time=0; i_time < _n_t_soln; i_time++)
+			{
+				if (verbose) {
+					std::cout << "time: " << i_time << std::flush;
+				};
+
+				// Reset the moments
+				for (auto it=_species.begin(); it!=_species.end(); it++)
+				{
+					_moms_awake[&(*it)] = 0.0;
+					_moms_asleep[&(*it)] = 0.0;
+				};
+
+				// Write the interactions at this timestep into the species
+				for (auto it1=_species.begin(); it1!=_species.end(); it1++)
+				{
+					it1->h = _nu_traj[i_time];
+					for (auto it2=_species.begin(); it2!=_species.end(); it2++)
+					{
+						it1->j[&(*it2)] = 0.0;
+					};
+				};
+
+				// Go through all samples in the batch
+				for (int i_batch=0; i_batch<_n_batch; i_batch++) 
+				{
+					if (verbose) {
+						std::cout << "." << std::flush;
+					};
+
+					// Read in batch at this timestep
+					fname = fnames[i_batch] + pad_str(i_time,4) + ".txt";
+					_latt.read_from_file(fname);
+
+					// Record the moments
+					for (auto it=_species.begin(); it!=_species.end(); it++)
+					{
+						_moms_awake[&(*it)] += 1.0 * it->count / _n_batch;
+					};
+
+					// Anneal
+					_latt.anneal(_n_annealing);
+
+					// Record the moments
+					for (auto it=_species.begin(); it!=_species.end(); it++)
+					{
+						_moms_asleep[&(*it)] += 1.0 * it->count / _n_batch;
+					};
+				};
+
+				if (verbose) {
+					std::cout << std::endl << _moms_awake[&(_species.front())] << " " << _moms_asleep[&(_species.front())] << std::endl;
+				};
+
+				// Write the moments
+				fmoments << _t_grid[i_time] << " " << _moms_awake[&(_species.front())] << " " << _moms_asleep[&(_species.front())] << "\n";
+
+				// Store the update AND DAMPEN
+				for (int j=0; j<_n_nu; j++) {
+					df[j] -= _dopt * _dt * (_moms_asleep[&(_species.front())] - _moms_awake[&(_species.front())]) * _var_traj[i_time][j];//* exp(-pow(_nu_traj[i_time]-_nu_grid[j],2)/(2.*0.1));
 				};
 			};
 
-			// Form the dictionary of interactions at this timestep
-			for (int is1=0; is1<_species.size(); is1++) {
-				h_dict[_species[is1]] = _nu_traj[i_time];
-				for (int is2=is1; is2<_species.size(); is2++) {
-					j_dict[StrPair(_species[is1],_species[is2])] = 0.0;
-				};
-			};
+			// Close the moments file
+			fmoments.close();
 
-			// Anneal the batch
-			for (int i_batch=0; i_batch<_n_batch; i_batch++) {
-				_data[i_batch].anneal(h_dict,j_dict,_n_annealing);
-
-				// Record the moments
-				for (auto sp: _species) {
-					_moms_asleep[sp] += _data[i_batch].get_count(sp) / _n_batch;
-				};
-			};
-
-			// Store the update
-			for (int j=0; j<_n_nu; j++) {
-				df[j] -= _dopt * _dt * (_moms_asleep[_species[0]] - _moms_awake[_species[0]]) * _var_traj[i_time][j];
-			};
+			// Update the basis functions
+			_f.update(df);
 		};
 
-		// Update the basis functions
-		_f.update(df);
+		// Write the final basis funcs once more
+		write_bfs("data/F/"+pad_str(_n_opt,4)+".txt");
+
+		// Free update
+		delete[] df;
 	};
 
 	/****************************************
@@ -244,7 +323,7 @@ namespace DynamicBoltzmann {
 
 	double OptProblem::_delta(double nu1, double nu2) 
 	{
-		return exp(-pow(nu1-nu2,2)/(2.*0.01)) / sqrt(2. * M_PI * 0.01);
+		return exp(-pow(nu1-nu2,2)/(2.*0.1)) / sqrt(2. * M_PI * 0.1);
 	};
 
 };

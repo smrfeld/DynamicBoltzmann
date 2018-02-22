@@ -1,3 +1,8 @@
+// string
+#ifndef STRING_h
+#define STRING_h
+#include <string>
+#endif
 
 /************************************
 * Namespace for DynamicBoltzmann
@@ -10,18 +15,17 @@ namespace DynamicBoltzmann {
 	****************************************/
 
 	/********************
+	Zero pad a string
+	********************/
+
+	std::string pad_str(int i, int n_zeros);
+	
+	/********************
 	Random numbers
 	********************/
 
-	// Random numbers
-	inline double randD(double dMin, double dMax)
-	{
-	    return dMin + ((double)rand() / RAND_MAX) * (dMax - dMin);
-	};
-	inline int randI(int iMin, int iMax)
-	{
-		return iMin + rand() % (iMax - iMin + 1);
-	};
+	double randD(double dMin, double dMax);
+	int randI(int iMin, int iMax);
 
 	/********************
 	Pointer deletions

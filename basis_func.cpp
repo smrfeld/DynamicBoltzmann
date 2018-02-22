@@ -36,7 +36,7 @@ namespace DynamicBoltzmann {
 		std::fill_n(this->_deriv, n_nu, 0.0);
 
 		// TEMP: fill the basis func with sin
-		test_fill_sin();
+		// test_fill_sin();
 	};
 	BasisFunc::BasisFunc(const BasisFunc& bf)
 	{
@@ -133,12 +133,59 @@ namespace DynamicBoltzmann {
 	/********************
 	Update the values
 	********************/
-	void BasisFunc::update(double *dvals)
-	{
-		// Update all the values
+
+	void BasisFunc::update(double *dvals) {
 		for (int i=0; i<_n; i++) {
 			_vals[i] += dvals[i];
 		};
+
+		// Update the deriv
+		_update_derivs();
+	};
+
+	/********************
+	Update the values, smoothing delta F before
+	********************/
+	void BasisFunc::update_smoothed(double *dvals)
+	{
+		// Smooth the updates by an average
+		// This helps to get rid of edge effects
+		int window = 11;
+		double *sm = new double[_n];
+		// Left edge
+		for (int i=0; i<int(window/2); i++) {
+			sm[i] = 0.;
+			for (int j=0; j<int(window/2)+1+i; j++) {
+				sm[i] += dvals[j];
+			};
+			sm[i] /= int(window/2)+1+i;
+		};
+		// Interior
+		for (int i=int(window/2); i<_n-int(window/2); i++) {
+			sm[i] = 0.;
+			for (int j=i-int(window/2); j<=i+int(window/2); j++) {
+				sm[i] += dvals[j];
+			}
+			sm[i] /= window;
+		};
+		// Right edge
+		for (int i=0; i<int(window/2); i++) {
+			sm[_n-1-i] = 0.;
+			for (int j=0; j<int(window/2)+1+i; j++) {
+				sm[_n-1-i] += dvals[_n-1-j];
+			};
+			sm[_n-1-i] /= int(window/2)+1+i;
+		};
+
+		// Update all the values
+		for (int i=0; i<_n; i++) {
+			_vals[i] += sm[i];
+		};
+
+		// Clear
+		delete[] sm;
+
+
 		// Update the deriv
 		_update_derivs();
 	};

@@ -81,6 +81,9 @@ namespace DynamicBoltzmann {
 		// Update the values
 		void update(double *dvals);
 
+		// Update the values, smoothing delta F before
+		void update_smoothed(double *dvals);
+
 		// Test: fill with a sin func
 		void test_fill_sin();
 	};

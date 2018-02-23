@@ -126,6 +126,9 @@ namespace DynamicBoltzmann {
 		// Reset the counts and nns
 		for (auto sp_pair: _sp_map) {
 			sp_pair.second->count = 0;
+			for (auto sp_pair2: _sp_map) {
+				sp_pair.second->nn_count[sp_pair2.second] = 0;
+			};
 		};
 
 		// Clear the lattice
@@ -146,11 +149,33 @@ namespace DynamicBoltzmann {
 			return false;
 		};
 
+		/*
+		std::cout << "Making: " << s->x << " " << s->y << " " << s->z;
+		int ctr=0;
+		for (auto nbr_it: s->nbrs) { // go through nbrs
+			if (nbr_it->sp) { // is nbr site occ
+				ctr++;
+			};
+		};
+		std::cout << " no nbrs: " << ctr << " count now: " << sp->nn_count[_sp_map["A"]];
+		*/
+
 		// Make
 		s->sp = sp;
 
 		// Update count and nns
 		sp->count++;
+		for (auto nbr_it: s->nbrs) { // go through nbrs
+			if (nbr_it->sp) { // is nbr site occ
+				// Update bidirectionally, unless it's the same species
+				sp->nn_count[nbr_it->sp]++;
+				if (nbr_it->sp != sp) {
+					nbr_it->sp->nn_count[sp]++;
+				};
+			};
+		};
+
+		// std::cout << " now: count: " << sp->nn_count[_sp_map["A"]] << std::endl;
 
 		return true;
 	};
@@ -167,8 +192,30 @@ namespace DynamicBoltzmann {
 			return false;
 		};
 
+		/*
+		std::cout << "Erasing: " << s->x << " " << s->y << " " << s->z;
+		int ctr=0;
+		for (auto nbr_it: s->nbrs) { // go through nbrs
+			if (nbr_it->sp) { // is nbr site occ
+				ctr++;
+			};
+		};
+		std::cout << " no nbrs: " << ctr << " count now: " << s->sp->nn_count[_sp_map["A"]];
+		*/
+
 		// Update count and nns
 		s->sp->count--;
+		for (auto nbr_it: s->nbrs) { // go through nbrs
+			if (nbr_it->sp) { // is nbr site occ
+				// Update bidirectionally, unless it's the same species
+				s->sp->nn_count[nbr_it->sp]--;
+				if (nbr_it->sp != s->sp) {
+					nbr_it->sp->nn_count[s->sp]--;
+				};
+			};
+		};
+
+		// std::cout << " now: count: " << s->sp->nn_count[_sp_map["A"]] << std::endl;
 
 		// Erase
 		s->sp = nullptr;
@@ -226,6 +273,8 @@ namespace DynamicBoltzmann {
 			};
 		};
 		f.close();
+
+		// std::cout << "Read: " << fname << " no nn: " << _sp_map["A"]->nn_count[_sp_map["A"]] << std::endl;
 	};
 
 	/********************

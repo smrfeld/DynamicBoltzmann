@@ -38,13 +38,19 @@ namespace DynamicBoltzmann {
 	private:
 
 		// The solution
-		BasisFunc _f;
+		BasisFunc2D _f_h;
+		BasisFunc2D _f_j;
 
 		// The variational problem solution
-		double* _nu_traj;
-		double** _var_traj;
+		double* _h_traj;
+		double* _j_traj;
+		double*** _var_hh_traj;
+		double*** _var_hj_traj;
+		double*** _var_jh_traj;
+		double*** _var_jj_traj;
 		double* _t_grid;
-		double* _nu_grid;
+		double* _h_grid;
+		double* _j_grid;
 
 		// Species present
 		std::list<Species> _species;
@@ -53,13 +59,13 @@ namespace DynamicBoltzmann {
 		std::vector<std::string> _fnames;
 
 		// Nu range
-		double _nu_min,_nu_max;
+		double _h_min,_h_max,_j_min,_j_max;
 
 		// Number nu
-		int _n_nu;
+		int _n_h,_n_j;
 
 		// Increment
-		double _dnu;
+		double _dh,_dj;
 
 		// Max time
 		double _t_max;
@@ -74,10 +80,10 @@ namespace DynamicBoltzmann {
 		int _n_t_soln;
 
 		// Initial value for nu
-		double _nu_init;
+		double _h_init,_j_init;
 
 		// Delta function at some time index, nu value
-		double _delta(double nu1, double nu2);
+		double _delta(double h1, double h2, double j1, double j2);
 
 		// Batch size
 		int _n_batch;
@@ -86,8 +92,10 @@ namespace DynamicBoltzmann {
 		int _n_annealing;
 
 		// Moments from data, annealing
-		std::map<Species*,double> _moms_awake;
-		std::map<Species*,double> _moms_asleep;
+		std::map<Species*,double> _moms_h_awake;
+		std::map<Species*,double> _moms_h_asleep;
+		std::map<Species*,std::map<Species*,double>> _moms_j_awake;
+		std::map<Species*,std::map<Species*,double>> _moms_j_asleep;
 
 		// Lattice size
 		int _box_length;
@@ -107,7 +115,7 @@ namespace DynamicBoltzmann {
 		Constructor
 		********************/
 
-		OptProblem(double nu_min, double nu_max, int n_nu, double t_max, int n_t, double nu_init, int batch_size, int n_annealing, int box_length, double dopt, int n_opt);
+		OptProblem(double h_min, double h_max, int n_h, double j_min, double j_max, int n_j, double t_max, int n_t, double h_init, double j_init, int batch_size, int n_annealing, int box_length, double dopt, int n_opt);
 		~OptProblem();
 
 		/********************
@@ -118,10 +126,10 @@ namespace DynamicBoltzmann {
 		void add_fname(std::string f);
 
 		/********************
-		Solve for nu
+		Solve for h,j
 		********************/
 
-		void solve_nu_traj();
+		void solve_hj_traj();
 
 		/********************
 		Solve for variational trajectory
@@ -130,19 +138,12 @@ namespace DynamicBoltzmann {
 		void solve_var_traj();
 
 		/********************
-		Print nu solution
-		********************/
-
-		void print_nu_traj();
-		void print_var_traj();
-
-		/********************
 		Write
 		********************/
 
-		void write_nu_traj(std::string fname);
+		void write_hj_traj(std::string fname);
 		void write_var_traj(std::string fname);
-		void write_bfs(std::string fname);
+		void write_bfs(std::string fname_h, std::string fname_j);
 
 		/********************
 		Solve

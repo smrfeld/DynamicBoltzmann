@@ -27,14 +27,27 @@ namespace DynamicBoltzmann {
 	****************************************/
 	
 	struct Species {
+		// Name
 		std::string name;
+		
 		// Counts
 		std::map<Species*,int> nn_count;
 		int count;
-		// Coupling strengths
-		double h;
-		std::map<Species*,double> j;
+
+		// Pointers...
+		// Solution array
+		double ***_soln_traj_ptr;
+		// Current time in the optimization
+		int *_t_opt_ptr;
+		int _h_index;
+		std::map<Species*,int> _j_index;
+
+		// Constructor
 		Species(std::string nameIn);
+
+		// Accessor h,j
+		double h();
+		double j(Species *other);
 	};
 	// Comparator
 	bool operator <(const Species& a, const Species& b);

@@ -205,26 +205,26 @@ namespace DynamicBoltzmann {
 			// Go through all h,j
 			for (int i=0; i<_n_h; i++) {
 				for (int j=0; j<_n_j; j++) {
-					_var_hh_traj[t+1][i][j] = _var_hh_traj[t+1][i][j] + _dt * (
+					_var_hh_traj[t+1][i][j] = _var_hh_traj[t][i][j] + _dt * (
 						_delta(_h_traj[t],_h_grid[i],_j_traj[t],_j_grid[j])
 						+
 						_f_h.get_deriv(_h_traj[t],_j_traj[t], true, false) * _var_hh_traj[t][i][j]
 						+
 						_f_h.get_deriv(_h_traj[t],_j_traj[t], false, true) * _var_jh_traj[t][i][j]
 						);
-					_var_hj_traj[t+1][i][j] = _var_hh_traj[t+1][i][j] + _dt * (
+					_var_hj_traj[t+1][i][j] = _var_hh_traj[t][i][j] + _dt * (
 						_f_h.get_deriv(_h_traj[t],_j_traj[t], true, false) * _var_hh_traj[t][i][j]
 						+
 						_f_h.get_deriv(_h_traj[t],_j_traj[t], false, true) * _var_jj_traj[t][i][j]
 						);
-					_var_jh_traj[t+1][i][j] = _var_hh_traj[t+1][i][j] + _dt * (
+					_var_jh_traj[t+1][i][j] = _var_hh_traj[t][i][j] + _dt * (
 						_delta(_h_traj[t],_h_grid[i],_j_traj[t],_j_grid[j])
 						+
 						_f_j.get_deriv(_h_traj[t],_j_traj[t], true, false) * _var_hh_traj[t][i][j]
 						+
 						_f_j.get_deriv(_h_traj[t],_j_traj[t], false, true) * _var_jh_traj[t][i][j]
 						);
-					_var_jj_traj[t+1][i][j] = _var_hh_traj[t+1][i][j] + _dt * (
+					_var_jj_traj[t+1][i][j] = _var_hh_traj[t][i][j] + _dt * (
 						_delta(_h_traj[t],_h_grid[i],_j_traj[t],_j_grid[j])
 						+
 						_f_j.get_deriv(_h_traj[t],_j_traj[t], true, false) * _var_hj_traj[t][i][j]

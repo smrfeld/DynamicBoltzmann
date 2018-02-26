@@ -1,5 +1,6 @@
 #include "dynamic_boltzmann.hpp"
 #include "general.hpp"
+#include <iostream>
 
 using namespace DynamicBoltzmann;
 
@@ -9,40 +10,44 @@ int main() {
 	Test optimization problem
 	********************/
 
-	// h,j
-	double h_min = -0.3;
-	double h_max = 0.55;
-	double h_init = 0.5;
-	int n_h = 21;
-	double j_min = -0.7;
-	double j_max = 0.15;
-	double j_init = 0.1;
-	int n_j = 21;
+	// Number of dimensions
+	int n_dim = 2;
 
-	// times
+	// Dimensions vec
+	std::vector<Dim> dims;
+	dims.push_back(Dim("h",-0.6,0.55,21,H,"A"));
+	dims.push_back(Dim("j",-0.7,0.15,21,J,"A","A"));
+
+	// Initial conditions
+	std::vector<double> init;
+	init.push_back(0.5); // h
+	init.push_back(0.1); // j
+
+	// Times
 	double t_max=1.0;
 	int n_t = 101;
 
 	// Opt params
-	int batch_size = 20;
+	int batch_size = 10;
 	int n_annealing = 500;
 	int box_length = 10;
 	double dopt = 0.005;
 	int n_opt = 100;
 	
 	// Init
-	OptProblem opt(h_min, h_max, n_h, j_min, j_max, n_j, t_max, n_t, h_init, j_init, batch_size, n_annealing, box_length, dopt, n_opt);
+	std::cout << "Initializing..." << std::flush;
+	OptProblem opt(n_dim, t_max, n_t, batch_size, n_annealing, box_length, dopt, n_opt, dims, init, {"A"});
+	std::cout << "ok." << std::endl;
 
 	// Add filenames
 	for (int i=0; i<100; i++) {
 		opt.add_fname("annihilation/lattice_v" + pad_str(i,2) + "/lattice/");
 	};
 
-	// Add species
-	opt.add_species("A");
-
 	// Solve
-	opt.solve(false);
+	std::cout << "Solving..." << std::endl;
+	opt.solve(true);
+	std::cout << "fin." << std::endl;
 
 	return 0;
 };

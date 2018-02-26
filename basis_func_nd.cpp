@@ -15,41 +15,41 @@ namespace DynamicBoltzmann {
 	Dimension information
 	****************************************/
 
-	Dim::Dim(std::string nameIn, double minIn, double maxIn, int nIn) {
+	Dim::Dim(std::string nameIn, double minIn, double maxIn, int nIn) : Dim(nameIn, minIn, maxIn, nIn, NONE, "", "") {};
+	Dim::Dim(std::string nameIn, double minIn, double maxIn, int nIn, DimType typeIn, std::string speciesIn) : Dim(nameIn, minIn, maxIn, nIn, typeIn, speciesIn, "") {};
+	Dim::Dim(std::string nameIn, double minIn, double maxIn, int nIn, DimType typeIn, std::string species1In, std::string species2In) 
+	{
+		name = nameIn;
+		
+		type = typeIn;
+
 		n = nIn;
 		min = minIn;
 		max = maxIn;
-		name = nameIn;
 		delta = (max-min)/(n-1);
 		grid = new double[n];
 		for (int i=0; i<n; i++) {
 			this->grid[i] = min + i*delta;
 		};
+		
+		species1 = species1In;
+		species2 = species2In;
+		sp1 = nullptr;
+		sp2 = nullptr;
+
+		awake = 0.0;
+		asleep = 0.0;
 	};
 	Dim::Dim(const Dim& d) 
 	{
-		n = d.n;
-		min = d.min;
-		max = d.max;
-		delta = d.delta;
-		name = d.name;
-		grid = new double[n];
-		std::copy( d.grid, d.grid + n, grid );
+		_copy(d);
 	};
 	Dim& Dim::operator=(const Dim& d)
 	{
 		if (this != &d)
-		{
-			n = d.n;
-			min = d.min;
-			max = d.max;
-			delta = d.delta;
-			name = d.name;
-
+		{			
 			safeDelArr(grid);
-
-			grid = new double[n];
-			std::copy( d.grid, d.grid + n, grid );
+			_copy(d);
 		};
 		return *this;		
 	};
@@ -57,11 +57,80 @@ namespace DynamicBoltzmann {
 		safeDelArr(grid);
 	};
 
+	/********************
+	Copy function
+	********************/
+
+	void Dim::_copy(const Dim& d) {
+		name = d.name;
+		
+		type = d.type;
+
+		n = d.n;
+		min = d.min;
+		max = d.max;
+		delta = d.delta;
+
+		grid = new double[n];
+		std::copy( d.grid, d.grid + n, grid );
+
+		species1 = d.species1;
+		species2 = d.species2;
+		if (d.sp1) {
+			sp1 = d.sp1;
+		};
+		if (d.sp2) {
+			sp2 = d.sp2;
+		};
+
+		awake = d.awake;
+		asleep = d.asleep;
+	};
+
+	/********************
+	Update moments from species
+	********************/
+
+	void Dim::append_moments_from_latt(MomentType moment_type) {
+		if (type == H) {
+			if (sp1) {
+				if (moment_type==AWAKE) {
+					awake += sp1->count;
+				} else if (moment_type==ASLEEP) {
+					asleep += sp1->count;
+				};
+			};
+		} else if (type == J) {
+			if (sp1 && sp2) {
+				if (moment_type==AWAKE) {
+					awake += sp1->nn_count[sp2];
+				} else if (moment_type==ASLEEP) {
+					asleep += sp1->nn_count[sp2];
+				};
+			};
+		};
+	};
+
+	/********************
+	Comparators
+	********************/
+
+	bool Dim::operator==(const Dim& d) 
+	{
+		return std::tie(name,n,min,max) == std::tie(d.name,d.n,d.min,d.max);
+	};
+	bool Dim::operator!=(const Dim& d) {
+		return !(*this==d);
+	}
+
 	/****************************************
 	GridND
 	****************************************/
-	GridND::GridND(int n_dim, std::vector<Dim> dims)
+
+	GridND::GridND(std::string name, int n_dim, std::vector<Dim> dims)
 	{
+		_name = name;
+
 		_n_dim = n_dim;
 		_dims = dims;
 
@@ -85,6 +154,7 @@ namespace DynamicBoltzmann {
 			_dim_pwrs.push_back(pwr); 
 		};
 	};
+	GridND::GridND(std::string name, Dim dim) : GridND(name,1,std::vector<Dim>{dim}) {};
 	GridND::GridND(const GridND& g) 
 	{
 		_copy(g);
@@ -101,10 +171,17 @@ namespace DynamicBoltzmann {
 	{
 		safeDelArr(_vals);
 	};
+
+	/********************
+	Internal copy
+	********************/
+
 	void GridND::_copy(const GridND& g) {
 		_n_dim = g._n_dim;
 		_val_len = g._val_len;
 		_dims = g._dims;
+		_dim_pwrs = g._dim_pwrs;
+		_name = g._name;
 
 		_vals = new double[_val_len];
 		std::copy( g._vals, g._vals + _val_len, _vals );
@@ -114,12 +191,17 @@ namespace DynamicBoltzmann {
 	Get/set an element by index
 	********************/
 
-	double GridND::get(int *idxs)
+	double GridND::get(int *idxs) const
 	{
 		int i=0;
 		for (int id=0; id<_n_dim; id++) {
 			i += _dim_pwrs[id] * idxs[id];
 		};
+		return _vals[i];
+	};
+
+	double GridND::get(int i) const
+	{
 		return _vals[i];
 	};
 
@@ -130,6 +212,40 @@ namespace DynamicBoltzmann {
 			i += _dim_pwrs[id] * idxs[id];
 		};
 		_vals[i] = val;
+	};
+
+	void GridND::set(int i, double val)
+	{
+		_vals[i] = val;
+	};
+
+	/********************
+	Multiply all values by some constant
+	********************/
+
+	void GridND::multiply_all(double val)
+	{
+		for (int i=0; i<_val_len; i++) {
+			_vals[i] *= val;
+		};
+	};
+
+	/********************
+	Increment by a whole grid
+	********************/
+
+	void GridND::increment(const GridND& g)
+	{
+		/*
+		if (!check_dims(g)) { 
+			std::cerr << "Could not increment because dims don't match" << std::endl;
+			exit(EXIT_FAILURE); 
+		};
+		*/
+
+		for (int i=0; i<_val_len; i++) {
+			_vals[i] += g.get(i);
+		};
 	};
 
 	/********************
@@ -150,10 +266,10 @@ namespace DynamicBoltzmann {
 	Write to file
 	********************/
 
-	void GridND::write_to_file(std::string fname) 
+	void GridND::write_to_file(std::string dir, int idx) 
 	{
 		std::ofstream f;
-		f.open (fname);
+		f.open (dir + _name + "_" + pad_str(idx,4));
 
 		// Go through everything to write
 		int *idxs = new int[_n_dim];
@@ -168,6 +284,36 @@ namespace DynamicBoltzmann {
 		safeDelArr(idxs);
 	};
 
+	/********************
+	Check dimensions against another grid
+	********************/
+
+	bool GridND::check_dims(const GridND& g)
+	{
+		// Check no dims
+		if (_n_dim != g._n_dim) { 
+			std::cerr << "ERROR! No dimensions don't match in update step" << std::endl;
+			return false;
+		};
+
+		// Check each dim
+		for (int id=0; id<_n_dim; id++) {
+			if (_dims[id] != g._dims[id]) {
+				return false;
+			};
+		};
+		return true;
+	};
+
+	/********************
+	Zero
+	********************/
+
+	void GridND::zero()
+	{
+		std::fill_n(_vals,_val_len,0.);
+	};
+
 	/****************************************
 	BasisFuncND
 	****************************************/
@@ -176,7 +322,7 @@ namespace DynamicBoltzmann {
 	Constructor
 	********************/
 
-	BasisFuncND::BasisFuncND(int n_dim, std::vector<Dim> dims) : GridND(n_dim,dims) {
+	BasisFuncND::BasisFuncND(std::string name, int n_dim, std::vector<Dim> dims) : GridND(name,n_dim,dims) {
 		_idxs_bounding = new int[_n_dim];
 		_idxs_p_cube = new int[_n_dim];
 		_idxs_ext_1 = new int[_n_dim];
@@ -340,6 +486,24 @@ namespace DynamicBoltzmann {
 	};
 
 	/********************
+	Update with delta f
+	********************/
+
+	void BasisFuncND::update(const GridND &g) 
+	{
+		// Check dimensions
+		if (!check_dims(g)) { 
+			std::cerr << "ERROR! Could not update BF b/c dims don't match" << std::endl; 
+			exit(EXIT_FAILURE); 
+		};
+
+		// Update
+		for (int i=0; i<_val_len; i++) {
+			_vals[i] += g.get(i);
+		};
+	};
+
+	/********************
 	Test fill in various dimensions
 	********************/
 
@@ -383,16 +547,20 @@ namespace DynamicBoltzmann {
 	From parent
 	********************/
 
-	double BasisFuncND::get(int *idxs) {
+	double BasisFuncND::get(int *idxs) const {
 		return GridND::get(idxs);
+	};
+
+	double BasisFuncND::get(int i) const {
+		return GridND::get(i);
 	};
 
 	void BasisFuncND::set(int *idxs, double val) {
 		GridND::set(idxs,val);
 	};
 
-	void BasisFuncND::write_to_file(std::string fname) {
-		GridND::write_to_file(fname);
+	void BasisFuncND::write_to_file(std::string dir, int idx) {
+		GridND::write_to_file(dir, idx);
 	}; 
 
 	/****************************************

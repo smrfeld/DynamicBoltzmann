@@ -319,11 +319,11 @@ namespace DynamicBoltzmann {
 			// Check if this site is occupied
 			if (it_flip->sp) {
 				// Occupied - flip down
-				hOld = -it_flip->sp->h;
+				hOld = -it_flip->sp->h();
 				jOld = 0.0;
 				for (auto it_nbr: it_flip->nbrs) {
 					if (it_nbr->sp) {
-						jOld -= it_flip->sp->j[it_nbr->sp];
+						jOld -= it_flip->sp->j(it_nbr->sp);
 					};
 				};
 				// New couplings
@@ -338,11 +338,11 @@ namespace DynamicBoltzmann {
 				std::advance(it_sp, randI(0,_sp_map.size()-1));
 				sp_new = it_sp->second;
 				// New couplings
-				hNew = -sp_new->h;
+				hNew = -sp_new->h();
 				jNew = 0.0;
 				for (auto it_nbr: it_flip->nbrs) {
 					if (it_nbr->sp) {
-						jNew -= sp_new->j[it_nbr->sp];
+						jNew -= sp_new->j(it_nbr->sp);
 					};
 				};
 			};

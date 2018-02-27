@@ -121,11 +121,15 @@ namespace DynamicBoltzmann {
 		int *_var_idxs;
 		// Time, num, denom idx
 		int _var_time, _var_nu, _var_f;
+		// Number basis funcs
+		int _var_f_n_dim,_var_nu_n_dim;
+		// Indexes of the dimensions for this basis func
+		std::vector<int> _var_f_dim_idxs, _var_nu_dim_idxs;
 		// Derivatives of the basis functions at the solution corresponding to the current timepoint
 		// Size: 2
 		//     Dim 1: basis functions, 1 to _n_dim
-		//     Dim 2: diff. variable, 1 to _n_dim
-		double **_bfs_derivs_var;
+		//     Dim 2: diff. variable, 1 to basis_func.bf_n_dim
+		double **_var_bf_derivs;
 		// Delta function
 		double _var_delta();
 
@@ -167,11 +171,11 @@ namespace DynamicBoltzmann {
 		********************/
 
 		void write_soln_traj(std::string fname);
-		void write_var_traj(std::string fname);
-		void write_bfs(std::string fname);
-		void write_bfs(std::string dir, int idx);
-		void write_grid(std::string fname);
+		void write_var_traj(std::string fname, int idx_num, int idx_denom);
+		void write_bf(std::string dir, int idx);
+		void write_bf_grid(std::string fname, int idx);
 		void write_moments(std::string fname, bool append);
+		void write_t_grid(std::string fname);
 
 		/********************
 		Solve

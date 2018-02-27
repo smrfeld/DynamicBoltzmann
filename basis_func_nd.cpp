@@ -39,6 +39,9 @@ namespace DynamicBoltzmann {
 
 		awake = 0.0;
 		asleep = 0.0;
+
+		// Default: use all dimensions as basis
+		bf_use_all_dim = true;
 	};
 	Dim::Dim(const Dim& d) 
 	{
@@ -85,6 +88,30 @@ namespace DynamicBoltzmann {
 
 		awake = d.awake;
 		asleep = d.asleep;
+
+		bf_use_all_dim = d.bf_use_all_dim;
+		bf_n_dim = d.bf_n_dim;
+		bf_dim_idxs = d.bf_dim_idxs;
+		bf_dim_names = d.bf_dim_names;
+	};
+
+	/********************
+	Specify dimensions to use as basis
+	********************/
+
+	void Dim::set_basis_func_dims(std::string dim_name) 
+	{
+		bf_use_all_dim = false;
+		auto it = std::find(bf_dim_names.begin(), bf_dim_names.end(), dim_name);
+		if (it == bf_dim_names.end()) {
+			bf_dim_names.push_back(dim_name);
+			bf_n_dim = bf_dim_names.size();
+		};
+	};
+	void Dim::set_basis_func_dims(std::vector<std::string> dim_name) {
+		for (auto s: dim_name) {
+			set_basis_func_dims(s);
+		};
 	};
 
 	/********************
@@ -129,7 +156,7 @@ namespace DynamicBoltzmann {
 
 	GridND::GridND(std::string name, int n_dim, std::vector<Dim> dims)
 	{
-		_name = name;
+		this->name = name;
 
 		_n_dim = n_dim;
 		_dims = dims;
@@ -181,7 +208,7 @@ namespace DynamicBoltzmann {
 		_val_len = g._val_len;
 		_dims = g._dims;
 		_dim_pwrs = g._dim_pwrs;
-		_name = g._name;
+		this->name = g.name;
 
 		_vals = new double[_val_len];
 		std::copy( g._vals, g._vals + _val_len, _vals );
@@ -269,7 +296,7 @@ namespace DynamicBoltzmann {
 	void GridND::write_to_file(std::string dir, int idx) 
 	{
 		std::ofstream f;
-		f.open (dir + _name + "_" + pad_str(idx,4));
+		f.open (dir + name + "_" + pad_str(idx,4));
 
 		// Go through everything to write
 		int *idxs = new int[_n_dim];

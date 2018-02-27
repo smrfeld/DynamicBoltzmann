@@ -64,6 +64,16 @@ namespace DynamicBoltzmann {
 		// Copy function
 		void _copy(const Dim& d);
 
+		// Dimensions to use as the basis function
+		bool bf_use_all_dim; // By default, use all available
+		// Otherwise, use these:
+		int bf_n_dim;
+		std::vector<int> bf_dim_idxs;
+		std::vector<std::string> bf_dim_names;
+		// Specify dimensions
+		void set_basis_func_dims(std::string dim_name);
+		void set_basis_func_dims(std::vector<std::string> dim_name);
+
 		// Update moments from species
 		enum MomentType {AWAKE, ASLEEP};
 		void append_moments_from_latt(MomentType moment_type);
@@ -99,9 +109,6 @@ namespace DynamicBoltzmann {
 		// Dimension length squares
 		std::vector<int> _dim_pwrs;
 
-		// Name - useful for writing!
-		std::string _name;
-
 	public:
 
 		// Constructor
@@ -110,6 +117,9 @@ namespace DynamicBoltzmann {
 		GridND(const GridND& bf);
 		GridND& operator=(const GridND& bf);
 		~GridND();
+
+		// Name - useful for writing!
+		std::string name;
 
 		// Get/set an element by index
 		double get(int *idxs) const;

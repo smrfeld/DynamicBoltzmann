@@ -29,18 +29,56 @@ namespace DynamicBoltzmann {
 		_n_dim = n_dim;
 		_dims = dims;
 
+		// Update the dimensions for each basis function
+		if (DIAG_INIT) {
+			std::cout << "updating basis funcs of dims..." << std::flush;
+		};
+		std::vector<int> idxs_all(_n_dim);
+		std::iota(idxs_all.begin(), idxs_all.end(), 0);
+		for (int d=0; d<_n_dim; d++) {
+			// By default, use all dims for the basis func corresponding to this dim
+			if (_dims[d].bf_use_all_dim) {
+				_dims[d].bf_n_dim = _n_dim;
+				_dims[d].bf_dim_idxs = idxs_all;
+			} else { // Otherwise, use the given dims
+				_dims[d].bf_dim_idxs.clear();
+				for (auto dim_name: _dims[d].bf_dim_names)
+				{
+					// Search for the idx of the dimension with this name
+					int dsearch=0; bool found = false;
+					while (dsearch < _n_dim && !found) {
+						if (_dims[dsearch].name==dim_name) {
+							_dims[d].bf_dim_idxs.push_back(dsearch);
+							found = true;
+						} else {
+							dsearch++;
+						};
+					};
+					if (!found) {
+						std::cerr << "ERROR! Dimension with name: " << dim_name << " was not found." << std::endl;
+						exit(EXIT_FAILURE);
+					};
+				};
+			};
+		};
+
 		// Initial points
 		_init = init;
 
-		// Initialize basis funcs
+		// Initialize basis funcs and updates
 		if (DIAG_INIT) {
 			std::cout << "basis funcs..." << std::flush;
 		};
-		for (int id=0; id<_n_dim; id++) {
-			// Basis functions
-			_bfs.push_back(BasisFuncND("bf_"+std::to_string(id),_n_dim,_dims));
-			// Updates to the basis functions
-			_dbfs.push_back(GridND("dbf_"+std::to_string(id),_n_dim,_dims));
+		std::vector<Dim> bf_dims;
+		for (int d=0; d<_n_dim; d++) {
+			// Set up the dimensions
+			bf_dims.clear();
+			for (auto dim_bf: _dims[d].bf_dim_idxs) {
+				bf_dims.push_back(_dims[dim_bf]);
+			};
+			// Make basis func
+			_bfs.push_back(BasisFuncND("F_"+_dims[d].name,_dims[d].bf_n_dim,bf_dims));
+			_dbfs.push_back(GridND("delta_F_"+_dims[d].name,_dims[d].bf_n_dim,bf_dims));
 		};
 
 		// Initialize solution trajs
@@ -64,7 +102,12 @@ namespace DynamicBoltzmann {
 				_var_traj[t].push_back(std::vector<GridND>());
 				for (int d_denom=0; d_denom<_n_dim; d_denom++) 
 				{
-					_var_traj[t][d_num].push_back(GridND("var_t_"+std::to_string(t)+"_vary_"+std::to_string(d_num)+"_wrt_"+std::to_string(d_denom),_n_dim,_dims));
+					// Set up the dimensions
+					bf_dims.clear();
+					for (auto dim_bf: _dims[d_denom].bf_dim_idxs) {
+						bf_dims.push_back(_dims[dim_bf]);
+					};
+					_var_traj[t][d_num].push_back(GridND("var_t_"+std::to_string(t)+"_vary_"+_dims[d_num].name+"_wrt_"+_dims[d_denom].name,_dims[d_denom].bf_n_dim,bf_dims));
 				};
 			};
 		};
@@ -122,11 +165,11 @@ namespace DynamicBoltzmann {
 		if (DIAG_INIT) {
 			std::cout << "allocating structures for var problem..." << std::flush;
 		};
-		_bfs_derivs_var = new double*[_n_dim];
+		_var_bf_derivs = new double*[_n_dim];
 		for (int d=0; d<_n_dim; d++) {
-			_bfs_derivs_var[d] = new double[_n_dim];
+			_var_bf_derivs[d] = new double[_dims[d].bf_n_dim];
 		};
-		_var_idxs = new int[_n_dim];
+		// Do not init _var_idxs - its size changes
 
 		if (DIAG_INIT) {
 			std::cout << "done." << std::endl;
@@ -141,9 +184,9 @@ namespace DynamicBoltzmann {
 		safeDelArr(_var_idxs);
 
 		for (int d=0; d<_n_dim; d++) {
-			safeDelArr(_bfs_derivs_var[d]);
+			safeDelArr(_var_bf_derivs[d]);
 		};
-		delete[] _bfs_derivs_var;
+		delete[] _var_bf_derivs;
 	};
 
 	/********************
@@ -210,8 +253,7 @@ namespace DynamicBoltzmann {
 		if (DIAG_VAR) { std::cout << "ok." << std::endl; };
 
 		// To specify which dimension to differentiate
-		bool derivs[_n_dim];
-		std::fill_n(derivs,_n_dim,false); // all false
+		bool *derivs;
 
 		// Go through all times, as long as the soln traj has not gone out of bounds
 		for (_var_time=0; _var_time<_n_t_soln-1; _var_time++) {
@@ -220,12 +262,18 @@ namespace DynamicBoltzmann {
 
 			if (DIAG_VAR) { std::cout << "Fill out derivs at time " << _var_time << "..." << std::flush; };
 
-			for (int d_deriv=0; d_deriv<_n_dim; d_deriv++) { // Deriv dimension
-				derivs[d_deriv] = true; // diff this dimension
-				for (int d_bf=0; d_bf<_n_dim; d_bf++) { // BF dimension
-					_bfs_derivs_var[d_bf][d_deriv] = _bfs[d_bf].get_deriv(_soln_traj[_var_time],derivs);
+			// Go through basis funcs to differentiate
+			for (int d_bf=0; d_bf<_n_dim; d_bf++) {
+				derivs = new bool[_dims[d_bf].bf_n_dim];
+				std::fill_n(derivs,_dims[d_bf].bf_n_dim,false); // all false
+				// Go through nu to differentiate with respect to
+				for (int d_nu=0; d_nu<_dims[d_bf].bf_n_dim; d_nu++) {
+					derivs[d_nu] = true; // diff this dimension
+					_var_bf_derivs[d_bf][d_nu] = _bfs[d_bf].get_deriv(_soln_traj[_var_time],derivs);
+					derivs[d_nu] = false; // reset
 				};
-				derivs[d_deriv] = false; // reset
+				// Free
+				safeDelArr(derivs);
 			};
 
 			if (DIAG_VAR) { std::cout << "ok." << std::endl; };
@@ -235,9 +283,19 @@ namespace DynamicBoltzmann {
 			if (DIAG_VAR) { std::cout << "Iterating over grid..." << std::endl; };
 
 			for (_var_nu=0; _var_nu<_n_dim; _var_nu++) {
-				for (_var_f=0; _var_f<_n_dim; _var_f++) {					
+				for (_var_f=0; _var_f<_n_dim; _var_f++) {
+					// Init the idxs for the grid of the basis function we are varying with respect to
+					_var_f_n_dim = _dims[_var_f].bf_n_dim;
+					_var_nu_n_dim = _dims[_var_nu].bf_n_dim;
+					_var_idxs = new int[_var_f_n_dim];
+					_var_f_dim_idxs = _dims[_var_f].bf_dim_idxs;
+					_var_nu_dim_idxs = _dims[_var_nu].bf_dim_idxs;
+
 					// Recursion to iterate over all grid points
 					_iterate_var(0);
+
+					// Free the idxs
+					safeDelArr(_var_idxs);
 				};
 			};
 
@@ -250,39 +308,43 @@ namespace DynamicBoltzmann {
 	void OptProblem::_iterate_var(int dim)
 	{
 		// Iterate over all idxs in dimension dim
-		for(_var_idxs[dim] = 0; _var_idxs[dim] < _dims[dim].n; ++_var_idxs[dim]) 
+		for(_var_idxs[dim] = 0; _var_idxs[dim] < _dims[_var_f_dim_idxs[dim]].n; ++_var_idxs[dim]) 
 		{
-			if (dim != _n_dim-1)
+			if (dim != _var_f_n_dim-1)
 			{
 				// Inception - need another for loop
 				_iterate_var(dim+1);
 			} else {
 				// Do something!
 
-				// Val at prev time
 				if (DIAG_VAR) { 
 					std::cout << "   Doing point: ";
-					for (int d=0; d<_n_dim; d++) {
-						std::cout << _dims[d].grid[_var_idxs[d]] << " ";
+					for (int d=0; d<_var_f_n_dim; d++) {
+						std::cout << _dims[_var_f_dim_idxs[d]].grid[_var_idxs[d]] << " ";
 					};
 					std::cout << "..." << std::flush; 
 				};
 
+				// Val at prev time
 				double new_val = _var_traj[_var_time][_var_nu][_var_f].get(_var_idxs);
+				//if (new_val > 1e10) { std::cerr << "prev" << std::endl; exit(EXIT_FAILURE); };
 
 				// Delta source
 				if (_var_nu == _var_f) {
 					new_val += _time.delta * _var_delta();
 				};
+				//if (new_val > 1e10) { std::cerr << "delta" << std::endl; exit(EXIT_FAILURE); };
 
 				// Derivatives
 				// We are calculating:
 				// (delta _var_nu) / (delta _var_f)
 				// These terms are: 
 				// sum_l (delta nu_l) / (delta _var_f) * (deriv of F corresponding to _var_nu ) / (d nu_l)
-				// So: _n_dim terms in the sum!
-				for (int nu_l=0; nu_l<_n_dim; nu_l++) {
-					new_val += _time.delta * _var_traj[_var_time][nu_l][_var_f].get(_var_idxs) * _bfs_derivs_var[_var_nu][nu_l];
+				// l runs over the number of basis funcs for this dim
+				// So: _var_f_n_dim terms in the sum!
+				for (int nu_l_idx=0; nu_l_idx<_var_nu_n_dim; nu_l_idx++) {
+					new_val += _time.delta * _var_traj[_var_time][_var_nu_dim_idxs[nu_l_idx]][_var_f].get(_var_idxs) * _var_bf_derivs[_var_nu][nu_l_idx];
+					// if (new_val > 1e10) { std::cerr << "deriv " << _var_time << " " << _var_nu << " " << _var_f << " " << nu_l_idx << " " << _var_nu_dim_idxs[nu_l_idx] << " " << _var_traj[_var_time][_var_nu_dim_idxs[nu_l_idx]][_var_f].get(_var_idxs) << " " << _var_bf_derivs[_var_nu][nu_l_idx] << std::endl; exit(EXIT_FAILURE); };
 				};
 
 				if (DIAG_VAR) { std::cout << " val " << new_val << std::flush; };
@@ -304,7 +366,6 @@ namespace DynamicBoltzmann {
 		std::ofstream f;
 		f.open (fname);
 		for (int i=0; i<_n_t_soln; i++) {
-			f << _time.grid[i] << " ";
 			for (int d=0; d<_n_dim; d++) {
 				f << _soln_traj[i][d];
 				if (d != _n_dim-1) { f << " "; };
@@ -313,69 +374,53 @@ namespace DynamicBoltzmann {
 		};
 		f.close();
 	};
-	void OptProblem::write_var_traj(std::string fname) {
+	void OptProblem::write_var_traj(std::string fname, int idx_num, int idx_denom) {
 		// Length of the grid
 		int val_len = 1;
-		for (auto v: _dims) { val_len *= v.n; };
+		for (auto i: _dims[idx_denom].bf_dim_idxs) { val_len *= _dims[i].n; };
 
 		std::ofstream f;
 		f.open (fname);
+		// Loop over time
 		for (int t=0; t<_n_t_soln; t++) {
 			// Loop over grid
 			for (int i=0; i<val_len; i++) {
-				f << _time.grid[t] << " ";
-				// Loop over num/denom and write value
-				for (int d_num=0; d_num<_n_dim; d_num++) {
-					for (int d_denom=0; d_denom<_n_dim; d_denom++) {
-						f << _var_traj[t][d_num][d_denom].get(i) << " ";
-					};
-				};
-				f << "\n";
+				f << _var_traj[t][idx_num][idx_denom].get(i) << "\n";
 			};
 		};
 		f.close();
 	};
-	void OptProblem::write_bfs(std::string fname) {
+	void OptProblem::write_bf(std::string fname, int idx) {
 		// Length of the grid
 		int val_len = 1;
-		for (auto v: _dims) { val_len *= v.n; };
+		for (auto i: _dims[idx].bf_dim_idxs) { val_len *= _dims[i].n; };
 
 		std::ofstream f;
 		f.open (fname);
 		// Loop over grid
 		for (int i=0; i<val_len; i++) {
-			// Loop over basis funcs
-			for (int d=0; d<_n_dim; d++) {
-				f << _bfs[d].get(i) << " ";
-			};
-			f << "\n";
+			f << _bfs[idx].get(i);
+			if (i != val_len-1) { f << "\n"; };
 		};
 		f.close();
 	};
-	void OptProblem::write_bfs(std::string dir,int idx) {
-		for (int d=0; d<_n_dim; d++) 
-		{
-			_bfs[d].write_to_file(dir,idx);
-		};
-	};
-
-	void OptProblem::write_grid(std::string fname) {
+	void OptProblem::write_bf_grid(std::string fname, int idx) {
 		// Length of the grid
 		int val_len = 1;
-		for (auto v: _dims) { val_len *= v.n; };
+		for (auto i: _dims[idx].bf_dim_idxs) { val_len *= _dims[i].n; };
 
 		// Idxs
-		int *idxs = new int[_n_dim];
+		int *idxs = new int[_dims[idx].bf_n_dim];
 
 		std::ofstream f;
 		f.open (fname);
 		// Loop over grid
 		for (int i=0; i<val_len; i++) {
 			// Get idxs
-			idxs = _var_traj[0][0][0].get_idxs(i);
+			idxs = _bfs[idx].get_idxs(i);
 			// Write coords
-			for (int d=0; d<_n_dim; d++) {
-				f << _dims[d].grid[idxs[d]] << " ";
+			for (int d=0; d<_dims[idx].bf_n_dim; d++) {
+				f << _dims[_dims[idx].bf_dim_idxs[d]].grid[idxs[d]] << " ";
 			};
 			if (i != val_len-1) { f << "\n"; };
 		};
@@ -391,8 +436,6 @@ namespace DynamicBoltzmann {
 		} else {
 			f.open(fname);
 		};
-		// Write time
-		f << _t_opt << " ";
 		// Loop over dims
 		for (int d=0; d<_n_dim; d++) {
 			f << _dims[d].awake / _n_batch << " ";
@@ -404,6 +447,16 @@ namespace DynamicBoltzmann {
 		f.close();
 	};
 
+	void OptProblem::write_t_grid(std::string fname) {
+		std::ofstream f;
+		f.open(fname);
+		for (int t=0; t<_time.n; t++) {
+			f << _time.grid[t];
+			if (t != _time.n-1) { f << "\n"; };
+		};
+		f.close();
+	};
+
 	/********************
 	Run main optimization loop
 	********************/
@@ -412,7 +465,10 @@ namespace DynamicBoltzmann {
 
 		// Write the grid of points
 		if (DIAG_SOLVE) { std::cout << "Writing grid..." << std::flush; };
-		write_grid("data/grid.txt");
+		for (int i=0; i<_n_dim; i++) {
+			write_bf_grid("data/grid_"+_bfs[i].name+".txt",i);
+		};
+		write_t_grid("data/grid_time.txt");
 		if (DIAG_SOLVE) { std::cout << "ok." << std::endl; };
 
 		// Filename to read
@@ -430,7 +486,9 @@ namespace DynamicBoltzmann {
 
 			if (DIAG_SOLVE) { std::cout << "Writing F..." << std::flush; };
 
-			write_bfs("data/F/"+pad_str(i_opt,4)+".txt");
+			for (int i=0; i<_n_dim; i++) {
+				write_bf("data/F/"+_bfs[i].name+"_"+pad_str(i_opt,4)+".txt",i);
+			};
 			
 			if (DIAG_SOLVE) { std::cout << "ok." << std::endl; };
 
@@ -461,11 +519,15 @@ namespace DynamicBoltzmann {
 			
 			if (DIAG_SOLVE) { std::cout << "ok." << std::endl; };
 
-			// Write the nu trajectory
+			// Write the trajectory
 
 			if (DIAG_SOLVE) { std::cout << "Writing var..." << std::flush; };
 			
-			write_var_traj("data/var_traj/"+pad_str(i_opt,4)+".txt");
+			for (int i_num=0; i_num<_n_dim; i_num++) {
+				for (int i_denom=0; i_denom<_n_dim; i_denom++) {
+					write_var_traj("data/var_traj/"+_dims[i_num].name+"_"+_dims[i_denom].name+"_"+pad_str(i_opt,4)+".txt",i_num,i_denom);
+				};
+			};
 			
 			if (DIAG_SOLVE) { std::cout << "ok." << std::endl; };
 
@@ -622,7 +684,9 @@ namespace DynamicBoltzmann {
 		};
 
 		// Write the final basis funcs once more
-		write_bfs("data/F/"+pad_str(_n_opt,4)+".txt");
+		for (int i=0; i<_n_dim; i++) {
+			write_bf("data/F/"+_bfs[i].name+"_"+pad_str(_n_opt,4)+".txt",i);
+		};
 	};
 
 	/****************************************
@@ -636,8 +700,9 @@ namespace DynamicBoltzmann {
 	double OptProblem::_var_delta()
 	{
 		double r=1;
-		for (int d=0; d<_n_dim; d++) {
-			r *= exp(-pow(_soln_traj[_var_time][d]-_dims[d].grid[_var_idxs[d]],2)/(2.*0.1))/sqrt(2.*M_PI*0.1);
+		for (int i=0; i<_var_nu_n_dim; i++) {
+			r *= exp(-pow(_soln_traj[_var_time][_var_nu_dim_idxs[i]]-_dims[_var_nu_dim_idxs[i]].grid[_var_idxs[i]],2)/(2.*0.1))/sqrt(2.*M_PI*0.1);
+
 		};
 		return r;
 	};

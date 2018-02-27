@@ -18,6 +18,9 @@ int main() {
 	dims.push_back(Dim("h",-0.6,0.55,21,H,"A"));
 	dims.push_back(Dim("j",-0.7,0.15,21,J,"A","A"));
 
+	// Restrict Fh = Fh(h) only
+	dims[0].set_basis_func_dims("h");
+
 	// Initial conditions
 	std::vector<double> init;
 	init.push_back(0.5); // h

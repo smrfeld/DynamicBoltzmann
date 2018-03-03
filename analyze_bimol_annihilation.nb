@@ -1,0 +1,944 @@
+(* Content-type: application/vnd.wolfram.mathematica *)
+
+(*** Wolfram Notebook File ***)
+(* http://www.wolfram.com/nb *)
+
+(* CreatedBy='Mathematica 11.1' *)
+
+(*CacheID: 234*)
+(* Internal cache information:
+NotebookFileLineBreakTest
+NotebookFileLineBreakTest
+NotebookDataPosition[       158,          7]
+NotebookDataLength[     36884,        936]
+NotebookOptionsPosition[     33695,        849]
+NotebookOutlinePosition[     34053,        865]
+CellTagsIndexPosition[     34010,        862]
+WindowFrame->Normal*)
+
+(* Beginning of Notebook Content *)
+Notebook[{
+
+Cell[CellGroupData[{
+Cell[BoxData[
+ RowBox[{"SetDirectory", "[", 
+  RowBox[{"NotebookDirectory", "[", "]"}], "]"}]], "Input",
+ CellChangeTimes->{{3.7280884755629053`*^9, 
+  3.7280884817676897`*^9}},ExpressionUUID->"fe15f474-8d92-4c49-8e35-\
+63dca9b02398"],
+
+Cell[BoxData["\<\"/Users/oernst/Research/cnl/dynamic_boltzmann_cpp\"\>"], \
+"Output",
+ CellChangeTimes->{3.7280884824540157`*^9, 3.7281483892751427`*^9, 
+  3.728175823193226*^9, 3.728239716927884*^9, 3.728329521598114*^9, 
+  3.7283398120622272`*^9, 3.728339857930257*^9, 3.7283399016037893`*^9, 
+  3.7283412188987713`*^9, 3.728498093869762*^9, 3.728669774783161*^9, 
+  3.72869313657139*^9, 
+  3.729025247670638*^9},ExpressionUUID->"640f6bc6-291f-444e-aac5-\
+4d64534bd8cc"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["Params", "Subchapter",
+ CellChangeTimes->{{3.728176395687132*^9, 
+  3.728176396319852*^9}},ExpressionUUID->"54f85450-2de6-430b-ab1a-\
+dbcfad854f30"],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"nOpt", "=", "30"}], ";"}]], "Input",
+ CellChangeTimes->{{3.7281763973118067`*^9, 3.7281764206270323`*^9}, {
+  3.728178751137642*^9, 3.728178751245344*^9}, {3.7281792067682333`*^9, 
+  3.728179207372221*^9}, {3.728191034916173*^9, 3.728191035128735*^9}, {
+  3.728241444647897*^9, 3.728241445006426*^9}, {3.72824167838089*^9, 
+  3.7282416793559732`*^9}, {3.728264902229471*^9, 3.728264902774467*^9}, {
+  3.728329682438727*^9, 3.7283296830513983`*^9}, {3.728334827997181*^9, 
+  3.72833482879556*^9}, {3.728708752131447*^9, 
+  3.728708752271871*^9}},ExpressionUUID->"090bc2a9-911d-44ca-ad07-\
+3d07675ee28c"],
+
+Cell[BoxData[{
+ RowBox[{
+  RowBox[{"tmax", "=", "1.0"}], ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"dt", "=", "0.01"}], ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"tGrid", "=", 
+   RowBox[{"Table", "[", 
+    RowBox[{
+     RowBox[{"i", "*", "dt"}], ",", 
+     RowBox[{"{", 
+      RowBox[{"i", ",", "0", ",", 
+       RowBox[{"IntegerPart", "[", 
+        RowBox[{"tmax", "/", "dt"}], "]"}]}], "}"}]}], "]"}]}], 
+  ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"nt", "=", 
+   RowBox[{"Length", "[", "tGrid", "]"}]}], ";"}]}], "Input",
+ CellChangeTimes->{{3.728339644707025*^9, 3.7283396749426517`*^9}, {
+  3.728670280049933*^9, 
+  3.72867028493895*^9}},ExpressionUUID->"d768648d-e256-4083-952d-\
+6981fa63f99b"],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"boxLength", "=", "10"}], ";"}]], "Input",
+ CellChangeTimes->{{3.728263841383081*^9, 3.728263844821638*^9}, {
+  3.728264032330525*^9, 3.728264036134671*^9}, {3.728329322688518*^9, 
+  3.728329322768221*^9}, {3.728329353011117*^9, 3.728329353098922*^9}, {
+  3.728341226928891*^9, 
+  3.728341227126988*^9}},ExpressionUUID->"1e31e81f-4dc0-44e9-8e10-\
+bc9ed27b0959"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["Nu trajectories (2D)", "Subchapter",
+ CellChangeTimes->{{3.728329561769455*^9, 3.72832956540805*^9}, {
+  3.728708876589959*^9, 
+  3.728708877791744*^9}},ExpressionUUID->"5f18c93b-1cd6-4566-af1b-\
+92d62bf35ace"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"Manipulate", "[", "\[IndentingNewLine]", 
+  RowBox[{
+   RowBox[{
+    RowBox[{"nus", "=", 
+     RowBox[{"Import", "[", 
+      RowBox[{
+       RowBox[{"\"\<data/ixn_params/hA_\>\"", "<>", 
+        RowBox[{"IntegerString", "[", 
+         RowBox[{"iOptStep", ",", "10", ",", "4"}], "]"}], "<>", 
+        "\"\<.txt\>\""}], ",", "\"\<Table\>\""}], "]"}]}], ";", "\n", 
+    RowBox[{"ListLinePlot", "[", 
+     RowBox[{"nus", "[", 
+      RowBox[{"[", 
+       RowBox[{";;", ",", "1"}], "]"}], "]"}], "]"}]}], "\[IndentingNewLine]",
+    ",", 
+   RowBox[{"{", 
+    RowBox[{"iOptStep", ",", "0", ",", 
+     RowBox[{"nOpt", "-", "1"}], ",", "1"}], "}"}]}], "]"}]], "Input",
+ CellChangeTimes->{{3.7287088180607967`*^9, 3.7287088224021482`*^9}, {
+  3.7290252599491997`*^9, 3.7290252757582903`*^9}, {3.729025348768134*^9, 
+  3.729025351355835*^9}},ExpressionUUID->"54c23e55-4798-4490-bb0b-\
+cca5039058d4"],
+
+Cell[BoxData[
+ TagBox[
+  StyleBox[
+   DynamicModuleBox[{$CellContext`iOptStep$$ = 10, Typeset`show$$ = True, 
+    Typeset`bookmarkList$$ = {}, Typeset`bookmarkMode$$ = "Menu", 
+    Typeset`animator$$, Typeset`animvar$$ = 1, Typeset`name$$ = 
+    "\"untitled\"", Typeset`specs$$ = {{
+      Hold[$CellContext`iOptStep$$], 0, 29, 1}}, Typeset`size$$ = {
+    360., {109., 113.}}, Typeset`update$$ = 0, Typeset`initDone$$, 
+    Typeset`skipInitDone$$ = True, $CellContext`iOptStep$4078$$ = 0}, 
+    DynamicBox[Manipulate`ManipulateBoxes[
+     1, StandardForm, "Variables" :> {$CellContext`iOptStep$$ = 0}, 
+      "ControllerVariables" :> {
+        Hold[$CellContext`iOptStep$$, $CellContext`iOptStep$4078$$, 0]}, 
+      "OtherVariables" :> {
+       Typeset`show$$, Typeset`bookmarkList$$, Typeset`bookmarkMode$$, 
+        Typeset`animator$$, Typeset`animvar$$, Typeset`name$$, 
+        Typeset`specs$$, Typeset`size$$, Typeset`update$$, Typeset`initDone$$,
+         Typeset`skipInitDone$$}, "Body" :> ($CellContext`nus = Import[
+          StringJoin["data/ixn_params/hA_", 
+           IntegerString[$CellContext`iOptStep$$, 10, 4], ".txt"], "Table"]; 
+       ListLinePlot[
+         Part[$CellContext`nus, 
+          Span[1, All], 1]]), 
+      "Specifications" :> {{$CellContext`iOptStep$$, 0, 29, 1}}, 
+      "Options" :> {}, "DefaultOptions" :> {}],
+     ImageSizeCache->{405., {167., 173.}},
+     SingleEvaluation->True],
+    Deinitialization:>None,
+    DynamicModuleValues:>{},
+    SynchronousInitialization->True,
+    UndoTrackedVariables:>{Typeset`show$$, Typeset`bookmarkMode$$},
+    UnsavedVariables:>{Typeset`initDone$$},
+    UntrackedVariables:>{Typeset`size$$}], "Manipulate",
+   Deployed->True,
+   StripOnInput->False],
+  Manipulate`InterpretManipulate[1]]], "Output",
+ CellChangeTimes->{
+  3.728708822961443*^9, {3.729025261500147*^9, 3.729025276196753*^9}, 
+   3.729025351663093*^9},ExpressionUUID->"cb3a411c-2722-4f3f-9680-\
+5ab170b0ecd8"]
+}, Open  ]]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["Nu trajectories (3D)", "Subchapter",
+ CellChangeTimes->{{3.728708870659005*^9, 
+  3.728708874353812*^9}},ExpressionUUID->"75f3cf40-dc4e-4827-874c-\
+8d146e7da78f"],
+
+Cell[BoxData[
+ RowBox[{"Manipulate", "[", "\[IndentingNewLine]", 
+  RowBox[{
+   RowBox[{
+    RowBox[{"nus", "=", 
+     RowBox[{"Import", "[", 
+      RowBox[{
+       RowBox[{"\"\<data/soln_traj/\>\"", "<>", 
+        RowBox[{"IntegerString", "[", 
+         RowBox[{"iOptStep", ",", "10", ",", "4"}], "]"}], "<>", 
+        "\"\<.txt\>\""}], ",", "\"\<Table\>\""}], "]"}]}], ";", "\n", 
+    RowBox[{"ListPointPlot3D", "[", 
+     RowBox[{"nus", "[", 
+      RowBox[{"[", 
+       RowBox[{";;", ",", 
+        RowBox[{"{", 
+         RowBox[{"1", ",", "2", ",", "3"}], "}"}]}], "]"}], "]"}], "]"}]}], 
+   "\[IndentingNewLine]", ",", 
+   RowBox[{"{", 
+    RowBox[{"iOptStep", ",", "0", ",", 
+     RowBox[{"nOpt", "-", "1"}], ",", "1"}], "}"}]}], "]"}]], "Input",
+ CellChangeTimes->{{3.728329507110609*^9, 3.728329508722221*^9}, {
+  3.728329607410532*^9, 3.7283296074581203`*^9}, {3.728329652065712*^9, 
+  3.728329675694668*^9}, {3.728341325689589*^9, 3.7283413341713867`*^9}, {
+  3.728669785733016*^9, 3.72866978688133*^9}, {3.728684228159814*^9, 
+  3.728684234001617*^9}, {3.728693148007615*^9, 3.72869316626672*^9}, {
+  3.7287052429117117`*^9, 3.7287052525057163`*^9}, {3.728705291220829*^9, 
+  3.728705291948094*^9}},ExpressionUUID->"26b5d0df-f57f-4d61-bf71-\
+dc66ced2d013"]
+}, Closed]],
+
+Cell[CellGroupData[{
+
+Cell["Moments", "Subchapter",
+ CellChangeTimes->{{3.728334902736527*^9, 
+  3.728334903439199*^9}},ExpressionUUID->"b6140646-ff82-4757-b657-\
+60d120a0029b"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"Manipulate", "[", "\[IndentingNewLine]", 
+  RowBox[{
+   RowBox[{
+    RowBox[{"momshA", "=", 
+     RowBox[{"Import", "[", 
+      RowBox[{
+       RowBox[{"\"\<data/moments/hA_\>\"", "<>", 
+        RowBox[{"IntegerString", "[", 
+         RowBox[{"iOptStep", ",", "10", ",", "4"}], "]"}], "<>", 
+        "\"\<.txt\>\""}], ",", "\"\<Table\>\""}], "]"}]}], ";", 
+    "\[IndentingNewLine]", 
+    RowBox[{"momshB", "=", 
+     RowBox[{"Import", "[", 
+      RowBox[{
+       RowBox[{"\"\<data/moments/hB_\>\"", "<>", 
+        RowBox[{"IntegerString", "[", 
+         RowBox[{"iOptStep", ",", "10", ",", "4"}], "]"}], "<>", 
+        "\"\<.txt\>\""}], ",", "\"\<Table\>\""}], "]"}]}], ";", 
+    "\[IndentingNewLine]", 
+    RowBox[{"momsjAA", "=", 
+     RowBox[{"Import", "[", 
+      RowBox[{
+       RowBox[{"\"\<data/moments/jAA_\>\"", "<>", 
+        RowBox[{"IntegerString", "[", 
+         RowBox[{"iOptStep", ",", "10", ",", "4"}], "]"}], "<>", 
+        "\"\<.txt\>\""}], ",", "\"\<Table\>\""}], "]"}]}], ";", 
+    "\[IndentingNewLine]", 
+    RowBox[{"momsjAB", "=", 
+     RowBox[{"Import", "[", 
+      RowBox[{
+       RowBox[{"\"\<data/moments/jAB_\>\"", "<>", 
+        RowBox[{"IntegerString", "[", 
+         RowBox[{"iOptStep", ",", "10", ",", "4"}], "]"}], "<>", 
+        "\"\<.txt\>\""}], ",", "\"\<Table\>\""}], "]"}]}], ";", 
+    "\[IndentingNewLine]", 
+    RowBox[{"momsjBB", "=", 
+     RowBox[{"Import", "[", 
+      RowBox[{
+       RowBox[{"\"\<data/moments/jBB_\>\"", "<>", 
+        RowBox[{"IntegerString", "[", 
+         RowBox[{"iOptStep", ",", "10", ",", "4"}], "]"}], "<>", 
+        "\"\<.txt\>\""}], ",", "\"\<Table\>\""}], "]"}]}], ";", 
+    "\[IndentingNewLine]", 
+    RowBox[{"GraphicsGrid", "[", 
+     RowBox[{
+      RowBox[{"{", "\[IndentingNewLine]", 
+       RowBox[{
+        RowBox[{"{", 
+         RowBox[{
+          RowBox[{"ListLinePlot", "[", 
+           RowBox[{
+            RowBox[{"Transpose", "[", "momshA", "]"}], ",", 
+            RowBox[{"PlotRange", "\[Rule]", 
+             RowBox[{"{", 
+              RowBox[{
+               RowBox[{"{", 
+                RowBox[{"0", ",", "nt"}], "}"}], ",", 
+               RowBox[{"{", 
+                RowBox[{"0", ",", "300"}], "}"}]}], "}"}]}]}], "]"}], ",", 
+          "\[IndentingNewLine]", 
+          RowBox[{"ListLinePlot", "[", 
+           RowBox[{
+            RowBox[{"Transpose", "[", "momshB", "]"}], ",", 
+            RowBox[{"PlotRange", "\[Rule]", 
+             RowBox[{"{", 
+              RowBox[{
+               RowBox[{"{", 
+                RowBox[{"0", ",", "nt"}], "}"}], ",", 
+               RowBox[{"{", 
+                RowBox[{"0", ",", "300"}], "}"}]}], "}"}]}]}], "]"}]}], "}"}],
+         ",", "\[IndentingNewLine]", 
+        RowBox[{"{", 
+         RowBox[{
+          RowBox[{"ListLinePlot", "[", 
+           RowBox[{
+            RowBox[{"Transpose", "[", "momsjAA", "]"}], ",", 
+            RowBox[{"PlotRange", "\[Rule]", 
+             RowBox[{"{", 
+              RowBox[{
+               RowBox[{"{", 
+                RowBox[{"0", ",", "nt"}], "}"}], ",", 
+               RowBox[{"{", 
+                RowBox[{"0", ",", "300"}], "}"}]}], "}"}]}]}], "]"}], ",", 
+          "\[IndentingNewLine]", 
+          RowBox[{"ListLinePlot", "[", 
+           RowBox[{
+            RowBox[{"Transpose", "[", "momsjAB", "]"}], ",", 
+            RowBox[{"PlotRange", "\[Rule]", 
+             RowBox[{"{", 
+              RowBox[{
+               RowBox[{"{", 
+                RowBox[{"0", ",", "nt"}], "}"}], ",", 
+               RowBox[{"{", 
+                RowBox[{"0", ",", "300"}], "}"}]}], "}"}]}]}], "]"}]}], "}"}],
+         ",", "\[IndentingNewLine]", 
+        RowBox[{"{", 
+         RowBox[{
+          RowBox[{"ListLinePlot", "[", 
+           RowBox[{
+            RowBox[{"Transpose", "[", "momsjBB", "]"}], ",", 
+            RowBox[{"PlotRange", "\[Rule]", 
+             RowBox[{"{", 
+              RowBox[{
+               RowBox[{"{", 
+                RowBox[{"0", ",", "nt"}], "}"}], ",", 
+               RowBox[{"{", 
+                RowBox[{"0", ",", "300"}], "}"}]}], "}"}]}]}], "]"}], ","}], 
+         "\[IndentingNewLine]", "}"}]}], "\[IndentingNewLine]", "}"}], ",", 
+      RowBox[{"ImageSize", "\[Rule]", "Large"}]}], "]"}]}], 
+   "\[IndentingNewLine]", ",", 
+   RowBox[{"{", 
+    RowBox[{"iOptStep", ",", "0", ",", 
+     RowBox[{"nOpt", "-", "1"}], ",", "1"}], "}"}]}], "]"}]], "Input",
+ CellChangeTimes->{{3.728338789289468*^9, 3.7283388566045*^9}, 
+   3.728339090027273*^9, {3.728669835925378*^9, 3.7286698393841343`*^9}, {
+   3.7286700686029253`*^9, 3.7286700797943163`*^9}, {3.72867241554344*^9, 
+   3.7286724572525063`*^9}, {3.7286842427643223`*^9, 3.728684248458824*^9}, {
+   3.7286933600598288`*^9, 3.728693380375971*^9}, {3.728702868089018*^9, 
+   3.728702904423183*^9}, {3.729025378001033*^9, 
+   3.729025520828566*^9}},ExpressionUUID->"b95371fa-58eb-4b44-91ad-\
+2e7876e9e054"],
+
+Cell[BoxData[
+ TagBox[
+  StyleBox[
+   DynamicModuleBox[{$CellContext`iOptStep$$ = 6, Typeset`show$$ = True, 
+    Typeset`bookmarkList$$ = {}, Typeset`bookmarkMode$$ = "Menu", 
+    Typeset`animator$$, Typeset`animvar$$ = 1, Typeset`name$$ = 
+    "\"untitled\"", Typeset`specs$$ = {{
+      Hold[$CellContext`iOptStep$$], 0, 29, 1}}, Typeset`size$$ = {
+    576., {297., 301.}}, Typeset`update$$ = 0, Typeset`initDone$$, 
+    Typeset`skipInitDone$$ = True, $CellContext`iOptStep$12167$$ = 0}, 
+    DynamicBox[Manipulate`ManipulateBoxes[
+     1, StandardForm, "Variables" :> {$CellContext`iOptStep$$ = 0}, 
+      "ControllerVariables" :> {
+        Hold[$CellContext`iOptStep$$, $CellContext`iOptStep$12167$$, 0]}, 
+      "OtherVariables" :> {
+       Typeset`show$$, Typeset`bookmarkList$$, Typeset`bookmarkMode$$, 
+        Typeset`animator$$, Typeset`animvar$$, Typeset`name$$, 
+        Typeset`specs$$, Typeset`size$$, Typeset`update$$, Typeset`initDone$$,
+         Typeset`skipInitDone$$}, "Body" :> ($CellContext`momshA = Import[
+          StringJoin["data/moments/hA_", 
+           IntegerString[$CellContext`iOptStep$$, 10, 4], ".txt"], 
+          "Table"]; $CellContext`momshB = Import[
+          StringJoin["data/moments/hB_", 
+           IntegerString[$CellContext`iOptStep$$, 10, 4], ".txt"], 
+          "Table"]; $CellContext`momsjAA = Import[
+          StringJoin["data/moments/jAA_", 
+           IntegerString[$CellContext`iOptStep$$, 10, 4], ".txt"], 
+          "Table"]; $CellContext`momsjAB = Import[
+          StringJoin["data/moments/jAB_", 
+           IntegerString[$CellContext`iOptStep$$, 10, 4], ".txt"], 
+          "Table"]; $CellContext`momsjBB = Import[
+          StringJoin["data/moments/jBB_", 
+           IntegerString[$CellContext`iOptStep$$, 10, 4], ".txt"], "Table"]; 
+       GraphicsGrid[{{
+           ListLinePlot[
+            Transpose[$CellContext`momshA], 
+            PlotRange -> {{0, $CellContext`nt}, {0, 300}}], 
+           ListLinePlot[
+            Transpose[$CellContext`momshB], 
+            PlotRange -> {{0, $CellContext`nt}, {0, 300}}]}, {
+           ListLinePlot[
+            Transpose[$CellContext`momsjAA], 
+            PlotRange -> {{0, $CellContext`nt}, {0, 300}}], 
+           ListLinePlot[
+            Transpose[$CellContext`momsjAB], 
+            PlotRange -> {{0, $CellContext`nt}, {0, 300}}]}, {
+           ListLinePlot[
+            Transpose[$CellContext`momsjBB], 
+            PlotRange -> {{0, $CellContext`nt}, {0, 300}}], Null}}, ImageSize -> 
+         Large]), "Specifications" :> {{$CellContext`iOptStep$$, 0, 29, 1}}, 
+      "Options" :> {}, "DefaultOptions" :> {}],
+     ImageSizeCache->{621., {355., 361.}},
+     SingleEvaluation->True],
+    Deinitialization:>None,
+    DynamicModuleValues:>{},
+    SynchronousInitialization->True,
+    UndoTrackedVariables:>{Typeset`show$$, Typeset`bookmarkMode$$},
+    UnsavedVariables:>{Typeset`initDone$$},
+    UntrackedVariables:>{Typeset`size$$}], "Manipulate",
+   Deployed->True,
+   StripOnInput->False],
+  Manipulate`InterpretManipulate[1]]], "Output",
+ CellChangeTimes->{
+  3.729025474065887*^9, {3.729025505086195*^9, 
+   3.7290255211356707`*^9}},ExpressionUUID->"579a8456-3682-4f6e-b75a-\
+944a5164a3c6"]
+}, Open  ]]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["Basis funcs (2D)", "Subchapter",
+ CellChangeTimes->{{3.728338880748372*^9, 3.728338883722877*^9}, {
+  3.728688759663946*^9, 3.728688764900566*^9}, {3.728708884414193*^9, 
+  3.728708903630487*^9}},ExpressionUUID->"afdc32ac-d1b7-4ea2-af7f-\
+9221a1785725"],
+
+Cell[BoxData[{
+ RowBox[{
+  RowBox[{"gridhA", "=", 
+   RowBox[{"Import", "[", 
+    RowBox[{"\"\<data/grid_F_hA.txt\>\"", ",", "\"\<Table\>\""}], "]"}]}], 
+  ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"gridhB", "=", 
+   RowBox[{"Import", "[", 
+    RowBox[{"\"\<data/grid_F_hB.txt\>\"", ",", "\"\<Table\>\""}], "]"}]}], 
+  ";"}]}], "Input",
+ CellChangeTimes->{{3.728669965710442*^9, 3.7286699797357883`*^9}, {
+  3.72868426635526*^9, 3.728684280895852*^9}, {3.72870297461936*^9, 
+  3.728702988402013*^9}},ExpressionUUID->"3803f1ec-307c-4e82-ac33-\
+593f1060ea83"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"Manipulate", "[", "\[IndentingNewLine]", 
+  RowBox[{
+   RowBox[{
+    RowBox[{"fhA", "=", 
+     RowBox[{"Flatten", "[", 
+      RowBox[{"Import", "[", 
+       RowBox[{
+        RowBox[{"\"\<data/F/F_hA_\>\"", "<>", 
+         RowBox[{"IntegerString", "[", 
+          RowBox[{"iOptStep", ",", "10", ",", "4"}], "]"}], "<>", 
+         "\"\<.txt\>\""}], ",", "\"\<Table\>\""}], "]"}], "]"}]}], ";", 
+    "\[IndentingNewLine]", 
+    RowBox[{"fhB", "=", 
+     RowBox[{"Flatten", "[", 
+      RowBox[{"Import", "[", 
+       RowBox[{
+        RowBox[{"\"\<data/F/F_hB_\>\"", "<>", 
+         RowBox[{"IntegerString", "[", 
+          RowBox[{"iOptStep", ",", "10", ",", "4"}], "]"}], "<>", 
+         "\"\<.txt\>\""}], ",", "\"\<Table\>\""}], "]"}], "]"}]}], ";", 
+    "\[IndentingNewLine]", 
+    RowBox[{"fhAT", "=", 
+     RowBox[{"Transpose", "[", 
+      RowBox[{"{", 
+       RowBox[{
+        RowBox[{"gridhA", "[", 
+         RowBox[{"[", 
+          RowBox[{";;", ",", "1"}], "]"}], "]"}], ",", 
+        RowBox[{"gridhA", "[", 
+         RowBox[{"[", 
+          RowBox[{";;", ",", "2"}], "]"}], "]"}], ",", "fhA"}], "}"}], 
+      "]"}]}], ";", "\[IndentingNewLine]", 
+    RowBox[{"fhBT", "=", 
+     RowBox[{"Transpose", "[", 
+      RowBox[{"{", 
+       RowBox[{
+        RowBox[{"gridhB", "[", 
+         RowBox[{"[", 
+          RowBox[{";;", ",", "1"}], "]"}], "]"}], ",", 
+        RowBox[{"gridhB", "[", 
+         RowBox[{"[", 
+          RowBox[{";;", ",", "2"}], "]"}], "]"}], ",", "fhB"}], "}"}], 
+      "]"}]}], ";", "\[IndentingNewLine]", 
+    RowBox[{"GraphicsRow", "[", 
+     RowBox[{
+      RowBox[{"{", "\[IndentingNewLine]", 
+       RowBox[{
+        RowBox[{"Show", "[", 
+         RowBox[{"ListContourPlot", "[", "fhAT", "]"}], "]"}], ",", 
+        "\[IndentingNewLine]", 
+        RowBox[{"Show", "[", 
+         RowBox[{"ListContourPlot", "[", "fhBT", "]"}], "]"}]}], 
+       "\[IndentingNewLine]", "}"}], ",", 
+      RowBox[{"ImageSize", "\[Rule]", "Large"}]}], "]"}]}], 
+   "\[IndentingNewLine]", ",", 
+   RowBox[{"{", 
+    RowBox[{"iOptStep", ",", "0", ",", 
+     RowBox[{"nOpt", "-", "1"}], ",", "1"}], "}"}]}], "]"}]], "Input",
+ CellChangeTimes->{{3.728338889149661*^9, 3.728338975119122*^9}, {
+  3.728339061641361*^9, 3.728339063155252*^9}, {3.728669888609001*^9, 
+  3.728669916465744*^9}, {3.728670001463066*^9, 3.7286700192547083`*^9}, {
+  3.728684292179453*^9, 3.728684382461315*^9}, {3.72870299137684*^9, 
+  3.728703061205483*^9}, {3.728704452004519*^9, 3.728704469226067*^9}, {
+  3.7287048016915207`*^9, 3.728704833380138*^9}, {3.7287057098283157`*^9, 
+  3.728705748512385*^9}, {3.7287089187263536`*^9, 3.728708924895946*^9}, {
+  3.729025567923532*^9, 
+  3.729025572627437*^9}},ExpressionUUID->"6101b216-feea-4b84-997e-\
+0c263769eb99"],
+
+Cell[BoxData[
+ TagBox[
+  StyleBox[
+   DynamicModuleBox[{$CellContext`iOptStep$$ = 7, Typeset`show$$ = True, 
+    Typeset`bookmarkList$$ = {}, Typeset`bookmarkMode$$ = "Menu", 
+    Typeset`animator$$, Typeset`animvar$$ = 1, Typeset`name$$ = 
+    "\"untitled\"", Typeset`specs$$ = {{
+      Hold[$CellContext`iOptStep$$], 0, 29, 1}}, Typeset`size$$ = {
+    576., {148., 153.}}, Typeset`update$$ = 0, Typeset`initDone$$, 
+    Typeset`skipInitDone$$ = True, $CellContext`iOptStep$20232$$ = 0}, 
+    DynamicBox[Manipulate`ManipulateBoxes[
+     1, StandardForm, "Variables" :> {$CellContext`iOptStep$$ = 0}, 
+      "ControllerVariables" :> {
+        Hold[$CellContext`iOptStep$$, $CellContext`iOptStep$20232$$, 0]}, 
+      "OtherVariables" :> {
+       Typeset`show$$, Typeset`bookmarkList$$, Typeset`bookmarkMode$$, 
+        Typeset`animator$$, Typeset`animvar$$, Typeset`name$$, 
+        Typeset`specs$$, Typeset`size$$, Typeset`update$$, Typeset`initDone$$,
+         Typeset`skipInitDone$$}, "Body" :> ($CellContext`fhA = Flatten[
+          Import[
+           StringJoin["data/F/F_hA_", 
+            IntegerString[$CellContext`iOptStep$$, 10, 4], ".txt"], 
+           "Table"]]; $CellContext`fhB = Flatten[
+          Import[
+           StringJoin["data/F/F_hB_", 
+            IntegerString[$CellContext`iOptStep$$, 10, 4], ".txt"], 
+           "Table"]]; $CellContext`fhAT = Transpose[{
+           Part[$CellContext`gridhA, 
+            Span[1, All], 1], 
+           Part[$CellContext`gridhA, 
+            Span[1, All], 2], $CellContext`fhA}]; $CellContext`fhBT = 
+        Transpose[{
+           Part[$CellContext`gridhB, 
+            Span[1, All], 1], 
+           Part[$CellContext`gridhB, 
+            Span[1, All], 2], $CellContext`fhB}]; GraphicsRow[{
+          Show[
+           ListContourPlot[$CellContext`fhAT]], 
+          Show[
+           ListContourPlot[$CellContext`fhBT]]}, ImageSize -> Large]), 
+      "Specifications" :> {{$CellContext`iOptStep$$, 0, 29, 1}}, 
+      "Options" :> {}, "DefaultOptions" :> {}],
+     ImageSizeCache->{621., {207., 213.}},
+     SingleEvaluation->True],
+    Deinitialization:>None,
+    DynamicModuleValues:>{},
+    SynchronousInitialization->True,
+    UndoTrackedVariables:>{Typeset`show$$, Typeset`bookmarkMode$$},
+    UnsavedVariables:>{Typeset`initDone$$},
+    UntrackedVariables:>{Typeset`size$$}], "Manipulate",
+   Deployed->True,
+   StripOnInput->False],
+  Manipulate`InterpretManipulate[1]]], "Output",
+ CellChangeTimes->{
+  3.7287089254081907`*^9, {3.729025543260111*^9, 
+   3.7290255729881907`*^9}},ExpressionUUID->"f38beea4-c7b3-45b0-a34c-\
+e766c4c62592"]
+}, Open  ]]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["Basis funcs (3D)", "Subchapter",
+ CellChangeTimes->{{3.728338880748372*^9, 3.728338883722877*^9}, {
+  3.728688759663946*^9, 3.728688764900566*^9}, {3.728708884414193*^9, 
+  3.7287088866168547`*^9}},ExpressionUUID->"781a2bf2-e903-4671-a415-\
+d81f9d37b09d"],
+
+Cell[BoxData[{
+ RowBox[{
+  RowBox[{"gridhA", "=", 
+   RowBox[{"Import", "[", 
+    RowBox[{"\"\<data/grid_F_hA.txt\>\"", ",", "\"\<Table\>\""}], "]"}]}], 
+  ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"gridhB", "=", 
+   RowBox[{"Import", "[", 
+    RowBox[{"\"\<data/grid_F_hB.txt\>\"", ",", "\"\<Table\>\""}], "]"}]}], 
+  ";"}]}], "Input",
+ CellChangeTimes->{{3.728669965710442*^9, 3.7286699797357883`*^9}, {
+  3.72868426635526*^9, 3.728684280895852*^9}, {3.72870297461936*^9, 
+  3.728702988402013*^9}},ExpressionUUID->"0a5c12fe-ed8e-4c96-8d35-\
+14f5e36f37b3"],
+
+Cell[BoxData[
+ RowBox[{"Manipulate", "[", "\[IndentingNewLine]", 
+  RowBox[{
+   RowBox[{
+    RowBox[{"fhA", "=", 
+     RowBox[{"Flatten", "[", 
+      RowBox[{"Import", "[", 
+       RowBox[{
+        RowBox[{"\"\<data/F/F_hA_\>\"", "<>", 
+         RowBox[{"IntegerString", "[", 
+          RowBox[{"iOptStep", ",", "10", ",", "4"}], "]"}], "<>", 
+         "\"\<.txt\>\""}], ",", "\"\<Table\>\""}], "]"}], "]"}]}], ";", 
+    "\[IndentingNewLine]", 
+    RowBox[{"fhB", "=", 
+     RowBox[{"Flatten", "[", 
+      RowBox[{"Import", "[", 
+       RowBox[{
+        RowBox[{"\"\<data/F/F_hB_\>\"", "<>", 
+         RowBox[{"IntegerString", "[", 
+          RowBox[{"iOptStep", ",", "10", ",", "4"}], "]"}], "<>", 
+         "\"\<.txt\>\""}], ",", "\"\<Table\>\""}], "]"}], "]"}]}], ";", 
+    "\[IndentingNewLine]", 
+    RowBox[{"fhAT", "=", 
+     RowBox[{"Transpose", "[", 
+      RowBox[{"{", 
+       RowBox[{
+        RowBox[{"gridhA", "[", 
+         RowBox[{"[", 
+          RowBox[{";;", ",", "1"}], "]"}], "]"}], ",", 
+        RowBox[{"gridhA", "[", 
+         RowBox[{"[", 
+          RowBox[{";;", ",", "2"}], "]"}], "]"}], ",", 
+        RowBox[{"gridhA", "[", 
+         RowBox[{"[", 
+          RowBox[{";;", ",", "3"}], "]"}], "]"}], ",", "fhA"}], "}"}], 
+      "]"}]}], ";", "\[IndentingNewLine]", 
+    RowBox[{"fhBT", "=", 
+     RowBox[{"Transpose", "[", 
+      RowBox[{"{", 
+       RowBox[{
+        RowBox[{"gridhB", "[", 
+         RowBox[{"[", 
+          RowBox[{";;", ",", "1"}], "]"}], "]"}], ",", 
+        RowBox[{"gridhB", "[", 
+         RowBox[{"[", 
+          RowBox[{";;", ",", "2"}], "]"}], "]"}], ",", 
+        RowBox[{"gridhB", "[", 
+         RowBox[{"[", 
+          RowBox[{";;", ",", "3"}], "]"}], "]"}], ",", "fhB"}], "}"}], 
+      "]"}]}], ";", "\[IndentingNewLine]", 
+    RowBox[{"nus", "=", 
+     RowBox[{"Import", "[", 
+      RowBox[{
+       RowBox[{"\"\<data/soln_traj/\>\"", "<>", 
+        RowBox[{"IntegerString", "[", 
+         RowBox[{"iOptStep", ",", "10", ",", "4"}], "]"}], "<>", 
+        "\"\<.txt\>\""}], ",", "\"\<Table\>\""}], "]"}]}], ";", 
+    "\[IndentingNewLine]", 
+    RowBox[{"GraphicsRow", "[", 
+     RowBox[{
+      RowBox[{"{", "\[IndentingNewLine]", 
+       RowBox[{
+        RowBox[{"Show", "[", 
+         RowBox[{"ListContourPlot3D", "[", "fhAT", "]"}], "]"}], ",", 
+        "\[IndentingNewLine]", 
+        RowBox[{"Show", "[", 
+         RowBox[{"ListContourPlot3D", "[", "fhBT", "]"}], "]"}]}], 
+       "\[IndentingNewLine]", "}"}], ",", 
+      RowBox[{"ImageSize", "\[Rule]", "Large"}]}], "]"}]}], 
+   "\[IndentingNewLine]", ",", 
+   RowBox[{"{", 
+    RowBox[{"iOptStep", ",", "0", ",", 
+     RowBox[{"nOpt", "-", "1"}], ",", "1"}], "}"}]}], "]"}]], "Input",
+ CellChangeTimes->{{3.728338889149661*^9, 3.728338975119122*^9}, {
+  3.728339061641361*^9, 3.728339063155252*^9}, {3.728669888609001*^9, 
+  3.728669916465744*^9}, {3.728670001463066*^9, 3.7286700192547083`*^9}, {
+  3.728684292179453*^9, 3.728684382461315*^9}, {3.72870299137684*^9, 
+  3.728703061205483*^9}, {3.728704452004519*^9, 3.728704469226067*^9}, {
+  3.7287048016915207`*^9, 3.728704833380138*^9}, {3.7287057098283157`*^9, 
+  3.728705748512385*^9}},ExpressionUUID->"a22114b0-aeb4-4a29-9e25-\
+4afa46b80c8d"]
+}, Closed]],
+
+Cell[CellGroupData[{
+
+Cell["Variational term (2D)", "Subchapter",
+ CellChangeTimes->{{3.728176242516803*^9, 3.72817624522783*^9}, {
+  3.728688883183464*^9, 3.728688884915923*^9}, {3.728708896662949*^9, 
+  3.728708897413681*^9}, {3.7287089577871313`*^9, 
+  3.728708960053804*^9}},ExpressionUUID->"5844d805-541e-4100-a47a-\
+c9ef59e64bad"],
+
+Cell[BoxData[{
+ RowBox[{
+  RowBox[{"gridhA", "=", 
+   RowBox[{"Import", "[", 
+    RowBox[{"\"\<data/grid_F_hA.txt\>\"", ",", "\"\<Table\>\""}], "]"}]}], 
+  ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"gridhB", "=", 
+   RowBox[{"Import", "[", 
+    RowBox[{"\"\<data/grid_F_hB.txt\>\"", ",", "\"\<Table\>\""}], "]"}]}], 
+  ";"}]}], "Input",ExpressionUUID->"10cce727-2938-44a3-817c-da67670d2eb6"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"Manipulate", "[", "\[IndentingNewLine]", 
+  RowBox[{
+   RowBox[{
+    RowBox[{"nus", "=", 
+     RowBox[{"Import", "[", 
+      RowBox[{
+       RowBox[{"\"\<data/soln_traj/\>\"", "<>", 
+        RowBox[{"IntegerString", "[", 
+         RowBox[{"iOptStep", ",", "10", ",", "4"}], "]"}], "<>", 
+        "\"\<.txt\>\""}], ",", "\"\<Table\>\""}], "]"}]}], ";", 
+    "\[IndentingNewLine]", 
+    RowBox[{"varhAhA", "=", 
+     RowBox[{"Flatten", "[", 
+      RowBox[{"Import", "[", 
+       RowBox[{
+        RowBox[{"\"\<data/var_traj/hA_hA_\>\"", "<>", 
+         RowBox[{"IntegerString", "[", 
+          RowBox[{"iOptStep", ",", "10", ",", "4"}], "]"}], "<>", 
+         "\"\<.txt\>\""}], ",", "\"\<Table\>\""}], "]"}], "]"}]}], ";", 
+    "\[IndentingNewLine]", 
+    RowBox[{"If", "[", 
+     RowBox[{
+      RowBox[{
+       RowBox[{"Length", "[", "varhAhA", "]"}], ">=", 
+       RowBox[{
+        RowBox[{"Length", "[", "gridhA", "]"}], "*", "iTime"}]}], ",", 
+      "\[IndentingNewLine]", 
+      RowBox[{
+       RowBox[{"varSel", "=", 
+        RowBox[{"Transpose", "[", 
+         RowBox[{"{", 
+          RowBox[{
+           RowBox[{"gridhA", "[", 
+            RowBox[{"[", 
+             RowBox[{";;", ",", "1"}], "]"}], "]"}], ",", 
+           RowBox[{"gridhA", "[", 
+            RowBox[{"[", 
+             RowBox[{";;", ",", "2"}], "]"}], "]"}], ",", 
+           RowBox[{"varhAhA", "[", 
+            RowBox[{"[", 
+             RowBox[{
+              RowBox[{
+               RowBox[{
+                RowBox[{"Length", "[", "gridhA", "]"}], "*", 
+                RowBox[{"(", 
+                 RowBox[{"iTime", "-", "1"}], ")"}]}], "+", "1"}], ";;", 
+              RowBox[{
+               RowBox[{"Length", "[", "gridhA", "]"}], "*", "iTime"}]}], 
+             "]"}], "]"}]}], "}"}], "]"}]}], ";"}]}], "\[IndentingNewLine]", 
+     "]"}], ";", "\[IndentingNewLine]", 
+    RowBox[{"GraphicsColumn", "[", 
+     RowBox[{"{", "\[IndentingNewLine]", 
+      RowBox[{"Show", "[", "\[IndentingNewLine]", 
+       RowBox[{
+        RowBox[{"ListContourPlot", "[", "varSel", "]"}], ",", 
+        "\[IndentingNewLine]", 
+        RowBox[{"ListLinePlot", "[", 
+         RowBox[{
+          RowBox[{"nus", "[", 
+           RowBox[{"[", 
+            RowBox[{";;", ",", 
+             RowBox[{"{", 
+              RowBox[{"1", ",", "2"}], "}"}]}], "]"}], "]"}], ",", 
+          RowBox[{"PlotRange", "\[Rule]", "All"}], ",", 
+          RowBox[{"PlotStyle", "\[Rule]", "Black"}]}], "]"}]}], 
+       "\[IndentingNewLine]", "]"}], "\[IndentingNewLine]", "}"}], "]"}]}], 
+   "\[IndentingNewLine]", ",", "\[IndentingNewLine]", 
+   RowBox[{"{", 
+    RowBox[{"iOptStep", ",", "0", ",", 
+     RowBox[{"nOpt", "-", "1"}], ",", "1"}], "}"}], "\[IndentingNewLine]", 
+   ",", "\[IndentingNewLine]", 
+   RowBox[{"{", 
+    RowBox[{"iTime", ",", "1", ",", "nt", ",", "1"}], "}"}]}], "]"}]], "Input",\
+
+ CellChangeTimes->CompressedData["
+1:eJxTTMoPSmViYGAQA2IQvSzt7dbDx147rthxdxuI3mAdtg9EBwXGg2mdM6++
+PADSIYWhX0H0puM8DA+B9D9/HzC9LWpN1DsgXZUYkwKi1WLd20G0R/z8ThAt
+O+n2YhCdtvH8ErA4q4WP3fHXjnwHD/uB6BkL/ENAtFKScDiIPmy1PAFEL7m4
+OB1ER1mtzAPR80J+g2k1m7cVIPqEbW0TiObQurP1PpBO5/0Jpr+ZTNwDovVK
+3u8H0f9F7hwH0YGG/udA9PTkmZdB9Dqd1isg+ly42zMQrfPI8gWIDuN23PAM
+ZK/+nx0g+pLNlf0gOjnB7yCIdr/+7td7IC0WeP8fiJYLEGT+AKQztWawgWgv
+3kx+EO3xaAWYBgDFcM52
+  
+  "],ExpressionUUID->"f08a3c32-c337-45a1-a83a-6bdeee4d7e06"],
+
+Cell[BoxData[
+ TagBox[
+  StyleBox[
+   DynamicModuleBox[{$CellContext`iOptStep$$ = 17, $CellContext`iTime$$ = 45, 
+    Typeset`show$$ = True, Typeset`bookmarkList$$ = {}, 
+    Typeset`bookmarkMode$$ = "Menu", Typeset`animator$$, Typeset`animvar$$ = 
+    1, Typeset`name$$ = "\"untitled\"", Typeset`specs$$ = {{
+      Hold[$CellContext`iOptStep$$], 0, 29, 1}, {
+      Hold[$CellContext`iTime$$], 1, 101, 1}}, Typeset`size$$ = {
+    360., {178., 182.}}, Typeset`update$$ = 0, Typeset`initDone$$, 
+    Typeset`skipInitDone$$ = True, $CellContext`iOptStep$526346$$ = 
+    0, $CellContext`iTime$526347$$ = 0}, 
+    DynamicBox[Manipulate`ManipulateBoxes[
+     1, StandardForm, 
+      "Variables" :> {$CellContext`iOptStep$$ = 0, $CellContext`iTime$$ = 1}, 
+      "ControllerVariables" :> {
+        Hold[$CellContext`iOptStep$$, $CellContext`iOptStep$526346$$, 0], 
+        Hold[$CellContext`iTime$$, $CellContext`iTime$526347$$, 0]}, 
+      "OtherVariables" :> {
+       Typeset`show$$, Typeset`bookmarkList$$, Typeset`bookmarkMode$$, 
+        Typeset`animator$$, Typeset`animvar$$, Typeset`name$$, 
+        Typeset`specs$$, Typeset`size$$, Typeset`update$$, Typeset`initDone$$,
+         Typeset`skipInitDone$$}, "Body" :> ($CellContext`nus = Import[
+          StringJoin["data/soln_traj/", 
+           IntegerString[$CellContext`iOptStep$$, 10, 4], ".txt"], 
+          "Table"]; $CellContext`varhAhA = Flatten[
+          Import[
+           StringJoin["data/var_traj/hA_hA_", 
+            IntegerString[$CellContext`iOptStep$$, 10, 4], ".txt"], "Table"]]; 
+       If[Length[$CellContext`varhAhA] >= 
+         Length[$CellContext`gridhA] $CellContext`iTime$$, \
+$CellContext`varSel = Transpose[{
+             Part[$CellContext`gridhA, 
+              Span[1, All], 1], 
+             Part[$CellContext`gridhA, 
+              Span[1, All], 2], 
+             Part[$CellContext`varhAhA, 
+              Span[
+              Length[$CellContext`gridhA] ($CellContext`iTime$$ - 1) + 1, 
+               Length[$CellContext`gridhA] $CellContext`iTime$$]]}]; Null]; 
+       GraphicsColumn[{
+          Show[
+           ListContourPlot[$CellContext`varSel], 
+           ListLinePlot[
+            Part[$CellContext`nus, 
+             Span[1, All], {1, 2}], PlotRange -> All, PlotStyle -> Black]]}]),
+       "Specifications" :> {{$CellContext`iOptStep$$, 0, 29, 
+         1}, {$CellContext`iTime$$, 1, 101, 1}}, "Options" :> {}, 
+      "DefaultOptions" :> {}],
+     ImageSizeCache->{405., {237., 243.}},
+     SingleEvaluation->True],
+    Deinitialization:>None,
+    DynamicModuleValues:>{},
+    SynchronousInitialization->True,
+    UndoTrackedVariables:>{Typeset`show$$, Typeset`bookmarkMode$$},
+    UnsavedVariables:>{Typeset`initDone$$},
+    UntrackedVariables:>{Typeset`size$$}], "Manipulate",
+   Deployed->True,
+   StripOnInput->False],
+  Manipulate`InterpretManipulate[1]]], "Output",
+ CellChangeTimes->{
+  3.728708987268708*^9},ExpressionUUID->"5ab3d774-5750-4d0d-b602-\
+bba04d6f0e99"]
+}, Open  ]]
+}, Open  ]]
+},
+WindowSize->{1048, 751},
+WindowMargins->{{Automatic, 371}, {Automatic, 104}},
+FrontEndVersion->"11.1 for Mac OS X x86 (32-bit, 64-bit Kernel) (April 18, \
+2017)",
+StyleDefinitions->"Default.nb"
+]
+(* End of Notebook Content *)
+
+(* Internal cache information *)
+(*CellTagsOutline
+CellTagsIndex->{}
+*)
+(*CellTagsIndex
+CellTagsIndex->{}
+*)
+(*NotebookFileOutline
+Notebook[{
+Cell[CellGroupData[{
+Cell[580, 22, 234, 5, 32, "Input", "ExpressionUUID" -> \
+"fe15f474-8d92-4c49-8e35-63dca9b02398"],
+Cell[817, 29, 472, 8, 32, "Output", "ExpressionUUID" -> \
+"640f6bc6-291f-444e-aac5-4d64534bd8cc"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[1326, 42, 154, 3, 63, "Subchapter", "ExpressionUUID" -> \
+"54f85450-2de6-430b-ab1a-dbcfad854f30"],
+Cell[1483, 47, 637, 11, 32, "Input", "ExpressionUUID" -> \
+"090bc2a9-911d-44ca-ad07-3d07675ee28c"],
+Cell[2123, 60, 728, 21, 96, "Input", "ExpressionUUID" -> \
+"d768648d-e256-4083-952d-6981fa63f99b"],
+Cell[2854, 83, 395, 8, 32, "Input", "ExpressionUUID" -> \
+"1e31e81f-4dc0-44e9-8e10-bc9ed27b0959"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[3286, 96, 216, 4, 63, "Subchapter", "ExpressionUUID" -> \
+"5f18c93b-1cd6-4566-af1b-92d62bf35ace"],
+Cell[CellGroupData[{
+Cell[3527, 104, 912, 22, 96, "Input", "ExpressionUUID" -> \
+"54c23e55-4798-4490-bb0b-cca5039058d4"],
+Cell[4442, 128, 1948, 40, 357, "Output", "ExpressionUUID" -> \
+"cb3a411c-2722-4f3f-9680-5ab170b0ecd8"]
+}, Open  ]]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[6439, 174, 168, 3, 63, "Subchapter", "ExpressionUUID" -> \
+"75f3cf40-dc4e-4827-874c-8d146e7da78f"],
+Cell[6610, 179, 1266, 28, 96, "Input", "ExpressionUUID" -> \
+"26b5d0df-f57f-4d61-bf71-dc66ced2d013"]
+}, Closed]],
+Cell[CellGroupData[{
+Cell[7913, 212, 155, 3, 47, "Subchapter", "ExpressionUUID" -> \
+"b6140646-ff82-4757-b657-60d120a0029b"],
+Cell[CellGroupData[{
+Cell[8093, 219, 4899, 121, 327, "Input", "ExpressionUUID" -> \
+"b95371fa-58eb-4b44-91ad-2e7876e9e054"],
+Cell[12995, 342, 3208, 65, 733, "Output", "ExpressionUUID" -> \
+"579a8456-3682-4f6e-b75a-944a5164a3c6"]
+}, Open  ]]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[16252, 413, 259, 4, 63, "Subchapter", "ExpressionUUID" -> \
+"afdc32ac-d1b7-4ea2-af7f-9221a1785725"],
+Cell[16514, 419, 566, 14, 54, "Input", "ExpressionUUID" -> \
+"3803f1ec-307c-4e82-ac33-593f1060ea83"],
+Cell[CellGroupData[{
+Cell[17105, 437, 2763, 68, 222, "Input", "ExpressionUUID" -> \
+"6101b216-feea-4b84-997e-0c263769eb99"],
+Cell[19871, 507, 2602, 56, 437, "Output", "ExpressionUUID" -> \
+"f38beea4-c7b3-45b0-a34c-e766c4c62592"]
+}, Open  ]]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[22522, 569, 261, 4, 63, "Subchapter", "ExpressionUUID" -> \
+"781a2bf2-e903-4671-a415-d81f9d37b09d"],
+Cell[22786, 575, 566, 14, 54, "Input", "ExpressionUUID" -> \
+"0a5c12fe-ed8e-4c96-8d35-14f5e36f37b3"],
+Cell[23355, 591, 3205, 80, 243, "Input", "ExpressionUUID" -> \
+"a22114b0-aeb4-4a29-9e25-4afa46b80c8d"]
+}, Closed]],
+Cell[CellGroupData[{
+Cell[26597, 676, 314, 5, 47, "Subchapter", "ExpressionUUID" -> \
+"5844d805-541e-4100-a47a-c9ef59e64bad"],
+Cell[26914, 683, 400, 10, 54, "Input", "ExpressionUUID" -> \
+"10cce727-2938-44a3-817c-da67670d2eb6"],
+Cell[CellGroupData[{
+Cell[27339, 697, 3359, 84, 369, "Input", "ExpressionUUID" -> \
+"f08a3c32-c337-45a1-a83a-6bdeee4d7e06"],
+Cell[30701, 783, 2966, 62, 497, "Output", "ExpressionUUID" -> \
+"5ab3d774-5750-4d0d-b602-bba04d6f0e99"]
+}, Open  ]]
+}, Open  ]]
+}
+]
+*)
+

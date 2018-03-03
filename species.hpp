@@ -23,31 +23,63 @@
 namespace DynamicBoltzmann {
 
 	/****************************************
+	Forward declare
+	****************************************/
+
+	class IxnParam;
+
+	/****************************************
 	Species
 	****************************************/
 	
-	struct Species {
-		// Name
-		std::string name;
-		
-		// Counts
-		std::map<Species*,int> nn_count;
-		int count;
+	class Species {
 
-		// Pointers...
-		// Solution array
-		double ***_soln_traj_ptr;
+	private:
+
+		// Name
+		std::string _name;
+
+		// Counts
+		std::map<Species*,int> _nn_count;
+		int _count;
+
 		// Current time in the optimization
 		int *_t_opt_ptr;
-		int _h_index;
-		std::map<Species*,int> _j_index;
+
+		// Pointers to the interaction params
+		IxnParam *_h_ptr;
+		std::map<Species*,IxnParam*> _j_ptr;
+
+	public:
 
 		// Constructor
-		Species(std::string nameIn);
+		Species(std::string name);
 
-		// Accessor h,j
-		double h();
-		double j(Species *other);
+		// Set pointer to the opt time variable
+		void set_opt_time_ptr(int *t_opt_ptr);
+
+		// Set h, j ptr
+		void set_h_ptr(IxnParam *h_ptr);
+		void add_j_ptr(Species* sp, IxnParam *j_ptr);
+
+		// Validate setup
+		void validate_setup() const;
+
+		// Setters/getters
+		double h() const;
+		double j(Species* other) const;
+		int count() const;
+		int nn_count(Species* other) const;
+		std::string name() const;
+
+		// Increment counts
+		void count_plus();
+		void count_minus();
+		void nn_count_plus(Species* other);
+		void nn_count_minus(Species* other);
+
+		// Reset counts
+		void reset_counts();
 	};
 	// Comparator
 	bool operator <(const Species& a, const Species& b);

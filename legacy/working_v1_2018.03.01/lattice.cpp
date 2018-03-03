@@ -37,7 +37,7 @@ namespace DynamicBoltzmann {
 	std::ostream& operator<<(std::ostream& os, const Site& s)
 	{
 		if (s.sp) {
-		    return os << s.x << " " << s.y << " " << s.z << " " << s.sp->name();
+		    return os << s.x << " " << s.y << " " << s.z << " " << s.sp->name;
 		} else {
 		    return os << s.x << " " << s.y << " " << s.z << " empty";
 		};
@@ -114,7 +114,7 @@ namespace DynamicBoltzmann {
 
 	void Lattice::add_species(Species *sp) {
 		if (sp) {
-			_sp_map[sp->name()] = sp;
+			_sp_map[sp->name] = sp;
 		};
 	};
 
@@ -125,7 +125,10 @@ namespace DynamicBoltzmann {
 	void Lattice::clear() { 
 		// Reset the counts and nns
 		for (auto sp_pair: _sp_map) {
-			sp_pair.second->reset_counts();
+			sp_pair.second->count = 0;
+			for (auto sp_pair2: _sp_map) {
+				sp_pair.second->nn_count[sp_pair2.second] = 0;
+			};
 		};
 
 		// Clear the lattice
@@ -147,28 +150,27 @@ namespace DynamicBoltzmann {
 		};
 
 		/*
-		std::cout << "Making: " << s->x << " " << s->y << " " << s->z << std::flush;
+		std::cout << "Making: " << s->x << " " << s->y << " " << s->z;
 		int ctr=0;
 		for (auto nbr_it: s->nbrs) { // go through nbrs
 			if (nbr_it->sp) { // is nbr site occ
 				ctr++;
 			};
 		};
-		std::cout << " no nbrs: " << ctr << std::flush;
-		std::cout << " count now: " << sp->nn_count(_sp_map["A"]) << std::flush;
+		std::cout << " no nbrs: " << ctr << " count now: " << sp->nn_count[_sp_map["A"]];
 		*/
 
 		// Make
 		s->sp = sp;
 
 		// Update count and nns
-		sp->count_plus();
+		sp->count++;
 		for (auto nbr_it: s->nbrs) { // go through nbrs
 			if (nbr_it->sp) { // is nbr site occ
 				// Update bidirectionally, unless it's the same species
-				sp->nn_count_plus(nbr_it->sp);
+				sp->nn_count[nbr_it->sp]++;
 				if (nbr_it->sp != sp) {
-					nbr_it->sp->nn_count_plus(sp);
+					nbr_it->sp->nn_count[sp]++;
 				};
 			};
 		};
@@ -202,13 +204,13 @@ namespace DynamicBoltzmann {
 		*/
 
 		// Update count and nns
-		s->sp->count_minus();
+		s->sp->count--;
 		for (auto nbr_it: s->nbrs) { // go through nbrs
 			if (nbr_it->sp) { // is nbr site occ
 				// Update bidirectionally, unless it's the same species
-				s->sp->nn_count_minus(nbr_it->sp);
+				s->sp->nn_count[nbr_it->sp]--;
 				if (nbr_it->sp != s->sp) {
-					nbr_it->sp->nn_count_minus(s->sp);
+					nbr_it->sp->nn_count[s->sp]--;
 				};
 			};
 		};
@@ -231,7 +233,7 @@ namespace DynamicBoltzmann {
 		f.open (fname);
 		for (auto l: _latt) {
 			if (l.sp) {
-				f << l.x << " " << l.y << " " << l.z << " " << l.sp->name() << "\n";
+				f << l.x << " " << l.y << " " << l.z << " " << l.sp->name << "\n";
 			};
 		};
 		f.close();
@@ -272,7 +274,7 @@ namespace DynamicBoltzmann {
 		};
 		f.close();
 
-		// std::cout << "Read: " << fname << std::endl;
+		// std::cout << "Read: " << fname << " no nn: " << _sp_map["A"]->nn_count[_sp_map["A"]] << std::endl;
 	};
 
 	/********************

@@ -1,31 +1,19 @@
-#ifndef BASISFUNC_h
-#define BASISFUNC_h
-#include "basis_func_nd.hpp"
+#ifndef IXN_PARAM_H
+#define IXN_PARAM_H
+#include "ixn_param.hpp"
 #endif
 
-#ifndef MAP_h
-#define MAP_h
-#include <map>
-#endif
-
-#ifndef LIST_h
-#define LIST_h
-#include <list>
-#endif
-
-#ifndef SPECIES_h
-#define SPECIES_h
-#include "species.hpp"
-#endif
-
-#ifndef LATTICE_h
-#define LATTICE_h
+#ifndef LATTICE_H
+#define LATTICE_H
 #include "lattice.hpp"
 #endif
 
-// Diagnostic flags
-#define DIAG_INIT 0
-#define DIAG_VAR 0
+#ifndef LIST_H
+#define LIST_H
+#include <list>
+#endif
+
+#define DIAG_SETUP 0
 #define DIAG_SOLVE 0
 
 /************************************
@@ -35,6 +23,39 @@
 namespace DynamicBoltzmann {
 
 	/****************************************
+	Struct for specifying a dimension
+	****************************************/
+
+	// Type of dimension
+	enum DimType { H, J };
+
+	struct Dim {
+		// Name
+		std::string name;
+
+		// Type
+		DimType type;
+
+		// Name of associated species
+		std::string species1;
+		std::string species2;
+
+		// Min/max/npts
+		double min,max;
+		int n;
+
+		// Initial value
+		double init;
+
+		// Basis function dimension names
+		std::vector<std::string> basis_func_dims;
+
+		// Constructor
+		Dim(std::string name, DimType type, std::string species, std::vector<std::string> basis_func_dims, double min, double max, int n, double init);
+		Dim(std::string name, DimType type, std::string species1, std::string species2, std::vector<std::string> basis_func_dims, double min, double max, int n, double init);
+	};
+
+	/****************************************
 	OptProblem
 	****************************************/
 
@@ -42,46 +63,24 @@ namespace DynamicBoltzmann {
 
 	private:
 
+		/********************
+		Parameters
+		********************/
+
 		// Number of dimensions
-		int _n_dim;
+		int _n_param;
 
-		// Vector of dimensions present
-		std::vector<Dim> _dims;
+		// List of interaction parameters
+		std::list<IxnParam> _ixn_params;
 
-		// The basis function solutions
-		// Size: (1+_n_dim)
-		//    Dim 1 = basis funcs, 1 to _n_dim
-		//    Dim 2 to _n_dim+1 = the grid
-		// (Vector b/c there is no default constructor)
-		std::vector<BasisFuncND> _bfs;
+		// List of basis funcs
+		std::list<BasisFunc> _bfs;
 
-		// Grids to hold the solutions
-		// Size: 2
-		//    Dim 1 = time
-		//    Dim 2 = values, 1 to _n_dim
-		double **_soln_traj;
-
-		// Grids to hold the variational problem solutions
-		//  Size: (3+_n_dim)
-		//     Dim 1 = time
-		//     Dim 2 = numerator = delta nu to vary at (_n_dim possible)
-		//     Dim 3 = denominator = delta f to vary with respect to (_n_dim possible)
-		//     Dim 4 to _n_dim+3 = grid points for the denominator
-		// (Vector b/c there is no default constructor)
-		std::vector<std::vector<std::vector<GridND>>> _var_traj;
-
-		// Updates to the basis functions
-		// Size: (1+_n_dim)
-		//    Dim 1 = basis funcs, 1 to _n_dim
-		//    Dim 2 to _n_dim+1 = the grid
-		// (Vector b/c there is no default constructor)
-		std::vector<GridND> _dbfs;
-
-		// Initial points
-		std::vector<double> _init;
+		// List of variational terms
+		std::list<VarTerm> _var_terms;
 
 		// Time dimension
-		Dim _time;
+		Grid _time;
 
 		// Species present
 		std::list<Species> _species;
@@ -113,31 +112,14 @@ namespace DynamicBoltzmann {
 		// Number opt steps
 		int _n_opt;
 
-		// Recursive function to iterate over all grid points for the variational term
-		void _iterate_var(int dim);
-		// Indexes for the recursion function
-		// Size: 1
-		//     Dim 1: grid values, 1 to _n_dim
-		int *_var_idxs;
-		// Time, num, denom idx
-		int _var_time, _var_nu, _var_f;
-		// Number basis funcs
-		int _var_f_n_dim,_var_nu_n_dim;
-		// Indexes of the dimensions for this basis func
-		std::vector<int> _var_f_dim_idxs, _var_nu_dim_idxs;
-		// Derivatives of the basis functions at the solution corresponding to the current timepoint
-		// Size: 2
-		//     Dim 1: basis functions, 1 to _n_dim
-		//     Dim 2: diff. variable, 1 to basis_func.bf_n_dim
-		double **_var_bf_derivs;
-		// Delta function
-		double _var_delta();
+		/********************
+		Search functions
+		********************/
 
-		// Find a species by name
-		Species* _find_species_by_name(std::string name);
-		// Find a interaction param by Species
-		int _find_param_by_species(Species *sp);
-		int _find_param_by_species(Species *sp1, Species *sp2);
+		Species* _find_species(std::string name);
+		IxnParam* _find_ixn_param(std::string name);
+		BasisFunc* _find_basis_func(std::string name);
+		VarTerm* _find_var_term(std::string name);
 
 	public:
 
@@ -145,7 +127,7 @@ namespace DynamicBoltzmann {
 		Constructor
 		********************/
 
-		OptProblem(int n_dim, double t_max, int n_t, int batch_size, int n_annealing, int box_length, double dopt, int n_opt, std::vector<Dim> dims, std::vector<double> init, std::vector<std::string> species);
+		OptProblem(std::vector<Dim> dims, std::vector<std::string> species, double t_max, int n_t, int batch_size, int n_annealing, int box_length, double dopt, int n_opt);
 		~OptProblem();
 
 		/********************
@@ -155,10 +137,16 @@ namespace DynamicBoltzmann {
 		void add_fname(std::string f);
 
 		/********************
-		Solve for solution traj
+		Validate setup
 		********************/
 
-		void solve_traj();
+		void validate_setup() const;
+
+		/********************
+		Solve interaction parameter traj
+		********************/
+
+		void solve_ixn_param_traj();
 
 		/********************
 		Solve for variational trajectory
@@ -167,21 +155,23 @@ namespace DynamicBoltzmann {
 		void solve_var_traj();
 
 		/********************
-		Write
-		********************/
-
-		void write_soln_traj(std::string fname);
-		void write_var_traj(std::string fname, int idx_num, int idx_denom);
-		void write_bf(std::string dir, int idx);
-		void write_bf_grid(std::string fname, int idx);
-		void write_moments(std::string fname, bool append);
-		void write_t_grid(std::string fname);
-
-		/********************
 		Solve
 		********************/
 
 		void solve(bool verbose=false);
+
+		/********************
+		Write
+		********************/
+
+		void write_bf_grids() const;
+		void write_t_grid() const;
+
+		void write_ixn_params(std::string dir, int idx) const;
+		void write_bfs(std::string dir, int idx) const;
+		void write_var_terms(std::string dir, int idx) const;
+		void write_moments(std::string dir, int idx) const;
 	};
+
 
 };

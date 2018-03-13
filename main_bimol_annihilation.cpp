@@ -12,22 +12,22 @@ int main() {
 
 	// Dimensions vec
 	std::vector<Dim> dims;
-	dims.push_back(Dim("hA",DimType::H,"A",{"hA","hB"},-3.0,0.15,16,0.1));
-	dims.push_back(Dim("hB",DimType::H,"B",{"hA","hB"},-3.0,0.15,16,0.1));
-	dims.push_back(Dim("jAA",DimType::J,"A","A",{"jAA","jAB","jBB"},-3.0,-0.05,16,-0.1));
-	dims.push_back(Dim("jAB",DimType::J,"A","B",{"jAA","jAB","jBB"},-3.0,-0.05,16,-0.1));
-	dims.push_back(Dim("jBB",DimType::J,"B","B",{"jAA","jAB","jBB"},-3.0,-0.05,16,-0.1));
+	dims.push_back(Dim("hA",DimType::H,"A",{"hA","hB"},-2.0,1.1,20,1.0));
+	dims.push_back(Dim("hB",DimType::H,"B",{"hA","hB"},-2.0,1.1,20,1.0));
+	dims.push_back(Dim("jAA",DimType::J,"A","A",{"jAA","jAB","jBB"},-2.0,0.1,16,0.0));
+	dims.push_back(Dim("jAB",DimType::J,"A","B",{"jAA","jAB","jBB"},-2.0,0.1,16,0.0));
+	dims.push_back(Dim("jBB",DimType::J,"B","B",{"jAA","jAB","jBB"},-2.0,0.1,16,0.0));
 
 	// Times
 	double t_max=1.0;
 	int n_t = 101;
 
 	// Opt params
-	int batch_size = 10;
-	int n_annealing = 300;
+	int batch_size = 5;
+	int n_annealing = 2000;
 	int box_length = 10;
-	double dopt = 0.5;
-	int n_opt = 30;
+	double dopt = 0.01;
+	int n_opt = 100;
 	
 	// Init
 	std::cout << "Initializing..." << std::flush;

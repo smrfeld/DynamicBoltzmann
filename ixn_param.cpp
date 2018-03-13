@@ -3,6 +3,7 @@
 #include "general.hpp"
 #include <iostream>
 #include <fstream>
+#include <iomanip>
 
 /************************************
 * Namespace for DynamicBoltzmann
@@ -230,6 +231,15 @@ namespace DynamicBoltzmann {
 	};
 
 	/********************
+	Set IC
+	********************/
+
+	void IxnParam::set_init_cond(double val) {
+		_val0 = val;
+		_vals[0] = _val0;
+	};
+
+	/********************
 	Validation
 	********************/
 
@@ -273,6 +283,9 @@ namespace DynamicBoltzmann {
 			_awake[it] = 0.;
 		};
 	};
+	void IxnParam::moments_retrieve_at_time(MomentType moment_type, int it) {
+		moments_retrieve_at_time(moment_type, it, 1);
+	};
 	void IxnParam::moments_retrieve_at_time(MomentType moment_type, int it, int batch_size)
 	{
 		if (_type == Hp) {
@@ -311,10 +324,28 @@ namespace DynamicBoltzmann {
 		};
 		f.close();
 	};
+	void IxnParam::write_vals(std::string dir, int idx1, int idx2, int n_t_traj) const {
+		std::ofstream f;
+		f.open(dir+name()+"_"+pad_str(idx1,4)+"_"+pad_str(idx2,2)+".txt");
+		for (int i=0; i<n_t_traj; i++) {
+			f << _vals[i];
+			if (i != n_t_traj-1) { f << "\n"; };
+		};
+		f.close();
+	};
 
 	void IxnParam::write_moments(std::string dir, int idx, int n_t_traj) const {
 		std::ofstream f;
 		f.open(dir+name()+"_"+pad_str(idx,4)+".txt");
+		for (int i=0; i<n_t_traj; i++) {
+			f << _awake[i] << " " << _asleep[i];
+			if (i != n_t_traj-1) { f << "\n"; };
+		};
+		f.close();
+	};
+	void IxnParam::write_moments(std::string dir, int idx1, int idx2, int n_t_traj) const {
+		std::ofstream f;
+		f.open(dir+name()+"_"+pad_str(idx1,4)+"_"+pad_str(idx2,2)+".txt");
 		for (int i=0; i<n_t_traj; i++) {
 			f << _awake[i] << " " << _asleep[i];
 			if (i != n_t_traj-1) { f << "\n"; };
@@ -497,8 +528,25 @@ namespace DynamicBoltzmann {
 		f.open (dir+name+"_"+pad_str(idx,4)+".txt");
 		for (int i=0; i<_val_len; i++)
 		{
-			f << _vals[i];
+			f << std::setprecision(15) << _vals[i];
 			if (i!=_val_len-1) { f << "\n"; };
+		};
+		f.close();
+	};
+
+	void Array::read_vals(std::string fname) 
+	{
+		std::ifstream f;
+		f.open(fname);
+		char frag[100]; // fragments of the line
+		std::string x="";
+		int i=0;
+		if (f.is_open()) { // make sure we found it
+			while (!f.eof()) {
+			    f >> frag;
+			    _vals[i] = atof(frag);
+			    i++;
+			};
 		};
 		f.close();
 	};
@@ -730,6 +778,8 @@ namespace DynamicBoltzmann {
 		_idxs_ext_2 = new int[_n_params];
 		_fracs = new double[_n_params];
 		_p_cube = new double[pow(4,_n_params)];
+
+		_update_gathered = nullptr; // allocated later if needed
 	};
 	BasisFunc::BasisFunc(const BasisFunc& other) : Array(other) {
 		_copy(other);
@@ -766,6 +816,13 @@ namespace DynamicBoltzmann {
 		std::copy( other._idxs_ext_2, other._idxs_ext_2 + _n_params, _idxs_ext_2 );
 		std::copy( other._fracs, other._fracs + _n_params, _fracs );
 		std::copy( other._p_cube, other._p_cube + int(pow(4,_n_params)), _p_cube );
+
+		if (other._update_gathered) {
+			_update_gathered = new double[_val_len];
+			std::copy( other._update_gathered, other._update_gathered + _val_len, _update_gathered );
+		} else {
+			_update_gathered = nullptr;
+		};
 	};
 	void BasisFunc::_clean_up() {
 		safeDelArr(_derivs);
@@ -775,6 +832,7 @@ namespace DynamicBoltzmann {
 		safeDelArr(_idxs_ext_2);
 		safeDelArr(_fracs);
 		safeDelArr(_p_cube);
+		safeDelArr(_update_gathered);
 	};
 
 	/********************
@@ -953,6 +1011,43 @@ namespace DynamicBoltzmann {
 		};
 	};
 
+	void BasisFunc::update_gather(int n_t, double dt, double dopt) 
+	{
+		if (!_update_gathered) {
+			// alloc
+			_update_gathered = new double[_val_len];
+			std::fill_n(_update_gathered,_val_len,0.);
+			std::cout << "!!! Alloced" << std::endl;
+		};
+
+		// Go through all idxs
+		for (int i=0; i<_val_len; i++) {
+			// Go through all updating terms
+			for (auto p: _update_ptrs) {
+				// Go through all times
+				for (int t=0; t<n_t; t++) {
+					_update_gathered[i] += dopt * dt * p.first->moments_diff_at_time(t) * p.second->get_at_time_by_idx(t, i);
+				};
+			};
+		};
+	};
+
+	void BasisFunc::update_committ_gathered() 
+	{
+		if (!_update_gathered) {
+			std::cerr << "ERROR! No update allocated." << std::endl;
+			exit(EXIT_FAILURE);
+		};
+
+		// Go through all idxs
+		for (int i=0; i<_val_len; i++) {
+			_vals[i] += _update_gathered[i];
+		};
+
+		// Reset to 0
+		std::fill_n(_update_gathered,_val_len,0.);
+	};
+
 	/********************
 	Test fill in various dimensions
 	********************/
@@ -1012,6 +1107,9 @@ namespace DynamicBoltzmann {
 	void BasisFunc::write_vals(std::string dir,int idx) const {
 		Array::write_vals(dir,_name,idx);
 	}; 
+	void BasisFunc::read_vals(std::string fname) {
+		Array::read_vals(fname);
+	};
 
 	/********************
 	Get delta source
@@ -1026,7 +1124,7 @@ namespace DynamicBoltzmann {
 		// Go through ixn parmas
 		double r=1;
 		for (int ip=0; ip<_n_params; ip++) {
-			r *= exp(-pow(_ixn_params[ip]->get_at_time(it)-_ixn_params[ip]->get_by_idx(idxs[ip]),2)/(2.*1.5*_ixn_params[ip]->delta()))/sqrt(2.*M_PI*1.5*_ixn_params[ip]->delta());
+			r *= exp(-pow(_ixn_params[ip]->get_at_time(it)-_ixn_params[ip]->get_by_idx(idxs[ip]),2)/(2.*1.0*_ixn_params[ip]->delta()))/sqrt(2.*M_PI*1.0*_ixn_params[ip]->delta());
 		};
 
 		// Clean

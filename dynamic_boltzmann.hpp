@@ -67,6 +67,9 @@ namespace DynamicBoltzmann {
 		Parameters
 		********************/
 
+		// The directory to write to
+		std::string _dir_io;
+
 		// Number of dimensions
 		int _n_param;
 
@@ -112,6 +115,12 @@ namespace DynamicBoltzmann {
 		// Number opt steps
 		int _n_opt;
 
+		// Start index for the files to read
+		int _fname_start_idx;
+
+		// Flags
+		bool _write_bf_only_last;
+
 		/********************
 		Search functions
 		********************/
@@ -121,19 +130,42 @@ namespace DynamicBoltzmann {
 		BasisFunc* _find_basis_func(std::string name);
 		VarTerm* _find_var_term(std::string name);
 
+		/********************
+		Helpers
+		********************/
+
+		void _clean_up();
+		void _copy(const OptProblem& other);
+
 	public:
 
 		/********************
 		Constructor
 		********************/
 
+		/**
+		 * @brief      { Constructor }
+		 * @param[in]  dims         The dims
+		 * @param[in]  species      The species
+		 * @param[in]  t_max        The t maximum
+		 * @param[in]  n_t          The number of time points in the trajectory
+		 * @param[in]  batch_size   The batch size
+		 * @param[in]  n_annealing  The n annealing
+		 * @param[in]  box_length   The box length
+		 * @param[in]  dopt         The dopt
+		 * @param[in]  n_opt        The n option
+		 */
 		OptProblem(std::vector<Dim> dims, std::vector<std::string> species, double t_max, int n_t, int batch_size, int n_annealing, int box_length, double dopt, int n_opt);
+		OptProblem(const OptProblem& other);
+		OptProblem & operator=(const OptProblem& other);
 		~OptProblem();
 
 		/********************
 		Set properties	
 		********************/
 
+		void set_dir_io(std::string dir);
+		void set_fname_start_idx(int idx);
 		void add_fname(std::string f);
 
 		/********************
@@ -159,6 +191,13 @@ namespace DynamicBoltzmann {
 		********************/
 
 		void solve(bool verbose=false);
+		void solve_varying_ic(bool verbose=false);
+
+		/********************
+		Read some initial conditions
+		********************/
+
+		void read_init_cond(std::string dir);
 
 		/********************
 		Write
@@ -168,9 +207,19 @@ namespace DynamicBoltzmann {
 		void write_t_grid() const;
 
 		void write_ixn_params(std::string dir, int idx) const;
+		void write_ixn_params(std::string dir, int idx1, int idx2) const;
 		void write_bfs(std::string dir, int idx) const;
 		void write_var_terms(std::string dir, int idx) const;
 		void write_moments(std::string dir, int idx) const;
+		void write_moments(std::string dir, int idx1, int idx2) const;
+
+		void set_flag_write_bf_only_final();
+
+		/********************
+		Read
+		********************/
+
+		void read_bf(std::string bf_name, std::string fname);
 	};
 
 

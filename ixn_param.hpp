@@ -138,6 +138,9 @@ namespace DynamicBoltzmann {
 		void set_basis_func_ptr(BasisFunc* bf);
 		bool is_bf(BasisFunc *bf);
 
+		// Set IC
+		void set_init_cond(double val);
+
 		// Validate setup
 		void validate_setup() const;
 
@@ -151,12 +154,15 @@ namespace DynamicBoltzmann {
 		// Moments from lattice
 		enum MomentType {AWAKE, ASLEEP};
 		void moments_reset();
+		void moments_retrieve_at_time(MomentType moment_type, int it);
 		void moments_retrieve_at_time(MomentType moment_type, int it, int batch_size);
 		double moments_diff_at_time(int it);
 
 		// Write into an ofstream
 		void write_vals(std::string dir, int idx, int n_t_traj) const;
+		void write_vals(std::string dir, int idx1, int idx2, int n_t_traj) const;
 		void write_moments(std::string dir, int idx, int n_t_traj) const;
+		void write_moments(std::string dir, int idx1, int idx2, int n_t_traj) const;
 	};
 
 	/****************************************
@@ -205,9 +211,10 @@ namespace DynamicBoltzmann {
 		// Get indexes by element
 		void get_idxs(int i, int* idxs) const;
 
-		// Write to a file
+		// Write/Read to a file
 		void write_grid(std::string fname) const;
 		void write_vals(std::string dir, std::string name, int idx) const;
+		void read_vals(std::string fname);
 
 		// Check dimensions against another array
 		bool check_dims(const Array& other) const;
@@ -307,6 +314,9 @@ namespace DynamicBoltzmann {
 		double *_fracs;
 		double *_p_cube;
 
+		// Update, if needed
+		double *_update_gathered;
+
 		// Derivatives
 		bool *_derivs;
 
@@ -342,6 +352,8 @@ namespace DynamicBoltzmann {
 
 		// Calculate the new basis function
 		void update(int n_t, double dt, double dopt);
+		void update_gather(int n_t, double dt, double dopt);
+		void update_committ_gathered();
 
 		// Test fill in various dimensions
 		void test_fill_2d();
@@ -354,9 +366,10 @@ namespace DynamicBoltzmann {
 		double get_by_idx(int i) const;
 		void set_by_idxs(int *idxs, double val);
 
-		// Write grid
+		// Write/Read grid/vals
 		void write_grid(std::string fname) const;
 		void write_vals(std::string dir, int idx) const;
+		void read_vals(std::string fname);
 
 		// Get the delta source
 		double get_delta_source(int it, int i);

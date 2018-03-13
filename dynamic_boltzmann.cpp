@@ -2,6 +2,7 @@
 #include <iostream>
 #include "general.hpp"
 #include <ctime>
+#include <fstream>
 
 /************************************
 * Namespace for DynamicBoltzmann
@@ -52,6 +53,9 @@ namespace DynamicBoltzmann {
 		_n_batch = batch_size;
 		_t_opt = 0;
 		_n_t_soln = 0;
+		_dir_io = "data/"; // default
+		_fname_start_idx = 0; // default
+		_write_bf_only_last = false; // default
 		if (DIAG_SETUP) { std::cout << "ok." << std::endl; };
 
 		// Create the species and add to the lattice
@@ -180,13 +184,68 @@ namespace DynamicBoltzmann {
 		};
 		if (DIAG_SETUP) { std::cout << "ok." << std::endl; };
 	};
+
+	OptProblem::OptProblem(const OptProblem& other) : _time(other._time)
+	{
+		_copy(other);
+	};
+
+	OptProblem& OptProblem::operator=(const OptProblem& other)
+	{
+		if (this != &other)
+		{			
+			_clean_up();
+			_copy(other);
+		};
+		return *this;		
+	};
+
 	OptProblem::~OptProblem() {
+		_clean_up();
+	};
+
+	/********************
+	Helpers for constructors
+	********************/
+
+	void OptProblem::_clean_up()
+	{
 		// Nothing...
+	};
+
+	void OptProblem::_copy(const OptProblem& other)
+	{
+		_dir_io = other._dir_io;
+		_n_param = other._n_param;
+		_ixn_params = other._ixn_params;
+		_bfs = other._bfs;
+		_var_terms = other._var_terms;
+		_time = other._time;
+		_species = other._species;
+		_fnames = other._fnames;
+		_n_t_soln = other._n_t_soln;
+		_t_opt = other._t_opt;
+		_n_batch = other._n_batch;
+		_n_annealing = other._n_annealing;
+		_box_length = other._box_length;
+		_latt = other._latt;
+		_dopt = other._dopt;
+		_n_opt = other._n_opt;
+		_fname_start_idx = other._fname_start_idx;
+		_write_bf_only_last = other._write_bf_only_last;
 	};
 
 	/********************
 	Set properties
 	********************/
+
+	void OptProblem::set_dir_io(std::string dir) {
+		_dir_io = dir;
+	};
+
+	void OptProblem::set_fname_start_idx(int idx) {
+		_fname_start_idx = idx;
+	};
 
 	void OptProblem::add_fname(std::string f) {
 		_fnames.push_back(f);
@@ -274,7 +333,9 @@ namespace DynamicBoltzmann {
 			std::cout << "Opt step " << i_opt << " / " << _n_opt-1 << std::endl;
 
 			// Write the basis funcs
-			write_bfs("data/F/",i_opt);
+			if (!_write_bf_only_last) {
+				write_bfs(_dir_io+"F/",i_opt);
+			};
 
 			/*****
 			Step 1 - Solve the current trajectory
@@ -285,7 +346,7 @@ namespace DynamicBoltzmann {
 			solve_ixn_param_traj();
 
 			// Write
-			write_ixn_params("data/ixn_params/",i_opt);
+			write_ixn_params(_dir_io+"ixn_params/",i_opt);
 
 			if (DIAG_SOLVE) { std::cout << "OK" << std::endl; };
 
@@ -298,7 +359,7 @@ namespace DynamicBoltzmann {
 			solve_var_traj();
 
 			// Write
-			//write_var_terms("data/var_terms/",i_opt);
+			//write_var_terms(_dir_io+"var_terms/",i_opt);
 			
 			if (DIAG_SOLVE) { std::cout << "OK" << std::endl; };
 
@@ -362,7 +423,7 @@ namespace DynamicBoltzmann {
 
 					if (DIAG_SOLVE) { std::cout << "      Read in batch" << std::endl; };
 
-					_latt.read_from_file(fnames[i_batch] + pad_str(_t_opt,4) + ".txt");
+					_latt.read_from_file(fnames[i_batch] + pad_str(_fname_start_idx+_t_opt,4) + ".txt");
 
 					/*****
 					Step 5.1.2 - Record the awake moments
@@ -403,7 +464,7 @@ namespace DynamicBoltzmann {
 			if (DIAG_SOLVE) { std::cout << "OK" << std::endl; };
 
 			// Write the moments
-			write_moments("data/moments/",i_opt);
+			write_moments(_dir_io+"moments/",i_opt);
 
 			/*****
 			Step 6 - Update the basis funcs
@@ -415,7 +476,234 @@ namespace DynamicBoltzmann {
 		};
 
 		// Write the basis funcs one last time
-		write_bfs("data/F/",_n_opt);
+		write_bfs(_dir_io+"F/",_n_opt);
+	};
+
+	/********************
+	Solve over varying initial conditions
+	********************/
+
+	void OptProblem::solve_varying_ic(bool verbose)
+	{
+		// Write the grids
+		write_bf_grids();
+		write_t_grid();
+
+		// Declare
+		std::vector<std::string> fnames, fnames_possible;
+		std::vector<std::string>::iterator itf;
+		std::vector<int> batch_idxs;
+
+		// Iterate over optimization steps
+		for (int i_opt=0; i_opt<_n_opt; i_opt++)
+		{
+			std::cout << "Opt step " << i_opt << " / " << _n_opt-1 << std::endl;
+
+			// Write the basis funcs
+			write_bfs(_dir_io+"F/",i_opt);
+
+			/*****
+			Step 1 - Pick a random batch
+			*****/
+
+			if (DIAG_SOLVE) { std::cout << "Random batch" << std::endl; };
+
+			std::cout << "Random batch" << std::endl;
+			fnames.clear();
+			fnames_possible=_fnames;
+			batch_idxs.clear();
+			for (int i_batch=0; i_batch<_n_batch; i_batch++) {
+				itf = fnames_possible.begin();
+				std::advance(itf,randI(0,fnames_possible.size()-1));
+				fnames.push_back(*itf);
+				batch_idxs.push_back(find(_fnames.begin(), _fnames.end(), fnames.back()) - _fnames.begin());
+				fnames_possible.erase(itf);
+			};
+			std::cout << "OK" << std::endl;
+
+			if (DIAG_SOLVE) { std::cout << "OK" << std::endl; };
+
+			/*****
+			Step 2 - Iterate over batch
+			*****/
+
+			if (DIAG_SOLVE) { std::cout << "   Looping over batch" << std::endl; };
+
+			for (int i_batch=0; i_batch<_n_batch; i_batch++) 
+			{
+				if (verbose) {
+					std::cout << "sample: " << i_batch << " / " << _n_batch << std::endl;
+				};
+
+				/*****
+				Step 2.1 - Read the IC
+				*****/
+
+				read_init_cond(fnames[i_batch]+"../");
+
+				/*****
+				Step 2.2 - Solve the current trajectory
+				*****/
+
+				if (DIAG_SOLVE) { std::cout << "Solving ixn param" << std::endl; };
+
+				solve_ixn_param_traj();
+
+				// Write
+				write_ixn_params(_dir_io+"ixn_params/",i_opt,batch_idxs[i_batch]);
+
+				if (DIAG_SOLVE) { std::cout << "OK" << std::endl; };
+
+				/*****
+				Step 2.3 - Solve the variational problem traj
+				*****/
+
+				if (DIAG_SOLVE) { std::cout << "Solving var term" << std::endl; };
+
+				solve_var_traj();
+
+				// Write
+				//write_var_terms(_dir_io+"var_terms/",i_opt);
+				
+				if (DIAG_SOLVE) { std::cout << "OK" << std::endl; };
+
+				/*****
+				Step 2.4 - reset the moments at all times
+				*****/
+
+				if (DIAG_SOLVE) { std::cout << "Reset moments" << std::endl; };
+
+				for (auto itp = _ixn_params.begin(); itp != _ixn_params.end(); itp++) {
+					itp->moments_reset();
+				};
+
+				if (DIAG_SOLVE) { std::cout << "OK" << std::endl; };
+
+				/*****
+				Step 2.5 - Go through all times
+				*****/
+
+				if (DIAG_SOLVE) { std::cout << "Looping over times" << std::endl; };
+
+				// Use the class variable _t_opt to iterate
+				for (_t_opt=0; _t_opt < _n_t_soln; _t_opt++)
+				{
+					if (verbose) {
+						std::cout << "." << std::flush;
+					};
+
+					/*****
+					Step 2.5.1 - Read in sample at this timestep
+					*****/
+
+					if (DIAG_SOLVE) { std::cout << "      Read in batch" << std::endl; };
+
+					_latt.read_from_file(fnames[i_batch] + pad_str(_fname_start_idx+_t_opt,4) + ".txt");
+
+					/*****
+					Step 2.5.2 - Record the awake moments
+					*****/
+
+					if (DIAG_SOLVE) { std::cout << "      Record awake moments" << std::endl; };
+
+					for (auto itp = _ixn_params.begin(); itp != _ixn_params.end(); itp++) {
+						itp->moments_retrieve_at_time(IxnParam::AWAKE,_t_opt);
+					};
+
+					/*****
+					Step 2.5.3 - anneal
+					*****/
+
+					if (DIAG_SOLVE) { std::cout << "      Anneal" << std::endl; };
+
+					_latt.anneal(_n_annealing);
+
+					/*****
+					Step 2.5.4 - Record the asleep moments
+					*****/
+
+					if (DIAG_SOLVE) { std::cout << "      Record asleep moments" << std::endl; };
+
+					for (auto itp = _ixn_params.begin(); itp != _ixn_params.end(); itp++) {
+						itp->moments_retrieve_at_time(IxnParam::ASLEEP,_t_opt);
+					};
+
+				};
+
+				if (verbose) {
+					std::cout << std::endl;
+				};
+
+				if (DIAG_SOLVE) { std::cout << "   OK" << std::endl; };
+
+				/*****
+				Step 2.6 - Write the moments
+				*****/
+
+				write_moments(_dir_io+"moments/",i_opt,batch_idxs[i_batch]);
+
+				/*****
+				Step 2.7 - Gather the update (but dont commit)
+				*****/
+
+				for (auto itbf=_bfs.begin(); itbf!=_bfs.end(); itbf++) {
+					itbf->update_gather(_n_t_soln, _time.delta(), _dopt);
+				};
+
+			};
+
+			/*****
+			Step 3 - Commit the updates to the basis funcs
+			*****/
+
+			for (auto itbf=_bfs.begin(); itbf!=_bfs.end(); itbf++) {
+				itbf->update_committ_gathered();
+			};
+
+		};
+
+		// Write the basis funcs one last time
+		write_bfs(_dir_io+"F/",_n_opt);
+	};
+
+
+	/********************
+	Read some initial conditions
+	********************/
+
+	void OptProblem::read_init_cond(std::string dir) {
+
+		std::ifstream f;
+		f.open(dir+"init.txt", std::ios::in);
+		char frag[100]; // fragments of the line
+		std::string sname="",sval="";
+		int i_frag=0;
+		IxnParam *ip;
+
+		if (f.is_open()) { // make sure we found it
+			while (!f.eof()) {
+				f >> frag;
+				if (i_frag==0) {
+					sname += frag; i_frag++;
+				} else if (i_frag==1) {
+					sval += frag;
+
+					// Find the ixn param with this name
+					ip = _find_ixn_param(sname);
+					if (ip) {
+						ip->set_init_cond(std::stod(sval));
+					} else {
+						std::cerr << "ERROR: Ixn param with name " << sname << " not found while reading IC." << std::endl;
+						exit(EXIT_FAILURE); 
+					};
+
+					// Reset
+					sname=""; sval=""; i_frag=0;
+				};
+			};
+		};
+
+		f.close();
 	};
 
 	/********************
@@ -424,16 +712,21 @@ namespace DynamicBoltzmann {
 
 	void OptProblem::write_bf_grids() const {
 		for (auto it=_bfs.begin(); it!=_bfs.end(); it++) {
-			it->write_grid("data/grid_"+it->name()+".txt");
+			it->write_grid(_dir_io+"grid_"+it->name()+".txt");
 		};
 	};
 	void OptProblem::write_t_grid() const {
-		_time.write_grid("data/grid_time.txt");
+		_time.write_grid(_dir_io+"grid_time.txt");
 	};
 
 	void OptProblem::write_ixn_params(std::string dir, int idx) const {
 		for (auto it = _ixn_params.begin(); it!=_ixn_params.end(); it++) {
 			it->write_vals(dir,idx,_n_t_soln);
+		};
+	};
+	void OptProblem::write_ixn_params(std::string dir, int idx1, int idx2) const {
+		for (auto it = _ixn_params.begin(); it!=_ixn_params.end(); it++) {
+			it->write_vals(dir,idx1,idx2,_n_t_soln);
 		};
 	};
 	void OptProblem::write_bfs(std::string dir, int idx) const {
@@ -450,6 +743,31 @@ namespace DynamicBoltzmann {
 		for (auto it = _ixn_params.begin(); it!=_ixn_params.end(); it++) {
 			it->write_moments(dir,idx,_n_t_soln);
 		};
+	};
+	void OptProblem::write_moments(std::string dir, int idx1, int idx2) const {
+		for (auto it = _ixn_params.begin(); it!=_ixn_params.end(); it++) {
+			it->write_moments(dir,idx1,idx2,_n_t_soln);
+		};
+	};
+
+	void OptProblem::set_flag_write_bf_only_final()
+	{
+		_write_bf_only_last = true;
+	};
+
+	/********************
+	Read
+	********************/
+
+	void OptProblem::read_bf(std::string bf_name, std::string fname) 
+	{
+		// Find the basis func
+		BasisFunc* bf = _find_basis_func(bf_name);
+		if (!bf) {
+			std::cerr << "ERROR: Could not find basis func to read into." << std::endl;
+			exit(EXIT_FAILURE);
+		};
+		bf->read_vals(fname);
 	};
 
 	/****************************************

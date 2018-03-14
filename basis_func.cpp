@@ -1,7 +1,7 @@
-#include "ixn_param.hpp"
-#include "math.h"
+#include "var_term_traj.hpp"
 #include "general.hpp"
 #include <iostream>
+#include "math.h"
 #include <fstream>
 #include <iomanip>
 
@@ -12,352 +12,10 @@
 namespace DynamicBoltzmann {
 
 	/****************************************
-	Grid
-	****************************************/
-
-	/********************
-	Constructor
-	********************/
-
-	Grid::Grid(std::string name, double min, double max, int n)
-	{
-		_name = name;
-		_min = min;
-		_max = max;
-		_n = n;
-		_delta = (max-min)/(n-1);
-		_grid = new double[n];
-		for (int i=0; i<n; i++) {
-			_grid[i] = min+i*_delta;
-		};
-	};
-	Grid::Grid(const Grid& other) 
-	{
-		_copy(other);
-	};
-	Grid& Grid::operator=(const Grid& other)
-	{
-		if (this != &other)
-		{			
-			_clean_up();
-			_copy(other);
-		};
-		return *this;		
-	};
-	Grid::~Grid() {
-		_clean_up();
-	};
-	void Grid::_copy(const Grid& other) {
-		_name = other._name;
-		_min = other._min;
-		_max = other._max;
-		_n = other._n;
-		_delta = other._delta;
-		_grid = new double[_n];
-		std::copy( other._grid, other._grid + _n, _grid );
-	};
-	void Grid::_clean_up() {
-		safeDelArr(_grid);
-	};
-	
-	/********************
-	Getters/setters
-	********************/
-
-	std::string Grid::name() const { return _name; };
-
-	double Grid::delta() const { return _delta; };
-
-	int Grid::n() const { return _n; };
-
-	double Grid::get_by_idx(int i) const {
-		return _grid[i];
-	};
-
-	/********************
-	Surrounding idxs
-	********************/
-
-	int Grid::surrounding_idxs(double x) const
-	{
-		int i = (x - _min) / _delta;
-		if (i==_n-1) {i--;};
-		return i;
-	};
-
-	double Grid::frac_between(double x) const
-	{
-		return frac_between(x,surrounding_idxs(x));
-	};
-
-	double Grid::frac_between(double x, int i) const
-	{
-		return (x-_grid[i]) / _delta;
-	};
-
-	/********************
-	Check if a given point is in the grid
-	********************/
-
-	bool Grid::in_grid(double x) const
-	{
-		if (x < _min || x > _max) { 
-			return false; 
-		} else {
-			return true;
-		};
-	};
- 
-	/********************
-	Print grid range
-	********************/
-
-	void Grid::print_grid_range() const
-	{
-		std::cout << "Grid: " << _name << " min: " << _min << " max: " << _max << std::endl;
-	};
-
-	/********************
-	Write grid into an ofstream
-	********************/
-
-	void Grid::write_grid(std::string fname) const {
-		std::ofstream f;
-		f.open(fname);
-		for (int i=0; i<_n; i++) {
-			f << _grid[i] << "\n";
-		};
-		f.close();
-	};
-
-	/********************
-	Test: if a sin func were defined on the grid
-	********************/
-
-	std::vector<double> Grid::test_sin() const {
-		std::vector<double> x;
-		for (int i=0; i<_n; i++) {
-			x.push_back(sin(2*M_PI*_grid[i]/(_max-_min)));
-		};
-		return x;
-	};
-	std::vector<double> Grid::test_cos() const {
-		std::vector<double> x;
-		for (int i=0; i<_n; i++) {
-			x.push_back(cos(2*M_PI*_grid[i]/(_max-_min)));
-		};
-		return x;	
-	};
-
-	/****************************************
-	Ixn Param
-	****************************************/
-
-	/********************
-	Constructor
-	********************/
-
-	IxnParam::IxnParam(std::string name, IxnParamType type, Species *sp, double min, double max, int n, double val0, int n_t) : IxnParam(name,type,sp,nullptr,min,max,n,val0,n_t) {};
-	IxnParam::IxnParam(std::string name, IxnParamType type, Species *sp1, Species *sp2, double min, double max, int n, double val0, int n_t) : Grid(name,min,max,n)
-	{
-		_type = type;
-		_sp1 = sp1;
-		_sp2 = sp2;
-		_val0 = val0;
-		_n_t = n_t;
-
-		_vals = new double[_n_t];
-		std::fill_n(_vals,_n_t,0.0);
-		_vals[0] = _val0;
-
-		_asleep = new double[_n_t];
-		std::fill_n(_asleep,_n_t,0.0);
-		_awake = new double[_n_t];
-		std::fill_n(_awake,_n_t,0.0);
-
-		_bf = nullptr;
-	};
-	IxnParam::IxnParam(const IxnParam& other) : Grid(other) {
-		_copy(other);
-	};
-	IxnParam& IxnParam::operator=(const IxnParam& other) {
-		if (this != &other)
-		{
-			Grid::operator=(other);
-
-			_clean_up();
-			_copy(other);
-		};
-		return *this;
-	};
-	IxnParam::~IxnParam() {
-		_clean_up();
-	};
-	void IxnParam::_copy(const IxnParam& other)
-	{
-		_type = other._type;
-		_sp1 = other._sp1;
-		_sp2 = other._sp2;
-		_n_t = other._n_t;
-		_vals = new double[_n_t];
-		std::copy( other._vals, other._vals + _n_t, _vals );
-		_val0 = other._val0;
-		_asleep = new double[_n_t];
-		std::copy( other._asleep, other._asleep + _n_t, _asleep );
-		_awake = new double[_n_t];
-		std::copy( other._awake, other._awake + _n_t, _awake );
-		_bf = other._bf;
-	};
-	void IxnParam::_clean_up() {
-		safeDelArr(_vals);
-		safeDelArr(_asleep);
-		safeDelArr(_awake);
-	};
-
-
-	/********************
-	Set/check basis func pointer
-	********************/
-
-	void IxnParam::set_basis_func_ptr(BasisFunc* bf) {
-		_bf = bf;
-	};
-	bool IxnParam::is_bf(BasisFunc *bf) {
-		if (_bf==bf) { 
-			return true;
-		} else { 
-			return false; 
-		};
-	};
-
-	/********************
-	Set IC
-	********************/
-
-	void IxnParam::set_init_cond(double val) {
-		_val0 = val;
-		_vals[0] = _val0;
-	};
-
-	/********************
-	Validation
-	********************/
-
-	void IxnParam::validate_setup() const {
-		std::cout << "--- Validate ixn param: " << name() << " ---" << std::endl; 
-		if (_bf) {
-			std::cout << "   Has basis func: " << _bf->name() << std::endl;
-		} else {
-			std::cerr << "ERROR: no basis func" << std::endl;
-			exit(EXIT_FAILURE);
-		};
-	};
-
-	/********************
-	Getters/setters
-	********************/
-
-	double IxnParam::get_at_time(int it) const
-	{
-		return _vals[it];
-	};
-
-	/********************
-	Calculate the next step
-	********************/
-
-	bool IxnParam::calculate_at_time(int it_next, double dt)
-	{
-		_vals[it_next] = _vals[it_next-1] + dt*_bf->get_at_time(it_next-1);
-		return in_grid(_vals[it_next]);
-	};
-
-	/********************
-	Moments from lattice
-	********************/
-
-	void IxnParam::moments_reset() 
-	{
-		for (int it=0; it<_n_t; it++) {
-			_asleep[it] = 0.;
-			_awake[it] = 0.;
-		};
-	};
-	void IxnParam::moments_retrieve_at_time(MomentType moment_type, int it) {
-		moments_retrieve_at_time(moment_type, it, 1);
-	};
-	void IxnParam::moments_retrieve_at_time(MomentType moment_type, int it, int batch_size)
-	{
-		if (_type == Hp) {
-			if (_sp1) {
-				if (moment_type==AWAKE) {
-					_awake[it] += 1. * _sp1->count() / batch_size;
-				} else if (moment_type==ASLEEP) {
-					_asleep[it] += 1. * _sp1->count() / batch_size;
-				};
-			};
-		} else if (_type == Jp) {
-			if (_sp1 && _sp2) {
-				if (moment_type==AWAKE) {
-					_awake[it] += 1. * _sp1->nn_count(_sp2) / batch_size;
-				} else if (moment_type==ASLEEP) {
-					_asleep[it] += 1. * _sp1->nn_count(_sp2) / batch_size;
-				};
-			};
-		};	
-	};
-
-	double IxnParam::moments_diff_at_time(int it) {
-		return (_awake[it] - _asleep[it]);
-	};
-
-	/********************
-	Write into an ofstream
-	********************/
-
-	void IxnParam::write_vals(std::string dir, int idx, int n_t_traj) const {
-		std::ofstream f;
-		f.open(dir+name()+"_"+pad_str(idx,4)+".txt");
-		for (int i=0; i<n_t_traj; i++) {
-			f << _vals[i];
-			if (i != n_t_traj-1) { f << "\n"; };
-		};
-		f.close();
-	};
-	void IxnParam::write_vals(std::string dir, int idx1, int idx2, int n_t_traj) const {
-		std::ofstream f;
-		f.open(dir+name()+"_"+pad_str(idx1,4)+"_"+pad_str(idx2,2)+".txt");
-		for (int i=0; i<n_t_traj; i++) {
-			f << _vals[i];
-			if (i != n_t_traj-1) { f << "\n"; };
-		};
-		f.close();
-	};
-
-	void IxnParam::write_moments(std::string dir, int idx, int n_t_traj) const {
-		std::ofstream f;
-		f.open(dir+name()+"_"+pad_str(idx,4)+".txt");
-		for (int i=0; i<n_t_traj; i++) {
-			f << _awake[i] << " " << _asleep[i];
-			if (i != n_t_traj-1) { f << "\n"; };
-		};
-		f.close();
-	};
-	void IxnParam::write_moments(std::string dir, int idx1, int idx2, int n_t_traj) const {
-		std::ofstream f;
-		f.open(dir+name()+"_"+pad_str(idx1,4)+"_"+pad_str(idx2,2)+".txt");
-		for (int i=0; i<n_t_traj; i++) {
-			f << _awake[i] << " " << _asleep[i];
-			if (i != n_t_traj-1) { f << "\n"; };
-		};
-		f.close();
-	};
-
-	/****************************************
 	Array
 	****************************************/
 
-	Array::Array(std::vector<IxnParam*> ixn_params)
+	Array::Array(std::vector<IxnParamTraj*> ixn_params)
 	{
 		_ixn_params = ixn_params;
 		_n_params = _ixn_params.size();
@@ -382,7 +40,7 @@ namespace DynamicBoltzmann {
 			_dim_pwrs.push_back(pwr); 
 		};
 	};
-	Array::Array(IxnParam* ixn_param) : Array(std::vector<IxnParam*>{ixn_param}) {};
+	Array::Array(IxnParamTraj* ixn_param) : Array(std::vector<IxnParamTraj*>{ixn_param}) {};
 	Array::Array(const Array& other) 
 	{
 		_copy(other);
@@ -582,183 +240,6 @@ namespace DynamicBoltzmann {
 	};
 
 	/****************************************
-	Variational Term Trajectory
-	****************************************/
-
-	/********************
-	Constructor
-	********************/
-
-	VarTerm::VarTerm(std::string name, IxnParam *num, BasisFunc *denom, std::vector<IxnParam*> denom_ixn_params, BasisFunc *num_bf, int n_ixn_params_in_num_bf, int n_t)
-	{
-		// Name
-		_name = name;
-
-		// Length (time)
-		_n_t = n_t;
-
-		// Num/denom ptrs
-		_num = num;
-		_denom = denom;
-
-		// Check if it is a delta source
-		_delta_source = _num->is_bf(denom);
-
-		// Basis func corresponding to numerator
-		_num_bf = num_bf;
-
-		// Number interaction parameters in numerators basis func
-		_n_ixn_params_in_num_bf=n_ixn_params_in_num_bf;
-
-		// Derivatives of the num bf
-		_num_bf_derivs = new double[_n_ixn_params_in_num_bf];
-
-		// Vals
-		for (int it=0; it<_n_t; it++) {
-			_vals.push_back(Array(denom_ixn_params));
-		};
-
-		// Length of each array
-		_val_len = 1;
-		for (auto v: denom_ixn_params) { _val_len *= v->n(); };
-	};
-	VarTerm::VarTerm(const VarTerm& other)
-	{
-		_copy(other);
-	};
-	VarTerm& VarTerm::operator=(const VarTerm& other)
-	{
-		if (this != &other)
-		{
-			_clean_up();
-			_copy(other);
-		};
-		return *this;
-	};
-	VarTerm::~VarTerm()
-	{
-		_clean_up();
-	};
-	void VarTerm::_copy(const VarTerm& other) {
-		_name = other._name;
-		_n_t = other._n_t;
-		_num = other._num;
-		_denom = other._denom;
-		_delta_source = other._delta_source;
-		_num_bf = other._num_bf;
-		_n_ixn_params_in_num_bf = other._n_ixn_params_in_num_bf;
-
-		_num_bf_derivs = new double[_n_ixn_params_in_num_bf];
-		std::copy(other._num_bf_derivs,other._num_bf_derivs+_n_ixn_params_in_num_bf,_num_bf_derivs);
-		
-		_vals = other._vals;
-		_val_len = other._val_len;
-		_update_var_terms = other._update_var_terms;
-	};
-	void VarTerm::_clean_up() {
-		safeDelArr(_num_bf_derivs);
-	};
-
-	/********************
-	Set the pointers needed to update this term
-	********************/
-
-	void VarTerm::add_update_ptr(VarTerm* var_term)
-	{
-		_update_var_terms.push_back(var_term);
-	};
-
-	/********************
-	Validation
-	********************/
-
-	void VarTerm::validate_setup() const {
-		std::cout << "--- Var term traj: " << _name << " ---" << std::endl;
-		if (_num_bf) {
-			std::cout << "   Numerator's basis func: " << _num_bf->name() << std::endl;
-		} else {
-			std::cerr << "ERROR: Var term traj: " << _name << " has no numerator basis func" << std::endl;
-			exit(EXIT_FAILURE);
-		};
-		if (_delta_source) {
-			std::cout << "   This is a delta source" << std::endl;
-		};
-		if (_update_var_terms.size() == 0) {
-			std::cerr << "ERROR: No variational terms for updating" << std::endl;
-			exit(EXIT_FAILURE);
-		};
-		for (auto vt_ptr: _update_var_terms) {
-			std::cout << "   Updated using var term: " << vt_ptr->name() << std::endl;
-		};
-	};
-
-	/********************
-	// Calculate next timestep
-	********************/
-
-	void VarTerm::calculate_at_time(int it_next, double dt)
-	{
-		// Calculate derivative of basis funcs
-		for (int j=0; j<_n_ixn_params_in_num_bf; j++) {
-			_num_bf_derivs[j] = _num_bf->get_deriv_at_time(it_next-1, j);
-		};
-
-		// New val
-		double d;
-
-		// Iterate over all pts
-		if (_delta_source)
-		{
-			for (int i=0; i<_val_len; i++) {
-				d = _num_bf->get_delta_source(it_next-1, i);
-				for (int j=0; j<_n_ixn_params_in_num_bf; j++) {
-					d += _num_bf_derivs[j] * _update_var_terms[j]->get_at_time_by_idx(it_next-1, i);
-				};
-				// Set the value
-				_vals[it_next].set_by_idx(i,_vals[it_next-1].get_by_idx(i)+dt*d);
-			};
-		} else {
-			for (int i=0; i<_val_len; i++) {
-				d = 0.0;
-				for (int j=0; j<_n_ixn_params_in_num_bf; j++) {
-					d += _num_bf_derivs[j] * _update_var_terms[j]->get_at_time_by_idx(it_next-1, i);
-				};
-				// Set the value
-				_vals[it_next].set_by_idx(i,_vals[it_next-1].get_by_idx(i)+dt*d);
-			};
-		};
-	};
-
-	/********************
-	Getters/setters
-	********************/
-
-	double VarTerm::get_at_time_by_idx(int it, int i) {
-		return _vals[it].get_by_idx(i);
-	};
-
-	std::string VarTerm::name() {
-		return _name;
-	};
-
-	/********************
-	Write
-	********************/
-
-	void VarTerm::write_vals(std::string dir,int idx) const {
-		std::ofstream f;
-		f.open(dir+_name+"_"+pad_str(idx,4)+".txt");
-		for (int i=0; i<_val_len; i++) {
-			for (int t=0; t<_n_t; t++) {
-				f << _vals[t].get_by_idx(i);
-				if (t != _n_t-1) { f << " "; };
-			};
-			if (i!=_val_len-1) { f << "\n"; };
-		};
-		f.close();
-	}; 
-
-	/****************************************
 	BasisFunc
 	****************************************/
 
@@ -766,7 +247,7 @@ namespace DynamicBoltzmann {
 	Constructor
 	********************/
 
-	BasisFunc::BasisFunc(std::string name, std::vector<IxnParam*> ixn_params) : Array(ixn_params) {
+	BasisFunc::BasisFunc(std::string name, std::vector<IxnParamTraj*> ixn_params) : Array(ixn_params) {
 		_name = name;
 		
 		_derivs = new bool[_n_params];
@@ -777,7 +258,7 @@ namespace DynamicBoltzmann {
 		_idxs_ext_1 = new int[_n_params];
 		_idxs_ext_2 = new int[_n_params];
 		_fracs = new double[_n_params];
-		_p_cube = new double[pow(4,_n_params)];
+		_p_cube = new double[int(pow(4,_n_params))];
 
 		_update_gathered = nullptr; // allocated later if needed
 	};
@@ -807,7 +288,7 @@ namespace DynamicBoltzmann {
 		_idxs_ext_1 = new int[_n_params];
 		_idxs_ext_2 = new int[_n_params];
 		_fracs = new double[_n_params];
-		_p_cube = new double[pow(4,_n_params)];
+		_p_cube = new double[int(pow(4,_n_params))];
 
 		std::copy( other._derivs, other._derivs + _n_params, _derivs );
 		std::copy( other._idxs_bounding, other._idxs_bounding + _n_params, _idxs_bounding );
@@ -839,7 +320,7 @@ namespace DynamicBoltzmann {
 	Add pointers needed to update
 	********************/
 
-	void BasisFunc::add_update_ptrs(IxnParam* ixn_param, VarTerm* var_term)
+	void BasisFunc::add_update_ptrs(IxnParamTraj* ixn_param, VarTermTraj* var_term)
 	{
 		_update_ptrs.push_back(std::make_pair(ixn_param,var_term));
 	};
@@ -1173,11 +654,4 @@ namespace DynamicBoltzmann {
 		};
 	};
 
-
-
 };
-
-
-
-
-

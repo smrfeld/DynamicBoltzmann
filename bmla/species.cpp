@@ -1,5 +1,5 @@
 #include <iostream>
-#include "ixn_param_traj.hpp" // also includes species header
+#include "ixn_param.hpp" // also includes species header
 
 /************************************
 * Namespace for Gillespie3D
@@ -16,55 +16,20 @@ namespace DynamicBoltzmann {
 		_count = 0;
 
 		// Ptrs
-		_t_opt_ptr = nullptr;
 		_h_ptr = nullptr;
-	};
-
-	/********************
-	Set pointer to the opt time variable
-	********************/
-
-	void Species::set_opt_time_ptr(int *t_opt_ptr)
-	{
-		_t_opt_ptr = t_opt_ptr;
 	};
 
 	/********************
 	Set h, j ptr
 	********************/
 
-	void Species::set_h_ptr(IxnParamTraj *h_ptr) {
+	void Species::set_h_ptr(IxnParam *h_ptr) {
 		_h_ptr = h_ptr;
 	};
-	void Species::add_j_ptr(Species* sp, IxnParamTraj *j_ptr) {
+	void Species::add_j_ptr(Species* sp, IxnParam *j_ptr) {
 		_j_ptr[sp] = j_ptr;
 		// Also add entry in nn count
 		_nn_count[sp] = 0;
-	};
-
-	/********************
-	Validate setup
-	********************/
-
-	void Species::validate_setup() const {
-		std::cout << "--- Validate species: " << _name << " ---" << std::endl;
-		std::cout << "   NNs: " << std::flush;
-		for (auto p: _nn_count) {
-			std::cout << p.first->name() << " " << std::flush;
-		};
-		std::cout << std::endl;
-		if (!_t_opt_ptr) {
-			std::cerr << "ERROR: no time ptr set" << std::endl;
-			exit(EXIT_FAILURE);
-		} else {
-			std::cout << "   Time ptr is set" << std::endl;
-		};
-		if (!_h_ptr) {
-			std::cerr << "ERROR: no h ptr set" << std::endl;
-			exit(EXIT_FAILURE);
-		} else {
-			std::cout << "   h ptr is set" << std::endl;
-		};
 	};
 
 	/********************
@@ -72,10 +37,10 @@ namespace DynamicBoltzmann {
 	********************/
 
 	double Species::h() const {
-		return _h_ptr->get_at_time(*_t_opt_ptr);
+		return _h_ptr->get();
 	};
 	double Species::j(Species *other) const {
-		return _j_ptr.at(other)->get_at_time(*_t_opt_ptr);
+		return _j_ptr.at(other)->get();
 	};
 	int Species::count() const {
 		return _count;

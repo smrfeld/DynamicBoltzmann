@@ -42,6 +42,7 @@ namespace DynamicBoltzmann {
 	****************************************/
 
 	struct Site {
+		int dim;
 		int x;
 		int y;
 		int z;	
@@ -50,8 +51,17 @@ namespace DynamicBoltzmann {
 
 		// Constructor
 		Site();
+		Site(int xIn);
+		Site(int xIn, Species *spIn);
+		Site(int xIn, int yIn);
+		Site(int xIn, int yIn, Species *spIn);
 		Site(int xIn, int yIn, int zIn);
 		Site(int xIn, int yIn, int zIn, Species *spIn);
+		Site(const Site& other);
+		Site(Site&& other);
+		Site& operator=(const Site& other);
+		Site& operator=(Site&& other);
+		~Site();
 	};
 	// Comparator
 	bool operator <(const Site& a, const Site& b);
@@ -66,29 +76,40 @@ namespace DynamicBoltzmann {
 	{
 	private:
 
-		// Internal maps
-		lattice _latt;
+		// Dimensionality
+		int _dim;
 
 		// Size
 		int _box_length;
 
+		// Internal maps
+		lattice _latt;
+
+		// Lookup a site iterator from x,y,z
+		latt_it _look_up(int x);
+		latt_it _look_up(int x, int y);
+		latt_it _look_up(int x, int y, int z);
+
 		// Pointers to species present
 		std::map<std::string,Species*> _sp_map;
 
-		/********************
-		Lookup a site iterator from x,y,z
-		********************/
-
-		latt_it _look_up(int x, int y, int z);
+		// Contructor helpers
+		void _clean_up();
+		void _copy(const Lattice& other);
+		void _copy(Lattice &&other);
 
 	public:
 
 		/********************
-		Constructor/Destructor
+		Constructor
 		********************/
 
-		Lattice(int box_length);
+		Lattice(int dim, int box_length);
 		Lattice();
+		Lattice(const Lattice& other);
+		Lattice(Lattice&& other);
+		Lattice& operator=(const Lattice& other);
+		Lattice& operator=(Lattice&& other);
 		~Lattice();
 
 		/********************

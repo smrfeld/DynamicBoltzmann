@@ -6,6 +6,7 @@
 #include "math.h"
 #include <ctime>
 #include "species.hpp"
+#include <sstream>
 
 /************************************
 * Namespace for DynamicBoltzmann
@@ -18,29 +19,121 @@ namespace DynamicBoltzmann {
 	****************************************/
 
 	// Constructor
-	Site::Site() : Site(0,0,0,nullptr) {};
-	Site::Site(int xIn, int yIn, int zIn) : Site(xIn, yIn, zIn, nullptr) {};	
+	Site::Site() : Site(0,0,0,nullptr) { dim=0; };
+	Site::Site(int xIn) : Site(xIn,0,0,nullptr) { dim=1; };
+	Site::Site(int xIn, Species *spIn) : Site(xIn,0,0,spIn) { dim=1; };
+	Site::Site(int xIn, int yIn) : Site(xIn,yIn,0,nullptr) { dim=2; };
+	Site::Site(int xIn, int yIn, Species *spIn) : Site(xIn,yIn,0,spIn) { dim=2; };
+	Site::Site(int xIn, int yIn, int zIn) : Site(xIn, yIn, zIn, nullptr) { dim=3; };
 	Site::Site(int xIn, int yIn, int zIn, Species *spIn) {
-		this->x = xIn;
-		this->y = yIn;
-		this->z = zIn;
-		this->sp = spIn;
+		dim=3;
+		x = xIn;
+		y = yIn;
+		z = zIn;
+		sp = spIn;
 	};	
+	Site::Site(const Site& other) {
+		dim = other.dim;
+		x = other.x;
+		y = other.y;
+		z = other.z;
+		sp = other.sp;
+		nbrs = other.nbrs;
+	};
+	Site::Site(Site&& other) {
+		dim = other.dim;
+		x = other.x;
+		y = other.y;
+		z = other.z;
+		sp = other.sp;
+		nbrs = other.nbrs;
+		// Clear other
+		other.dim = 0;
+		other.x = 0;
+		other.y = 0;
+		other.z = 0;
+		other.sp = nullptr;
+		other.nbrs.clear();
+	};
+	Site& Site::operator=(const Site& other) {
+		if (this != &other) {
+			dim = other.dim;
+			x = other.x;
+			y = other.y;
+			z = other.z;
+			sp = other.sp;
+			nbrs = other.nbrs;
+		};
+		return *this;
+	};
+	Site& Site::operator=(Site&& other) {
+		if (this != &other) {
+			dim = other.dim;
+			x = other.x;
+			y = other.y;
+			z = other.z;
+			sp = other.sp;
+			nbrs = other.nbrs;
+			// Clear other
+			other.dim = 0;
+			other.x = 0;
+			other.y = 0;
+			other.z = 0;
+			other.sp = nullptr;
+			other.nbrs.clear();
+		};
+		return *this;
+	};
+	Site::~Site() {
+		// Nothing...
+	};
 
 	// Comparator
 	bool operator <(const Site& a, const Site& b) {
-    	return std::tie(a.x, a.y, a.z) < std::tie(b.x, b.y, b.z);
+		if (a.dim == 1) {
+	    	return a.x < b.x;
+	    } else if (a.dim == 2) {
+	    	return std::tie(a.x, a.y) < std::tie(b.x, b.y);
+	    } else if (a.dim == 3) {
+	    	return std::tie(a.x, a.y, a.z) < std::tie(b.x, b.y, b.z);
+	    } else {
+	    	return false;
+	    };
 	};
 	bool operator==(const Site& a, const Site& b) {
-		return std::tie(a.x, a.y, a.z) == std::tie(b.x, b.y, b.z);
+		if (a.dim == 1) {
+	    	return a.x == b.x;
+	    } else if (a.dim == 2) {
+	    	return std::tie(a.x, a.y) == std::tie(b.x, b.y);
+	    } else if (a.dim == 3) {
+	    	return std::tie(a.x, a.y, a.z) == std::tie(b.x, b.y, b.z);
+	    } else {
+	    	return false;
+	    };
 	}; 
 	std::ostream& operator<<(std::ostream& os, const Site& s)
 	{
-		if (s.sp) {
-		    return os << s.x << " " << s.y << " " << s.z << " " << s.sp->name();
-		} else {
-		    return os << s.x << " " << s.y << " " << s.z << " empty";
-		};
+		if (s.dim == 1) {
+			if (s.sp) {
+			    return os << s.x << " " << s.sp->name();
+			} else {
+			    return os << s.x << " empty";
+			};	    
+		} else if (s.dim == 2) {
+			if (s.sp) {
+			    return os << s.x << " " << s.y << " " << s.sp->name();
+			} else {
+			    return os << s.x << " " << s.y << " empty";
+			};	    
+		} else if (s.dim == 3) {
+			if (s.sp) {
+			    return os << s.x << " " << s.y << " " << s.z << " " << s.sp->name();
+			} else {
+			    return os << s.x << " " << s.y << " " << s.z << " empty";
+			};
+	    } else {
+	    	return os;
+	    };
 	};
 
 	/****************************************
@@ -48,19 +141,35 @@ namespace DynamicBoltzmann {
 	****************************************/
 
 	/********************
-	Constructor/Destructor
+	Constructor
 	********************/
 
-	// Constructor
-	Lattice::Lattice(int box_length)
+	Lattice::Lattice(int dim, int box_length)
 	{
-		this->_box_length = box_length;
+		if (dim != 1 && dim != 2 && dim != 3) {
+			std::cerr << "ERROR: only dimensions 1,2,3 are supported for Lattice." << std::endl;
+			exit(EXIT_FAILURE);
+		};
+		_dim = dim;
+		_box_length = box_length;
 
 		// Make a fully linked list of sites
-		for (int x=1; x<=box_length; x++) {
-			for (int y=1; y<=box_length; y++) {
-				for (int z=1; z<=box_length; z++) {
-					_latt.push_back(Site(x,y,z));					
+		if (dim == 1) {
+			for (int x=1; x<=box_length; x++) {
+				_latt.push_back(Site(x));					
+			};
+		} else if (dim == 2) {
+			for (int x=1; x<=box_length; x++) {
+				for (int y=1; y<=box_length; y++) {
+					_latt.push_back(Site(x,y));					
+				};
+			};
+		} else if (dim == 3) {
+			for (int x=1; x<=box_length; x++) {
+				for (int y=1; y<=box_length; y++) {
+					for (int z=1; z<=box_length; z++) {
+						_latt.push_back(Site(x,y,z));					
+					};
 				};
 			};
 		};
@@ -77,36 +186,85 @@ namespace DynamicBoltzmann {
 			if (lit->x+1 <= box_length) {
 				nbrs.push_back(Site(lit->x+1,lit->y,lit->z));
 			};
-			if (lit->y-1 >= 1) {
-				nbrs.push_back(Site(lit->x,lit->y-1,lit->z));
+			if (dim == 2 || dim == 3) {
+				if (lit->y-1 >= 1) {
+					nbrs.push_back(Site(lit->x,lit->y-1,lit->z));
+				};
+				if (lit->y+1 <= box_length) {
+					nbrs.push_back(Site(lit->x,lit->y+1,lit->z));
+				};
 			};
-			if (lit->y+1 <= box_length) {
-				nbrs.push_back(Site(lit->x,lit->y+1,lit->z));
-			};
-			if (lit->z-1 >= 1) {
-				nbrs.push_back(Site(lit->x,lit->y,lit->z-1));
-			};
-			if (lit->z+1 <= box_length) {
-				nbrs.push_back(Site(lit->x,lit->y,lit->z+1));
+			if (dim == 3) {
+				if (lit->z-1 >= 1) {
+					nbrs.push_back(Site(lit->x,lit->y,lit->z-1));
+				};
+				if (lit->z+1 <= box_length) {
+					nbrs.push_back(Site(lit->x,lit->y,lit->z+1));
+				};
 			};
 
 			// Go through neighbors
 			for (auto nbr: nbrs) {
 				// Add as nbr
-				lit->nbrs.push_back(_look_up(nbr.x,nbr.y,nbr.z));
+				if (dim == 1) {
+					lit->nbrs.push_back(_look_up(nbr.x));
+				} else if (dim == 2) {
+					lit->nbrs.push_back(_look_up(nbr.x,nbr.y));
+				} else if (dim == 3) {
+					lit->nbrs.push_back(_look_up(nbr.x,nbr.y,nbr.z));
+				};
 			};
 
 			// Next
 			lit++;
 		};
+
 	};
-	Lattice::Lattice()
-	{
-		this->_box_length = 0;
+	Lattice::Lattice() {
+		_dim = 0;
+		_box_length = 0;
+	};
+	Lattice::Lattice(const Lattice& other) {
+		_copy(other);
+	};
+	Lattice::Lattice(Lattice&& other) {
+		_copy(other);
+	};
+	Lattice& Lattice::operator=(const Lattice& other) {
+		if (this != &other) {
+			_clean_up();
+			_copy(other);
+		};
+		return *this;
+	};
+	Lattice& Lattice::operator=(Lattice&& other) {
+		if (this != &other) {
+			_clean_up();
+			_copy(other);
+		};
+		return *this;
+	};
+	Lattice::~Lattice() {
+		_clean_up();
 	};
 
-	// Destructor
-	Lattice::~Lattice() {};
+	void Lattice::_clean_up() {
+		// Nothing...
+	};
+	void Lattice::_copy(const Lattice& other) {
+		_latt = other._latt;
+		_box_length = other._box_length;
+		_sp_map = other._sp_map;
+	};
+	void Lattice::_copy(Lattice &&other) {
+		_latt = other._latt;
+		_box_length = other._box_length;
+		_sp_map = other._sp_map;
+		// Clear other
+		other._box_length = 0;
+		other._sp_map.clear();
+		other._latt.clear();
+	};
 
 	/********************
 	Add a species
@@ -231,7 +389,7 @@ namespace DynamicBoltzmann {
 		f.open (fname);
 		for (auto l: _latt) {
 			if (l.sp) {
-				f << l.x << " " << l.y << " " << l.z << " " << l.sp->name() << "\n";
+				f << l << "\n";
 			};
 		};
 		f.close();
@@ -248,26 +406,31 @@ namespace DynamicBoltzmann {
 
 		std::ifstream f;
 		f.open(fname);
-		char frag[100]; // fragments of the line
-		int i_frag=0;
 		std::string x="",y="",z="";
 		std::string sp="";
+		std::string line;
+		std::istringstream iss;
 		if (f.is_open()) { // make sure we found it
-			while (!f.eof()) {
-			    f >> frag;
-			    if (i_frag==0) {
-			    	x += frag; i_frag++;
-			    } else if (i_frag==1) {
-			    	y += frag; i_frag++;
-			    } else if (i_frag==2) {
-			    	z += frag; i_frag++;
-			    } else if (i_frag==3) {
-			    	sp += frag;
-			    	// Add to map
-			    	make_mol(_look_up(atoi(x.c_str()),atoi(y.c_str()),atoi(z.c_str())),_sp_map[sp]);
-			    	i_frag = 0;
-			    	sp=""; x=""; y=""; z="";
+			while (getline(f,line)) {
+				if (line == "") { continue; };
+				iss = std::istringstream(line);
+			    iss >> x;
+			    if (_dim == 2 || _dim == 3) {
+				    iss >> y;
 			    };
+			    if (_dim == 3) {
+				    iss >> z;
+			    };
+			    iss >> sp;
+		    	// Add to map
+		    	if (_dim == 1) {
+			    	make_mol(_look_up(atoi(x.c_str())),_sp_map[sp]);
+			    } else if (_dim == 2) {
+			    	make_mol(_look_up(atoi(x.c_str()),atoi(y.c_str())),_sp_map[sp]);
+			    } else if (_dim == 3) {
+			    	make_mol(_look_up(atoi(x.c_str()),atoi(y.c_str()),atoi(z.c_str())),_sp_map[sp]);
+			    };
+		    	sp=""; x=""; y=""; z="";
 			};
 		};
 		f.close();
@@ -374,6 +537,24 @@ namespace DynamicBoltzmann {
 	Lookup a site iterator from x,y,z
 	********************/
 
+	latt_it Lattice::_look_up(int x) {
+		// Figure out index in list
+		int n = x-1;
+
+		// Grab
+		latt_it it = _latt.begin();
+		std::advance(it,n);
+		return it;
+	};
+	latt_it Lattice::_look_up(int x, int y) {
+		// Figure out index in list
+		int n = (x-1)*_box_length + y-1;
+
+		// Grab
+		latt_it it = _latt.begin();
+		std::advance(it,n);
+		return it;
+	};
 	latt_it Lattice::_look_up(int x, int y, int z) {
 		// Figure out index in list
 		int n = (x-1)*_box_length*_box_length + (y-1)*_box_length + z-1;
@@ -383,5 +564,8 @@ namespace DynamicBoltzmann {
 		std::advance(it,n);
 		return it;
 	};
+
+
+
 
 };

@@ -3,6 +3,7 @@
 #include "general.hpp"
 #include <ctime>
 #include <fstream>
+#include <algorithm>
 
 /************************************
 * Namespace for DynamicBoltzmann
@@ -41,7 +42,7 @@ namespace DynamicBoltzmann {
 	Constructor
 	********************/
 
-	OptProblem::OptProblem(std::vector<Dim> dims, std::vector<std::string> species, double t_max, int n_t, int batch_size, int n_annealing, int box_length, double dopt, int n_opt) : _latt(box_length), _time("time",0.0,t_max,n_t)
+	OptProblem::OptProblem(std::vector<Dim> dims, std::vector<std::string> species, double t_max, int n_t, int batch_size, int n_annealing, int box_length, double dopt, int n_opt, int lattice_dim) : _latt(lattice_dim,box_length), _time("time",0.0,t_max,n_t)
 	{
 		// Set parameters
 		if (DIAG_SETUP) { std::cout << "Copying params..." << std::flush; };
@@ -72,9 +73,9 @@ namespace DynamicBoltzmann {
 		if (DIAG_SETUP) { std::cout << "Create ixn params..." << std::flush; };
 		for (auto d: dims) {
 			if (d.type==H) { 
-				_ixn_params.push_back(IxnParam(d.name,Hp,_find_species(d.species1),d.min,d.max,d.n,d.init,n_t));
+				_ixn_params.push_back(IxnParamTraj(d.name,Hp,_find_species(d.species1),d.min,d.max,d.n,d.init,n_t));
 			} else { 
-				_ixn_params.push_back(IxnParam(d.name,Jp,_find_species(d.species1),_find_species(d.species2),d.min,d.max,d.n,d.init,n_t));
+				_ixn_params.push_back(IxnParamTraj(d.name,Jp,_find_species(d.species1),_find_species(d.species2),d.min,d.max,d.n,d.init,n_t));
 			};
 		};
 		if (DIAG_SETUP) { std::cout << "ok." << std::endl; };
@@ -82,7 +83,7 @@ namespace DynamicBoltzmann {
 		// Add the interaction params and time ptr to the species
 		if (DIAG_SETUP) { std::cout << "Add ixn params to species..." << std::flush; };
 		Species *sp1=nullptr, *sp2=nullptr;
-		IxnParam *ip_ptr=nullptr;
+		IxnParamTraj *ip_ptr=nullptr;
 		for (auto d: dims) {
 			ip_ptr = _find_ixn_param(d.name);
 			if (d.type==H) {
@@ -102,7 +103,7 @@ namespace DynamicBoltzmann {
 
 		// Create the basis functions
 		if (DIAG_SETUP) { std::cout << "Create basis funcs..." << std::flush; };
-		std::vector<IxnParam*> bf_ips;
+		std::vector<IxnParamTraj*> bf_ips;
 		for (auto d: dims) {
 			// Find the basis func dimensions
 			bf_ips.clear();
@@ -128,7 +129,7 @@ namespace DynamicBoltzmann {
 		// Create the variational terms
 		if (DIAG_SETUP) { std::cout << "Create var terms..." << std::flush; };
 		BasisFunc *num_bf_ptr = nullptr;
-		IxnParam *ixn_param_ptr = nullptr;
+		IxnParamTraj *ixn_param_ptr = nullptr;
 		// Go through numerators
 		for (auto num: dims) {
 			// Go through denominators
@@ -145,14 +146,14 @@ namespace DynamicBoltzmann {
 				// Find the basis func corresponding to the numerator
 				num_bf_ptr = _find_basis_func("F_"+num.name);
 				// Create the var term
-				_var_terms.push_back(VarTerm("var_"+num.name+"_wrt_F_"+denom.name, ixn_param_ptr, bf_ptr, bf_ips, num_bf_ptr, num.basis_func_dims.size(), n_t));
+				_var_terms.push_back(VarTermTraj("var_"+num.name+"_wrt_F_"+denom.name, ixn_param_ptr, bf_ptr, bf_ips, num_bf_ptr, num.basis_func_dims.size(), n_t));
 			};
 		};
 		if (DIAG_SETUP) { std::cout << "ok." << std::endl; };
 
 		// Add the pointers to variational terms needed to update this var term
 		if (DIAG_SETUP) { std::cout << "Add ptrs to var term..." << std::flush; };
-		VarTerm* vt_ptr=nullptr;
+		VarTermTraj* vt_ptr=nullptr;
 		// Go through numerators
 		for (auto num: dims) {
 			// Go through denoms
@@ -190,12 +191,28 @@ namespace DynamicBoltzmann {
 		_copy(other);
 	};
 
+	OptProblem::OptProblem(OptProblem&& other) : _time(other._time)
+	{
+		other._clean_up();
+	};
+
 	OptProblem& OptProblem::operator=(const OptProblem& other)
 	{
 		if (this != &other)
 		{			
 			_clean_up();
 			_copy(other);
+		};
+		return *this;		
+	};
+
+	OptProblem& OptProblem::operator=(OptProblem&& other)
+	{
+		if (this != &other)
+		{
+			_clean_up();
+			_copy(other);
+			other._clean_up();
 		};
 		return *this;		
 	};
@@ -432,7 +449,7 @@ namespace DynamicBoltzmann {
 					if (DIAG_SOLVE) { std::cout << "      Record awake moments" << std::endl; };
 
 					for (auto itp = _ixn_params.begin(); itp != _ixn_params.end(); itp++) {
-						itp->moments_retrieve_at_time(IxnParam::AWAKE,_t_opt,_n_batch);
+						itp->moments_retrieve_at_time(IxnParamTraj::AWAKE,_t_opt,_n_batch);
 					};
 
 					/*****
@@ -450,7 +467,7 @@ namespace DynamicBoltzmann {
 					if (DIAG_SOLVE) { std::cout << "      Record asleep moments" << std::endl; };
 
 					for (auto itp = _ixn_params.begin(); itp != _ixn_params.end(); itp++) {
-						itp->moments_retrieve_at_time(IxnParam::ASLEEP,_t_opt,_n_batch);
+						itp->moments_retrieve_at_time(IxnParamTraj::ASLEEP,_t_opt,_n_batch);
 					};
 				};
 
@@ -607,7 +624,7 @@ namespace DynamicBoltzmann {
 					if (DIAG_SOLVE) { std::cout << "      Record awake moments" << std::endl; };
 
 					for (auto itp = _ixn_params.begin(); itp != _ixn_params.end(); itp++) {
-						itp->moments_retrieve_at_time(IxnParam::AWAKE,_t_opt);
+						itp->moments_retrieve_at_time(IxnParamTraj::AWAKE,_t_opt);
 					};
 
 					/*****
@@ -625,7 +642,7 @@ namespace DynamicBoltzmann {
 					if (DIAG_SOLVE) { std::cout << "      Record asleep moments" << std::endl; };
 
 					for (auto itp = _ixn_params.begin(); itp != _ixn_params.end(); itp++) {
-						itp->moments_retrieve_at_time(IxnParam::ASLEEP,_t_opt);
+						itp->moments_retrieve_at_time(IxnParamTraj::ASLEEP,_t_opt);
 					};
 
 				};
@@ -678,7 +695,7 @@ namespace DynamicBoltzmann {
 		char frag[100]; // fragments of the line
 		std::string sname="",sval="";
 		int i_frag=0;
-		IxnParam *ip;
+		IxnParamTraj *ip;
 
 		if (f.is_open()) { // make sure we found it
 			while (!f.eof()) {
@@ -787,7 +804,7 @@ namespace DynamicBoltzmann {
 		std::cerr << "ERROR: could not find species: " << name << std::endl;
 		exit(EXIT_FAILURE);
 	};
-	IxnParam* OptProblem::_find_ixn_param(std::string name) {
+	IxnParamTraj* OptProblem::_find_ixn_param(std::string name) {
 		for (auto it=_ixn_params.begin(); it!=_ixn_params.end(); it++) {
 			if (it->name() == name) {
 				return &*it;
@@ -805,7 +822,7 @@ namespace DynamicBoltzmann {
 		std::cerr << "ERROR: could not find basis func: " << name << std::endl;
 		exit(EXIT_FAILURE);
 	};
-	VarTerm* OptProblem::_find_var_term(std::string name) {
+	VarTermTraj* OptProblem::_find_var_term(std::string name) {
 		for (auto it=_var_terms.begin(); it!=_var_terms.end(); it++) {
 			if (it->name() == name) {
 				return &*it;

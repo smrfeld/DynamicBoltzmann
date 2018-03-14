@@ -1,6 +1,6 @@
-#ifndef IXN_PARAM_H
-#define IXN_PARAM_H
-#include "ixn_param.hpp"
+#ifndef VAR_TERM_TRAJ_h
+#define VAR_TERM_TRAJ_h
+#include "var_term_traj.hpp"
 #endif
 
 #ifndef LATTICE_H
@@ -74,13 +74,13 @@ namespace DynamicBoltzmann {
 		int _n_param;
 
 		// List of interaction parameters
-		std::list<IxnParam> _ixn_params;
+		std::list<IxnParamTraj> _ixn_params;
 
 		// List of basis funcs
 		std::list<BasisFunc> _bfs;
 
 		// List of variational terms
-		std::list<VarTerm> _var_terms;
+		std::list<VarTermTraj> _var_terms;
 
 		// Time dimension
 		Grid _time;
@@ -121,19 +121,13 @@ namespace DynamicBoltzmann {
 		// Flags
 		bool _write_bf_only_last;
 
-		/********************
-		Search functions
-		********************/
-
+		// Search functions
 		Species* _find_species(std::string name);
-		IxnParam* _find_ixn_param(std::string name);
+		IxnParamTraj* _find_ixn_param(std::string name);
 		BasisFunc* _find_basis_func(std::string name);
-		VarTerm* _find_var_term(std::string name);
+		VarTermTraj* _find_var_term(std::string name);
 
-		/********************
-		Helpers
-		********************/
-
+		// Constructor helpers
 		void _clean_up();
 		void _copy(const OptProblem& other);
 
@@ -144,34 +138,80 @@ namespace DynamicBoltzmann {
 		********************/
 
 		/**
-		 * @brief      { Constructor }
-		 * @param[in]  dims         The dims
-		 * @param[in]  species      The species
-		 * @param[in]  t_max        The t maximum
-		 * @param[in]  n_t          The number of time points in the trajectory
-		 * @param[in]  batch_size   The batch size
-		 * @param[in]  n_annealing  The n annealing
-		 * @param[in]  box_length   The box length
-		 * @param[in]  dopt         The dopt
-		 * @param[in]  n_opt        The n option
+		 * @brief      Constructor
+		 * @param[in]  dims         Vector of dimensions
+		 * @param[in]  species      Vector of species present
+		 * @param[in]  t_max        Maximum time
+		 * @param[in]  n_t          No. of timepoints in the trajectory
+		 * @param[in]  batch_size   Batch size
+		 * @param[in]  n_annealing  No. annealing steps
+		 * @param[in]  box_length   Box length
+		 * @param[in]  dopt         Optimization step interval
+		 * @param[in]  n_opt        No. optimization steps
+		 * @param[in]  lattice_dim  The lattice dimension
 		 */
-		OptProblem(std::vector<Dim> dims, std::vector<std::string> species, double t_max, int n_t, int batch_size, int n_annealing, int box_length, double dopt, int n_opt);
+		OptProblem(std::vector<Dim> dims, std::vector<std::string> species, double t_max, int n_t, int batch_size, int n_annealing, int box_length, double dopt, int n_opt, int lattice_dim=3);
+
+		/**
+		 * @brief      Copy constructor
+		 * @param[in]  other  The other
+		 */
 		OptProblem(const OptProblem& other);
-		OptProblem & operator=(const OptProblem& other);
+
+		/**
+		 * @brief      Move constructor
+		 * @param[in]  other  The other
+		 */
+		OptProblem(OptProblem&& other);
+
+		/**
+		 * @brief      Copy assignment
+		 * @param[in]  other  The other
+		 * @return     Copied
+		 */
+		OptProblem& operator=(const OptProblem& other);
+
+	    /**
+	     * @brief      Move assignment
+	     * @param[in]  other  The other
+	     * @return     Moved
+	     */
+	    OptProblem& operator=(OptProblem&& other);
+
+	    /**
+	     * @brief      Destructor
+	     */
 		~OptProblem();
 
 		/********************
 		Set properties	
 		********************/
 
+		/**
+		 * @brief      Sets the dir for i/o.
+		 * @param[in]  dir   The dir
+		 */
 		void set_dir_io(std::string dir);
+
+		/**
+		 * @brief      Sets the filename index to start reading.
+		 * @param[in]  idx   The index
+		 */
 		void set_fname_start_idx(int idx);
+		
+		/**
+		 * @brief      Adds a filename for the lattices.
+		 * @param[in]  f     The filename
+		 */
 		void add_fname(std::string f);
 
 		/********************
 		Validate setup
 		********************/
 
+		/**
+		 * @brief      Validate the setup by printing.
+		 */
 		void validate_setup() const;
 
 		/********************

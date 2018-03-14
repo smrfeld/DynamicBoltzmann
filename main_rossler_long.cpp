@@ -13,7 +13,7 @@ int main() {
 	dims.push_back(Dim("hC",DimType::H,"C",{"hA","hB","hC"},-2.0,0.0,20,-1.0));
 	dims.push_back(Dim("jAA",DimType::J,"A","A",{"jAA","jAB","jAC"},-0.1,1.4,20,0.0));
 	dims.push_back(Dim("jAB",DimType::J,"A","B",{"jAA","jAB","jBB"},-0.3,0.8,20,0.0));
-	dims.push_back(Dim("jAC",DimType::J,"A","C",{"jAA","jAC","jCC"},-0.8,0.3,20,0.0));
+	dims.push_back(Dim("jAC",DimType::J,"A","C",{"jAA","jAC","jCC"},-0.8,0.8,20,0.0));
 	dims.push_back(Dim("jBB",DimType::J,"B","B",{"jAA","jAB","jBB"},-0.1,1.1,20,0.0));
 	dims.push_back(Dim("jBC",DimType::J,"B","C",{"jBB","jBC","jCC"},-0.5,0.8,20,0.0));
 	dims.push_back(Dim("jCC",DimType::J,"C","C",{"jAC","jBC","jCC"},-0.25,1.5,20,0.0));
@@ -23,7 +23,7 @@ int main() {
 	int n_annealing = 100000;
 	int box_length = 10;
 	double dopt = 0.01;
-	int n_opt = 200;
+	int n_opt = 100;
 	
 	double t_max;
 	int n_t;
@@ -33,6 +33,7 @@ int main() {
 	Solve all at once
 	********************/
 
+	/*
 	t_max = 2.0;
 	n_t = 200;
 
@@ -54,12 +55,12 @@ int main() {
 	std::cout << "Solving..." << std::endl;
 	opt1->solve(true);
 	std::cout << "fin." << std::endl;
+	*/
 
 	/********************
 	Solve in segments
 	********************/
 
-	/*
 	// Times
 	t_max=0.0;
 	n_t = 0;
@@ -71,9 +72,9 @@ int main() {
 		n_t += 20;
 
 		if (i_loop==1) {
-			dopt = 0.1;
+			dopt = 0.01;
 		} else {
-			dopt = 0.025;
+			dopt = 0.002;
 		};
 
 		// Opt problem
@@ -112,7 +113,6 @@ int main() {
 		delete opt1;
 
 	};
-	*/
 	
 	return 0;
 }

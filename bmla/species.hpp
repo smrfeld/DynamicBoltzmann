@@ -26,7 +26,7 @@ namespace DynamicBoltzmann {
 	Forward declare
 	****************************************/
 
-	class IxnParamTraj;
+	class IxnParam;
 
 	/****************************************
 	Species
@@ -43,27 +43,18 @@ namespace DynamicBoltzmann {
 		std::map<Species*,int> _nn_count;
 		int _count;
 
-		// Current time in the optimization
-		int *_t_opt_ptr;
-
 		// Pointers to the interaction params
-		IxnParamTraj *_h_ptr;
-		std::map<Species*,IxnParamTraj*> _j_ptr;
+		IxnParam *_h_ptr;
+		std::map<Species*,IxnParam*> _j_ptr;
 
 	public:
 
 		// Constructor
 		Species(std::string name);
 
-		// Set pointer to the opt time variable
-		void set_opt_time_ptr(int *t_opt_ptr);
-
 		// Set h, j ptr
-		void set_h_ptr(IxnParamTraj *h_ptr);
-		void add_j_ptr(Species* sp, IxnParamTraj *j_ptr);
-
-		// Validate setup
-		void validate_setup() const;
+		void set_h_ptr(IxnParam *h_ptr);
+		void add_j_ptr(Species* sp, IxnParam *j_ptr);
 
 		// Setters/getters
 		double h() const;

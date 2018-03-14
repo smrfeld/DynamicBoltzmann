@@ -3,6 +3,7 @@
 #include <fstream>
 #include "math.h"
 #include <sstream>
+#include <iomanip>
 
 /************************************
 * Namespace for DynamicBoltzmann
@@ -40,6 +41,10 @@ namespace DynamicBoltzmann {
 		_n_opt = n_opt;
 		_n_annealing = n_annealing;
 		_n_batch = batch_size;
+		_mse_quit_mode = false;
+		_mse_quit = 0.;
+		_l2_reg = false;
+		_lambda = 0.;
 
 		// Create the species and add to the lattice
 		for (auto s: species) {
@@ -111,6 +116,10 @@ namespace DynamicBoltzmann {
 		_latt = other._latt;
 		_dopt = other._dopt;
 		_n_opt = other._n_opt;
+		_mse_quit_mode = other._mse_quit_mode;
+		_mse_quit = other._mse_quit;
+		_l2_reg = other._l2_reg;
+		_lambda = other._lambda;
 	};
 	void BMLA::_copy(BMLA&& other) {
 		_n_param = other._n_param;
@@ -121,6 +130,10 @@ namespace DynamicBoltzmann {
 		_latt = other._latt;
 		_dopt = other._dopt;
 		_n_opt = other._n_opt;
+		_mse_quit_mode = other._mse_quit_mode;
+		_mse_quit = other._mse_quit;
+		_l2_reg = other._l2_reg;
+		_lambda = other._lambda;
 		// Clear other
 		other._n_param = 0;
 		other._ixn_params.clear();
@@ -130,11 +143,25 @@ namespace DynamicBoltzmann {
 		other._latt = Lattice();
 		other._dopt = 0.;
 		other._n_opt = 0;
+		other._mse_quit_mode = false;
+		other._mse_quit = 0.;
+		other._l2_reg = false;
+		other._lambda = 0.;
 	};
 
 	/********************
 	Print (compare) moments
 	********************/
+
+	void BMLA::_print_ixn_params(bool new_line) const {
+		std::cout << "   Ixn params: ";
+ 		for (auto it=_ixn_params.begin(); it!=_ixn_params.end(); it++) {
+			std::cout << it->get() << " ";
+		};
+		if (new_line) {
+			std::cout << std::endl;
+		};
+	};
 
 	void BMLA::_print_moments() const {
 		std::cout << "   Moments Initial: ";
@@ -147,12 +174,42 @@ namespace DynamicBoltzmann {
 			std::cout << it->get_moment(IxnParam::ASLEEP) << " ";
 		};
 		std::cout << std::endl;
-		// MSE
+	};
+	void BMLA::_print_mse(bool new_line) const {
+		std::cout << "   MSE: " << _get_mse() << "%";
+		if (new_line) {
+			std::cout << std::endl;
+		};
+	};
+
+	/********************
+	Get MSE
+	********************/
+
+	double BMLA::_get_mse() const {
 		double mse=0.0;
 		for (auto it=_ixn_params.begin(); it!=_ixn_params.end(); it++) {
 			mse += abs(it->moments_diff())/it->get_moment(IxnParam::AWAKE);
 		};
-		std::cout << "   MSE: " << 100*mse/_n_param << "%" << std::endl;
+		return 100*mse/_n_param;
+	};
+
+	/********************
+	Set and turn on l2 reg
+	********************/
+
+	void BMLA::set_l2_reg(double lambda) {
+		_l2_reg = true;
+		_lambda = lambda;
+	};
+
+	/********************
+	Set and turn on MSE quit mode
+	********************/
+
+	void BMLA::set_mse_quit(double mse_quit) {
+		_mse_quit_mode = true;
+		_mse_quit = mse_quit;
 	};
 
 	/********************
@@ -161,9 +218,11 @@ namespace DynamicBoltzmann {
 
 	void BMLA::solve(std::string fname, bool verbose)
 	{
-		// Reset the params
+		// Reset the params to the guesses, and the moments to 0
 		for (auto it=_ixn_params.begin(); it!=_ixn_params.end(); it++) {
 			it->reset();
+			it->moments_reset(IxnParam::AWAKE);
+			it->moments_reset(IxnParam::ASLEEP);
 		};
 
 		// Record the initial moments - these will never change!
@@ -179,13 +238,13 @@ namespace DynamicBoltzmann {
 				std::cout << "Opt step: " << i_opt << " / " << _n_opt << std::endl;
 			};
 
-			// Print out the current params
-			if (verbose) {
-				std::cout << "   Params: ";
-				for (auto it=_ixn_params.begin(); it!=_ixn_params.end(); it++) {
-					std::cout << it->get() << " ";
+			// Check MSE to see if quit
+			if (_mse_quit_mode) {
+				if (_get_mse() < _mse_quit) {
+					// Quit!
+					std::cout << "--- MSE is low enough: " << _get_mse() << " < " << _mse_quit << " quitting! ---" << std::endl;
+					break;
 				};
-				std::cout << std::endl;
 			};
 
 			// Reset the asleep moments
@@ -212,25 +271,24 @@ namespace DynamicBoltzmann {
 					it->moments_retrieve(IxnParam::ASLEEP, _n_batch);
 				};
 			};
-			if (verbose) {
-				std::cout << std::endl;
-			};
 
-			// Print out the moments
+			// Print out the MSE
 			if (verbose) {
-				_print_moments();
+				_print_ixn_params(false);
+				_print_mse();
 			};
 
 			// Update the params
 			for (auto it=_ixn_params.begin(); it!=_ixn_params.end(); it++) {
-				it->update(_dopt);
-			};
-
-			// Compare final moments
-			if (!verbose && i_opt == _n_opt-1) {
-				_print_moments();
+				it->update(_dopt,_l2_reg,_lambda);
 			};
 		};
+
+		// Report final
+		std::cout << "--- Final ---" << std::endl;
+		_print_ixn_params();
+		_print_moments();
+		_print_mse();
 	};
 
 	/********************

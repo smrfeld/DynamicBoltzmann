@@ -2,6 +2,7 @@
 #include "../general.hpp"
 #include <iostream>
 #include <fstream>
+#include "math.h"
 
 /************************************
 * Namespace for DynamicBoltzmann
@@ -58,6 +59,7 @@ namespace DynamicBoltzmann {
 	};
 	void IxnParam::_copy(const IxnParam& other)
 	{
+		_name = other._name;
 		_type = other._type;
 		_sp1 = other._sp1;
 		_sp2 = other._sp2;
@@ -68,6 +70,7 @@ namespace DynamicBoltzmann {
 	};
 	void IxnParam::_copy(IxnParam&& other)
 	{
+		_name = other._name;
 		_type = other._type;
 		_sp1 = other._sp1;
 		_sp2 = other._sp2;
@@ -76,6 +79,7 @@ namespace DynamicBoltzmann {
 		_asleep = other._asleep;
 		_awake = other._awake;
 		// Clear other
+		other._name = "";
 		other._sp1 = nullptr;
 		other._sp2 = nullptr;
 		other._val = 0.;
@@ -89,8 +93,15 @@ namespace DynamicBoltzmann {
 	Update
 	********************/
 
-	void IxnParam::update(double dopt) {
+	void IxnParam::update(double dopt, bool l2_reg, double lambda) {
 		_val += dopt * moments_diff();
+		if (l2_reg) {
+			if (_val > 0) {
+				_val -= lambda * 2. * abs(_val);
+			} else {
+				_val += lambda * 2. * abs(_val);
+			};
+		};
 	};
 
 	/********************

@@ -77,8 +77,21 @@ namespace DynamicBoltzmann {
 		// No opt steps
 		int _n_opt;
 
-		// Compare moments (print)
+		// If the MSE dips below this, quit
+		bool _mse_quit_mode;
+		double _mse_quit; // in percent
+
+		// L2 reg
+		bool _l2_reg;
+		double _lambda;
+
+		// Print
+		void _print_ixn_params(bool new_line=true) const;
 		void _print_moments() const;
+		void _print_mse(bool new_line=true) const;
+
+		// Get the mse
+		double _get_mse() const;
 
 		// Search functions
 		Species* _find_species(std::string name);
@@ -98,6 +111,12 @@ namespace DynamicBoltzmann {
 		BMLA& operator=(const BMLA& other);
 	    BMLA& operator=(BMLA&& other);
 		~BMLA();
+
+		// Set and turn on l2 regularizer
+		void set_l2_reg(double lambda);
+
+		// Set and turn on MSE quit mode
+		void set_mse_quit(double mse_quit);
 
 		// Solve for the h,j corresponding to a given lattice
 		void solve(std::string fname, bool verbose=false);

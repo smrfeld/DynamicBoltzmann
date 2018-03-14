@@ -70,7 +70,7 @@ namespace DynamicBoltzmann {
 		~IxnParam();
 
 		// Update based on diff
-		void update(double dopt);
+		void update(double dopt, bool l2_reg=false, double lambda=0.);
 
 		// Getters/setters
 		std::string name() const;

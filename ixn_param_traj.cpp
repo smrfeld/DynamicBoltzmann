@@ -114,7 +114,7 @@ namespace DynamicBoltzmann {
 	};
 
 	/********************
-	Check if this ixn param is a visible to hidden for a given species name
+	Check if this ixn param is...
 	********************/
 
 	bool IxnParamTraj::is_w_with_species(std::string species_name) const {

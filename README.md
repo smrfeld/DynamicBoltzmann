@@ -18,7 +18,7 @@ g++ -std=c++14 -O3 -L./ -ldynamicboltz myprogram.cpp -o myprogram.o
 To build the library called `bmla` - navigate to the dir `bmla`, then:
 ```
 g++ -std=c++14 -O3 -c -fpic bmla.cpp ixn_param.cpp species.cpp
-g++ -std=c++14 -O3 -shared -o libbmla.so bmla.o ../general.o species.o ixn_param.o ../lattice.o
+g++ -std=c++14 -O3 -shared -o libbmla.so bmla.o ../general.o species.o ixn_param.o ../lattice.o ../hidden_unit.o
 ```
 
 Link against it using

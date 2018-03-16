@@ -17,8 +17,53 @@ namespace DynamicBoltzmann {
 
 		// Ptrs
 		_h_ptr = nullptr;
+		_w_ptr = nullptr;
+	};
+	Species::Species(const Species& other) {
+		_copy(other);
+	};
+	Species::Species(Species&& other) {
+		_copy(other);
+		other._reset();
+	};
+	Species& Species::operator=(const Species& other) {
+		if (this != &other) {
+			_clean_up();
+			_copy(other);
+		};
+		return *this;
+	};
+	Species& Species::operator=(Species&& other) {
+		if (this != &other) {
+			_clean_up();
+			_copy(other);
+			other._reset();
+		};
+		return *this;
+	};
+	Species::~Species() {
+		_clean_up();
 	};
 
+	void Species::_clean_up() {
+		// Nothing...
+	};
+	void Species::_reset() {
+		_name = "";
+		_nn_count.clear();
+		_count = 0;
+		_h_ptr = nullptr;
+		_j_ptr.clear();
+		_w_ptr = nullptr;
+	};
+	void Species::_copy(const Species& other) {
+		_name = other._name;
+		_nn_count = other._nn_count;
+		_count = other._count;
+		_h_ptr = other._h_ptr;
+		_j_ptr = other._j_ptr;
+		_w_ptr = other._w_ptr;
+	};
 	/********************
 	Set h, j ptr
 	********************/
@@ -31,6 +76,9 @@ namespace DynamicBoltzmann {
 		// Also add entry in nn count
 		_nn_count[sp] = 0;
 	};
+	void Species::set_w_ptr(IxnParam *w_ptr) {
+		_w_ptr = w_ptr;
+	};
 
 	/********************
 	Setters/getters
@@ -41,6 +89,9 @@ namespace DynamicBoltzmann {
 	};
 	double Species::j(Species *other) const {
 		return _j_ptr.at(other)->get();
+	};
+	double Species::w() const {
+		return _w_ptr->get();
 	};
 	int Species::count() const {
 		return _count;

@@ -37,6 +37,7 @@ namespace DynamicBoltzmann {
 	};
 	IxnParam::IxnParam(IxnParam&& other) {
 		_copy(other);
+		other._reset();
 	};
 	IxnParam& IxnParam::operator=(const IxnParam& other) {
 		if (this != &other)
@@ -51,6 +52,7 @@ namespace DynamicBoltzmann {
 		{
 			_clean_up();
 			_copy(other);
+			other._reset();
 		};
 		return *this;
 	};
@@ -63,31 +65,57 @@ namespace DynamicBoltzmann {
 		_type = other._type;
 		_sp1 = other._sp1;
 		_sp2 = other._sp2;
+		_conns = other._conns;
 		_val = other._val;
 		_val_guess = other._val_guess;
 		_asleep = other._asleep;
 		_awake = other._awake;
 	};
-	void IxnParam::_copy(IxnParam&& other)
+	void IxnParam::_reset()
 	{
-		_name = other._name;
-		_type = other._type;
-		_sp1 = other._sp1;
-		_sp2 = other._sp2;
-		_val = other._val;
-		_val_guess = other._val_guess;
-		_asleep = other._asleep;
-		_awake = other._awake;
-		// Clear other
-		other._name = "";
-		other._sp1 = nullptr;
-		other._sp2 = nullptr;
-		other._val = 0.;
-		other._val_guess = 0.;
-		other._asleep = 0.;
-		other._awake = 0.;
+		_name = "";
+		_sp1 = nullptr;
+		_sp2 = nullptr;
+		_conns.clear();
+		_val = 0.;
+		_val_guess = 0.;
+		_asleep = 0.;
+		_awake = 0.;
 	};
 	void IxnParam::_clean_up() {};
+
+	/********************
+	Check if this ixn param is...
+	********************/
+
+	bool IxnParam::is_w_with_species(std::string species_name) const {
+		if (_type == Wp && _sp1->name() == species_name) {
+			return true;
+		} else {
+			return false;
+		};
+	};
+
+	bool IxnParam::is_j_with_species(std::string species_name_1, std::string species_name_2) const {
+		if (_type == Jp) {
+			if ((_sp1->name() == species_name_1 && _sp2->name() == species_name_2) || (_sp1->name() == species_name_2 && _sp2->name() == species_name_1)) {
+				return true;
+			};
+		};
+		return false;
+	};
+
+	/********************
+	Add a visible->hidden unit connection
+	********************/
+
+	void IxnParam::add_visible_hidden_connection(Site *sptr, HiddenUnit *hup) {
+		if (_type != Wp) {
+			std::cerr << "ERROR: adding visible to hidden connection to wrong type of IxnParam" << std::endl;
+			exit(EXIT_FAILURE);
+		};
+		_conns.push_back(std::make_pair(sptr,hup));
+	};
 
 	/********************
 	Update

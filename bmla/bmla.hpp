@@ -1,8 +1,3 @@
-#ifndef LATTICE_h
-#define LATTICE_h
-#include "../lattice.hpp"
-#endif
-
 #ifndef IXN_PARAM_h
 #define IXN_PARAM_h
 #include "ixn_param.hpp"
@@ -24,7 +19,7 @@ namespace DynamicBoltzmann {
 	****************************************/
 
 	// Type of dimension
-	enum DimType { H, J };
+	enum DimType { H, J, W };
 
 	struct Dim {
 		// Name
@@ -62,6 +57,10 @@ namespace DynamicBoltzmann {
 		// Species present
 		std::list<Species> _species;
 
+		// List of hidden units, and flag if they exist
+		bool _hidden_layer_exists;
+		std::list<HiddenUnit> _hidden_units;
+
 		// Batch size
 		int _n_batch;
 
@@ -93,14 +92,19 @@ namespace DynamicBoltzmann {
 		// Get the mse
 		double _get_mse() const;
 
+		// Add a hidden unit
+		void _add_hidden_unit(std::vector<Site*> conns, std::string species);
+
 		// Search functions
-		Species* _find_species(std::string name);
-		IxnParam* _find_ixn_param(std::string name);
+		Species* _find_species(std::string name, bool enforce_success=true);
+		IxnParam* _find_ixn_param(std::string name, bool enforce_success=true);
+		IxnParam* _find_ixn_param_j_by_species(std::string species_name_1, std::string species_name_2, bool enforce_success=true);
+		IxnParam* _find_ixn_param_w_by_species(std::string species_name, bool enforce_success=true);
 
 		// Constructor helpers
 		void _clean_up();
 		void _copy(const BMLA& other);
-		void _copy(BMLA&& other);
+		void _reset();
 
 	public:
 
@@ -111,6 +115,11 @@ namespace DynamicBoltzmann {
 		BMLA& operator=(const BMLA& other);
 	    BMLA& operator=(BMLA&& other);
 		~BMLA();
+
+		// Any dim
+		void add_hidden_unit(std::vector<std::vector<int>> lattice_idxs, std::string species);
+		// 1D specific
+		void add_hidden_unit(std::vector<int> lattice_idxs, std::string species);
 
 		// Set and turn on l2 regularizer
 		void set_l2_reg(double lambda);

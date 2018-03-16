@@ -13,6 +13,11 @@
 #include "species.hpp"
 #endif
 
+#ifndef HIDDEN_UNIT_h
+#define HIDDEN_UNIT_h
+#include "../hidden_unit.hpp"
+#endif
+
 /************************************
 * Namespace for DynamicBoltzmann
 ************************************/
@@ -24,7 +29,7 @@ namespace DynamicBoltzmann {
 	****************************************/
 
 	// Enumeration of type of dimension
-	enum IxnParamType { Hp, Jp };
+	enum IxnParamType { Hp, Jp, Wp };
 
 	class IxnParam {
 
@@ -37,8 +42,14 @@ namespace DynamicBoltzmann {
 		IxnParamType _type;
 
 		// Species
+		// If Hp or Wp: only sp1
 		Species *_sp1;
+		// If Jp: also sp2
 		Species *_sp2;
+
+		// If Wp:
+		// Connects sites (visible) to hidden units
+		std::vector<std::pair<Site*,HiddenUnit*> > _conns;
 
 		// Number of time points in these trajs
 		int _n_t;
@@ -55,7 +66,7 @@ namespace DynamicBoltzmann {
 
 		// Copy, clean up
 		void _copy(const IxnParam& other);
-		void _copy(IxnParam&& other);
+		void _reset();
 		void _clean_up();
 
 	public:
@@ -68,6 +79,13 @@ namespace DynamicBoltzmann {
 		IxnParam & operator=(const IxnParam& other);
 		IxnParam & operator=(IxnParam&& other);
 		~IxnParam();
+
+		// Check if this ixn param is...
+		bool is_w_with_species(std::string species_name) const;
+		bool is_j_with_species(std::string species_name_1, std::string species_name_2) const;
+
+		// Add a visible->hidden unit connection
+		void add_visible_hidden_connection(Site *sptr, HiddenUnit *hup);
 
 		// Update based on diff
 		void update(double dopt, bool l2_reg=false, double lambda=0.);

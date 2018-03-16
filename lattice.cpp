@@ -1,11 +1,10 @@
-#include "lattice.hpp"
+#include "var_term_traj.hpp"
 #include <iostream>
 #include <fstream>
 #include <numeric>
 #include "general.hpp"
 #include "math.h"
 #include <ctime>
-#include "species.hpp"
 #include <sstream>
 
 /************************************
@@ -33,60 +32,52 @@ namespace DynamicBoltzmann {
 		sp = spIn;
 	};	
 	Site::Site(const Site& other) {
-		dim = other.dim;
-		x = other.x;
-		y = other.y;
-		z = other.z;
-		sp = other.sp;
-		nbrs = other.nbrs;
+		_copy(other);
 	};
 	Site::Site(Site&& other) {
-		dim = other.dim;
-		x = other.x;
-		y = other.y;
-		z = other.z;
-		sp = other.sp;
-		nbrs = other.nbrs;
-		// Clear other
-		other.dim = 0;
-		other.x = 0;
-		other.y = 0;
-		other.z = 0;
-		other.sp = nullptr;
-		other.nbrs.clear();
+		_copy(other);
+		other._reset();
 	};
 	Site& Site::operator=(const Site& other) {
 		if (this != &other) {
-			dim = other.dim;
-			x = other.x;
-			y = other.y;
-			z = other.z;
-			sp = other.sp;
-			nbrs = other.nbrs;
+			_clean_up();
+			_copy(other);
 		};
 		return *this;
 	};
 	Site& Site::operator=(Site&& other) {
 		if (this != &other) {
-			dim = other.dim;
-			x = other.x;
-			y = other.y;
-			z = other.z;
-			sp = other.sp;
-			nbrs = other.nbrs;
-			// Clear other
-			other.dim = 0;
-			other.x = 0;
-			other.y = 0;
-			other.z = 0;
-			other.sp = nullptr;
-			other.nbrs.clear();
+			_clean_up();
+			_copy(other);
+			other._reset();
 		};
 		return *this;
 	};
 	Site::~Site() {
-		// Nothing...
+		_clean_up();
 	};
+	void Site::_clean_up() {
+		// Nothing....
+	};
+	void Site::_reset() {
+		dim = 0;
+		x = 0;
+		y = 0;
+		z = 0;
+		sp = nullptr;
+		nbrs.clear();
+		hidden_conns.clear();
+	};
+	void Site::_copy(const Site& other) {
+		dim = other.dim;
+		x = other.x;
+		y = other.y;
+		z = other.z;
+		sp = other.sp;
+		nbrs = other.nbrs;
+		hidden_conns = other.hidden_conns;
+	};
+
 
 	// Comparator
 	bool operator <(const Site& a, const Site& b) {
@@ -152,6 +143,7 @@ namespace DynamicBoltzmann {
 		};
 		_dim = dim;
 		_box_length = box_length;
+		_hidden_layer_exists = false;
 
 		// Make a fully linked list of sites
 		if (dim == 1) {
@@ -229,6 +221,7 @@ namespace DynamicBoltzmann {
 	};
 	Lattice::Lattice(Lattice&& other) {
 		_copy(other);
+		other._reset();
 	};
 	Lattice& Lattice::operator=(const Lattice& other) {
 		if (this != &other) {
@@ -241,6 +234,7 @@ namespace DynamicBoltzmann {
 		if (this != &other) {
 			_clean_up();
 			_copy(other);
+			other._reset();
 		};
 		return *this;
 	};
@@ -255,15 +249,21 @@ namespace DynamicBoltzmann {
 		_latt = other._latt;
 		_box_length = other._box_length;
 		_sp_map = other._sp_map;
+		_hidden_layer_exists = other._hidden_layer_exists;
 	};
-	void Lattice::_copy(Lattice &&other) {
-		_latt = other._latt;
-		_box_length = other._box_length;
-		_sp_map = other._sp_map;
-		// Clear other
-		other._box_length = 0;
-		other._sp_map.clear();
-		other._latt.clear();
+	void Lattice::_reset() {
+		_box_length = 0;
+		_sp_map.clear();
+		_latt.clear();
+		_hidden_layer_exists = false;
+	};
+
+	/********************
+	Getters
+	********************/
+
+	int Lattice::dim() const {
+		return _dim;
 	};
 
 	/********************
@@ -274,6 +274,40 @@ namespace DynamicBoltzmann {
 		if (sp) {
 			_sp_map[sp->name()] = sp;
 		};
+	};
+
+	/********************
+	Indicate that the hidden unit exists
+	********************/
+
+	void Lattice::set_hidden_layer_exists() {
+		_hidden_layer_exists = true;
+	};
+
+	/********************
+	Find a pointer to a site by index
+	********************/
+
+	Site* Lattice::get_site(int x) {
+		if (_dim != 1) {
+			std::cerr << "ERROR: dim wrong in get_site" << std::endl;
+			exit(EXIT_FAILURE);
+		};
+		return &(*(_look_up(x)));
+	};
+	Site* Lattice::get_site(int x, int y) {
+		if (_dim != 2) {
+			std::cerr << "ERROR: dim wrong in get_site" << std::endl;
+			exit(EXIT_FAILURE);
+		};
+		return &(*(_look_up(x,y)));
+	};
+	Site* Lattice::get_site(int x, int y, int z) {
+		if (_dim != 3) {
+			std::cerr << "ERROR: dim wrong in get_site" << std::endl;
+			exit(EXIT_FAILURE);
+		};
+		return &(*(_look_up(x,y,z)));
 	};
 
 	/********************
@@ -457,7 +491,8 @@ namespace DynamicBoltzmann {
 
 		// Declarations
 
-		double hOld,jOld,hNew,jNew,energy_diff;
+		double hOld,jOld,wOld,hNew,jNew,wNew,energy_diff;
+		std::map<Species*, std::vector<HiddenUnit*>>::iterator it_hups;
 		latt_it it_flip;
 		std::map<std::string,Species*>::iterator it_sp;
 		Species *sp_new = nullptr;
@@ -513,6 +548,42 @@ namespace DynamicBoltzmann {
 
 			// Energy difference
 			energy_diff = hNew + jNew - hOld - jOld;
+
+			// Hidden layer?
+			if (_hidden_layer_exists) {
+
+				// Check if this site is occupied
+				if (it_flip->sp) {
+					// Occupied - flip down
+					wOld = 0.0;
+					// Check if this species has connections to hidden units
+					it_hups = it_flip->hidden_conns.find(it_flip->sp);
+					if (it_hups != it_flip->hidden_conns.end()) {
+						// Yes it does - sum them up!
+						for (auto hup: it_hups->second) {
+							wOld += hup->get();
+						};
+					};
+					wNew = 0.0;
+				} else {
+					// Unoccupied - flip up
+					wOld = 0.0;
+					// Already have the new species - check if it has conns to hidden units
+					wNew = 0.0;
+					it_hups = it_flip->hidden_conns.find(sp_new);
+					if (it_hups != it_flip->hidden_conns.end()) {
+						// Yes it does - sum them up!
+						for (auto hup: it_hups->second) {
+							wNew += hup->get();
+						};
+					};
+				};
+
+				// Update the energy diff
+				energy_diff += wNew - wOld;
+			};
+
+			// Evaluate energy diff
 			if (energy_diff < 0.0 || exp(-energy_diff) > randD(0.0,1.0)) {
 				// Accept the flip!
 				if (it_flip->sp) {

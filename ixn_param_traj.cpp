@@ -17,9 +17,19 @@ namespace DynamicBoltzmann {
 	Constructor
 	********************/
 
-	IxnParamTraj::IxnParamTraj(std::string name, IxnParamType type, Species *sp, double min, double max, int n, double val0, int n_t) : IxnParamTraj(name,type,sp,nullptr,min,max,n,val0,n_t) {};
+	IxnParamTraj::IxnParamTraj(std::string name, IxnParamType type, Species *sp, double min, double max, int n, double val0, int n_t) : IxnParamTraj(name,type,sp,nullptr,min,max,n,val0,n_t) {
+		if (type != Wp && type != Hp) {
+			std::cerr << "ERROR: wrong IxnParamTraj constructor?" << std::endl;
+			exit(EXIT_FAILURE);
+		};
+	};
 	IxnParamTraj::IxnParamTraj(std::string name, IxnParamType type, Species *sp1, Species *sp2, double min, double max, int n, double val0, int n_t) : Grid(name,min,max,n)
 	{
+		if (type == Jp && (sp1 == nullptr || sp2==nullptr)) {
+			std::cerr << "ERROR: wrong IxnParamTraj constructor?" << std::endl;
+			exit(EXIT_FAILURE);
+		};
+
 		_type = type;
 		_sp1 = sp1;
 		_sp2 = sp2;
@@ -37,8 +47,13 @@ namespace DynamicBoltzmann {
 
 		_bf = nullptr;
 	};
+
 	IxnParamTraj::IxnParamTraj(const IxnParamTraj& other) : Grid(other) {
 		_copy(other);
+	};
+	IxnParamTraj::IxnParamTraj(IxnParamTraj&& other) : Grid(other) {
+		_copy(other);
+		other._reset();
 	};
 	IxnParamTraj& IxnParamTraj::operator=(const IxnParamTraj& other) {
 		if (this != &other)
@@ -50,6 +65,17 @@ namespace DynamicBoltzmann {
 		};
 		return *this;
 	};
+	IxnParamTraj& IxnParamTraj::operator=(IxnParamTraj&& other) {
+		if (this != &other)
+		{
+			Grid::operator=(other);
+
+			_clean_up();
+			_copy(other);
+			other._reset();
+		};
+		return *this;
+	};
 	IxnParamTraj::~IxnParamTraj() {
 		_clean_up();
 	};
@@ -58,6 +84,7 @@ namespace DynamicBoltzmann {
 		_type = other._type;
 		_sp1 = other._sp1;
 		_sp2 = other._sp2;
+		_conns = other._conns;
 		_n_t = other._n_t;
 		_vals = new double[_n_t];
 		std::copy( other._vals, other._vals + _n_t, _vals );
@@ -68,12 +95,48 @@ namespace DynamicBoltzmann {
 		std::copy( other._awake, other._awake + _n_t, _awake );
 		_bf = other._bf;
 	};
+	void IxnParamTraj::_reset()
+	{
+		_sp1 = nullptr;
+		_sp2 = nullptr;
+		_conns.clear();
+		_n_t = 0;
+		safeDelArr(_vals);
+		_val0 = 0.;
+		safeDelArr(_asleep);
+		safeDelArr(_awake);
+		_bf = nullptr;
+	};
 	void IxnParamTraj::_clean_up() {
 		safeDelArr(_vals);
 		safeDelArr(_asleep);
 		safeDelArr(_awake);
 	};
 
+	/********************
+	Check if this ixn param is a visible to hidden for a given species name
+	********************/
+
+	bool IxnParamTraj::is_visible_hidden_for_species(std::string species_name) const {
+		if (_type == Wp && _sp1->name() == species_name) {
+			return true;
+		} else {
+			return false;
+		};
+	};
+
+
+	/********************
+	Add a visible->hidden unit connection
+	********************/
+
+	void IxnParamTraj::add_visible_hidden_connection(Site *sptr, HiddenUnit *hup) {
+		if (_type != Wp) {
+			std::cerr << "ERROR: adding visible to hidden connection to wrong type of IxnParam" << std::endl;
+			exit(EXIT_FAILURE);
+		};
+		_conns.push_back(std::make_pair(sptr,hup));
+	};
 
 	/********************
 	Set/check basis func pointer
@@ -149,22 +212,31 @@ namespace DynamicBoltzmann {
 	void IxnParamTraj::moments_retrieve_at_time(MomentType moment_type, int it, int batch_size)
 	{
 		if (_type == Hp) {
-			if (_sp1) {
-				if (moment_type==AWAKE) {
-					_awake[it] += 1. * _sp1->count() / batch_size;
-				} else if (moment_type==ASLEEP) {
-					_asleep[it] += 1. * _sp1->count() / batch_size;
-				};
+			if (moment_type==AWAKE) {
+				_awake[it] += 1. * _sp1->count() / batch_size;
+			} else if (moment_type==ASLEEP) {
+				_asleep[it] += 1. * _sp1->count() / batch_size;
 			};
 		} else if (_type == Jp) {
-			if (_sp1 && _sp2) {
-				if (moment_type==AWAKE) {
-					_awake[it] += 1. * _sp1->nn_count(_sp2) / batch_size;
-				} else if (moment_type==ASLEEP) {
-					_asleep[it] += 1. * _sp1->nn_count(_sp2) / batch_size;
+			if (moment_type==AWAKE) {
+				_awake[it] += 1. * _sp1->nn_count(_sp2) / batch_size;
+			} else if (moment_type==ASLEEP) {
+				_asleep[it] += 1. * _sp1->nn_count(_sp2) / batch_size;
+			};
+		} else if (_type == Wp) {
+			double inc = 0.0;
+			// Run through all connections
+			for (auto c: _conns) {
+				if (c.first->sp == _sp1) { // site occupied with the correct species
+					inc += c.second->get(); // v * h
 				};
 			};
-		};	
+			if (moment_type==AWAKE) {
+				_awake[it] += inc / batch_size;
+			} else if (moment_type==ASLEEP) {
+				_asleep[it] += inc / batch_size;
+			};
+		};
 	};
 
 	double IxnParamTraj::moments_diff_at_time(int it) {

@@ -27,6 +27,7 @@ namespace DynamicBoltzmann {
 	****************************************/
 
 	class IxnParamTraj;
+	class HiddenUnit;
 
 	/****************************************
 	Species
@@ -49,11 +50,22 @@ namespace DynamicBoltzmann {
 		// Pointers to the interaction params
 		IxnParamTraj *_h_ptr;
 		std::map<Species*,IxnParamTraj*> _j_ptr;
+		IxnParamTraj* _w_ptr;
+
+		// Constructor helpers
+		void _clean_up();
+		void _reset();
+		void _copy(const Species& other);
 
 	public:
 
 		// Constructor
 		Species(std::string name);
+		Species(const Species& other);
+		Species(Species&& other);
+		Species& operator=(const Species& other);
+		Species& operator=(Species&& other);
+		~Species();
 
 		// Set pointer to the opt time variable
 		void set_opt_time_ptr(int *t_opt_ptr);
@@ -61,6 +73,7 @@ namespace DynamicBoltzmann {
 		// Set h, j ptr
 		void set_h_ptr(IxnParamTraj *h_ptr);
 		void add_j_ptr(Species* sp, IxnParamTraj *j_ptr);
+		void set_w_ptr(IxnParamTraj *w_ptr);
 
 		// Validate setup
 		void validate_setup() const;
@@ -68,6 +81,7 @@ namespace DynamicBoltzmann {
 		// Setters/getters
 		double h() const;
 		double j(Species* other) const;
+		double w() const;
 		int count() const;
 		int nn_count(Species* other) const;
 		std::string name() const;

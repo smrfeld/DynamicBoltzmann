@@ -3,11 +3,6 @@
 #include "var_term_traj.hpp"
 #endif
 
-#ifndef LATTICE_H
-#define LATTICE_H
-#include "lattice.hpp"
-#endif
-
 #ifndef LIST_H
 #define LIST_H
 #include <list>
@@ -27,7 +22,7 @@ namespace DynamicBoltzmann {
 	****************************************/
 
 	// Type of dimension
-	enum DimType { H, J };
+	enum DimType { H, J, W };
 
 	struct Dim {
 		// Name
@@ -82,6 +77,10 @@ namespace DynamicBoltzmann {
 		// List of variational terms
 		std::list<VarTermTraj> _var_terms;
 
+		// List of hidden units, and flag if they exist
+		bool _hidden_layer_exists;
+		std::list<HiddenUnit> _hidden_units;
+
 		// Time dimension
 		Grid _time;
 
@@ -121,14 +120,19 @@ namespace DynamicBoltzmann {
 		// Flags
 		bool _write_bf_only_last;
 
+		// Add a hidden unit
+		void _add_hidden_unit(std::vector<Site*> conns, std::string species);
+
 		// Search functions
 		Species* _find_species(std::string name);
 		IxnParamTraj* _find_ixn_param(std::string name);
+		IxnParamTraj* _find_ixn_param_visible_hidden(std::string species_name);
 		BasisFunc* _find_basis_func(std::string name);
 		VarTermTraj* _find_var_term(std::string name);
 
 		// Constructor helpers
 		void _clean_up();
+		void _reset();
 		void _copy(const OptProblem& other);
 
 	public:
@@ -187,6 +191,11 @@ namespace DynamicBoltzmann {
 		Set properties	
 		********************/
 
+		// Any dim
+		void add_hidden_unit(std::vector<std::vector<int>> lattice_idxs, std::string species);
+		// 1D specific
+		void add_hidden_unit(std::vector<int> lattice_idxs, std::string species);
+
 		/**
 		 * @brief      Sets the dir for i/o.
 		 * @param[in]  dir   The dir
@@ -230,7 +239,7 @@ namespace DynamicBoltzmann {
 		Solve
 		********************/
 
-		void solve(bool verbose=false);
+		void solve(bool verbose=false, bool same_lattice=false);
 		void solve_varying_ic(bool verbose=false);
 
 		/********************

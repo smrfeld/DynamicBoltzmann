@@ -18,7 +18,10 @@ namespace DynamicBoltzmann {
 	Dim::Dim(std::string name, DimType type, std::string species, std::vector<std::string> basis_func_dims, double min, double max, int n, double init) : Dim(name,type,species, "", basis_func_dims, min, max, n, init) {};
 	Dim::Dim(std::string name, DimType type, std::string species1, std::string species2, std::vector<std::string> basis_func_dims, double min, double max, int n, double init)
 	{
-		if ((type==H && species2 != "") || (type==J && species2 == "")) {
+		if ( (species1 == "") 
+			|| 
+			((type==H && species2 != "") || (type==W && species2 != "") || (type==J && species2 == ""))
+			) {
 			std::cerr << "ERROR! Dim specification is incorrect." << std::endl;
 			exit(EXIT_FAILURE);
 		};
@@ -57,6 +60,7 @@ namespace DynamicBoltzmann {
 		_dir_io = "data/"; // default
 		_fname_start_idx = 0; // default
 		_write_bf_only_last = false; // default
+		_hidden_layer_exists = false; // default
 		if (DIAG_SETUP) { std::cout << "ok." << std::endl; };
 
 		// Create the species and add to the lattice
@@ -72,9 +76,9 @@ namespace DynamicBoltzmann {
 		// Create the interaction params
 		if (DIAG_SETUP) { std::cout << "Create ixn params..." << std::flush; };
 		for (auto d: dims) {
-			if (d.type==H) { 
+			if (d.type==H || d.type==W) { 
 				_ixn_params.push_back(IxnParamTraj(d.name,Hp,_find_species(d.species1),d.min,d.max,d.n,d.init,n_t));
-			} else { 
+			} else if(d.type==J) { 
 				_ixn_params.push_back(IxnParamTraj(d.name,Jp,_find_species(d.species1),_find_species(d.species2),d.min,d.max,d.n,d.init,n_t));
 			};
 		};
@@ -94,6 +98,9 @@ namespace DynamicBoltzmann {
 				sp2 = _find_species(d.species2);
 				sp1->add_j_ptr(sp2,ip_ptr);
 				sp2->add_j_ptr(sp1,ip_ptr);
+			} else if (d.type==W) {
+				sp1 = _find_species(d.species1);
+				sp1->set_w_ptr(ip_ptr);		
 			};
 		};
 		for (auto itsp = _species.begin(); itsp!=_species.end(); itsp++) {
@@ -193,7 +200,8 @@ namespace DynamicBoltzmann {
 
 	OptProblem::OptProblem(OptProblem&& other) : _time(other._time)
 	{
-		other._clean_up();
+		_copy(other);
+		other._reset();
 	};
 
 	OptProblem& OptProblem::operator=(const OptProblem& other)
@@ -212,7 +220,7 @@ namespace DynamicBoltzmann {
 		{
 			_clean_up();
 			_copy(other);
-			other._clean_up();
+			other._reset();
 		};
 		return *this;		
 	};
@@ -229,6 +237,26 @@ namespace DynamicBoltzmann {
 	{
 		// Nothing...
 	};
+	void OptProblem::_reset()
+	{
+		_dir_io = "";
+		_n_param = 0;
+		_ixn_params.clear();
+		_bfs.clear();
+		_var_terms.clear();
+		_hidden_layer_exists = false;
+		_hidden_units.clear();
+		_species.clear();
+		_fnames.clear();
+		_n_t_soln = 0;
+		_t_opt = 0;
+		_n_batch = 0;
+		_n_annealing = 0;
+		_box_length = 0;
+		_dopt = 0;
+		_fname_start_idx = 0;
+		_write_bf_only_last = false;
+	};
 
 	void OptProblem::_copy(const OptProblem& other)
 	{
@@ -237,6 +265,8 @@ namespace DynamicBoltzmann {
 		_ixn_params = other._ixn_params;
 		_bfs = other._bfs;
 		_var_terms = other._var_terms;
+		_hidden_layer_exists = other._hidden_layer_exists;
+		_hidden_units = other._hidden_units;
 		_time = other._time;
 		_species = other._species;
 		_fnames = other._fnames;
@@ -255,6 +285,64 @@ namespace DynamicBoltzmann {
 	/********************
 	Set properties
 	********************/
+
+	void OptProblem::add_hidden_unit(std::vector<std::vector<int>> lattice_idxs, std::string species) 
+	{
+		// Find sites indicated by connections
+		std::vector<Site*> conns;
+		for (auto c: lattice_idxs) {
+			if (c.size() != _latt.dim()) {
+				std::cerr << "ERROR: lattice dim does not match hidden layer dim." << std::endl;
+				exit(EXIT_FAILURE);
+			};
+			if (c.size() == 1) {
+				conns.push_back(_latt.get_site(c[0]));
+			} else if (c.size() == 2) {
+				conns.push_back(_latt.get_site(c[0],c[1]));
+			} else if (c.size() == 3) {
+				conns.push_back(_latt.get_site(c[0],c[1],c[2]));
+			};
+		};
+
+		// Add
+		_add_hidden_unit(conns,species);
+	};
+	void OptProblem::add_hidden_unit(std::vector<int> lattice_idxs, std::string species) 
+	{
+		// Find sites indicated by connections
+		std::vector<Site*> conns;
+		for (auto c: lattice_idxs) {
+			conns.push_back(_latt.get_site(c));
+		};
+
+		// Add
+		_add_hidden_unit(conns,species);
+	};
+	void OptProblem::_add_hidden_unit(std::vector<Site*> conns, std::string species)
+	{
+		// Flag that a hidden layer exists
+		_hidden_layer_exists = true;
+		// Also tell the lattice - important for the annealer
+		_latt.set_hidden_layer_exists();
+
+		// Find the species
+		Species *sp = _find_species(species);
+
+		// Make hidden unit
+		_hidden_units.push_back(HiddenUnit(conns,sp));
+
+		// Go through lattice sites in this connection
+		// Indicate that for this species, they are linked to this hidden unit
+		for (auto s: conns) {
+			s->hidden_conns[sp].push_back(&_hidden_units.back());
+		};
+
+		// Tell the appropriate interaction parameter that these these sites are connected to this hidden unit
+		IxnParamTraj *ip = _find_ixn_param_visible_hidden(species);
+		for (auto sptr: conns) {
+			ip->add_visible_hidden_connection(sptr,&_hidden_units.back());
+		};
+	};
 
 	void OptProblem::set_dir_io(std::string dir) {
 		_dir_io = dir;
@@ -454,7 +542,20 @@ namespace DynamicBoltzmann {
 					_latt.read_from_file(fnames[i_batch] + pad_str(_fname_start_idx+_t_opt,4) + ".txt");
 
 					/*****
-					Step 5.1.2 - Record the awake moments
+					Step 5.1.2 - Activate the hidden units if needed
+					*****/
+
+					if (DIAG_SOLVE) { std::cout << "      Activating hidden units" << std::endl; };
+
+					if (_hidden_layer_exists) {
+						for (auto ithu = _hidden_units.begin(); ithu != _hidden_units.end(); ithu++) {
+							// When using real data, always use binary states
+							ithu->activate(true);
+						};
+					};
+
+					/*****
+					Step 5.1.3 - Record the awake moments
 					*****/
 
 					if (DIAG_SOLVE) { std::cout << "      Record awake moments" << std::endl; };
@@ -464,7 +565,7 @@ namespace DynamicBoltzmann {
 					};
 
 					/*****
-					Step 5.1.3 - anneal
+					Step 5.1.4 - anneal
 					*****/
 
 					if (DIAG_SOLVE) { std::cout << "      Anneal" << std::endl; };
@@ -472,11 +573,24 @@ namespace DynamicBoltzmann {
 					_latt.anneal(_n_annealing);
 
 					/*****
-					Step 5.1.4 - Record the asleep moments
+					Step 5.1.5 - Activate the hidden units if needed
+					*****/
+
+					if (DIAG_SOLVE) { std::cout << "      Activating hidden units" << std::endl; };
+
+					if (_hidden_layer_exists) {
+						for (auto ithu = _hidden_units.begin(); ithu != _hidden_units.end(); ithu++) {
+							// When using reconstructions, always use raw probabilities
+							ithu->activate(false);
+						};
+					};
+
+					/*****
+					Step 5.1.6 - Record the asleep moments
 					*****/
 
 					if (DIAG_SOLVE) { std::cout << "      Record asleep moments" << std::endl; };
-
+					
 					for (auto itp = _ixn_params.begin(); itp != _ixn_params.end(); itp++) {
 						itp->moments_retrieve_at_time(IxnParamTraj::ASLEEP,_t_opt,_n_batch);
 					};
@@ -826,6 +940,15 @@ namespace DynamicBoltzmann {
 		std::cerr << "ERROR: could not find ixn param: " << name << std::endl;
 		exit(EXIT_FAILURE);
 	};
+	IxnParamTraj* OptProblem::_find_ixn_param_visible_hidden(std::string species_name) {
+		for (auto it=_ixn_params.begin(); it!=_ixn_params.end(); it++) {
+			if (it->is_visible_hidden_for_species(species_name)) {
+				return &*it;
+			};
+		};
+		std::cerr << "ERROR: could not find visible-to-hidden ixn param for species: " << species_name << std::endl;
+		exit(EXIT_FAILURE);
+	};
 	BasisFunc* OptProblem::_find_basis_func(std::string name) {
 		for (auto it=_bfs.begin(); it!=_bfs.end(); it++) {
 			if (it->name() == name) {
@@ -844,5 +967,4 @@ namespace DynamicBoltzmann {
 		std::cerr << "ERROR: could not find var term: " << name << std::endl;
 		exit(EXIT_FAILURE);
 	};
-
 };

@@ -15,14 +15,11 @@ namespace DynamicBoltzmann {
 	Constructor
 	********************/
 
-	HiddenUnit::HiddenUnit() : HiddenUnit(std::vector<Site*>(), nullptr) {};
-	HiddenUnit::HiddenUnit(std::vector<Site*> conn) : HiddenUnit(conn, nullptr) {};
-	HiddenUnit::HiddenUnit(std::vector<Site*> conn, IxnParamTraj* weight)
+	HiddenUnit::HiddenUnit(std::vector<Site*> conn, Species *sp)
 	{
 		_n_conn = conn.size();
 		_conn = conn;
-		_weight = weight;
-		_t_opt_ptr = nullptr;
+		_sp = sp;
 		_val = 0.0;
 	};
 	HiddenUnit::HiddenUnit(const HiddenUnit& other)
@@ -32,6 +29,7 @@ namespace DynamicBoltzmann {
 	HiddenUnit::HiddenUnit(HiddenUnit&& other)
 	{
 		_copy(other);
+		other._reset();
 	};
 	HiddenUnit& HiddenUnit::operator=(const HiddenUnit& other)
 	{
@@ -46,6 +44,7 @@ namespace DynamicBoltzmann {
 		if (this != &other) {
 			_clean_up();
 			_copy(other);
+			other._reset();
 		};
 		return *this;
 	};
@@ -56,41 +55,25 @@ namespace DynamicBoltzmann {
 	void HiddenUnit::_clean_up() {
 		// Nothing....
 	};
+	void HiddenUnit::_reset() {
+		_n_conn = 0;
+		_conn.clear();
+		_sp = nullptr;
+		_val = 0.;
+	};
 	void HiddenUnit::_copy(const HiddenUnit& other) {
 		_n_conn = other._n_conn;
 		_conn = other._conn;
-		_weight = other._weight;
-		_t_opt_ptr = other._t_opt_ptr;
+		_sp = other._sp;
 		_val = other._val;
-	};
-	void HiddenUnit::_copy(HiddenUnit&& other) {
-		_n_conn = other._n_conn;
-		_conn = other._conn;
-		_weight = other._weight;
-		_t_opt_ptr = other._t_opt_ptr;
-		_val = other._val;
-		// Clear other
-		other._n_conn = 0;
-		other._conn.clear();
-		other._weight = nullptr;
-		other._t_opt_ptr = nullptr;
-		other._val = 0.;
 	};
 
 	/********************
-	Add connections
+	Getters
 	********************/
 
-	void HiddenUnit::add_conn(Site* site_ptr) {
-		_conn.push_back(site_ptr);
-	};
-
-	/********************
-	Set pointer to the opt time variable
-	********************/
-
-	void HiddenUnit::set_opt_time_ptr(int *t_opt_ptr) {
-		_t_opt_ptr = t_opt_ptr;
+	double HiddenUnit::get() const {
+		return _val;
 	};
 
 	/********************
@@ -101,12 +84,10 @@ namespace DynamicBoltzmann {
 		// Go through all connected neurons
 		double act = 0.0;
 		for (auto c: _conn) {
-			if (c->sp != nullptr) {
-				act += 1.0;
+			if (c->sp == _sp) { // Check that this is the species that I love
+				act += c->sp->w(); // Gets the weight of this connection
 			};
 		};
-		// Multiply by weight
-		act *= _weight->get_at_time(*_t_opt_ptr);
 		// Pass through sigmoid
 		_val = _sigma(act);
 		if (binary) {

@@ -22,6 +22,12 @@
 #include <map>
 #endif
 
+// Species
+#ifndef SPECIES_h
+#define SPECIES_h
+#include "species.hpp"
+#endif
+
 /************************************
 * Namespace for DynamicBoltzmann
 ************************************/
@@ -32,8 +38,7 @@ namespace DynamicBoltzmann {
 	General functions
 	****************************************/
 
-	struct Species;
-	struct Site;
+	class Site;
 	typedef std::list<Site> lattice;
 	typedef std::list<Site>::iterator latt_it;
 
@@ -41,13 +46,25 @@ namespace DynamicBoltzmann {
 	Structure to hold a lattice site
 	****************************************/
 
-	struct Site {
+	class Site {
+	private:
+
+		// Constructor helpers
+		void _clean_up();
+		void _reset();
+		void _copy(const Site& other);
+
+	public:
 		int dim;
 		int x;
 		int y;
 		int z;	
 		Species *sp;
 		std::vector<latt_it> nbrs;
+
+		// Connectivity to any hidden units
+		// A species-dependent graph :)
+		std::map<Species*, std::vector<HiddenUnit*>> hidden_conns;
 
 		// Constructor
 		Site();
@@ -93,10 +110,13 @@ namespace DynamicBoltzmann {
 		// Pointers to species present
 		std::map<std::string,Species*> _sp_map;
 
+		// Flag - are hidden units present? (needed for annealing)
+		bool _hidden_layer_exists;
+
 		// Contructor helpers
 		void _clean_up();
+		void _reset();
 		void _copy(const Lattice& other);
-		void _copy(Lattice &&other);
 
 	public:
 
@@ -113,10 +133,30 @@ namespace DynamicBoltzmann {
 		~Lattice();
 
 		/********************
+		Getters
+		********************/
+
+		int dim() const;
+
+		/********************
 		Add a species
 		********************/
 
 		void add_species(Species *sp);
+
+		/********************
+		Indicate that the hidden unit exists
+		********************/
+
+		void set_hidden_layer_exists();
+
+		/********************
+		Find a pointer to a site by index
+		********************/
+
+		Site* get_site(int x);
+		Site* get_site(int x, int y);
+		Site* get_site(int x, int y, int z);
 
 		/********************
 		Clear, size

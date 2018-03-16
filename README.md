@@ -4,8 +4,8 @@
 
 To build the library:
 ```
-g++ -std=c++14 -O3 -c -fpic basis_func.cpp dynamic_boltzmann.cpp general.cpp grid.cpp ixn_param_traj.cpp lattice.cpp species.cpp var_term_traj.cpp
-g++ -std=c++14 -O3 -shared -o libdynamicboltz.so basis_func.o dynamic_boltzmann.o general.o grid.o ixn_param_traj.o lattice.o species.o var_term_traj.o
+g++ -std=c++14 -O3 -c -fpic basis_func.cpp dynamic_boltzmann.cpp general.cpp grid.cpp ixn_param_traj.cpp lattice.cpp species.cpp var_term_traj.cpp hidden_unit.cpp
+g++ -std=c++14 -O3 -shared -o libdynamicboltz.so basis_func.o dynamic_boltzmann.o general.o grid.o ixn_param_traj.o lattice.o species.o var_term_traj.o hidden_unit.o
 ```
 
 Link against it using

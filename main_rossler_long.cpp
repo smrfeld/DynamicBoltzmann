@@ -93,15 +93,15 @@ int main() {
 
 		// Read in the basis funcs
 		if (i_loop!=0) {
-			opt1->read_bf("F_hA","rossler_long_data_"+pad_str(i_loop-1,1)+"/F/F_hA_"+pad_str(n_t_old,4)+".txt");	
-			opt1->read_bf("F_hB","rossler_long_data_"+pad_str(i_loop-1,1)+"/F/F_hB_"+pad_str(n_t_old,4)+".txt");	
-			opt1->read_bf("F_hC","rossler_long_data_"+pad_str(i_loop-1,1)+"/F/F_hC_"+pad_str(n_t_old,4)+".txt");	
-			opt1->read_bf("F_jAA","rossler_long_data_"+pad_str(i_loop-1,1)+"/F/F_jAA_"+pad_str(n_t_old,4)+".txt");	
-			opt1->read_bf("F_jAB","rossler_long_data_"+pad_str(i_loop-1,1)+"/F/F_jAB_"+pad_str(n_t_old,4)+".txt");	
-			opt1->read_bf("F_jAC","rossler_long_data_"+pad_str(i_loop-1,1)+"/F/F_jAC_"+pad_str(n_t_old,4)+".txt");	
-			opt1->read_bf("F_jBB","rossler_long_data_"+pad_str(i_loop-1,1)+"/F/F_jBB_"+pad_str(n_t_old,4)+".txt");	
-			opt1->read_bf("F_jBC","rossler_long_data_"+pad_str(i_loop-1,1)+"/F/F_jBC_"+pad_str(n_t_old,4)+".txt");	
-			opt1->read_bf("F_jCC","rossler_long_data_"+pad_str(i_loop-1,1)+"/F/F_jCC_"+pad_str(n_t_old,4)+".txt");	
+			opt1->read_bf("F_hA","rossler_long_data_"+pad_str(i_loop-1,1)+"/F/F_hA_"+pad_str(n_opt,4)+".txt");	
+			opt1->read_bf("F_hB","rossler_long_data_"+pad_str(i_loop-1,1)+"/F/F_hB_"+pad_str(n_opt,4)+".txt");	
+			opt1->read_bf("F_hC","rossler_long_data_"+pad_str(i_loop-1,1)+"/F/F_hC_"+pad_str(n_opt,4)+".txt");	
+			opt1->read_bf("F_jAA","rossler_long_data_"+pad_str(i_loop-1,1)+"/F/F_jAA_"+pad_str(n_opt,4)+".txt");	
+			opt1->read_bf("F_jAB","rossler_long_data_"+pad_str(i_loop-1,1)+"/F/F_jAB_"+pad_str(n_opt,4)+".txt");	
+			opt1->read_bf("F_jAC","rossler_long_data_"+pad_str(i_loop-1,1)+"/F/F_jAC_"+pad_str(n_opt,4)+".txt");	
+			opt1->read_bf("F_jBB","rossler_long_data_"+pad_str(i_loop-1,1)+"/F/F_jBB_"+pad_str(n_opt,4)+".txt");	
+			opt1->read_bf("F_jBC","rossler_long_data_"+pad_str(i_loop-1,1)+"/F/F_jBC_"+pad_str(n_opt,4)+".txt");	
+			opt1->read_bf("F_jCC","rossler_long_data_"+pad_str(i_loop-1,1)+"/F/F_jCC_"+pad_str(n_opt,4)+".txt");	
 		};
 
 		// Solve

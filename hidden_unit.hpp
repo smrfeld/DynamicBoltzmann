@@ -1,10 +1,5 @@
-#ifndef IXN_PARAM_TRAJ_h
-#define IXN_PARAM_TRAJ_h
-#include "ixn_param_traj.hpp"
-#endif
-
-#ifndef LATTICE_H
-#define LATTICE_H
+#ifndef LATTICE_h
+#define LATTICE_h
 #include "lattice.hpp"
 #endif
 
@@ -18,7 +13,7 @@ namespace DynamicBoltzmann {
 	Hidden unit
 	************************************/
 
-	// Forward declare
+	// Forward declare a site
 	class Site;
 
 	class HiddenUnit
@@ -31,11 +26,8 @@ namespace DynamicBoltzmann {
 		// Sites I am connected to
 		std::vector<Site*> _conn;
 
-		// Ixn param describing the weight connection
-		IxnParamTraj *_weight;
-
-		// Time we are at
-		int *_t_opt_ptr;
+		// Species that I love
+		Species *_sp;
 
 		// Value
 		double _val;
@@ -45,8 +37,8 @@ namespace DynamicBoltzmann {
 
 		// Constructor helpers
 		void _clean_up();
+		void _reset();
 		void _copy(const HiddenUnit& other);
-		void _copy(HiddenUnit &&other);
 
 	public:
 
@@ -54,9 +46,7 @@ namespace DynamicBoltzmann {
 		Constructor
 		********************/
 
-		HiddenUnit();
-		HiddenUnit(std::vector<Site*> conn);
-		HiddenUnit(std::vector<Site*> conn, IxnParamTraj *weight);
+		HiddenUnit(std::vector<Site*> conn, Species *sp);
 		HiddenUnit(const HiddenUnit& other);
 		HiddenUnit(HiddenUnit&& other);
 		HiddenUnit& operator=(const HiddenUnit& other);
@@ -64,16 +54,10 @@ namespace DynamicBoltzmann {
 		~HiddenUnit();	
 
 		/********************
-		Add connections
+		Getters
 		********************/
 
-		void add_conn(Site* site_ptr);
-
-		/********************
-		Set pointer to the opt time variable
-		********************/
-
-		void set_opt_time_ptr(int *t_opt_ptr);
+		double get() const;
 
 		/********************
 		Activate

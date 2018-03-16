@@ -8,14 +8,14 @@
 #include <string>
 #endif
 
-#ifndef SPECIES_h
-#define SPECIES_h
-#include "species.hpp"
-#endif
-
 #ifndef GRID_h
 #define GRID_h
 #include "grid.hpp"
+#endif
+
+#ifndef HIDDEN_UNIT_h
+#define HIDDEN_UNIT_h
+#include "hidden_unit.hpp"
 #endif
 
 /************************************
@@ -35,7 +35,7 @@ namespace DynamicBoltzmann {
 	****************************************/
 
 	// Enumeration of type of dimension
-	enum IxnParamType { Hp, Jp };
+	enum IxnParamType { Hp, Jp, Wp };
 
 	class IxnParamTraj : public Grid {
 
@@ -45,8 +45,14 @@ namespace DynamicBoltzmann {
 		IxnParamType _type;
 
 		// Species
+		// If Hp or Wp: only sp1
 		Species *_sp1;
+		// If Jp: also sp2
 		Species *_sp2;
+
+		// If Wp:
+		// Connects sites (visible) to hidden units
+		std::vector<std::pair<Site*,HiddenUnit*> > _conns;
 
 		// Number of time points in these trajs
 		int _n_t;
@@ -65,8 +71,9 @@ namespace DynamicBoltzmann {
 		BasisFunc *_bf;
 
 		// Copy, clean up
-		void _copy(const IxnParamTraj& other);
 		void _clean_up();
+		void _reset();
+		void _copy(const IxnParamTraj& other);
 
 	public:
 
@@ -74,8 +81,16 @@ namespace DynamicBoltzmann {
 		IxnParamTraj(std::string name, IxnParamType type, Species *sp, double min, double max, int n, double val0, int n_t);
 		IxnParamTraj(std::string name, IxnParamType type, Species *sp1, Species *sp2, double min, double max, int n, double val0, int n_t);
 		IxnParamTraj(const IxnParamTraj& other);
-		IxnParamTraj & operator=(const IxnParamTraj& other);
+		IxnParamTraj(IxnParamTraj&& other);
+		IxnParamTraj& operator=(const IxnParamTraj& other);
+		IxnParamTraj& operator=(IxnParamTraj&& other);
 		~IxnParamTraj();
+
+		// Check if this ixn param is a visible to hidden for a given species name
+		bool is_visible_hidden_for_species(std::string species_name) const;
+
+		// Add a visible->hidden unit connection
+		void add_visible_hidden_connection(Site *sptr, HiddenUnit *hup);
 
 		// Set/check basis func pointer
 		void set_basis_func_ptr(BasisFunc* bf);

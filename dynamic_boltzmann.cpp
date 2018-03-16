@@ -75,11 +75,14 @@ namespace DynamicBoltzmann {
 
 		// Create the interaction params
 		if (DIAG_SETUP) { std::cout << "Create ixn params..." << std::flush; };
-		for (auto d: dims) {
-			if (d.type==H || d.type==W) { 
+		for (auto d: dims) 
+		{
+			if (d.type==H) { 
 				_ixn_params.push_back(IxnParamTraj(d.name,Hp,_find_species(d.species1),d.min,d.max,d.n,d.init,n_t));
-			} else if(d.type==J) { 
+			} else if (d.type==J) { 
 				_ixn_params.push_back(IxnParamTraj(d.name,Jp,_find_species(d.species1),_find_species(d.species2),d.min,d.max,d.n,d.init,n_t));
+			} else if (d.type==W) { 
+				_ixn_params.push_back(IxnParamTraj(d.name,Wp,_find_species(d.species1),d.min,d.max,d.n,d.init,n_t));
 			};
 		};
 		if (DIAG_SETUP) { std::cout << "ok." << std::endl; };
@@ -106,6 +109,18 @@ namespace DynamicBoltzmann {
 		for (auto itsp = _species.begin(); itsp!=_species.end(); itsp++) {
 			itsp->set_opt_time_ptr(&_t_opt);
 		};	
+		// Ensure the J of the species are complete - if there is no ixn param that descripes the coupling, add a nullptr entry in the dictionary - later check if nullptr, then return 0
+		// I think this is faster - otherwise there would be no reason to do it
+		for (auto itsp1 = _species.begin(); itsp1!=_species.end(); itsp1++) {
+			for (auto itsp2 = _species.begin(); itsp2!=_species.end(); itsp2++) {
+				ip_ptr = _find_ixn_param_j_by_species(itsp1->name(), itsp2->name(), false);
+				if (!ip_ptr) {
+					// It's null; add to both
+					itsp1->add_j_ptr(&(*itsp2),nullptr);
+					itsp2->add_j_ptr(&(*itsp1),nullptr);
+				};
+			};
+		};
 		if (DIAG_SETUP) { std::cout << "ok." << std::endl; };
 
 		// Create the basis functions
@@ -338,7 +353,7 @@ namespace DynamicBoltzmann {
 		};
 
 		// Tell the appropriate interaction parameter that these these sites are connected to this hidden unit
-		IxnParamTraj *ip = _find_ixn_param_visible_hidden(species);
+		IxnParamTraj *ip = _find_ixn_param_w_by_species(species);
 		for (auto sptr: conns) {
 			ip->add_visible_hidden_connection(sptr,&_hidden_units.back());
 		};
@@ -590,7 +605,7 @@ namespace DynamicBoltzmann {
 					*****/
 
 					if (DIAG_SOLVE) { std::cout << "      Record asleep moments" << std::endl; };
-					
+
 					for (auto itp = _ixn_params.begin(); itp != _ixn_params.end(); itp++) {
 						itp->moments_retrieve_at_time(IxnParamTraj::ASLEEP,_t_opt,_n_batch);
 					};
@@ -922,49 +937,82 @@ namespace DynamicBoltzmann {
 	Search functions
 	********************/
 
-	Species* OptProblem::_find_species(std::string name) {
+	Species* OptProblem::_find_species(std::string name, bool enforce_success) {
 		for (auto it=_species.begin(); it!=_species.end(); it++) {
 			if (it->name() == name) {
 				return &*it;
 			};
 		};
-		std::cerr << "ERROR: could not find species: " << name << std::endl;
-		exit(EXIT_FAILURE);
+		if (enforce_success) {
+			std::cerr << "ERROR: could not find species: " << name << std::endl;
+			exit(EXIT_FAILURE);
+		} else {
+			return nullptr;
+		};
 	};
-	IxnParamTraj* OptProblem::_find_ixn_param(std::string name) {
+	IxnParamTraj* OptProblem::_find_ixn_param(std::string name, bool enforce_success) {
 		for (auto it=_ixn_params.begin(); it!=_ixn_params.end(); it++) {
 			if (it->name() == name) {
 				return &*it;
 			};
 		};
-		std::cerr << "ERROR: could not find ixn param: " << name << std::endl;
-		exit(EXIT_FAILURE);
+		if (enforce_success) {
+			std::cerr << "ERROR: could not find ixn param: " << name << std::endl;
+			exit(EXIT_FAILURE);
+		} else {
+			return nullptr;
+		};
 	};
-	IxnParamTraj* OptProblem::_find_ixn_param_visible_hidden(std::string species_name) {
+	IxnParamTraj* OptProblem::_find_ixn_param_j_by_species(std::string species_name_1, std::string species_name_2, bool enforce_success) {
 		for (auto it=_ixn_params.begin(); it!=_ixn_params.end(); it++) {
-			if (it->is_visible_hidden_for_species(species_name)) {
+			if (it->is_j_with_species(species_name_1,species_name_2)) {
 				return &*it;
 			};
 		};
-		std::cerr << "ERROR: could not find visible-to-hidden ixn param for species: " << species_name << std::endl;
-		exit(EXIT_FAILURE);
+		if (enforce_success) {
+			std::cerr << "ERROR: could not find J ixn param for species: " << species_name_1 << " " << species_name_2 << std::endl;
+			exit(EXIT_FAILURE);
+		} else {
+			return nullptr;
+		};
 	};
-	BasisFunc* OptProblem::_find_basis_func(std::string name) {
+	IxnParamTraj* OptProblem::_find_ixn_param_w_by_species(std::string species_name, bool enforce_success) {
+		for (auto it=_ixn_params.begin(); it!=_ixn_params.end(); it++) {
+			if (it->is_w_with_species(species_name)) {
+				return &*it;
+			};
+		};
+		if (enforce_success) {
+			std::cerr << "ERROR: could not find visible-to-hidden ixn param for species: " << species_name << std::endl;
+			exit(EXIT_FAILURE);
+		} else {
+			return nullptr;
+		};
+	};
+	BasisFunc* OptProblem::_find_basis_func(std::string name, bool enforce_success) {
 		for (auto it=_bfs.begin(); it!=_bfs.end(); it++) {
 			if (it->name() == name) {
 				return &*it;
 			};
 		};
-		std::cerr << "ERROR: could not find basis func: " << name << std::endl;
-		exit(EXIT_FAILURE);
+		if (enforce_success) {
+			std::cerr << "ERROR: could not find basis func: " << name << std::endl;
+			exit(EXIT_FAILURE);
+		} else {
+			return nullptr;
+		};
 	};
-	VarTermTraj* OptProblem::_find_var_term(std::string name) {
+	VarTermTraj* OptProblem::_find_var_term(std::string name, bool enforce_success) {
 		for (auto it=_var_terms.begin(); it!=_var_terms.end(); it++) {
 			if (it->name() == name) {
 				return &*it;
 			};
 		};
-		std::cerr << "ERROR: could not find var term: " << name << std::endl;
-		exit(EXIT_FAILURE);
+		if (enforce_success) {
+			std::cerr << "ERROR: could not find var term: " << name << std::endl;
+			exit(EXIT_FAILURE);
+		} else {
+			return nullptr;
+		};
 	};
 };

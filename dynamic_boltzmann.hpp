@@ -124,11 +124,12 @@ namespace DynamicBoltzmann {
 		void _add_hidden_unit(std::vector<Site*> conns, std::string species);
 
 		// Search functions
-		Species* _find_species(std::string name);
-		IxnParamTraj* _find_ixn_param(std::string name);
-		IxnParamTraj* _find_ixn_param_visible_hidden(std::string species_name);
-		BasisFunc* _find_basis_func(std::string name);
-		VarTermTraj* _find_var_term(std::string name);
+		Species* _find_species(std::string name, bool enforce_success=true);
+		IxnParamTraj* _find_ixn_param(std::string name, bool enforce_success=true);
+		IxnParamTraj* _find_ixn_param_j_by_species(std::string species_name_1, std::string species_name_2, bool enforce_success=true);
+		IxnParamTraj* _find_ixn_param_w_by_species(std::string species_name, bool enforce_success=true);
+		BasisFunc* _find_basis_func(std::string name, bool enforce_success=true);
+		VarTermTraj* _find_var_term(std::string name, bool enforce_success=true);
 
 		// Constructor helpers
 		void _clean_up();

@@ -86,8 +86,9 @@ namespace DynamicBoltzmann {
 		IxnParamTraj& operator=(IxnParamTraj&& other);
 		~IxnParamTraj();
 
-		// Check if this ixn param is a visible to hidden for a given species name
-		bool is_visible_hidden_for_species(std::string species_name) const;
+		// Check if this ixn param is...
+		bool is_w_with_species(std::string species_name) const;
+		bool is_j_with_species(std::string species_name_1, std::string species_name_2) const;
 
 		// Add a visible->hidden unit connection
 		void add_visible_hidden_connection(Site *sptr, HiddenUnit *hup);

@@ -117,7 +117,7 @@ namespace DynamicBoltzmann {
 	Check if this ixn param is a visible to hidden for a given species name
 	********************/
 
-	bool IxnParamTraj::is_visible_hidden_for_species(std::string species_name) const {
+	bool IxnParamTraj::is_w_with_species(std::string species_name) const {
 		if (_type == Wp && _sp1->name() == species_name) {
 			return true;
 		} else {
@@ -125,6 +125,14 @@ namespace DynamicBoltzmann {
 		};
 	};
 
+	bool IxnParamTraj::is_j_with_species(std::string species_name_1, std::string species_name_2) const {
+		if (_type == Jp) {
+			if ((_sp1->name() == species_name_1 && _sp2->name() == species_name_2) || (_sp1->name() == species_name_2 && _sp2->name() == species_name_1)) {
+				return true;
+			};
+		};
+		return false;
+	};
 
 	/********************
 	Add a visible->hidden unit connection

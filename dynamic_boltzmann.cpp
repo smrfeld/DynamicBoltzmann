@@ -338,7 +338,7 @@ namespace DynamicBoltzmann {
 	Solve --- Main optimization loop
 	********************/
 
-	void OptProblem::solve(bool verbose)
+	void OptProblem::solve(bool verbose, bool same_lattice)
 	{
 		// Write the grids
 		write_bf_grids();
@@ -388,11 +388,22 @@ namespace DynamicBoltzmann {
 
 			std::vector<std::string> fnames, fnames_possible=_fnames;
 			std::vector<std::string>::iterator itf;
-			for (int i_batch=0; i_batch<_n_batch; i_batch++) {
+			if (same_lattice == false) {
+				for (int i_batch=0; i_batch<_n_batch; i_batch++) {
+					itf = fnames_possible.begin();
+					std::advance(itf,randI(0,fnames_possible.size()-1));
+					fnames.push_back(*itf);
+					fnames_possible.erase(itf); // don't choose again
+				};
+			} else {
+				// Pick a rand
 				itf = fnames_possible.begin();
 				std::advance(itf,randI(0,fnames_possible.size()-1));
 				fnames.push_back(*itf);
-				// fnames_possible.erase(itf);
+				for (int i_batch=1; i_batch<_n_batch; i_batch++) {
+					// Only this one
+					fnames.push_back(fnames.back());
+				};
 			};
 
 			if (DIAG_SOLVE) { std::cout << "OK" << std::endl; };
@@ -495,6 +506,8 @@ namespace DynamicBoltzmann {
 		// Write the basis funcs one last time
 		write_bfs(_dir_io+"F/",_n_opt);
 	};
+
+
 
 	/********************
 	Solve over varying initial conditions

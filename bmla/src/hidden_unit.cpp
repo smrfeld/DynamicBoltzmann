@@ -109,6 +109,9 @@ namespace DynamicBoltzmann {
 	********************/
 
 	double HiddenUnit::_sigma(double x) const {
-		return 1.0 / (1.0 + exp(-x));
+		// Tanh
+		return tanh(x);
+		// Sigmoid
+		// return 1.0 / (1.0 + exp(-x));
 	};	
 };

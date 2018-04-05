@@ -1,4 +1,4 @@
-#include "bmla.hpp"
+#include "../include/bmla.hpp"
 #include <iostream>
 #include <fstream>
 #include "math.h"
@@ -46,6 +46,7 @@ namespace DynamicBoltzmann {
 		_n_batch = batch_size;
 		_mse_quit_mode = false;
 		_mse_quit = 0.;
+		_n_cd_steps = 1; // default
 		_l2_reg = false;
 		_lambda = 0.;
 		_hidden_layer_exists = false;
@@ -143,6 +144,7 @@ namespace DynamicBoltzmann {
 		_n_opt = other._n_opt;
 		_mse_quit_mode = other._mse_quit_mode;
 		_mse_quit = other._mse_quit;
+		_n_cd_steps = other._n_cd_steps;
 		_l2_reg = other._l2_reg;
 		_lambda = other._lambda;
 	};
@@ -159,6 +161,7 @@ namespace DynamicBoltzmann {
 		_n_opt = 0;
 		_mse_quit_mode = false;
 		_mse_quit = 0.;
+		_n_cd_steps = 1;
 		_l2_reg = false;
 		_lambda = 0.;
 	};
@@ -275,6 +278,14 @@ namespace DynamicBoltzmann {
 	};
 
 	/********************
+	Set the number of CD steps (default = 1)
+	********************/
+
+	void BMLA::set_n_cd_steps(int n_steps) {
+		_n_cd_steps = n_steps;
+	};
+
+	/********************
 	Set and turn on l2 reg
 	********************/
 
@@ -338,11 +349,12 @@ namespace DynamicBoltzmann {
 				// Reset the lattice by reading it in
 				_latt.read_from_file(fname);
 		 		
-				// Activate
+				// Activate hidden
 				if (_hidden_layer_exists) {
 					for (auto ithu = _hidden_units.begin(); ithu != _hidden_units.end(); ithu++) {
 						// When using real data, always use binary states
-						ithu->activate(false);
+						// TEMP: use probabilities here....
+						ithu->activate(true);
 					};
 				};
 
@@ -351,14 +363,18 @@ namespace DynamicBoltzmann {
 					it->moments_retrieve(IxnParam::AWAKE, _n_batch);
 				};
 
-				// Anneal
-				_latt.anneal(_n_annealing);
+				// Do the contrastive divergence
+				for (int cd_step=0; cd_step<_n_cd_steps; cd_step++)
+				{
+					// Anneal
+					_latt.anneal(_n_annealing);
 
-				// Activate
-				if (_hidden_layer_exists) {
-					for (auto ithu = _hidden_units.begin(); ithu != _hidden_units.end(); ithu++) {
-						// When using reconstructions, always use raw probabilities
-						ithu->activate(false);
+					// Activate hidden
+					if (_hidden_layer_exists) {
+						for (auto ithu = _hidden_units.begin(); ithu != _hidden_units.end(); ithu++) {
+							// When using reconstructions, always use raw probabilities
+							ithu->activate(false);
+						};
 					};
 				};
 

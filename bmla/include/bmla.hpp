@@ -1,6 +1,6 @@
 #ifndef IXN_PARAM_h
 #define IXN_PARAM_h
-#include "ixn_param.hpp"
+#include "../src/ixn_param.hpp"
 #endif
 
 #ifndef LIST_H
@@ -84,6 +84,9 @@ namespace DynamicBoltzmann {
 		bool _l2_reg;
 		double _lambda;
 
+		// Number of CD steps
+		int _n_cd_steps;
+
 		// Print
 		void _print_ixn_params(bool new_line=true) const;
 		void _print_moments(bool new_line=true) const;
@@ -120,6 +123,9 @@ namespace DynamicBoltzmann {
 		void add_hidden_unit(std::vector<std::vector<int>> lattice_idxs, std::string species);
 		// 1D specific
 		void add_hidden_unit(std::vector<int> lattice_idxs, std::string species);
+
+		// Set the number of CD steps (default = 1)
+		void set_n_cd_steps(int n_steps);
 
 		// Set and turn on l2 regularizer
 		void set_l2_reg(double lambda);

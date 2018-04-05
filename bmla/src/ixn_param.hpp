@@ -8,14 +8,9 @@
 #include <string>
 #endif
 
-#ifndef SPECIES_h
-#define SPECIES_h
-#include "species.hpp"
-#endif
-
 #ifndef HIDDEN_UNIT_h
 #define HIDDEN_UNIT_h
-#include "../hidden_unit.hpp"
+#include "hidden_unit.hpp"
 #endif
 
 /************************************

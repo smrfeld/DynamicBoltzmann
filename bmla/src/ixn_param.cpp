@@ -1,5 +1,5 @@
 #include "ixn_param.hpp"
-#include "../general.hpp"
+#include "../include/general.hpp"
 #include <iostream>
 #include <fstream>
 #include "math.h"

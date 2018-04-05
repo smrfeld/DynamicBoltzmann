@@ -88,7 +88,7 @@ namespace DynamicBoltzmann {
 		for (auto c: _conn) {
 			if (c->sp == _sp) { // Check that this is the species that I love
 				act += c->sp->w(); // Gets the weight of this connection
-				std::cout << "Activating hidden:   " << c->sp->w() << std::endl;
+				// std::cout << "Activating hidden:   " << c->sp->w() << std::endl;
 			};
 		};
 

@@ -10,6 +10,12 @@ The library will be in `lib` and the necessary headers in `include`. Link agains
 ```
 g++ -std=c++14 -O3 -L./lib -ldynamicboltz myprogram.cpp -o myprogram.o
 ```
+Make sure to move the library to somewhere it will be found, or at worst
+```
+export DYLD_LIBRARY_PATH=$DYLD_LIBRARY_PATH:/absolute/path/to/lib
+export DYLD_LIBRARY_PATH=$DYLD_LIBRARY_PATH:/Users/oernst/Research/cnl/dynamic_boltzmann_cpp/lib
+```
+(Note: `-L` is needed for finding the library at linking time; `DYLD_LIBRARY_PATH` is at runtime).
 
 ## LEGACY build instructions
 

@@ -88,7 +88,11 @@ namespace DynamicBoltzmann {
 		return _h_ptr->get();
 	};
 	double Species::j(Species *other) const {
-		return _j_ptr.at(other)->get();
+		if (_j_ptr.at(other)) {
+			return _j_ptr.at(other)->get();
+		} else {
+			return 0.0;
+		};
 	};
 	double Species::w() const {
 		return _w_ptr->get();

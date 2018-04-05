@@ -1,6 +1,6 @@
 #include "var_term_traj.hpp"
 #include <iostream>
-#include "general.hpp"
+#include "../include/general.hpp"
 #include <fstream>
 
 /************************************

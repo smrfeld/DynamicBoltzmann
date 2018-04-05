@@ -2,7 +2,7 @@
 #include <iostream>
 #include <fstream>
 #include <numeric>
-#include "general.hpp"
+#include "../include/general.hpp"
 #include "math.h"
 #include <ctime>
 #include <sstream>
@@ -561,7 +561,7 @@ namespace DynamicBoltzmann {
 					if (it_hups != it_flip->hidden_conns.end()) {
 						// Yes it does - sum them up!
 						for (auto hup: it_hups->second) {
-							wOld += hup->get();
+							wOld -= hup->get();
 						};
 					};
 					wNew = 0.0;
@@ -574,7 +574,7 @@ namespace DynamicBoltzmann {
 					if (it_hups != it_flip->hidden_conns.end()) {
 						// Yes it does - sum them up!
 						for (auto hup: it_hups->second) {
-							wNew += hup->get();
+							wNew -= hup->get();
 						};
 					};
 				};

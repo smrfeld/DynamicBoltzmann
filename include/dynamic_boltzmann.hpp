@@ -1,6 +1,6 @@
 #ifndef VAR_TERM_TRAJ_h
 #define VAR_TERM_TRAJ_h
-#include "var_term_traj.hpp"
+#include "../src/var_term_traj.hpp"
 #endif
 
 #ifndef LIST_H

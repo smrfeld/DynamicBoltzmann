@@ -1,5 +1,7 @@
 #include "hidden_unit.hpp"
 #include "math.h"
+#include <iostream>
+#include "../include/general.hpp"
 
 /************************************
 * Namespace for DynamicBoltzmann
@@ -86,15 +88,19 @@ namespace DynamicBoltzmann {
 		for (auto c: _conn) {
 			if (c->sp == _sp) { // Check that this is the species that I love
 				act += c->sp->w(); // Gets the weight of this connection
+				std::cout << "Activating hidden:   " << c->sp->w() << std::endl;
 			};
 		};
+
 		// Pass through sigmoid
 		_val = _sigma(act);
 		if (binary) {
-			if (_val >= 0.5) {
+			if (_val > 0.5) {
 				_val = 1.;
-			} else {
+			} else if (_val < 0.5) {
 				_val = 0.;
+			} else {
+				_val = 1.*randI(0,1);
 			};
 		};
 	};

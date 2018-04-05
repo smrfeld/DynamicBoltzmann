@@ -1,5 +1,5 @@
 #include "basis_func.hpp"
-#include "general.hpp"
+#include "../include/general.hpp"
 #include <iostream>
 #include <fstream>
 

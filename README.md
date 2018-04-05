@@ -2,6 +2,17 @@
 
 ## Build
 
+There now is a convenient makefile:
+```
+make
+```
+The library will be in `lib` and the necessary headers in `include`. Link against it using
+```
+g++ -std=c++14 -O3 -L./lib -ldynamicboltz myprogram.cpp -o myprogram.o
+```
+
+## LEGACY build instructions
+
 To build the library:
 ```
 g++ -std=c++14 -O3 -c -fpic basis_func.cpp dynamic_boltzmann.cpp general.cpp grid.cpp ixn_param_traj.cpp lattice.cpp species.cpp var_term_traj.cpp hidden_unit.cpp
@@ -13,7 +24,7 @@ Link against it using
 g++ -std=c++14 -O3 -L./ -ldynamicboltz myprogram.cpp -o myprogram.o
 ```
 
-## BMLA
+# BMLA
 
 To build the library called `bmla` - navigate to the dir `bmla`, then:
 ```

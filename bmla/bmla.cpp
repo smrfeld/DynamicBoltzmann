@@ -62,8 +62,10 @@ namespace DynamicBoltzmann {
 		for (auto d: dims) {
 			if (d.type==H) { 
 				_ixn_params.push_back(IxnParam(d.name,Hp,_find_species(d.species1),d.guess));
-			} else { 
+			} else if (d.type==J) { 
 				_ixn_params.push_back(IxnParam(d.name,Jp,_find_species(d.species1),_find_species(d.species2),d.guess));
+			} else if (d.type==W) { 
+				_ixn_params.push_back(IxnParam(d.name,Wp,_find_species(d.species1),d.guess));
 			};
 		};
 
@@ -80,6 +82,9 @@ namespace DynamicBoltzmann {
 				sp2 = _find_species(d.species2);
 				sp1->add_j_ptr(sp2,ip_ptr);
 				sp2->add_j_ptr(sp1,ip_ptr);
+			} else if (d.type==W) {
+				sp1 = _find_species(d.species1);
+				sp1->set_w_ptr(ip_ptr);		
 			};
 		};
 		// Ensure the J of the species are complete - if there is no ixn param that descripes the coupling, add a nullptr entry in the dictionary - later check if nullptr, then return 0
@@ -172,17 +177,21 @@ namespace DynamicBoltzmann {
 		};
 	};
 
-	void BMLA::_print_moments() const {
+	void BMLA::_print_moments(bool new_line) const {
 		std::cout << "   Moments Initial: ";
 		for (auto it=_ixn_params.begin(); it!=_ixn_params.end(); it++) {
 			std::cout << it->get_moment(IxnParam::AWAKE) << " ";
 		};
-		std::cout << std::endl;
+		if (new_line) {
+			std::cout << std::endl;
+		};
 		std::cout << "   Moments Final: ";
 		for (auto it=_ixn_params.begin(); it!=_ixn_params.end(); it++) {
 			std::cout << it->get_moment(IxnParam::ASLEEP) << " ";
 		};
-		std::cout << std::endl;
+		if (new_line) {
+			std::cout << std::endl;
+		};
 	};
 	void BMLA::_print_mse(bool new_line) const {
 		std::cout << "   MSE: " << _get_mse() << "%";
@@ -296,24 +305,6 @@ namespace DynamicBoltzmann {
 			it->moments_reset(IxnParam::ASLEEP);
 		};
 
-		// Awake phase - never changes!
-
-		// Read lattice
-		_latt.read_from_file(fname);
-
-		// Activate
-		if (_hidden_layer_exists) {
-			for (auto ithu = _hidden_units.begin(); ithu != _hidden_units.end(); ithu++) {
-				// When using real data, always use binary states
-				ithu->activate(true);
-			};
-		};
-
-		// Record moments
-		for (auto it=_ixn_params.begin(); it!=_ixn_params.end(); it++) {
-			it->moments_retrieve(IxnParam::AWAKE);
-		};
-
 		// Iterate over optimization steps
 		for (int i_opt=0; i_opt<_n_opt; i_opt++)
 		{
@@ -330,8 +321,9 @@ namespace DynamicBoltzmann {
 				};
 			};
 
-			// Reset the asleep moments
+			// Reset all moments
 			for (auto it=_ixn_params.begin(); it!=_ixn_params.end(); it++) {
+				it->moments_reset(IxnParam::AWAKE);
 				it->moments_reset(IxnParam::ASLEEP);
 			};
 
@@ -345,13 +337,18 @@ namespace DynamicBoltzmann {
 
 				// Reset the lattice by reading it in
 				_latt.read_from_file(fname);
-		 
+		 		
 				// Activate
 				if (_hidden_layer_exists) {
 					for (auto ithu = _hidden_units.begin(); ithu != _hidden_units.end(); ithu++) {
 						// When using real data, always use binary states
-						ithu->activate(true);
+						ithu->activate(false);
 					};
+				};
+
+				// Record awake moments
+				for (auto it=_ixn_params.begin(); it!=_ixn_params.end(); it++) {
+					it->moments_retrieve(IxnParam::AWAKE, _n_batch);
 				};
 
 				// Anneal
@@ -365,7 +362,7 @@ namespace DynamicBoltzmann {
 					};
 				};
 
-				// Update the final moments
+				// Record asleep moments
 				for (auto it=_ixn_params.begin(); it!=_ixn_params.end(); it++) {
 					it->moments_retrieve(IxnParam::ASLEEP, _n_batch);
 				};
@@ -374,6 +371,7 @@ namespace DynamicBoltzmann {
 			// Print out the MSE
 			if (verbose) {
 				_print_ixn_params(false);
+				_print_moments(false);
 				_print_mse();
 			};
 

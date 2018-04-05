@@ -1,7 +1,7 @@
 #include "grid.hpp"
 #include <iostream>
 #include "math.h"
-#include "general.hpp"
+#include "../include/general.hpp"
 #include <fstream>
 
 /************************************

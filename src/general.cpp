@@ -1,4 +1,4 @@
-#include "general.hpp"
+#include "../include/general.hpp"
 #include <iomanip>
 #include <sstream>
 

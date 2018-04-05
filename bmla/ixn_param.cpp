@@ -178,22 +178,31 @@ namespace DynamicBoltzmann {
 	void IxnParam::moments_retrieve(MomentType moment_type, int batch_size)
 	{
 		if (_type == Hp) {
-			if (_sp1) {
-				if (moment_type==AWAKE) {
-					_awake += 1. * _sp1->count() / batch_size;
-				} else if (moment_type==ASLEEP) {
-					_asleep += 1. * _sp1->count() / batch_size;
-				};
+			if (moment_type==AWAKE) {
+				_awake += 1. * _sp1->count() / batch_size;
+			} else if (moment_type==ASLEEP) {
+				_asleep += 1. * _sp1->count() / batch_size;
 			};
 		} else if (_type == Jp) {
-			if (_sp1 && _sp2) {
-				if (moment_type==AWAKE) {
-					_awake += 1. * _sp1->nn_count(_sp2) / batch_size;
-				} else if (moment_type==ASLEEP) {
-					_asleep += 1. * _sp1->nn_count(_sp2) / batch_size;
+			if (moment_type==AWAKE) {
+				_awake += 1. * _sp1->nn_count(_sp2) / batch_size;
+			} else if (moment_type==ASLEEP) {
+				_asleep += 1. * _sp1->nn_count(_sp2) / batch_size;
+			};
+		} else if (_type == Wp) {
+			double inc = 0.0;
+			// Run through all connections
+			for (auto c: _conns) {
+				if (c.first->sp == _sp1) { // site occupied with the correct species
+					inc += c.second->get(); // v * h
 				};
 			};
-		};	
+			if (moment_type==AWAKE) {
+				_awake += 1. * inc / batch_size;
+			} else if (moment_type==ASLEEP) {
+				_asleep += 1. * inc / batch_size;
+			};
+		};
 	};
 
 	double IxnParam::moments_diff() const {

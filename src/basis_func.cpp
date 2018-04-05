@@ -1,5 +1,5 @@
 #include "var_term_traj.hpp"
-#include "general.hpp"
+#include "../include/general.hpp"
 #include <iostream>
 #include "math.h"
 #include <fstream>

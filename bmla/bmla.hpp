@@ -86,7 +86,7 @@ namespace DynamicBoltzmann {
 
 		// Print
 		void _print_ixn_params(bool new_line=true) const;
-		void _print_moments() const;
+		void _print_moments(bool new_line=true) const;
 		void _print_mse(bool new_line=true) const;
 
 		// Get the mse

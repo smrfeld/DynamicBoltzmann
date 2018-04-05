@@ -1,6 +1,6 @@
-#include "dynamic_boltzmann.hpp"
+#include "../include/dynamic_boltzmann.hpp"
 #include <iostream>
-#include "general.hpp"
+#include "../include/general.hpp"
 #include <ctime>
 #include <fstream>
 #include <algorithm>
@@ -565,7 +565,7 @@ namespace DynamicBoltzmann {
 					if (_hidden_layer_exists) {
 						for (auto ithu = _hidden_units.begin(); ithu != _hidden_units.end(); ithu++) {
 							// When using real data, always use binary states
-							ithu->activate(true);
+							ithu->activate(false);
 						};
 					};
 

@@ -354,21 +354,8 @@ namespace DynamicBoltzmann {
 
 		// If already occupied, remove
 		if (s->sp) {
-
-			// Update count and nns
-			s->sp->count_minus();
-			for (auto nbr_it: s->nbrs) { // go through nbrs
-				if (nbr_it->sp) { // is nbr site occ
-					// Update bidirectionally, unless it's the same species
-					s->sp->nn_count_minus(nbr_it->sp);
-					if (nbr_it->sp != s->sp) {
-						nbr_it->sp->nn_count_minus(s->sp);
-					};
-				};
-			};
-
-			// Clear
-			s->sp = nullptr;	
+			// Erase mol
+			erase_mol(s);
 		};
 
 		// Make mol at empty site

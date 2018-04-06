@@ -336,12 +336,46 @@ namespace DynamicBoltzmann {
 	********************/
 
 	bool Lattice::make_mol(latt_it s, Species *sp) {
-		// Check not already occupide
+		// Check not already occupied
 		if (s->sp) {
 			std::cerr << "ERROR site already occupied" << std::endl;
 			return false;
 		};
 
+		// Make mol at empty site
+		return make_mol_at_empty(s,sp);
+	};
+
+	bool Lattice::replace_mol(latt_it s, Species *sp) {
+		// Check not the same as already there
+		if (s->sp == sp) {
+			return true;
+		};
+
+		// If already occupied, remove
+		if (s->sp) {
+
+			// Update count and nns
+			s->sp->count_minus();
+			for (auto nbr_it: s->nbrs) { // go through nbrs
+				if (nbr_it->sp) { // is nbr site occ
+					// Update bidirectionally, unless it's the same species
+					s->sp->nn_count_minus(nbr_it->sp);
+					if (nbr_it->sp != s->sp) {
+						nbr_it->sp->nn_count_minus(s->sp);
+					};
+				};
+			};
+
+			// Clear
+			s->sp = nullptr;	
+		};
+
+		// Make mol at empty site
+		return make_mol_at_empty(s,sp);
+	};
+
+	bool Lattice::make_mol_at_empty(latt_it s, Species *sp) {
 		/*
 		std::cout << "Making: " << s->x << " " << s->y << " " << s->z << std::flush;
 		int ctr=0;
@@ -544,10 +578,8 @@ namespace DynamicBoltzmann {
 					erase_mol(it); // Does not invalidate iterator
 				};
 			} else {
-				// Make the appropriate species at this site if needed
-				if (it->sp != _sp_vec[i_chosen-1]) {
-					make_mol(it,_sp_vec[i_chosen-1]);
-				};
+				// Make the appropriate species at this site if needed (checks internally)
+				replace_mol(it,_sp_vec[i_chosen-1]);
 			};
 		};
 	};

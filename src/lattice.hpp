@@ -171,6 +171,8 @@ namespace DynamicBoltzmann {
 		********************/
 
 		bool make_mol(latt_it s, Species *sp);
+		bool replace_mol(latt_it s, Species *sp);
+		bool make_mol_at_empty(latt_it s, Species *sp);
 
 		/********************
 		Erase a mol

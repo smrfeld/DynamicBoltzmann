@@ -504,6 +504,7 @@ namespace DynamicBoltzmann {
 			for (auto sp_new: sp_ptrs) {
 				// Bias
 				energy = sp_new->h();
+				//std::cout << "after h: " << energy << std::endl;
 
 				// NNs for J
 				for (auto it_nbr: it->nbrs) {
@@ -512,6 +513,7 @@ namespace DynamicBoltzmann {
 						energy += sp_new->j(it_nbr->sp);
 					};
 				};
+				//std::cout << "after j: " << energy << std::endl;
 
 				// Hidden layer exists?
 				if (_hidden_layer_exists) {
@@ -526,18 +528,27 @@ namespace DynamicBoltzmann {
 						};
 					};
 				};
+				//std::cout << "after hidden: " << energy << std::endl;
 
 				// Append prop
 				props.push_back(props.back() + exp(energy));
 			};
 
+			/*
+			for (auto pr: props) {
+				std::cout << pr << std::endl;
+			};
+			*/
+
 			// Sample RV
 			r = randD(0.0,props.back());
 
 			// Find interval
-			for (int i=0; i<props.size()-2; i++) {
+			for (int i=0; i<props.size()-1; i++) {
+				// std::cout << i << " " << props[i] << " " << r << " " << props[i+1] << std::endl;
 				if (props[i] <= r && r <= props[i+1]) {
 					if (i==0) {
+						// std::cout << "new spin 0" << std::endl; 
 						// Flip down (new spin = 0) if needed
 						if (it->sp != nullptr) {
 							erase_mol(it); // Does not invalidate iterator
@@ -545,7 +556,10 @@ namespace DynamicBoltzmann {
 					} else {
 						// Make the appropriate species at this site if needed
 						if (it->sp != sp_ptrs[i-1]) {
+							//std::cout << "new spin " << sp_ptrs[i-1]->name() << std::endl; 
 							make_mol(it,sp_ptrs[i-1]);
+						} else {
+							//std::cout << "same spin " << sp_ptrs[i-1]->name() << std::endl; 
 						};
 					};
 					// Stop finding interval

@@ -8,14 +8,14 @@ using namespace DynamicBoltzmann;
 int main() {
 
 	int box_length = 1000;
-	int n_cd_steps = 10;
+	int n_cd_steps = 1000;
 	double dopt = 0.002;
-	int n_opt = 1000;
-	int n_batch = 1000;
+	int n_opt = 100;
+	int n_batch = 100;
 
 	std::vector<Dim> dims;
-	dims.push_back(Dim("h",DimType::H,"A",0.83461));
-	dims.push_back(Dim("W",DimType::W,"A",-7.175));
+	dims.push_back(Dim("h",DimType::H,"A",1.0));
+	dims.push_back(Dim("W",DimType::W,"A",-5));
 
 	BMLA bmla(dims,{"A"},n_batch,box_length,dopt,n_opt,1);
 
@@ -54,8 +54,8 @@ int main() {
 	};
 
 	// Iterate over the things
-	int n_files = 10;
-	for (int i=10; i<=n_files; i++) {
+	int n_files = 11;
+	for (int i=11; i<=n_files; i++) {
 		std::cout << "--- File: " << i << " / " << n_files << " ---" << std::endl; 
 
 		// Read the existing as a guess

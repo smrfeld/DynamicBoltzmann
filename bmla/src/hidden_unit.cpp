@@ -84,11 +84,12 @@ namespace DynamicBoltzmann {
 
 	void HiddenUnit::activate(bool binary) {
 		// Go through all connected neurons
+		//std::cout << "Activating..." << std::endl;
 		double act = 0.0;
 		for (auto c: _conn) {
 			if (c->sp == _sp) { // Check that this is the species that I love
 				act += c->sp->w(); // Gets the weight of this connection
-				// std::cout << "Activating hidden:   " << c->sp->w() << std::endl;
+				//std::cout << "    Adding from site -> " << act << std::endl;
 			};
 		};
 
@@ -109,8 +110,6 @@ namespace DynamicBoltzmann {
 	********************/
 
 	double HiddenUnit::_sigma(double x) const {
-		// Tanh
-		// return tanh(x);
 		// Sigmoid
 		return 1.0 / (1.0 + exp(-x));
 	};	

@@ -350,7 +350,6 @@ namespace DynamicBoltzmann {
 				if (_hidden_layer_exists) {
 					for (auto ithu = _hidden_units.begin(); ithu != _hidden_units.end(); ithu++) {
 						// When using real data, always use binary states
-						// TEMP: use probabilities here....
 						ithu->activate(true);
 					};
 				};
@@ -363,8 +362,8 @@ namespace DynamicBoltzmann {
 				// Do the contrastive divergence
 				for (int cd_step=0; cd_step<_n_cd_steps; cd_step++)
 				{
-					// Anneal
-					_latt.anneal();
+					// Sample
+					_latt.sample();
 
 					// Activate hidden
 					if (_hidden_layer_exists) {

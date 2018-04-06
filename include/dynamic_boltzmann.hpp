@@ -99,8 +99,8 @@ namespace DynamicBoltzmann {
 		// Batch size
 		int _n_batch;
 
-		// Number of annealing steps
-		int _n_annealing;
+		// Number of CD steps
+		int _n_cd_steps;
 
 		// Lattice size
 		int _box_length;
@@ -149,13 +149,12 @@ namespace DynamicBoltzmann {
 		 * @param[in]  t_max        Maximum time
 		 * @param[in]  n_t          No. of timepoints in the trajectory
 		 * @param[in]  batch_size   Batch size
-		 * @param[in]  n_annealing  No. annealing steps
 		 * @param[in]  box_length   Box length
 		 * @param[in]  dopt         Optimization step interval
 		 * @param[in]  n_opt        No. optimization steps
 		 * @param[in]  lattice_dim  The lattice dimension
 		 */
-		OptProblem(std::vector<Dim> dims, std::vector<std::string> species, double t_max, int n_t, int batch_size, int n_annealing, int box_length, double dopt, int n_opt, int lattice_dim=3);
+		OptProblem(std::vector<Dim> dims, std::vector<std::string> species, double t_max, int n_t, int batch_size, int box_length, double dopt, int n_opt, int lattice_dim=3);
 
 		/**
 		 * @brief      Copy constructor
@@ -214,6 +213,9 @@ namespace DynamicBoltzmann {
 		 * @param[in]  f     The filename
 		 */
 		void add_fname(std::string f);
+
+		// Set the number of CD steps
+		void set_n_cd_steps(int n_steps);
 
 		/********************
 		Validate setup

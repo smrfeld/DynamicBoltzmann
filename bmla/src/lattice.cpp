@@ -6,6 +6,7 @@
 #include "math.h"
 #include <ctime>
 #include <sstream>
+#include <random>
 
 /************************************
 * Namespace for DynamicBoltzmann
@@ -249,11 +250,13 @@ namespace DynamicBoltzmann {
 		_latt = other._latt;
 		_box_length = other._box_length;
 		_sp_map = other._sp_map;
+		_sp_vec = other._sp_vec;
 		_hidden_layer_exists = other._hidden_layer_exists;
 	};
 	void Lattice::_reset() {
 		_box_length = 0;
 		_sp_map.clear();
+		_sp_vec.clear();
 		_latt.clear();
 		_hidden_layer_exists = false;
 	};
@@ -273,6 +276,7 @@ namespace DynamicBoltzmann {
 	void Lattice::add_species(Species *sp) {
 		if (sp) {
 			_sp_map[sp->name()] = sp;
+			_sp_vec.push_back(sp);
 		};
 	};
 
@@ -316,8 +320,8 @@ namespace DynamicBoltzmann {
 
 	void Lattice::clear() { 
 		// Reset the counts and nns
-		for (auto sp_pair: _sp_map) {
-			sp_pair.second->reset_counts();
+		for (auto sp: _sp_vec) {
+			sp->reset_counts();
 		};
 
 		// Clear the lattice
@@ -473,38 +477,35 @@ namespace DynamicBoltzmann {
 	};
 
 	/********************
-	Anneal
+	Sample
 	********************/
 
-	void Lattice::anneal() {
+	void Lattice::sample() {
 
 		// Declarations
 		latt_it it;
 		double energy;
-		std::vector<double> props; // Unnormalized
-		double r;
 		std::map<Species*, std::vector<HiddenUnit*>>::iterator it_hups;
-
-		// Species ptrs
-		std::vector<Species*> sp_ptrs;
-		for (auto sp_pair: _sp_map) {
-			sp_ptrs.push_back(sp_pair.second);
-		};
+		// std::vector<double> probs; // Unnormalized probabilities
+		std::vector<double> props; // propensities
+		int i_chosen;
 
 		// Go through all lattice sites
 		for (it = _latt.begin(); it != _latt.end(); it++) {
 
 			// Clear propensities
+			// probs.clear();
 			props.clear();
 			props.push_back(0.0);
 
 			// Propensity for no spin is exp(0) = 1
+			// probs.push_back(1.0);
 			props.push_back(1.0);
+			
 			// Go through all possible species this could be, calculate propensities
-			for (auto sp_new: sp_ptrs) {
+			for (auto sp_new: _sp_vec) {
 				// Bias
 				energy = sp_new->h();
-				//std::cout << "after h: " << energy << std::endl;
 
 				// NNs for J
 				for (auto it_nbr: it->nbrs) {
@@ -513,7 +514,6 @@ namespace DynamicBoltzmann {
 						energy += sp_new->j(it_nbr->sp);
 					};
 				};
-				//std::cout << "after j: " << energy << std::endl;
 
 				// Hidden layer exists?
 				if (_hidden_layer_exists) {
@@ -528,45 +528,54 @@ namespace DynamicBoltzmann {
 						};
 					};
 				};
-				//std::cout << "after hidden: " << energy << std::endl;
 
-				// Append prop
-				props.push_back(props.back() + exp(energy));
+				// Append prob
+				// probs.push_back(exp(energy));
+				props.push_back(props.back()+exp(energy));
 			};
-
-			/*
-			for (auto pr: props) {
-				std::cout << pr << std::endl;
-			};
-			*/
 
 			// Sample RV
-			r = randD(0.0,props.back());
+			// i_chosen = sample_prob_vec(probs);
+			i_chosen = sample_prop_vec(props);
 
-			// Find interval
-			for (int i=0; i<props.size()-1; i++) {
-				// std::cout << i << " " << props[i] << " " << r << " " << props[i+1] << std::endl;
-				if (props[i] <= r && r <= props[i+1]) {
-					if (i==0) {
-						// std::cout << "new spin 0" << std::endl; 
-						// Flip down (new spin = 0) if needed
-						if (it->sp != nullptr) {
-							erase_mol(it); // Does not invalidate iterator
-						};
-					} else {
-						// Make the appropriate species at this site if needed
-						if (it->sp != sp_ptrs[i-1]) {
-							//std::cout << "new spin " << sp_ptrs[i-1]->name() << std::endl; 
-							make_mol(it,sp_ptrs[i-1]);
-						} else {
-							//std::cout << "same spin " << sp_ptrs[i-1]->name() << std::endl; 
-						};
-					};
-					// Stop finding interval
-					break;
+			if (i_chosen==0) {
+				// Flip down (new spin = 0) if needed
+				if (it->sp != nullptr) {
+					erase_mol(it); // Does not invalidate iterator
+				};
+			} else {
+				// Make the appropriate species at this site if needed
+				if (it->sp != _sp_vec[i_chosen-1]) {
+					make_mol(it,_sp_vec[i_chosen-1]);
 				};
 			};
 		};
+	};
+
+	/********************
+	Sample probabilities/propensities
+	********************/
+
+	// Sample an unnormalized probability vector
+	int Lattice::sample_prob_vec(std::vector<double> &probs) {
+		unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
+		std::default_random_engine generator(seed);
+		std::discrete_distribution<int> dd(probs.begin(),probs.end());
+		return dd(generator);
+	};
+
+	// Sample a vector of propensities (cumulative probabilities)
+	int Lattice::sample_prop_vec(std::vector<double> &props) {
+		// Sample RV
+		double r = randD(0.0,props.back());
+
+		// Find interval
+		for (int i=0; i<props.size()-1; i++) {
+			if (props[i] <= r && r <= props[i+1]) {
+				return i;
+			};
+		};
+		return 0; // never get here
 	};
 
 	/****************************************

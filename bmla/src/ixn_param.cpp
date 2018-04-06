@@ -194,6 +194,7 @@ namespace DynamicBoltzmann {
 			// Run through all connections
 			for (auto c: _conns) {
 				if (c.first->sp == _sp1) { // site occupied with the correct species
+					//std::cout << "inc val " << c.second->get() << std::endl;
 					inc += c.second->get(); // v * h
 				};
 			};

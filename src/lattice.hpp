@@ -109,6 +109,7 @@ namespace DynamicBoltzmann {
 
 		// Pointers to species present
 		std::map<std::string,Species*> _sp_map;
+		std::vector<Species*> _sp_vec;
 
 		// Flag - are hidden units present? (needed for annealing)
 		bool _hidden_layer_exists;
@@ -190,10 +191,20 @@ namespace DynamicBoltzmann {
 		void read_from_file(std::string fname);
 
 		/********************
-		Anneal
+		Sample
 		********************/
 
-		void anneal(int n_steps);
+		void sample();
+
+		/********************
+		Sample probabilities/propensities
+		********************/
+
+		// Sample an unnormalized probability vector
+		int sample_prop_vec(std::vector<double> &props);
+		
+		// Sample a vector of propensities (cumulative probabilities)
+		int sample_prob_vec(std::vector<double> &probs);
 	};
 
 };

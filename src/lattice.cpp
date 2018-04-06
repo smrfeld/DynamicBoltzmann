@@ -6,6 +6,7 @@
 #include "math.h"
 #include <ctime>
 #include <sstream>
+#include <random>
 
 /************************************
 * Namespace for DynamicBoltzmann
@@ -249,11 +250,13 @@ namespace DynamicBoltzmann {
 		_latt = other._latt;
 		_box_length = other._box_length;
 		_sp_map = other._sp_map;
+		_sp_vec = other._sp_vec;
 		_hidden_layer_exists = other._hidden_layer_exists;
 	};
 	void Lattice::_reset() {
 		_box_length = 0;
 		_sp_map.clear();
+		_sp_vec.clear();
 		_latt.clear();
 		_hidden_layer_exists = false;
 	};
@@ -273,6 +276,7 @@ namespace DynamicBoltzmann {
 	void Lattice::add_species(Species *sp) {
 		if (sp) {
 			_sp_map[sp->name()] = sp;
+			_sp_vec.push_back(sp);
 		};
 	};
 
@@ -316,8 +320,8 @@ namespace DynamicBoltzmann {
 
 	void Lattice::clear() { 
 		// Reset the counts and nns
-		for (auto sp_pair: _sp_map) {
-			sp_pair.second->reset_counts();
+		for (auto sp: _sp_vec) {
+			sp->reset_counts();
 		};
 
 		// Clear the lattice
@@ -473,131 +477,105 @@ namespace DynamicBoltzmann {
 	};
 
 	/********************
-	Anneal
+	Sample
 	********************/
 
-	void Lattice::anneal(int n_steps) {
-
-		// Annealing temperature
-		// double temp0 = 3.0;
-		// double temp;
-		// Formula:
-		// temp0 * exp( - log(temp0) * i / (n_steps-1) )
-		// Such that final temp is 1
-
-		// Timing
-		
-		// std::clock_t    start;
+	void Lattice::sample() {
 
 		// Declarations
-
-		double hOld,jOld,wOld,hNew,jNew,wNew,energy_diff;
+		latt_it it;
+		double energy;
 		std::map<Species*, std::vector<HiddenUnit*>>::iterator it_hups;
-		latt_it it_flip;
-		std::map<std::string,Species*>::iterator it_sp;
-		Species *sp_new = nullptr;
+		// std::vector<double> probs; // Unnormalized probabilities
+		std::vector<double> props; // propensities
+		int i_chosen;
 
-		// Go through the steps
-		for (int i=0; i<n_steps; i++) {
+		// Go through all lattice sites
+		for (it = _latt.begin(); it != _latt.end(); it++) {
 
-			// Annealing temp
-			// temp = temp0 * exp( - log(temp0) * i / (n_steps-1) );
+			// Clear propensities
+			// probs.clear();
+			props.clear();
+			props.push_back(0.0);
 
-			// start = std::clock();
+			// Propensity for no spin is exp(0) = 1
+			// probs.push_back(1.0);
+			props.push_back(1.0);
+			
+			// Go through all possible species this could be, calculate propensities
+			for (auto sp_new: _sp_vec) {
+				// Bias
+				energy = sp_new->h();
 
-			// Pick a site to flip randomly
-			it_flip = _latt.begin();
-			std::advance(it_flip,randI(0,_latt.size()-1));
-
-			//std::cout << "NBRS Time: " << (std::clock() - start) / (double)(CLOCKS_PER_SEC / 1000) << " ms" << std::endl;
-			//start = std::clock();
-
-			// Check if this site is occupied
-			if (it_flip->sp) {
-				// Occupied - flip down
-				hOld = -it_flip->sp->h();
-				jOld = 0.0;
-				for (auto it_nbr: it_flip->nbrs) {
+				// NNs for J
+				for (auto it_nbr: it->nbrs) {
+					// Occupied?
 					if (it_nbr->sp) {
-						jOld -= it_flip->sp->j(it_nbr->sp);
+						energy += sp_new->j(it_nbr->sp);
 					};
 				};
-				// New couplings
-				hNew = 0.0;
-				jNew = 0.0;
-			} else {
-				// Unoccupied - flip up
-				hOld = 0.0;
-				jOld = 0.0;
-				// Random species
-				it_sp = _sp_map.begin();
-				std::advance(it_sp, randI(0,_sp_map.size()-1));
-				sp_new = it_sp->second;
-				// New couplings
-				hNew = -sp_new->h();
-				jNew = 0.0;
-				for (auto it_nbr: it_flip->nbrs) {
-					if (it_nbr->sp) {
-						jNew -= sp_new->j(it_nbr->sp);
-					};
-				};
-			};
 
-			//std::cout << "CALC Time: " << (std::clock() - start) / (double)(CLOCKS_PER_SEC / 1000) << " ms" << std::endl;
-			//start = std::clock();
+				// Hidden layer exists?
+				if (_hidden_layer_exists) {
 
-			// Energy difference
-			energy_diff = hNew + jNew - hOld - jOld;
-
-			// Hidden layer?
-			if (_hidden_layer_exists) {
-
-				// Check if this site is occupied
-				if (it_flip->sp) {
-					// Occupied - flip down
-					wOld = 0.0;
 					// Check if this species has connections to hidden units
-					it_hups = it_flip->hidden_conns.find(it_flip->sp);
-					if (it_hups != it_flip->hidden_conns.end()) {
-						// Yes it does - sum them up!
+					it_hups = it->hidden_conns.find(sp_new);
+					if (it_hups != it->hidden_conns.end()) {
+						// Yes it does - sum them up! Go over hidden units
 						for (auto hup: it_hups->second) {
-							wOld -= hup->get();
-						};
-					};
-					wNew = 0.0;
-				} else {
-					// Unoccupied - flip up
-					wOld = 0.0;
-					// Already have the new species - check if it has conns to hidden units
-					wNew = 0.0;
-					it_hups = it_flip->hidden_conns.find(sp_new);
-					if (it_hups != it_flip->hidden_conns.end()) {
-						// Yes it does - sum them up!
-						for (auto hup: it_hups->second) {
-							wNew -= hup->get();
+							// Weight * value of spin (0 or 1 if binary, else a prob)
+							energy += sp_new->w() * hup->get();
 						};
 					};
 				};
 
-				// Update the energy diff
-				energy_diff += wNew - wOld;
+				// Append prob
+				// probs.push_back(exp(energy));
+				props.push_back(props.back()+exp(energy));
 			};
 
-			// Evaluate energy diff
-			if (energy_diff < 0.0 || exp(-energy_diff) > randD(0.0,1.0)) {
-				// Accept the flip!
-				if (it_flip->sp) {
-					// Occupied - flip down
-					erase_mol(it_flip);
-				} else {
-					// Unoccupied - flip up
-					make_mol(it_flip,sp_new);
+			// Sample RV
+			// i_chosen = sample_prob_vec(probs);
+			i_chosen = sample_prop_vec(props);
+
+			if (i_chosen==0) {
+				// Flip down (new spin = 0) if needed
+				if (it->sp != nullptr) {
+					erase_mol(it); // Does not invalidate iterator
+				};
+			} else {
+				// Make the appropriate species at this site if needed
+				if (it->sp != _sp_vec[i_chosen-1]) {
+					make_mol(it,_sp_vec[i_chosen-1]);
 				};
 			};
-
-			//std::cout << "FLIP Time: " << (std::clock() - start) / (double)(CLOCKS_PER_SEC / 1000) << " ms" << std::endl;
-			//start = std::clock();
 		};
+	};
+
+	/********************
+	Sample probabilities/propensities
+	********************/
+
+	// Sample an unnormalized probability vector
+	int Lattice::sample_prob_vec(std::vector<double> &probs) {
+		unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
+		std::default_random_engine generator(seed);
+		std::discrete_distribution<int> dd(probs.begin(),probs.end());
+		return dd(generator);
+	};
+
+	// Sample a vector of propensities (cumulative probabilities)
+	int Lattice::sample_prop_vec(std::vector<double> &props) {
+		// Sample RV
+		double r = randD(0.0,props.back());
+
+		// Find interval
+		for (int i=0; i<props.size()-1; i++) {
+			if (props[i] <= r && r <= props[i+1]) {
+				return i;
+			};
+		};
+		return 0; // never get here
 	};
 
 	/****************************************

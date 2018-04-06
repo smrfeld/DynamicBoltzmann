@@ -45,14 +45,14 @@ namespace DynamicBoltzmann {
 	Constructor
 	********************/
 
-	OptProblem::OptProblem(std::vector<Dim> dims, std::vector<std::string> species, double t_max, int n_t, int batch_size, int n_annealing, int box_length, double dopt, int n_opt, int lattice_dim) : _latt(lattice_dim,box_length), _time("time",0.0,t_max,n_t)
+	OptProblem::OptProblem(std::vector<Dim> dims, std::vector<std::string> species, double t_max, int n_t, int batch_size, int box_length, double dopt, int n_opt, int lattice_dim) : _latt(lattice_dim,box_length), _time("time",0.0,t_max,n_t)
 	{
 		// Set parameters
 		if (DIAG_SETUP) { std::cout << "Copying params..." << std::flush; };
 		_n_param = dims.size();
 		_dopt = dopt;
 		_n_opt = n_opt;
-		_n_annealing = n_annealing;
+		_n_cd_steps = 1; // default
 		_box_length = box_length;
 		_n_batch = batch_size;
 		_t_opt = 0;
@@ -266,7 +266,7 @@ namespace DynamicBoltzmann {
 		_n_t_soln = 0;
 		_t_opt = 0;
 		_n_batch = 0;
-		_n_annealing = 0;
+		_n_cd_steps = 1;
 		_box_length = 0;
 		_dopt = 0;
 		_fname_start_idx = 0;
@@ -288,7 +288,7 @@ namespace DynamicBoltzmann {
 		_n_t_soln = other._n_t_soln;
 		_t_opt = other._t_opt;
 		_n_batch = other._n_batch;
-		_n_annealing = other._n_annealing;
+		_n_cd_steps = other._n_cd_steps;
 		_box_length = other._box_length;
 		_latt = other._latt;
 		_dopt = other._dopt;
@@ -369,6 +369,10 @@ namespace DynamicBoltzmann {
 
 	void OptProblem::add_fname(std::string f) {
 		_fnames.push_back(f);
+	};
+
+	void OptProblem::set_n_cd_steps(int n_steps) {
+		_n_cd_steps = n_steps;
 	};
 
 	/********************
@@ -580,28 +584,31 @@ namespace DynamicBoltzmann {
 					};
 
 					/*****
-					Step 5.1.4 - anneal
+					Step 5.1.4 - CD steps
 					*****/
 
-					if (DIAG_SOLVE) { std::cout << "      Anneal" << std::endl; };
+					for (int cd_step=0; cd_step<_n_cd_steps; cd_step++)
+					{
+						// Sample
 
-					_latt.anneal(_n_annealing);
+						if (DIAG_SOLVE) { std::cout << "      Anneal" << std::endl; };
 
-					/*****
-					Step 5.1.5 - Activate the hidden units if needed
-					*****/
+						_latt.sample();
 
-					if (DIAG_SOLVE) { std::cout << "      Activating hidden units" << std::endl; };
+						// Activate the hidden units if needed
 
-					if (_hidden_layer_exists) {
-						for (auto ithu = _hidden_units.begin(); ithu != _hidden_units.end(); ithu++) {
-							// When using reconstructions, always use raw probabilities
-							ithu->activate(false);
+						if (DIAG_SOLVE) { std::cout << "      Activating hidden units" << std::endl; };
+
+						if (_hidden_layer_exists) {
+							for (auto ithu = _hidden_units.begin(); ithu != _hidden_units.end(); ithu++) {
+								// When using reconstructions, always use raw probabilities
+								ithu->activate(false);
+							};
 						};
 					};
 
 					/*****
-					Step 5.1.6 - Record the asleep moments
+					Step 5.1.5 - Record the asleep moments
 					*****/
 
 					if (DIAG_SOLVE) { std::cout << "      Record asleep moments" << std::endl; };
@@ -770,23 +777,26 @@ namespace DynamicBoltzmann {
 					};
 
 					/*****
-					Step 2.5.3 - anneal
+					Step 2.5.3 - CD steps - alternate sampling and activating
 					*****/
 
-					if (DIAG_SOLVE) { std::cout << "      Anneal" << std::endl; };
+					for (int cd_step=0; cd_step<_n_cd_steps; cd_step++) {
 
-					_latt.anneal(_n_annealing);
+						// Anneal
 
-					/*****
-					Step 2.5.4 - Record the asleep moments
-					*****/
+						if (DIAG_SOLVE) { std::cout << "      Anneal" << std::endl; };
 
-					if (DIAG_SOLVE) { std::cout << "      Record asleep moments" << std::endl; };
+						_latt.sample();
 
-					for (auto itp = _ixn_params.begin(); itp != _ixn_params.end(); itp++) {
-						itp->moments_retrieve_at_time(IxnParamTraj::ASLEEP,_t_opt);
+						// Record the asleep moments
+
+						if (DIAG_SOLVE) { std::cout << "      Record asleep moments" << std::endl; };
+
+						for (auto itp = _ixn_params.begin(); itp != _ixn_params.end(); itp++) {
+							itp->moments_retrieve_at_time(IxnParamTraj::ASLEEP,_t_opt);
+						};
+
 					};
-
 				};
 
 				if (verbose) {

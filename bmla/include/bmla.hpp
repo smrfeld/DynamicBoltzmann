@@ -64,8 +64,8 @@ namespace DynamicBoltzmann {
 		// Batch size
 		int _n_batch;
 
-		// Number of annealing steps
-		int _n_annealing;
+		// Number of CD steps
+		int _n_cd_steps;
 
 		// The lattice to learn
 		Lattice _latt;
@@ -83,9 +83,6 @@ namespace DynamicBoltzmann {
 		// L2 reg
 		bool _l2_reg;
 		double _lambda;
-
-		// Number of CD steps
-		int _n_cd_steps;
 
 		// Print
 		void _print_ixn_params(bool new_line=true) const;
@@ -112,7 +109,7 @@ namespace DynamicBoltzmann {
 	public:
 
 		// Constructor
-		BMLA(std::vector<Dim> dims, std::vector<std::string> species, int batch_size, int n_annealing, int box_length, double dopt, int n_opt, int lattice_dim=3);
+		BMLA(std::vector<Dim> dims, std::vector<std::string> species, int batch_size, int box_length, double dopt, int n_opt, int lattice_dim=3);
 		BMLA(const BMLA& other);
 		BMLA(BMLA&& other);
 		BMLA& operator=(const BMLA& other);

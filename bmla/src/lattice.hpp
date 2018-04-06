@@ -193,7 +193,7 @@ namespace DynamicBoltzmann {
 		Anneal
 		********************/
 
-		void anneal(int n_steps);
+		void anneal();
 	};
 
 };

@@ -8,22 +8,22 @@ using namespace DynamicBoltzmann;
 int main() {
 
 	int box_length = 1000;
-	int n_annealing = 10000;
+	int n_cd_steps = 10;
 	double dopt = 0.002;
 	int n_opt = 100;
 	int n_batch = 200;
 
 	std::vector<Dim> dims;
-	dims.push_back(Dim("h",DimType::H,"A",-3.2801));
-	dims.push_back(Dim("W",DimType::W,"A",5.73896));
+	dims.push_back(Dim("h",DimType::H,"A",1.01267));
+	dims.push_back(Dim("W",DimType::W,"A",2.44382));
 
-	BMLA bmla(dims,{"A"},n_batch,n_annealing,box_length,dopt,n_opt,1);
+	BMLA bmla(dims,{"A"},n_batch,box_length,dopt,n_opt,1);
 
 	// Set the number of CD steps
-	// bmla.set_n_cd_steps(10);
+	bmla.set_n_cd_steps(n_cd_steps);
 
 	// Quit if the MSE goes below 1%
-	bmla.set_mse_quit(1.0);
+	bmla.set_mse_quit(0.1);
 
 	// Turn on L2 reg
 	// bmla.set_l2_reg(0.01);
@@ -55,7 +55,7 @@ int main() {
 
 	// Iterate over the things
 	int n_files = 20;
-	for (int i=11; i<=n_files; i++) {
+	for (int i=10; i<=n_files; i++) {
 		std::cout << "--- File: " << i << " / " << n_files << " ---" << std::endl; 
 
 		// Read the existing as a guess

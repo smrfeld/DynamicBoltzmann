@@ -476,127 +476,82 @@ namespace DynamicBoltzmann {
 	Anneal
 	********************/
 
-	void Lattice::anneal(int n_steps) {
-
-		// Annealing temperature
-		// double temp0 = 3.0;
-		// double temp;
-		// Formula:
-		// temp0 * exp( - log(temp0) * i / (n_steps-1) )
-		// Such that final temp is 1
-
-		// Timing
-		
-		// std::clock_t    start;
+	void Lattice::anneal() {
 
 		// Declarations
-
-		double hOld,jOld,wOld,hNew,jNew,wNew,energy_diff;
+		latt_it it;
+		double energy;
+		std::vector<double> props; // Unnormalized
+		double r;
 		std::map<Species*, std::vector<HiddenUnit*>>::iterator it_hups;
-		latt_it it_flip;
-		std::map<std::string,Species*>::iterator it_sp;
-		Species *sp_new = nullptr;
 
-		// Go through the steps
-		for (int i=0; i<n_steps; i++) {
+		// Species ptrs
+		std::vector<Species*> sp_ptrs;
+		for (auto sp_pair: _sp_map) {
+			sp_ptrs.push_back(sp_pair.second);
+		};
 
-			// Annealing temp
-			// temp = temp0 * exp( - log(temp0) * i / (n_steps-1) );
+		// Go through all lattice sites
+		for (it = _latt.begin(); it != _latt.end(); it++) {
 
-			// start = std::clock();
+			// Clear propensities
+			props.clear();
+			props.push_back(0.0);
 
-			// Pick a site to flip randomly
-			it_flip = _latt.begin();
-			std::advance(it_flip,randI(0,_latt.size()-1));
+			// Propensity for no spin is exp(0) = 1
+			props.push_back(1.0);
+			// Go through all possible species this could be, calculate propensities
+			for (auto sp_new: sp_ptrs) {
+				// Bias
+				energy = sp_new->h();
 
-			//std::cout << "NBRS Time: " << (std::clock() - start) / (double)(CLOCKS_PER_SEC / 1000) << " ms" << std::endl;
-			//start = std::clock();
-
-			// Check if this site is occupied
-			if (it_flip->sp) {
-				// Occupied - flip down
-				hOld = -it_flip->sp->h();
-				jOld = 0.0;
-				for (auto it_nbr: it_flip->nbrs) {
+				// NNs for J
+				for (auto it_nbr: it->nbrs) {
+					// Occupied?
 					if (it_nbr->sp) {
-						jOld -= it_flip->sp->j(it_nbr->sp);
+						energy += sp_new->j(it_nbr->sp);
 					};
 				};
-				// New couplings
-				hNew = 0.0;
-				jNew = 0.0;
-			} else {
-				// Unoccupied - flip up
-				hOld = 0.0;
-				jOld = 0.0;
-				// Random species
-				it_sp = _sp_map.begin();
-				std::advance(it_sp, randI(0,_sp_map.size()-1));
-				sp_new = it_sp->second;
-				// New couplings
-				hNew = -sp_new->h();
-				jNew = 0.0;
-				for (auto it_nbr: it_flip->nbrs) {
-					if (it_nbr->sp) {
-						jNew -= sp_new->j(it_nbr->sp);
-					};
-				};
-			};
 
-			//std::cout << "CALC Time: " << (std::clock() - start) / (double)(CLOCKS_PER_SEC / 1000) << " ms" << std::endl;
-			//start = std::clock();
+				// Hidden layer exists?
+				if (_hidden_layer_exists) {
 
-			// Energy difference
-			energy_diff = hNew + jNew - hOld - jOld;
-
-			// Hidden layer?
-			if (_hidden_layer_exists) {
-
-				// Check if this site is occupied
-				if (it_flip->sp) {
-					// Occupied - flip down
-					wOld = 0.0;
 					// Check if this species has connections to hidden units
-					it_hups = it_flip->hidden_conns.find(it_flip->sp);
-					if (it_hups != it_flip->hidden_conns.end()) {
-						// Yes it does - sum them up!
+					it_hups = it->hidden_conns.find(sp_new);
+					if (it_hups != it->hidden_conns.end()) {
+						// Yes it does - sum them up! Go over hidden units
 						for (auto hup: it_hups->second) {
-							wOld -= hup->get();
-						};
-					};
-					wNew = 0.0;
-				} else {
-					// Unoccupied - flip up
-					wOld = 0.0;
-					// Already have the new species - check if it has conns to hidden units
-					wNew = 0.0;
-					it_hups = it_flip->hidden_conns.find(sp_new);
-					if (it_hups != it_flip->hidden_conns.end()) {
-						// Yes it does - sum them up!
-						for (auto hup: it_hups->second) {
-							wNew -= hup->get();
+							// Weight * value of spin (0 or 1 if binary, else a prob)
+							energy += sp_new->w() * hup->get();
 						};
 					};
 				};
 
-				// Update the energy diff
-				energy_diff += wNew - wOld;
+				// Append prop
+				props.push_back(props.back() + exp(energy));
 			};
 
-			// Evaluate energy diff
-			if (energy_diff < 0.0 || exp(-energy_diff) > randD(0.0,1.0)) {
-				// Accept the flip!
-				if (it_flip->sp) {
-					// Occupied - flip down
-					erase_mol(it_flip);
-				} else {
-					// Unoccupied - flip up
-					make_mol(it_flip,sp_new);
+			// Sample RV
+			r = randD(0.0,props.back());
+
+			// Find interval
+			for (int i=0; i<props.size()-2; i++) {
+				if (props[i] <= r && r <= props[i+1]) {
+					if (i==0) {
+						// Flip down (new spin = 0) if needed
+						if (it->sp != nullptr) {
+							erase_mol(it); // Does not invalidate iterator
+						};
+					} else {
+						// Make the appropriate species at this site if needed
+						if (it->sp != sp_ptrs[i-1]) {
+							make_mol(it,sp_ptrs[i-1]);
+						};
+					};
+					// Stop finding interval
+					break;
 				};
 			};
-
-			//std::cout << "FLIP Time: " << (std::clock() - start) / (double)(CLOCKS_PER_SEC / 1000) << " ms" << std::endl;
-			//start = std::clock();
 		};
 	};
 

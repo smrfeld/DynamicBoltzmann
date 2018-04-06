@@ -37,12 +37,11 @@ namespace DynamicBoltzmann {
 	Constructor
 	********************/
 
-	BMLA::BMLA(std::vector<Dim> dims, std::vector<std::string> species, int batch_size, int n_annealing, int box_length, double dopt, int n_opt, int lattice_dim) : _latt(lattice_dim,box_length) {
+	BMLA::BMLA(std::vector<Dim> dims, std::vector<std::string> species, int batch_size, int box_length, double dopt, int n_opt, int lattice_dim) : _latt(lattice_dim,box_length) {
 		// Set parameters
 		_n_param = dims.size();
 		_dopt = dopt;
 		_n_opt = n_opt;
-		_n_annealing = n_annealing;
 		_n_batch = batch_size;
 		_mse_quit_mode = false;
 		_mse_quit = 0.;
@@ -138,7 +137,6 @@ namespace DynamicBoltzmann {
 		_hidden_layer_exists = other._hidden_layer_exists;
 		_hidden_units = other._hidden_units;
 		_n_batch = other._n_batch;
-		_n_annealing = other._n_annealing;
 		_latt = other._latt;
 		_dopt = other._dopt;
 		_n_opt = other._n_opt;
@@ -155,7 +153,6 @@ namespace DynamicBoltzmann {
 		_hidden_layer_exists = false;
 		_hidden_units.clear();
 		_n_batch = 0;
-		_n_annealing = 0;
 		_latt = Lattice();
 		_dopt = 0.;
 		_n_opt = 0;
@@ -367,7 +364,7 @@ namespace DynamicBoltzmann {
 				for (int cd_step=0; cd_step<_n_cd_steps; cd_step++)
 				{
 					// Anneal
-					_latt.anneal(_n_annealing);
+					_latt.anneal();
 
 					// Activate hidden
 					if (_hidden_layer_exists) {

@@ -110,8 +110,8 @@ namespace DynamicBoltzmann {
 
 	double HiddenUnit::_sigma(double x) const {
 		// Tanh
-		return tanh(x);
+		// return tanh(x);
 		// Sigmoid
-		// return 1.0 / (1.0 + exp(-x));
+		return 1.0 / (1.0 + exp(-x));
 	};	
 };

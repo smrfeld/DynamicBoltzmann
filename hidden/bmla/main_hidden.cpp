@@ -8,14 +8,14 @@ using namespace DynamicBoltzmann;
 int main() {
 
 	int box_length = 1000;
-	int n_cd_steps = 1000;
+	int n_cd_steps = 1;
 	double dopt = 0.002;
 	int n_opt = 100;
 	int n_batch = 100;
 
 	std::vector<Dim> dims;
 	dims.push_back(Dim("h",DimType::H,"A",1.0));
-	dims.push_back(Dim("W",DimType::W,"A",-5));
+	dims.push_back(Dim("W",DimType::W,"A",0.0));
 
 	BMLA bmla(dims,{"A"},n_batch,box_length,dopt,n_opt,1);
 

@@ -5,6 +5,8 @@
 #include <sstream>
 #include <iomanip>
 
+#include "ixn_param.hpp"
+
 /************************************
 * Namespace for DynamicBoltzmann
 ************************************/
@@ -33,11 +35,113 @@ namespace DynamicBoltzmann {
 		this->guess = guess;
 	};
 
+	/****************************************
+	BMLA - IMPLEMENTATION
+	****************************************/
+
+	class BMLA::Impl {
+
+	private:
+
+		// Number of dimensions
+		int _n_param;
+
+		// List of interaction parameters
+		std::list<IxnParam> _ixn_params;
+
+		// Species present
+		std::list<Species> _species;
+
+		// List of hidden units, and flag if they exist
+		bool _hidden_layer_exists;
+		std::list<HiddenUnit> _hidden_units;
+
+		// Batch size
+		int _n_batch;
+
+		// Number of CD steps
+		int _n_cd_steps;
+
+		// The lattice to learn
+		Lattice _latt;
+
+		// Optimization step size
+		double _dopt;
+
+		// No opt steps
+		int _n_opt;
+
+		// If the MSE dips below this, quit
+		bool _mse_quit_mode;
+		double _mse_quit; // in percent
+
+		// L2 reg
+		bool _l2_reg;
+		double _lambda;
+
+		// Print
+		void _print_ixn_params(bool new_line=true) const;
+		void _print_moments(bool new_line=true) const;
+		void _print_mse(bool new_line=true) const;
+
+		// Get the mse
+		double _get_mse() const;
+
+		// Add a hidden unit
+		void _add_hidden_unit(std::vector<Site*> conns, std::string species);
+
+		// Search functions
+		Species* _find_species(std::string name, bool enforce_success=true);
+		IxnParam* _find_ixn_param(std::string name, bool enforce_success=true);
+		IxnParam* _find_ixn_param_j_by_species(std::string species_name_1, std::string species_name_2, bool enforce_success=true);
+		IxnParam* _find_ixn_param_w_by_species(std::string species_name, bool enforce_success=true);
+
+		// Constructor helpers
+		void _clean_up();
+		void _copy(const Impl& other);
+		void _reset();
+
+	public:
+
+		// Constructor
+		Impl(std::vector<Dim> dims, std::vector<std::string> species, int batch_size, int box_length, double dopt, int n_opt, int lattice_dim=3);
+		Impl(Impl&& other);
+	    Impl& operator=(Impl&& other);
+		~Impl();
+
+		// Any dim
+		void add_hidden_unit(std::vector<std::vector<int>> lattice_idxs, std::string species);
+		// 1D specific
+		void add_hidden_unit(std::vector<int> lattice_idxs, std::string species);
+
+		// Set the number of CD steps (default = 1)
+		void set_n_cd_steps(int n_steps);
+
+		// Set and turn on l2 regularizer
+		void set_l2_reg(double lambda);
+
+		// Set and turn on MSE quit mode
+		void set_mse_quit(double mse_quit);
+
+		// Solve for the h,j corresponding to a given lattice
+		void solve(std::string fname, bool verbose=false);
+
+		// Update the initial params
+		void read(std::string fname);
+
+		// Write out the solutions
+		void write(std::string fname);
+	};
+
+	/****************************************
+	BMLA - IMPLEMENTATION DEFINITIONS
+	****************************************/
+
 	/********************
 	Constructor
 	********************/
 
-	BMLA::BMLA(std::vector<Dim> dims, std::vector<std::string> species, int batch_size, int box_length, double dopt, int n_opt, int lattice_dim) : _latt(lattice_dim,box_length) {
+	BMLA::Impl::Impl(std::vector<Dim> dims, std::vector<std::string> species, int batch_size, int box_length, double dopt, int n_opt, int lattice_dim) : _latt(lattice_dim,box_length) {
 		// Set parameters
 		_n_param = dims.size();
 		_dopt = dopt;
@@ -100,21 +204,11 @@ namespace DynamicBoltzmann {
 			};
 		};
 	};
-	BMLA::BMLA(const BMLA& other) {
-		_copy(other);
-	};
-	BMLA::BMLA(BMLA&& other) {
+	BMLA::Impl::Impl(Impl&& other) {
 		_copy(other);
 		other._reset();
 	};
-	BMLA& BMLA::operator=(const BMLA& other) {
-		if (this != &other) {
-			_clean_up();
-			_copy(other);
-		};
-		return *this;
-	};
-    BMLA& BMLA::operator=(BMLA&& other) {
+    BMLA::Impl& BMLA::Impl::operator=(Impl&& other) {
 		if (this != &other) {
 			_clean_up();
 			_copy(other);
@@ -122,15 +216,15 @@ namespace DynamicBoltzmann {
 		};
 		return *this;
     };
-	BMLA::~BMLA()
+	BMLA::Impl::~Impl()
 	{
 		_clean_up();
 	};
 
-	void BMLA::_clean_up() {
+	void BMLA::Impl::_clean_up() {
 		// Nothing...
 	};
-	void BMLA::_copy(const BMLA& other) {
+	void BMLA::Impl::_copy(const Impl& other) {
 		_n_param = other._n_param;
 		_ixn_params = other._ixn_params;
 		_species = other._species;
@@ -146,7 +240,7 @@ namespace DynamicBoltzmann {
 		_l2_reg = other._l2_reg;
 		_lambda = other._lambda;
 	};
-	void BMLA::_reset() {
+	void BMLA::Impl::_reset() {
 		_n_param = 0;
 		_ixn_params.clear();
 		_species.clear();
@@ -167,7 +261,7 @@ namespace DynamicBoltzmann {
 	Print (compare) moments
 	********************/
 
-	void BMLA::_print_ixn_params(bool new_line) const {
+	void BMLA::Impl::_print_ixn_params(bool new_line) const {
 		std::cout << "   Ixn params: ";
  		for (auto it=_ixn_params.begin(); it!=_ixn_params.end(); it++) {
 			std::cout << it->get() << " ";
@@ -177,7 +271,7 @@ namespace DynamicBoltzmann {
 		};
 	};
 
-	void BMLA::_print_moments(bool new_line) const {
+	void BMLA::Impl::_print_moments(bool new_line) const {
 		std::cout << "   Moments Initial: ";
 		for (auto it=_ixn_params.begin(); it!=_ixn_params.end(); it++) {
 			std::cout << it->get_moment(IxnParam::AWAKE) << " ";
@@ -193,7 +287,7 @@ namespace DynamicBoltzmann {
 			std::cout << std::endl;
 		};
 	};
-	void BMLA::_print_mse(bool new_line) const {
+	void BMLA::Impl::_print_mse(bool new_line) const {
 		std::cout << "   MSE: " << _get_mse() << "%";
 		if (new_line) {
 			std::cout << std::endl;
@@ -204,7 +298,7 @@ namespace DynamicBoltzmann {
 	Get MSE
 	********************/
 
-	double BMLA::_get_mse() const {
+	double BMLA::Impl::_get_mse() const {
 		double mse=0.0;
 		for (auto it=_ixn_params.begin(); it!=_ixn_params.end(); it++) {
 			mse += abs(it->moments_diff())/it->get_moment(IxnParam::AWAKE);
@@ -216,7 +310,7 @@ namespace DynamicBoltzmann {
 	Set properties
 	********************/
 
-	void BMLA::add_hidden_unit(std::vector<std::vector<int>> lattice_idxs, std::string species) 
+	void BMLA::Impl::add_hidden_unit(std::vector<std::vector<int>> lattice_idxs, std::string species) 
 	{
 		// Find sites indicated by connections
 		std::vector<Site*> conns;
@@ -237,7 +331,7 @@ namespace DynamicBoltzmann {
 		// Add
 		_add_hidden_unit(conns,species);
 	};
-	void BMLA::add_hidden_unit(std::vector<int> lattice_idxs, std::string species) 
+	void BMLA::Impl::add_hidden_unit(std::vector<int> lattice_idxs, std::string species) 
 	{
 		// Find sites indicated by connections
 		std::vector<Site*> conns;
@@ -248,7 +342,7 @@ namespace DynamicBoltzmann {
 		// Add
 		_add_hidden_unit(conns,species);
 	};
-	void BMLA::_add_hidden_unit(std::vector<Site*> conns, std::string species)
+	void BMLA::Impl::_add_hidden_unit(std::vector<Site*> conns, std::string species)
 	{
 		// Flag that a hidden layer exists
 		_hidden_layer_exists = true;
@@ -278,7 +372,7 @@ namespace DynamicBoltzmann {
 	Set the number of CD steps (default = 1)
 	********************/
 
-	void BMLA::set_n_cd_steps(int n_steps) {
+	void BMLA::Impl::set_n_cd_steps(int n_steps) {
 		_n_cd_steps = n_steps;
 	};
 
@@ -286,7 +380,7 @@ namespace DynamicBoltzmann {
 	Set and turn on l2 reg
 	********************/
 
-	void BMLA::set_l2_reg(double lambda) {
+	void BMLA::Impl::set_l2_reg(double lambda) {
 		_l2_reg = true;
 		_lambda = lambda;
 	};
@@ -295,7 +389,7 @@ namespace DynamicBoltzmann {
 	Set and turn on MSE quit mode
 	********************/
 
-	void BMLA::set_mse_quit(double mse_quit) {
+	void BMLA::Impl::set_mse_quit(double mse_quit) {
 		_mse_quit_mode = true;
 		_mse_quit = mse_quit;
 	};
@@ -304,7 +398,7 @@ namespace DynamicBoltzmann {
 	Solve for the h,j corresponding to a given lattice
 	********************/
 
-	void BMLA::solve(std::string fname, bool verbose)
+	void BMLA::Impl::solve(std::string fname, bool verbose)
 	{
 		// Reset the params to the guesses, and the moments to 0
 		for (auto it=_ixn_params.begin(); it!=_ixn_params.end(); it++) {
@@ -404,7 +498,7 @@ namespace DynamicBoltzmann {
 	Read initial guess
 	********************/
 
-	void BMLA::read(std::string fname) 
+	void BMLA::Impl::read(std::string fname) 
 	{
 		std::ifstream f;
 		f.open(fname);
@@ -430,7 +524,7 @@ namespace DynamicBoltzmann {
 	Write the solutions
 	********************/
 
-	void BMLA::write(std::string fname) {
+	void BMLA::Impl::write(std::string fname) {
 		std::ofstream f;
 		f.open (fname);
 		for (auto it=_ixn_params.begin(); it!=_ixn_params.end(); it++) {
@@ -443,7 +537,7 @@ namespace DynamicBoltzmann {
 	Search functions
 	********************/
 
-	Species* BMLA::_find_species(std::string name, bool enforce_success) {
+	Species* BMLA::Impl::_find_species(std::string name, bool enforce_success) {
 		for (auto it=_species.begin(); it!=_species.end(); it++) {
 			if (it->name() == name) {
 				return &*it;
@@ -456,7 +550,7 @@ namespace DynamicBoltzmann {
 			return nullptr;
 		};
 	};
-	IxnParam* BMLA::_find_ixn_param(std::string name, bool enforce_success) {
+	IxnParam* BMLA::Impl::_find_ixn_param(std::string name, bool enforce_success) {
 		for (auto it=_ixn_params.begin(); it!=_ixn_params.end(); it++) {
 			if (it->name() == name) {
 				return &*it;
@@ -469,7 +563,7 @@ namespace DynamicBoltzmann {
 			return nullptr;
 		};
 	};
-	IxnParam* BMLA::_find_ixn_param_j_by_species(std::string species_name_1, std::string species_name_2, bool enforce_success) {
+	IxnParam* BMLA::Impl::_find_ixn_param_j_by_species(std::string species_name_1, std::string species_name_2, bool enforce_success) {
 		for (auto it=_ixn_params.begin(); it!=_ixn_params.end(); it++) {
 			if (it->is_j_with_species(species_name_1,species_name_2)) {
 				return &*it;
@@ -482,7 +576,7 @@ namespace DynamicBoltzmann {
 			return nullptr;
 		};
 	};
-	IxnParam* BMLA::_find_ixn_param_w_by_species(std::string species_name, bool enforce_success) {
+	IxnParam* BMLA::Impl::_find_ixn_param_w_by_species(std::string species_name, bool enforce_success) {
 		for (auto it=_ixn_params.begin(); it!=_ixn_params.end(); it++) {
 			if (it->is_w_with_species(species_name)) {
 				return &*it;
@@ -494,6 +588,56 @@ namespace DynamicBoltzmann {
 		} else {
 			return nullptr;
 		};
+	};
+
+
+	/****************************************
+	BMLA IMPL forwards
+	****************************************/
+
+	// Constructor
+	BMLA::BMLA(std::vector<Dim> dims, std::vector<std::string> species, int batch_size, int box_length, double dopt, int n_opt, int lattice_dim) : _impl(new Impl(dims,species,batch_size,box_length,dopt,n_opt,lattice_dim)) {};
+	BMLA::BMLA(BMLA&& other) = default; // movable but no copies
+    BMLA& BMLA::operator=(BMLA&& other) = default; // movable but no copies
+	BMLA::~BMLA() = default;
+
+	// Any dim
+	void BMLA::add_hidden_unit(std::vector<std::vector<int>> lattice_idxs, std::string species) {
+		_impl->add_hidden_unit(lattice_idxs,species);
+	};
+	// 1D specific
+	void BMLA::add_hidden_unit(std::vector<int> lattice_idxs, std::string species) {
+		_impl->add_hidden_unit(lattice_idxs,species);
+	};
+
+	// Set the number of CD steps (default = 1)
+	void BMLA::set_n_cd_steps(int n_steps) {
+		_impl->set_n_cd_steps(n_steps);
+	};
+
+	// Set and turn on l2 regularizer
+	void BMLA::set_l2_reg(double lambda) {
+		_impl->set_l2_reg(lambda);
+	};
+
+	// Set and turn on MSE quit mode
+	void BMLA::set_mse_quit(double mse_quit) {
+		_impl->set_mse_quit(mse_quit);
+	};
+
+	// Solve for the h,j corresponding to a given lattice
+	void BMLA::solve(std::string fname, bool verbose) {
+		_impl->solve(fname,verbose);
+	};
+
+	// Update the initial params
+	void BMLA::read(std::string fname) {
+		_impl->read(fname);
+	};
+
+	// Write out the solutions
+	void BMLA::write(std::string fname) {
+		_impl->write(fname);
 	};
 };
 

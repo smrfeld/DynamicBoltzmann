@@ -1,11 +1,11 @@
-#ifndef IXN_PARAM_h
-#define IXN_PARAM_h
-#include "../src/ixn_param.hpp"
-#endif
-
 #ifndef LIST_H
 #define LIST_H
 #include <list>
+#endif
+
+#ifndef STRING_H
+#define STRING_H
+#include <string>
 #endif
 
 /************************************
@@ -48,72 +48,15 @@ namespace DynamicBoltzmann {
 
 	private:
 
-		// Number of dimensions
-		int _n_param;
-
-		// List of interaction parameters
-		std::list<IxnParam> _ixn_params;
-
-		// Species present
-		std::list<Species> _species;
-
-		// List of hidden units, and flag if they exist
-		bool _hidden_layer_exists;
-		std::list<HiddenUnit> _hidden_units;
-
-		// Batch size
-		int _n_batch;
-
-		// Number of CD steps
-		int _n_cd_steps;
-
-		// The lattice to learn
-		Lattice _latt;
-
-		// Optimization step size
-		double _dopt;
-
-		// No opt steps
-		int _n_opt;
-
-		// If the MSE dips below this, quit
-		bool _mse_quit_mode;
-		double _mse_quit; // in percent
-
-		// L2 reg
-		bool _l2_reg;
-		double _lambda;
-
-		// Print
-		void _print_ixn_params(bool new_line=true) const;
-		void _print_moments(bool new_line=true) const;
-		void _print_mse(bool new_line=true) const;
-
-		// Get the mse
-		double _get_mse() const;
-
-		// Add a hidden unit
-		void _add_hidden_unit(std::vector<Site*> conns, std::string species);
-
-		// Search functions
-		Species* _find_species(std::string name, bool enforce_success=true);
-		IxnParam* _find_ixn_param(std::string name, bool enforce_success=true);
-		IxnParam* _find_ixn_param_j_by_species(std::string species_name_1, std::string species_name_2, bool enforce_success=true);
-		IxnParam* _find_ixn_param_w_by_species(std::string species_name, bool enforce_success=true);
-
-		// Constructor helpers
-		void _clean_up();
-		void _copy(const BMLA& other);
-		void _reset();
+		class Impl;
+		std::unique_ptr<Impl> _impl;
 
 	public:
 
 		// Constructor
 		BMLA(std::vector<Dim> dims, std::vector<std::string> species, int batch_size, int box_length, double dopt, int n_opt, int lattice_dim=3);
-		BMLA(const BMLA& other);
-		BMLA(BMLA&& other);
-		BMLA& operator=(const BMLA& other);
-	    BMLA& operator=(BMLA&& other);
+		BMLA(BMLA&& other); // movable but no copies
+	    BMLA& operator=(BMLA&& other); // movable but no copies
 		~BMLA();
 
 		// Any dim

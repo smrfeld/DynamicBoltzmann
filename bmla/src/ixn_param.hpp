@@ -24,7 +24,7 @@ namespace DynamicBoltzmann {
 	****************************************/
 
 	// Enumeration of type of dimension
-	enum IxnParamType { Hp, Jp, Wp };
+	enum IxnParamType { Hp, Jp, Wp, Kp };
 
 	class IxnParam {
 
@@ -39,8 +39,10 @@ namespace DynamicBoltzmann {
 		// Species
 		// If Hp or Wp: only sp1
 		Species *_sp1;
-		// If Jp: also sp2
+		// If Jp or Kp: also sp2
 		Species *_sp2;
+		// If Kp: also sp3
+		Species *_sp3;
 
 		// If Wp:
 		// Connects sites (visible) to hidden units
@@ -69,6 +71,7 @@ namespace DynamicBoltzmann {
 		// Constructor
 		IxnParam(std::string name, IxnParamType type, Species *sp, double val_guess);
 		IxnParam(std::string name, IxnParamType type, Species *sp1, Species *sp2, double val_guess);
+		IxnParam(std::string name, IxnParamType type, Species *sp1, Species *sp2, Species *sp3, double val_guess);
 		IxnParam(const IxnParam& other);
 		IxnParam(IxnParam&& other);
 		IxnParam & operator=(const IxnParam& other);
@@ -78,6 +81,7 @@ namespace DynamicBoltzmann {
 		// Check if this ixn param is...
 		bool is_w_with_species(std::string species_name) const;
 		bool is_j_with_species(std::string species_name_1, std::string species_name_2) const;
+		bool is_k_with_species(std::string species_name_1, std::string species_name_2, std::string species_name_3) const;
 
 		// Add a visible->hidden unit connection
 		void add_visible_hidden_connection(Site *sptr, HiddenUnit *hup);

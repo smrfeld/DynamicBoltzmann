@@ -49,7 +49,13 @@ namespace DynamicBoltzmann {
 	class Site {
 	private:
 
-		// Probs
+		// Is it binary (vs probabilistic)
+		bool _binary;
+
+		// If binary, this is the species
+		Species *_sp_binary;
+
+		// If probabilistic, these are the probs
 		std::map<Species*, double> _probs;
 		double _prob_empty;
 
@@ -58,16 +64,23 @@ namespace DynamicBoltzmann {
 		void _reset();
 		void _copy(const Site& other);
 
+		// Add/Remove counts on a given species (not _sp_binary, unless it is passed)
+		void _remove_counts_on_species_binary(Species *sp);
+		void _add_counts_on_species_binary(Species *sp);
+		void _remove_counts_on_species_prob(Species *sp, double prob);
+		void _add_counts_on_species_prob(Species *sp, double prob);
+
+		// Clear a site from being binary/probabilistic
+		// Note: flips to the opposite mode
+		void _clear_binary();
+		void _clear_prob();
+
 	public:
 		int dim;
 		int x;
 		int y;
 		int z;
-		Species *sp;
 		std::vector<latt_it> nbrs;
-
-		// Is it binary? (vs probabilistic)
-		bool binary;
 
 		// Connectivity to any hidden units
 		// A species-dependent graph :)
@@ -87,14 +100,36 @@ namespace DynamicBoltzmann {
 		Site& operator=(Site&& other);
 		~Site();
 
-		// Normalize probabilities based on current entries
-		void normalize_probs();
-
 		// Get a probability
-		// nullptr for empty
-		double get_prob(Species *sp);
-		void set_prob(Species *sp, double val);
-		void mult_probs_as_nbr(Species *sp, double val);
+		// If binary, returns 1.0 for a certain species
+		// Pass nullptr to get prob of empty
+		double get_prob(Species *sp) const;
+		// Get all probs - if binary, returns an empty
+		const std::map<Species*, double>& get_probs() const;
+		// Set probability
+		// Pass nullptr to set probability of being empty
+		void set_prob(Species *sp, double prob);
+
+		// Get J and K activations
+		// Go through all possible species probabilities x J of the coupling for the given species
+		double get_act_j(Species *sp) const;
+		double get_act_k(Species *sp) const;
+
+		// Increment NN counts given that we are neighboring this given species which exists with this given prob
+		// Note: internally acts bidirectionally
+		void increment_nn_counts_for_neighbor_prob(Species *sp_nbr, double prob);
+
+		// If binary, gets the species
+		// Else returns nullptr if empty OR probabilistic
+		Species* get_species_binary() const;
+		// Sets a site to binary with some species
+		// Pass nullptr to make an empty binary site
+		void set_species_binary(Species *sp);
+		// Set a site to be empty
+		void set_site_empty_binary();
+
+		// Check if the site is binary
+		bool binary() const;
 	};
 	// Comparator
 	bool operator <(const Site& a, const Site& b);
@@ -129,6 +164,12 @@ namespace DynamicBoltzmann {
 
 		// Flag - are hidden units present? (needed for annealing)
 		bool _hidden_layer_exists;
+
+		// Sample an unnormalized probability vector
+		int _sample_prop_vec(std::vector<double> &props);
+		
+		// Sample a vector of propensities (cumulative probabilities)
+		int _sample_prob_vec(std::vector<double> &probs);
 
 		// Contructor helpers
 		void _clean_up();
@@ -183,23 +224,6 @@ namespace DynamicBoltzmann {
 		int size();
 
 		/********************
-		Make a mol
-		********************/
-
-		bool make_mol(latt_it s, Species *sp);
-		bool replace_mol(latt_it s, Species *sp);
-		bool make_mol_at_empty(latt_it s, Species *sp);
-
-		// Increment counts on species - only for binary
-		void increment_species_counts_binary(latt_it s, Species *sp, double inc);
-
-		/********************
-		Erase a mol
-		********************/
-
-		bool erase_mol(latt_it s);
-
-		/********************
 		Write lattice to a file
 		********************/
 
@@ -216,16 +240,6 @@ namespace DynamicBoltzmann {
 		********************/
 
 		void sample(bool binary=true);
-
-		/********************
-		Sample probabilities/propensities
-		********************/
-
-		// Sample an unnormalized probability vector
-		int sample_prop_vec(std::vector<double> &props);
-		
-		// Sample a vector of propensities (cumulative probabilities)
-		int sample_prob_vec(std::vector<double> &probs);
 
 	};
 

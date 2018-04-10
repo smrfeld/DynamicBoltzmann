@@ -101,15 +101,8 @@ namespace DynamicBoltzmann {
 		//std::cout << "Activating..." << std::endl;
 		double act = 0.0;
 		for (auto c: _conn) {
-			if (c->binary) {
-				// Binary
-				if (c->sp == _sp) { // Check that this is the species that I love
-					act += _sp->w(); // Gets the weight of this connection
-				};
-			} else {
-				// Probabilistic
-				act += _sp->w() * c->get_prob(_sp); // weight * visible value for this species
-			};
+			// weight * visible value for this species
+			act += _sp->w() * c->get_prob(_sp);
 		};
 
 		// Pass through sigmoid

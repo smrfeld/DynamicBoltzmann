@@ -19,7 +19,7 @@ namespace DynamicBoltzmann {
 	****************************************/
 
 	// Type of dimension
-	enum DimType { H, J, W };
+	enum DimType { H, J, K, W };
 
 	struct Dim {
 		// Name
@@ -31,6 +31,7 @@ namespace DynamicBoltzmann {
 		// Name of associated species
 		std::string species1;
 		std::string species2;
+		std::string species3;
 
 		// Guess
 		double guess;
@@ -38,6 +39,7 @@ namespace DynamicBoltzmann {
 		// Constructor
 		Dim(std::string name, DimType type, std::string species, double guess);
 		Dim(std::string name, DimType type, std::string species1, std::string species2, double guess);
+		Dim(std::string name, DimType type, std::string species1, std::string species2, std::string species3, double guess);
 	};
 
 	/****************************************

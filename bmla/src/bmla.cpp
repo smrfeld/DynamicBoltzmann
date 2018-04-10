@@ -18,21 +18,32 @@ namespace DynamicBoltzmann {
 	Struct for specifying a dimension
 	****************************************/
 
-	Dim::Dim(std::string name, DimType type, std::string species, double guess) : Dim(name, type, species, "", guess) {};
-	Dim::Dim(std::string name, DimType type, std::string species1, std::string species2, double guess)
+	Dim::Dim(std::string name, DimType type, std::string species, double guess) : Dim(name, type, species, "", "", guess) {};
+	Dim::Dim(std::string name, DimType type, std::string species1, std::string species2, double guess) : Dim(name, type, species1, species2, "", guess) {};
+	Dim::Dim(std::string name, DimType type, std::string species1, std::string species2, std::string species3, double guess)
 	{
-		if ( (species1 == "") 
-			|| 
-			((type==H && species2 != "") || (type==W && species2 != "") || (type==J && species2 == ""))
-			) {
-			std::cerr << "ERROR! Dim specification is incorrect." << std::endl;
-			exit(EXIT_FAILURE);
+		if (type == H || type == W) {
+			if (species1 == "" || species2 != "" || species3 != "") {
+				std::cerr << "ERROR! Dim specification is incorrect for H or W." << std::endl;
+				exit(EXIT_FAILURE);
+			};
+		} else if (type == J) {
+			if (species1 == "" || species2 == "" || species3 != "") {
+				std::cerr << "ERROR! Dim specification is incorrect for J." << std::endl;
+				exit(EXIT_FAILURE);
+			};
+		} else if (type == K) {
+			if (species1 == "" || species2 == "" || species3 == "") {
+				std::cerr << "ERROR! Dim specification is incorrect for K." << std::endl;
+				exit(EXIT_FAILURE);
+			};
 		};
 
 		this->name = name;
 		this->type = type;
 		this->species1 = species1;
 		this->species2 = species2;
+		this->species3 = species3;
 		this->guess = guess;
 	};
 
@@ -99,6 +110,7 @@ namespace DynamicBoltzmann {
 		IxnParam* _find_ixn_param(std::string name, bool enforce_success=true);
 		IxnParam* _find_ixn_param_j_by_species(std::string species_name_1, std::string species_name_2, bool enforce_success=true);
 		IxnParam* _find_ixn_param_w_by_species(std::string species_name, bool enforce_success=true);
+		IxnParam* _find_ixn_param_k_by_species(std::string species_name_1, std::string species_name_2, std::string species_name_3, bool enforce_success=true);
 
 		// Constructor helpers
 		void _clean_up();
@@ -178,11 +190,19 @@ namespace DynamicBoltzmann {
 				_ixn_params.push_back(IxnParam(d.name,Jp,_find_species(d.species1),_find_species(d.species2),d.guess));
 			} else if (d.type==W) { 
 				_ixn_params.push_back(IxnParam(d.name,Wp,_find_species(d.species1),d.guess));
+			} else if (d.type==K) {
+				// Check that Lattice dim is 1 - only 1 is allowed!
+				if (lattice_dim != 1) {
+					std::cerr << "Error: triplets are currently only supported for lattice of dim 1" << std::endl;
+					exit(EXIT_FAILURE);
+				};
+
+				_ixn_params.push_back(IxnParam(d.name,Kp,_find_species(d.species1),_find_species(d.species2),_find_species(d.species3),d.guess));
 			};
 		};
 
 		// Add the interaction params and time ptr to the species
-		Species *sp1=nullptr, *sp2=nullptr;
+		Species *sp1=nullptr, *sp2=nullptr, *sp3=nullptr;
 		IxnParam *ip_ptr=nullptr;
 		for (auto d: dims) {
 			ip_ptr = _find_ixn_param(d.name);
@@ -197,17 +217,36 @@ namespace DynamicBoltzmann {
 			} else if (d.type==W) {
 				sp1 = _find_species(d.species1);
 				sp1->set_w_ptr(ip_ptr);		
+			} else if (d.type==K) {
+				sp1 = _find_species(d.species1);
+				sp2 = _find_species(d.species2);
+				sp3 = _find_species(d.species3);
+				sp1->add_k_ptr(sp2,sp3,ip_ptr);
+				sp2->add_k_ptr(sp1,sp3,ip_ptr);
+				sp3->add_k_ptr(sp1,sp2,ip_ptr);
 			};
 		};
-		// Ensure the J of the species are complete - if there is no ixn param that descripes the coupling, add a nullptr entry in the dictionary - later check if nullptr, then return 0
+		// Ensure the J,K of the species are complete - if there is no ixn param that descripes the coupling, add a nullptr entry in the dictionary - later check if nullptr, then return 0
 		// I think this is faster - otherwise there would be no reason to do it
 		for (auto itsp1 = _species.begin(); itsp1!=_species.end(); itsp1++) {
 			for (auto itsp2 = _species.begin(); itsp2!=_species.end(); itsp2++) {
+				// J
 				ip_ptr = _find_ixn_param_j_by_species(itsp1->name(), itsp2->name(), false);
 				if (!ip_ptr) {
 					// It's null; add to both
 					itsp1->add_j_ptr(&(*itsp2),nullptr);
 					itsp2->add_j_ptr(&(*itsp1),nullptr);
+				};
+
+				// K
+				for (auto itsp3 = _species.begin(); itsp3!=_species.end(); itsp3++) {
+					ip_ptr = _find_ixn_param_k_by_species(itsp1->name(), itsp2->name(), itsp3->name(), false);
+					if (!ip_ptr) {
+						// It's null; add to all 3
+						itsp1->add_k_ptr(&(*itsp2),&(*itsp3),nullptr);
+						itsp2->add_k_ptr(&(*itsp1),&(*itsp3),nullptr);
+						itsp3->add_k_ptr(&(*itsp1),&(*itsp2),nullptr);
+					};
 				};
 			};
 		};
@@ -625,7 +664,19 @@ namespace DynamicBoltzmann {
 			return nullptr;
 		};
 	};
-
+	IxnParam* BMLA::Impl::_find_ixn_param_k_by_species(std::string species_name_1, std::string species_name_2, std::string species_name_3, bool enforce_success) {
+		for (auto it=_ixn_params.begin(); it!=_ixn_params.end(); it++) {
+			if (it->is_k_with_species(species_name_1,species_name_2,species_name_3)) {
+				return &*it;
+			};
+		};
+		if (enforce_success) {
+			std::cerr << "ERROR: could not find K ixn param for species: " << species_name_1 << " " << species_name_2 << " " << species_name_3 << std::endl;
+			exit(EXIT_FAILURE);
+		} else {
+			return nullptr;
+		};
+	};
 
 	/****************************************
 	BMLA IMPL forwards

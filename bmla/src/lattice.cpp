@@ -30,8 +30,8 @@ namespace DynamicBoltzmann {
 		x = xIn;
 		y = yIn;
 		z = zIn;
-		sp = spIn;
-		binary = true;
+		_sp_binary = spIn;
+		_binary = true; // default
 		_prob_empty = 0.0;
 	};	
 	Site::Site(const Site& other) {
@@ -67,10 +67,10 @@ namespace DynamicBoltzmann {
 		x = 0;
 		y = 0;
 		z = 0;
-		sp = nullptr;
+		_sp_binary = nullptr;
 		nbrs.clear();
 		hidden_conns.clear();
-		binary = true;
+		_binary = true;
 		_prob_empty = 0.0;
 		_probs.clear();
 	};
@@ -79,14 +79,13 @@ namespace DynamicBoltzmann {
 		x = other.x;
 		y = other.y;
 		z = other.z;
-		sp = other.sp;
+		_sp_binary = other._sp_binary;
 		nbrs = other.nbrs;
 		hidden_conns = other.hidden_conns;
-		binary = other.binary;
+		_binary = other._binary;
 		_prob_empty = other._prob_empty;
 		_probs = other._probs;
 	};
-
 
 	// Comparator
 	bool operator <(const Site& a, const Site& b) {
@@ -113,84 +112,240 @@ namespace DynamicBoltzmann {
 	}; 
 	std::ostream& operator<<(std::ostream& os, const Site& s)
 	{
-		if (s.dim == 1) {
-			if (s.sp) {
-			    return os << s.x << " " << s.sp->name();
-			} else {
-			    return os << s.x << " empty";
-			};	    
-		} else if (s.dim == 2) {
-			if (s.sp) {
-			    return os << s.x << " " << s.y << " " << s.sp->name();
-			} else {
-			    return os << s.x << " " << s.y << " empty";
-			};	    
-		} else if (s.dim == 3) {
-			if (s.sp) {
-			    return os << s.x << " " << s.y << " " << s.z << " " << s.sp->name();
-			} else {
-			    return os << s.x << " " << s.y << " " << s.z << " empty";
+		Species *sp;
+		if (s.binary()) {
+			sp = s.get_species_binary();
+			if (sp)	{
+				if (s.dim == 1) {
+				    return os << s.x << " " << sp->name();
+				} else if (s.dim == 2) {
+				    return os << s.x << " " << s.y << " " << sp->name();
+				} else if (s.dim == 3) {
+				    return os << s.x << " " << s.y << " " << s.z << " " << sp->name();
+				};
 			};
-	    } else {
-	    	return os;
-	    };
-	};
-
-	void Site::normalize_probs() {
-		double tot = _prob_empty;
-		for (auto mp: _probs) {
-			tot += mp.second;
 		};
-		_prob_empty /= tot;
-		for (auto mp: _probs) {
-			_probs[mp.first] /= tot;
-		};
+    	
+    	return os;
 	};
 
 	// Get a probability
 	// nullptr for empty
-	double Site::get_prob(Species *sp) {
-		// nullptr for prob of empty
-		if (sp == nullptr) {
-			return _prob_empty;
-		};
-
-		auto it = _probs.find(sp);
-		if (it != _probs.end()) {
-			return it->second;
+	double Site::get_prob(Species *sp) const {
+		// Binary?
+		if (_binary) {
+			// Binary
+			if (sp == _sp_binary) {
+				return 1.0;
+			} else {
+				return 0.0;
+			};
 		} else {
-			return 0.0;
-		};
-	};
-	void Site::set_prob(Species *sp, double val) {
-		// nullptr for prob of empty
-		if (sp == nullptr) {
-			_prob_empty = val;
-			return;
-		};
+			// Probabilistic
+			// nullptr for prob of empty
+			if (sp == nullptr) {
+				return _prob_empty;
+			};
 
-		// Store
-		_probs[sp] = val;
-
-		// Increment counts on species
-		// Counts
-		sp->count_increment(val);
-		// NNs
-		double p;
-		// Go through neighbor sites
-		for (auto nbr_it: nbrs) {
-			nbr_it->mult_probs_as_nbr(sp,val);
-		};
-	};
-	void Site::mult_probs_as_nbr(Species *sp, double val) {
-		for (auto mp: _probs) {
-			mp.first->nn_count_increment(sp,val*mp.second);
-			if (mp.first != sp) {
-				sp->nn_count_increment(mp.first, val*mp.second);
+			auto it = _probs.find(sp);
+			if (it != _probs.end()) {
+				return it->second;
+			} else {
+				return 0.0;
 			};
 		};
 	};
 
+	// Get all probs - if binary, returns an empty
+	const std::map<Species*, double>& Site::get_probs() const {
+		return _probs;
+	};
+
+	// Get J and K activations
+	// Go through all possible species probabilities x J of the coupling for the given species
+	double Site::get_act_j(Species *sp) const {
+		double act=0.0;
+		// Go through all nbrs
+		for (auto lit: nbrs) {
+			// Get all probs
+			const std::map<Species*, double> prs = lit->get_probs();
+			// Go through all probs
+			for (auto pr: prs) {
+				// J * prob
+				act += sp->j(pr.first) * pr.second;
+			};
+		};
+		return act;
+	};
+	double Site::get_act_k(Species *sp) const {
+		return 0.0;
+	};
+
+	// Set probability
+	// Pass nullptr to set probability of being empty
+	void Site::set_prob(Species *sp, double prob) {
+		// Check if currently binary
+		if (_binary) {
+			_clear_binary();
+		};
+
+		// nullptr for prob of empty
+		if (sp == nullptr) {
+			_prob_empty = prob;
+			return;
+		};
+
+		// Store
+		_probs[sp] = prob;
+
+		// Increment counts on species
+		_add_counts_on_species_prob(sp,prob);
+	};
+
+	// Increment NN counts given that we are neighboring this species with this prob
+	void Site::increment_nn_counts_for_neighbor_prob(Species *sp_nbr, double prob) {
+		// Go through all species/probs
+		for (auto mp: _probs) {
+			// Increment counts bidirectionally
+			mp.first->nn_count_increment(sp_nbr,prob*mp.second);
+			if (mp.first != sp_nbr) {
+				sp_nbr->nn_count_increment(mp.first, prob*mp.second);
+			};
+		};
+	};
+
+	// If binary, gets the species
+	// Else returns nullptr if empty OR probabilistic
+	Species* Site::get_species_binary() const {
+		if (_binary) {
+			return _sp_binary; 
+		} else {
+			return nullptr;
+		};
+	};
+
+	// Sets a site to binary with some species
+	// Pass nullptr to make an empty binary site
+	void Site::set_species_binary(Species *sp) {
+		// Check if currently probabilistic
+		if (!_binary) {
+			_clear_prob();
+		};
+
+		// Is already occupied? Then remove counts
+		if (_sp_binary) {
+			_remove_counts_on_species_binary(_sp_binary);
+		};
+
+		// Set
+		_sp_binary = sp;
+		
+		// Increment counts
+		_add_counts_on_species_binary(_sp_binary);
+	};
+
+	// Set a site to be empty
+	void Site::set_site_empty_binary() {
+		// Check if currently probabilistic
+		if (!_binary) {
+			_clear_prob();
+		};
+
+		// Check if already empty
+		if (!_sp_binary) {
+			return;
+		};
+
+		// Remove counts on existing species
+		_remove_counts_on_species_binary(_sp_binary);
+
+		// Clear species
+		_sp_binary = nullptr;
+	};
+
+	// Check if the site is binary
+	bool Site::binary() const { return _binary; };
+
+	// Add/Remove counts on a given species (not _sp_binary, unless it is passed)
+	void Site::_remove_counts_on_species_binary(Species *sp) {
+		// Count
+		sp->count_increment(-1.0);
+		// NN
+		Species *sp_nbr = nullptr;
+		for (auto nbr_it: nbrs) { // go through nbrs
+			sp_nbr = nbr_it->get_species_binary();
+			if (sp_nbr) { // is nbr site occ
+				// Update bidirectionally, unless it's the same species
+				sp->nn_count_increment(sp_nbr,-1.0);
+				if (sp_nbr != sp) {
+					sp_nbr->nn_count_increment(sp,-1.0);
+				};
+			};
+		};
+	};
+	void Site::_add_counts_on_species_binary(Species *sp) {
+		// Count
+		sp->count_increment(1.0);
+		// NN
+		Species *sp_nbr = nullptr;
+		for (auto nbr_it: nbrs) { // go through nbrs
+			sp_nbr = nbr_it->get_species_binary();
+			if (sp_nbr) { // is nbr site occ
+				// Update bidirectionally, unless it's the same species
+				sp->nn_count_increment(sp_nbr,1.0);
+				if (sp_nbr != sp) {
+					sp_nbr->nn_count_increment(sp,1.0);
+				};
+			};
+		};
+	};
+	void Site::_remove_counts_on_species_prob(Species *sp, double prob) {
+		// Counts
+		sp->count_increment(-1.0*prob);
+		// NNs
+		for (auto nbr_it: nbrs) {
+			nbr_it->increment_nn_counts_for_neighbor_prob(sp,-1.0*prob);
+		};
+	};
+	void Site::_add_counts_on_species_prob(Species *sp, double prob) {
+		// Counts
+		sp->count_increment(prob);
+		// NNs
+		for (auto nbr_it: nbrs) {
+			nbr_it->increment_nn_counts_for_neighbor_prob(sp,prob);
+		};
+	};
+
+	// Clear a site from being binary/probabilistic
+	// Note: flips to the opposite mode
+	void Site::_clear_binary() {
+		// Remove counts if needed
+		if (_sp_binary) {
+			_remove_counts_on_species_binary(_sp_binary);
+		};
+
+		// Remove
+		_sp_binary = nullptr;
+
+		// Not binary now
+		_binary = false;
+	};
+	void Site::_clear_prob() {
+		// Remove counts if needed
+		for (auto pr: _probs) {
+			_remove_counts_on_species_prob(pr.first,pr.second);
+		};
+
+		// Remove
+		_probs.clear();
+		_prob_empty = 0.0;
+
+		// Now binary
+		_binary = true;
+
+		// Set default binary state = empty
+		_sp_binary = nullptr;
+	};
 
 	/****************************************
 	Lattice
@@ -383,120 +538,17 @@ namespace DynamicBoltzmann {
 	********************/
 
 	void Lattice::clear() { 
+		// Clear the lattice
+		for (auto it = _latt.begin(); it != _latt.end(); it++) {
+			it->set_site_empty_binary();
+		};
+
 		// Reset the counts and nns
 		for (auto sp: _sp_vec) {
 			sp->reset_counts();
 		};
-
-		// Clear the lattice
-		for (auto it = _latt.begin(); it != _latt.end(); it++) {
-			it->sp = nullptr;
-		};
 	};
 	int Lattice::size() { return _latt.size(); };
-
-	/********************
-	Make a mol
-	********************/
-
-	bool Lattice::make_mol(latt_it s, Species *sp) {
-		// Check not already occupide
-		if (s->sp) {
-			std::cerr << "ERROR site already occupied" << std::endl;
-			return false;
-		};
-
-		// Make mol at empty site
-		return make_mol_at_empty(s,sp);
-	};
-
-	bool Lattice::replace_mol(latt_it s, Species *sp) {
-		// Check not the same as already there
-		if (s->sp == sp) {
-			return true;
-		};
-
-		// If already occupied, remove
-		if (s->sp) {
-			// Erase mol
-			erase_mol(s);
-		};
-
-		// Make mol at empty site
-		return make_mol_at_empty(s,sp);
-	};
-
-	bool Lattice::make_mol_at_empty(latt_it s, Species *sp) {
-		/*
-		std::cout << "Making: " << s->x << " " << s->y << " " << s->z << std::flush;
-		int ctr=0;
-		for (auto nbr_it: s->nbrs) { // go through nbrs
-			if (nbr_it->sp) { // is nbr site occ
-				ctr++;
-			};
-		};
-		std::cout << " no nbrs: " << ctr << std::flush;
-		std::cout << " count now: " << sp->nn_count(_sp_map["A"]) << std::flush;
-		*/
-
-		// Make
-		s->sp = sp;
-
-		// Update count and nns
-		increment_species_counts_binary(s,sp,1.0);
-
-		// std::cout << " now: count: " << sp->nn_count[_sp_map["A"]] << std::endl;
-
-		return true;
-	};
-
-	// Increment counts on species
-	void Lattice::increment_species_counts_binary(latt_it s, Species *sp, double inc) {
-		sp->count_increment(inc);
-		for (auto nbr_it: s->nbrs) { // go through nbrs
-			if (nbr_it->sp) { // is nbr site occ
-				// Update bidirectionally, unless it's the same species
-				sp->nn_count_increment(nbr_it->sp,inc);
-				if (nbr_it->sp != sp) {
-					nbr_it->sp->nn_count_increment(sp,inc);
-				};
-			};
-		};
-	};
-
-	/********************
-	Erase a mol
-	********************/
-
-	bool Lattice::erase_mol(latt_it s)
-	{
-		// Check not empty
-		if (!(s->sp)) {
-			std::cerr << "ERROR site not occupied" << std::endl;
-			return false;
-		};
-
-		/*
-		std::cout << "Erasing: " << s->x << " " << s->y << " " << s->z;
-		int ctr=0;
-		for (auto nbr_it: s->nbrs) { // go through nbrs
-			if (nbr_it->sp) { // is nbr site occ
-				ctr++;
-			};
-		};
-		std::cout << " no nbrs: " << ctr << " count now: " << s->sp->nn_count[_sp_map["A"]];
-		*/
-
-		// Update count and nns
-		increment_species_counts_binary(s,s->sp,-1.0);
-
-		// std::cout << " now: count: " << s->sp->nn_count[_sp_map["A"]] << std::endl;
-
-		// Erase
-		s->sp = nullptr;
-
-		return true;
-	};
 
 	/********************
 	Write lattice to a file
@@ -507,9 +559,7 @@ namespace DynamicBoltzmann {
 		std::ofstream f;
 		f.open (fname);
 		for (auto l: _latt) {
-			if (l.sp) {
-				f << l << "\n";
-			};
+			f << l << "\n";
 		};
 		f.close();
 	};
@@ -529,6 +579,7 @@ namespace DynamicBoltzmann {
 		std::string sp="";
 		std::string line;
 		std::istringstream iss;
+		latt_it lit;
 		if (f.is_open()) { // make sure we found it
 			while (getline(f,line)) {
 				if (line == "") { continue; };
@@ -541,14 +592,16 @@ namespace DynamicBoltzmann {
 				    iss >> z;
 			    };
 			    iss >> sp;
-		    	// Add to map
+		    	// Add to lattice
 		    	if (_dim == 1) {
-			    	make_mol(_look_up(atoi(x.c_str())),_sp_map[sp]);
+		    		lit = _look_up(atoi(x.c_str()));
 			    } else if (_dim == 2) {
-			    	make_mol(_look_up(atoi(x.c_str()),atoi(y.c_str())),_sp_map[sp]);
+		    		lit = _look_up(atoi(x.c_str()),atoi(y.c_str()));
 			    } else if (_dim == 3) {
-			    	make_mol(_look_up(atoi(x.c_str()),atoi(y.c_str()),atoi(z.c_str())),_sp_map[sp]);
+			    	lit = _look_up(atoi(x.c_str()),atoi(y.c_str()),atoi(z.c_str()));
 			    };
+	    		lit->set_species_binary(_sp_map[sp]);
+	    		// Reset
 		    	sp=""; x=""; y=""; z="";
 			};
 		};
@@ -607,11 +660,11 @@ namespace DynamicBoltzmann {
 				energy = sp_new->h();
 
 				// NNs for J
-				for (auto it_nbr: it->nbrs) {
-					// Occupied?
-					if (it_nbr->sp) {
-						energy += sp_new->j(it_nbr->sp);
-					};
+				energy += it->get_act_j(sp_new);
+
+				// Triplets for K
+				if (_dim == 1) { // Only dim 1 currently supported
+					// ...
 				};
 
 				// Hidden layer exists?
@@ -638,24 +691,18 @@ namespace DynamicBoltzmann {
 			// Binarize if needed
 			if (binary) {
 
-				// Binary
-				lit->binary = true;
-
 				// Sample RV
-				// i_chosen = sample_prob_vec(probs);
-				i_chosen = sample_prop_vec(props);
+				// i_chosen = _sample_prob_vec(probs);
+				i_chosen = _sample_prop_vec(props);
 
 				if (i_chosen==0) {
 					// Flip down (new spin = 0)
-					// Already guaranteed empty
+					// Already guaranteed empty, since lattice was cleared
 				} else {
 					// Make the appropriate species at this site (guaranteed empty)
-					make_mol_at_empty(lit,_sp_vec[i_chosen-1]);
+					lit->set_species_binary(_sp_vec[i_chosen-1]);
 				};
 			} else {
-
-				// Probabilistic
-				lit->binary = false;
 
 				// Normalize the probs
 				double tot=0.0;
@@ -676,32 +723,6 @@ namespace DynamicBoltzmann {
 				*/
 			};
 		};
-	};
-
-	/********************
-	Sample probabilities/propensities
-	********************/
-
-	// Sample an unnormalized probability vector
-	int Lattice::sample_prob_vec(std::vector<double> &probs) {
-		unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
-		std::default_random_engine generator(seed);
-		std::discrete_distribution<int> dd(probs.begin(),probs.end());
-		return dd(generator);
-	};
-
-	// Sample a vector of propensities (cumulative probabilities)
-	int Lattice::sample_prop_vec(std::vector<double> &props) {
-		// Sample RV
-		double r = randD(0.0,props.back());
-
-		// Find interval
-		for (int i=0; i<props.size()-1; i++) {
-			if (props[i] <= r && r <= props[i+1]) {
-				return i;
-			};
-		};
-		return 0; // never get here
 	};
 
 	/****************************************
@@ -740,7 +761,30 @@ namespace DynamicBoltzmann {
 		return it;
 	};
 
+	/********************
+	Sample probabilities/propensities
+	********************/
 
+	// Sample an unnormalized probability vector
+	int Lattice::_sample_prob_vec(std::vector<double> &probs) {
+		unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
+		std::default_random_engine generator(seed);
+		std::discrete_distribution<int> dd(probs.begin(),probs.end());
+		return dd(generator);
+	};
 
+	// Sample a vector of propensities (cumulative probabilities)
+	int Lattice::_sample_prop_vec(std::vector<double> &props) {
+		// Sample RV
+		double r = randD(0.0,props.back());
+
+		// Find interval
+		for (int i=0; i<props.size()-1; i++) {
+			if (props[i] <= r && r <= props[i+1]) {
+				return i;
+			};
+		};
+		return 0; // never get here
+	};
 
 };

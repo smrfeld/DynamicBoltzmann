@@ -18,13 +18,15 @@ namespace DynamicBoltzmann {
 	Constructor
 	********************/
 
-	IxnParam::IxnParam(std::string name, IxnParamType type, Species *sp, double val_guess) : IxnParam(name,type,sp,nullptr,val_guess) {};
-	IxnParam::IxnParam(std::string name, IxnParamType type, Species *sp1, Species *sp2, double val_guess)
+	IxnParam::IxnParam(std::string name, IxnParamType type, Species *sp, double val_guess) : IxnParam(name,type,sp,nullptr,nullptr,val_guess) {};
+	IxnParam::IxnParam(std::string name, IxnParamType type, Species *sp1, Species *sp2, double val_guess) : IxnParam(name,type,sp1,sp2,nullptr,val_guess) {};
+	IxnParam::IxnParam(std::string name, IxnParamType type, Species *sp1, Species *sp2, Species *sp3, double val_guess)	
 	{
 		_name = name;
 		_type = type;
 		_sp1 = sp1;
 		_sp2 = sp2;
+		_sp3 = sp3;
 		_val_guess = val_guess;
 
 		_val = val_guess;
@@ -65,6 +67,7 @@ namespace DynamicBoltzmann {
 		_type = other._type;
 		_sp1 = other._sp1;
 		_sp2 = other._sp2;
+		_sp3 = other._sp3;
 		_conns = other._conns;
 		_val = other._val;
 		_val_guess = other._val_guess;
@@ -76,6 +79,7 @@ namespace DynamicBoltzmann {
 		_name = "";
 		_sp1 = nullptr;
 		_sp2 = nullptr;
+		_sp3 = nullptr;
 		_conns.clear();
 		_val = 0.;
 		_val_guess = 0.;
@@ -99,6 +103,18 @@ namespace DynamicBoltzmann {
 	bool IxnParam::is_j_with_species(std::string species_name_1, std::string species_name_2) const {
 		if (_type == Jp) {
 			if ((_sp1->name() == species_name_1 && _sp2->name() == species_name_2) || (_sp1->name() == species_name_2 && _sp2->name() == species_name_1)) {
+				return true;
+			};
+		};
+		return false;
+	};
+
+	bool IxnParam::is_k_with_species(std::string species_name_1, std::string species_name_2, std::string species_name_3) const {
+		if (_type == Kp) {
+			if ((_sp1->name() == species_name_1 && _sp2->name() == species_name_2 && _sp3->name() == species_name_3) 
+				|| (_sp1->name() == species_name_3 && _sp2->name() == species_name_1 && _sp3->name() == species_name_2)
+				|| (_sp1->name() == species_name_2 && _sp2->name() == species_name_3 && _sp3->name() == species_name_1)
+				) {
 				return true;
 			};
 		};
@@ -189,39 +205,23 @@ namespace DynamicBoltzmann {
 			} else if (moment_type==ASLEEP) {
 				_asleep += 1. * _sp1->nn_count(_sp2) / batch_size;
 			};
+		} else if (_type == Kp) {
+			if (moment_type==AWAKE) {
+				_awake += 1. * _sp1->triplet_count(_sp2,_sp3) / batch_size;
+			} else if (moment_type==ASLEEP) {
+				_asleep += 1. * _sp1->triplet_count(_sp2,_sp3) / batch_size;
+			};
 		} else if (_type == Wp) {
 			double inc = 0.0;
 			// Run through all connections
 			for (auto c: _conns) {
-				// Is it binary or not?
-				if (c.first->binary) {
-					// Binary
-					/*
-					std::cout << "visible: " << c.first->x << " " << c.first->y << " " << c.first->z << " hidden: ";
-					c.second->print_conns(false);
-					std::cout << " vis val: ";
-					if (c.first->sp == _sp1) { // site occupied with the correct species
-						std::cout << 1;
-					} else {
-						std::cout << 0;
-					};
-					std::cout << " hidden val: " << c.second->get() << std::endl;
-					*/
-
-					if (c.first->sp == _sp1) { // site occupied with the correct species
-						inc += c.second->get(); // v * h
-					};
-				} else {
-					// Probabilistic
-					// Use the prob for the species we love
-					/*
-					std::cout << "visible: " << c.first->x << " " << c.first->y << " " << c.first->z << " hidden: ";
-					c.second->print_conns(false);
-					std::cout << " vis val: " << c.first->get_prob(_sp1) << " hidden val: " << c.second->get() << std::endl;
-					*/
-					
-					inc += c.first->get_prob(_sp1) * c.second->get(); // v * h
-				};
+				/*
+				std::cout << "visible: " << c.first->x << " " << c.first->y << " " << c.first->z << " hidden: ";
+				c.second->print_conns(false);
+				std::cout << " vis val: " << c.first->get_prob(_sp1) << " hidden val: " << c.second->get() << std::endl;
+				*/
+				
+				inc += c.first->get_prob(_sp1) * c.second->get(); // v * h
 			};
 			if (moment_type==AWAKE) {
 				_awake += 1. * inc / batch_size;

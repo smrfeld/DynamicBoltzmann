@@ -73,8 +73,12 @@ namespace DynamicBoltzmann {
 		// Set and turn on MSE quit mode
 		void set_mse_quit(double mse_quit);
 
+		// Use a single lattice for training, irregardless of batch size
+		void set_use_single_lattice(bool flag);
+
 		// Solve for the h,j corresponding to a given lattice
 		void solve(std::string fname, bool verbose=false);
+		void solve(std::vector<std::string> fnames, bool verbose=false);
 
 		// Update the initial params
 		void read(std::string fname);

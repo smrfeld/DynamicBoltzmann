@@ -193,9 +193,34 @@ namespace DynamicBoltzmann {
 			double inc = 0.0;
 			// Run through all connections
 			for (auto c: _conns) {
-				if (c.first->sp == _sp1) { // site occupied with the correct species
-					//std::cout << "inc val " << c.second->get() << std::endl;
-					inc += c.second->get(); // v * h
+				// Is it binary or not?
+				if (c.first->binary) {
+					// Binary
+					/*
+					std::cout << "visible: " << c.first->x << " " << c.first->y << " " << c.first->z << " hidden: ";
+					c.second->print_conns(false);
+					std::cout << " vis val: ";
+					if (c.first->sp == _sp1) { // site occupied with the correct species
+						std::cout << 1;
+					} else {
+						std::cout << 0;
+					};
+					std::cout << " hidden val: " << c.second->get() << std::endl;
+					*/
+
+					if (c.first->sp == _sp1) { // site occupied with the correct species
+						inc += c.second->get(); // v * h
+					};
+				} else {
+					// Probabilistic
+					// Use the prob for the species we love
+					/*
+					std::cout << "visible: " << c.first->x << " " << c.first->y << " " << c.first->z << " hidden: ";
+					c.second->print_conns(false);
+					std::cout << " vis val: " << c.first->get_prob(_sp1) << " hidden val: " << c.second->get() << std::endl;
+					*/
+					
+					inc += c.first->get_prob(_sp1) * c.second->get(); // v * h
 				};
 			};
 			if (moment_type==AWAKE) {

@@ -54,6 +54,12 @@ namespace DynamicBoltzmann {
 		~HiddenUnit();	
 
 		/********************
+		Print connections
+		********************/
+
+		void print_conns(bool newline) const;
+
+		/********************
 		Getters
 		********************/
 

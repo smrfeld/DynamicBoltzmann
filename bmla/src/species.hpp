@@ -41,8 +41,8 @@ namespace DynamicBoltzmann {
 		std::string _name;
 
 		// Counts
-		std::map<Species*,int> _nn_count;
-		int _count;
+		std::map<Species*,double> _nn_count;
+		double _count;
 
 		// Pointers to the interaction params
 		IxnParam *_h_ptr;
@@ -73,15 +73,13 @@ namespace DynamicBoltzmann {
 		double h() const;
 		double j(Species* other) const;
 		double w() const;
-		int count() const;
-		int nn_count(Species* other) const;
+		double count() const;
+		double nn_count(Species* other) const;
 		std::string name() const;
 
 		// Increment counts
-		void count_plus();
-		void count_minus();
-		void nn_count_plus(Species* other);
-		void nn_count_minus(Species* other);
+		void count_increment(double inc);
+		void nn_count_increment(Species* other, double inc);
 
 		// Reset counts
 		void reset_counts();

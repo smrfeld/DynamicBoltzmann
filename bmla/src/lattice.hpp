@@ -49,6 +49,10 @@ namespace DynamicBoltzmann {
 	class Site {
 	private:
 
+		// Probs
+		std::map<Species*, double> _probs;
+		double _prob_empty;
+
 		// Constructor helpers
 		void _clean_up();
 		void _reset();
@@ -58,9 +62,12 @@ namespace DynamicBoltzmann {
 		int dim;
 		int x;
 		int y;
-		int z;	
+		int z;
 		Species *sp;
 		std::vector<latt_it> nbrs;
+
+		// Is it binary? (vs probabilistic)
+		bool binary;
 
 		// Connectivity to any hidden units
 		// A species-dependent graph :)
@@ -79,6 +86,15 @@ namespace DynamicBoltzmann {
 		Site& operator=(const Site& other);
 		Site& operator=(Site&& other);
 		~Site();
+
+		// Normalize probabilities based on current entries
+		void normalize_probs();
+
+		// Get a probability
+		// nullptr for empty
+		double get_prob(Species *sp);
+		void set_prob(Species *sp, double val);
+		void mult_probs_as_nbr(Species *sp, double val);
 	};
 	// Comparator
 	bool operator <(const Site& a, const Site& b);
@@ -174,6 +190,9 @@ namespace DynamicBoltzmann {
 		bool replace_mol(latt_it s, Species *sp);
 		bool make_mol_at_empty(latt_it s, Species *sp);
 
+		// Increment counts on species - only for binary
+		void increment_species_counts_binary(latt_it s, Species *sp, double inc);
+
 		/********************
 		Erase a mol
 		********************/
@@ -196,7 +215,7 @@ namespace DynamicBoltzmann {
 		Sample
 		********************/
 
-		void sample();
+		void sample(bool binary=true);
 
 		/********************
 		Sample probabilities/propensities

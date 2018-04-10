@@ -71,6 +71,20 @@ namespace DynamicBoltzmann {
 	};
 
 	/********************
+	Print connections
+	********************/
+
+	void HiddenUnit::print_conns(bool newline) const {
+		std::cout << "Connected to: ";
+		for (auto sp: _conn) {
+			std::cout << "(" << sp->x << "," << sp->y << "," << sp->z << ") ";
+		};
+		if (newline) {
+			std::cout << std::endl;
+		};
+	};
+
+	/********************
 	Getters
 	********************/
 
@@ -87,9 +101,14 @@ namespace DynamicBoltzmann {
 		//std::cout << "Activating..." << std::endl;
 		double act = 0.0;
 		for (auto c: _conn) {
-			if (c->sp == _sp) { // Check that this is the species that I love
-				act += c->sp->w(); // Gets the weight of this connection
-				//std::cout << "    Adding from site -> " << act << std::endl;
+			if (c->binary) {
+				// Binary
+				if (c->sp == _sp) { // Check that this is the species that I love
+					act += _sp->w(); // Gets the weight of this connection
+				};
+			} else {
+				// Probabilistic
+				act += _sp->w() * c->get_prob(_sp); // weight * visible value for this species
 			};
 		};
 

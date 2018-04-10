@@ -31,6 +31,8 @@ namespace DynamicBoltzmann {
 		y = yIn;
 		z = zIn;
 		sp = spIn;
+		binary = true;
+		_prob_empty = 0.0;
 	};	
 	Site::Site(const Site& other) {
 		_copy(other);
@@ -68,6 +70,9 @@ namespace DynamicBoltzmann {
 		sp = nullptr;
 		nbrs.clear();
 		hidden_conns.clear();
+		binary = true;
+		_prob_empty = 0.0;
+		_probs.clear();
 	};
 	void Site::_copy(const Site& other) {
 		dim = other.dim;
@@ -77,6 +82,9 @@ namespace DynamicBoltzmann {
 		sp = other.sp;
 		nbrs = other.nbrs;
 		hidden_conns = other.hidden_conns;
+		binary = other.binary;
+		_prob_empty = other._prob_empty;
+		_probs = other._probs;
 	};
 
 
@@ -127,6 +135,62 @@ namespace DynamicBoltzmann {
 	    	return os;
 	    };
 	};
+
+	void Site::normalize_probs() {
+		double tot = _prob_empty;
+		for (auto mp: _probs) {
+			tot += mp.second;
+		};
+		_prob_empty /= tot;
+		for (auto mp: _probs) {
+			_probs[mp.first] /= tot;
+		};
+	};
+
+	// Get a probability
+	// nullptr for empty
+	double Site::get_prob(Species *sp) {
+		// nullptr for prob of empty
+		if (sp == nullptr) {
+			return _prob_empty;
+		};
+
+		auto it = _probs.find(sp);
+		if (it != _probs.end()) {
+			return it->second;
+		} else {
+			return 0.0;
+		};
+	};
+	void Site::set_prob(Species *sp, double val) {
+		// nullptr for prob of empty
+		if (sp == nullptr) {
+			_prob_empty = val;
+			return;
+		};
+
+		// Store
+		_probs[sp] = val;
+
+		// Increment counts on species
+		// Counts
+		sp->count_increment(val);
+		// NNs
+		double p;
+		// Go through neighbor sites
+		for (auto nbr_it: nbrs) {
+			nbr_it->mult_probs_as_nbr(sp,val);
+		};
+	};
+	void Site::mult_probs_as_nbr(Species *sp, double val) {
+		for (auto mp: _probs) {
+			mp.first->nn_count_increment(sp,val*mp.second);
+			if (mp.first != sp) {
+				sp->nn_count_increment(mp.first, val*mp.second);
+			};
+		};
+	};
+
 
 	/****************************************
 	Lattice
@@ -379,20 +443,25 @@ namespace DynamicBoltzmann {
 		s->sp = sp;
 
 		// Update count and nns
-		sp->count_plus();
-		for (auto nbr_it: s->nbrs) { // go through nbrs
-			if (nbr_it->sp) { // is nbr site occ
-				// Update bidirectionally, unless it's the same species
-				sp->nn_count_plus(nbr_it->sp);
-				if (nbr_it->sp != sp) {
-					nbr_it->sp->nn_count_plus(sp);
-				};
-			};
-		};
+		increment_species_counts_binary(s,sp,1.0);
 
 		// std::cout << " now: count: " << sp->nn_count[_sp_map["A"]] << std::endl;
 
 		return true;
+	};
+
+	// Increment counts on species
+	void Lattice::increment_species_counts_binary(latt_it s, Species *sp, double inc) {
+		sp->count_increment(inc);
+		for (auto nbr_it: s->nbrs) { // go through nbrs
+			if (nbr_it->sp) { // is nbr site occ
+				// Update bidirectionally, unless it's the same species
+				sp->nn_count_increment(nbr_it->sp,inc);
+				if (nbr_it->sp != sp) {
+					nbr_it->sp->nn_count_increment(sp,inc);
+				};
+			};
+		};
 	};
 
 	/********************
@@ -419,16 +488,7 @@ namespace DynamicBoltzmann {
 		*/
 
 		// Update count and nns
-		s->sp->count_minus();
-		for (auto nbr_it: s->nbrs) { // go through nbrs
-			if (nbr_it->sp) { // is nbr site occ
-				// Update bidirectionally, unless it's the same species
-				s->sp->nn_count_minus(nbr_it->sp);
-				if (nbr_it->sp != s->sp) {
-					nbr_it->sp->nn_count_minus(s->sp);
-				};
-			};
-		};
+		increment_species_counts_binary(s,s->sp,-1.0);
 
 		// std::cout << " now: count: " << s->sp->nn_count[_sp_map["A"]] << std::endl;
 
@@ -501,27 +561,45 @@ namespace DynamicBoltzmann {
 	Sample
 	********************/
 
-	void Lattice::sample() {
+	void Lattice::sample(bool binary) {
 
 		// Declarations
 		latt_it it;
 		double energy;
 		std::map<Species*, std::vector<HiddenUnit*>>::iterator it_hups;
-		// std::vector<double> probs; // Unnormalized probabilities
+		std::vector<double> probs; // probabilities
 		std::vector<double> props; // propensities
 		int i_chosen;
+		latt_it lit;
+
+		// Copy lattice
+		lattice latt_new(_latt);
+
+		// Clear everything existing
+		clear();
 
 		// Go through all lattice sites
-		for (it = _latt.begin(); it != _latt.end(); it++) {
+		for (it = latt_new.begin(); it != latt_new.end(); it++) {
+
+			// Look up the site in our latt
+			if (_dim==1) {
+				lit = _look_up(it->x);
+			} else if (_dim == 2) {
+				lit = _look_up(it->x,it->y);
+			} else if (_dim == 3) {
+				lit = _look_up(it->x,it->y,it->z);
+			};
 
 			// Clear propensities
-			// probs.clear();
 			props.clear();
 			props.push_back(0.0);
 
 			// Propensity for no spin is exp(0) = 1
-			// probs.push_back(1.0);
 			props.push_back(1.0);
+
+			// Prob
+			probs.clear();
+			probs.push_back(1.0);
 
 			// Go through all possible species this could be, calculate propensities
 			for (auto sp_new: _sp_vec) {
@@ -551,22 +629,51 @@ namespace DynamicBoltzmann {
 				};
 
 				// Append prob
-				// probs.push_back(exp(energy));
-				props.push_back(props.back()+exp(energy));
+				energy = exp(energy);
+				probs.push_back(energy);
+				props.push_back(props.back()+energy);
+
 			};
 
-			// Sample RV
-			// i_chosen = sample_prob_vec(probs);
-			i_chosen = sample_prop_vec(props);
+			// Binarize if needed
+			if (binary) {
 
-			if (i_chosen==0) {
-				// Flip down (new spin = 0) if needed
-				if (it->sp != nullptr) {
-					erase_mol(it); // Does not invalidate iterator
+				// Binary
+				lit->binary = true;
+
+				// Sample RV
+				// i_chosen = sample_prob_vec(probs);
+				i_chosen = sample_prop_vec(props);
+
+				if (i_chosen==0) {
+					// Flip down (new spin = 0)
+					// Already guaranteed empty
+				} else {
+					// Make the appropriate species at this site (guaranteed empty)
+					make_mol_at_empty(lit,_sp_vec[i_chosen-1]);
 				};
 			} else {
-				// Make the appropriate species at this site if needed (checks internally)
-				replace_mol(it,_sp_vec[i_chosen-1]);
+
+				// Probabilistic
+				lit->binary = false;
+
+				// Normalize the probs
+				double tot=0.0;
+				for (auto t: probs) {
+					tot += t;
+				};
+
+				// Write into species
+				lit->set_prob(nullptr,probs[0]/tot);
+				for (int i=1; i<probs.size(); i++) {
+					lit->set_prob(_sp_vec[i-1],probs[i]/tot);
+				};
+				/*
+				for (auto pr: probs) {
+					std::cout << pr/tot << " ";
+				};
+				std::cout << std::endl;
+				*/
 			};
 		};
 	};

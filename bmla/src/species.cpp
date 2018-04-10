@@ -97,10 +97,10 @@ namespace DynamicBoltzmann {
 	double Species::w() const {
 		return _w_ptr->get();
 	};
-	int Species::count() const {
+	double Species::count() const {
 		return _count;
 	};
-	int Species::nn_count(Species *other) const {
+	double Species::nn_count(Species *other) const {
 		return _nn_count.at(other);
 	};
 
@@ -110,19 +110,17 @@ namespace DynamicBoltzmann {
 	Increment counts
 	********************/
 
-	void Species::count_plus() { _count++; };
-	void Species::count_minus() { _count--; };
-	void Species::nn_count_plus(Species* other) { _nn_count[other]++; };
-	void Species::nn_count_minus(Species* other) { _nn_count[other]--; };
+	void Species::count_increment(double inc) { _count += inc; };
+	void Species::nn_count_increment(Species* other, double inc) { _nn_count[other] += inc; };
 
 	/********************
 	Reset counts
 	********************/
 
 	void Species::reset_counts() {
-		_count = 0;
+		_count = 0.0;
 		for (auto it=_nn_count.begin(); it!=_nn_count.end(); it++) {
-			it->second = 0;
+			it->second = 0.0;
 		};
 	};
 

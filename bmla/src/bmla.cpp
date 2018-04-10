@@ -6,6 +6,7 @@
 #include <iomanip>
 
 #include "ixn_param.hpp"
+#include "../include/general.hpp"
 
 /************************************
 * Namespace for DynamicBoltzmann
@@ -79,6 +80,9 @@ namespace DynamicBoltzmann {
 		bool _l2_reg;
 		double _lambda;
 
+		// Use a single lattice, irregardless of batch size
+		bool _use_single_lattice;
+
 		// Print
 		void _print_ixn_params(bool new_line=true) const;
 		void _print_moments(bool new_line=true) const;
@@ -123,8 +127,11 @@ namespace DynamicBoltzmann {
 		// Set and turn on MSE quit mode
 		void set_mse_quit(double mse_quit);
 
+		// Use a single lattice for training, irregardless of batch size
+		void set_use_single_lattice(bool flag);
+
 		// Solve for the h,j corresponding to a given lattice
-		void solve(std::string fname, bool verbose=false);
+		void solve(std::vector<std::string> fnames, bool verbose=false);
 
 		// Update the initial params
 		void read(std::string fname);
@@ -153,6 +160,7 @@ namespace DynamicBoltzmann {
 		_l2_reg = false;
 		_lambda = 0.;
 		_hidden_layer_exists = false;
+		_use_single_lattice = false; // default
 
 		// Create the species and add to the lattice
 		for (auto s: species) {
@@ -239,6 +247,7 @@ namespace DynamicBoltzmann {
 		_n_cd_steps = other._n_cd_steps;
 		_l2_reg = other._l2_reg;
 		_lambda = other._lambda;
+		_use_single_lattice = other._use_single_lattice;
 	};
 	void BMLA::Impl::_reset() {
 		_n_param = 0;
@@ -255,6 +264,7 @@ namespace DynamicBoltzmann {
 		_n_cd_steps = 1;
 		_l2_reg = false;
 		_lambda = 0.;
+		_use_single_lattice = false;
 	};
 
 	/********************
@@ -395,11 +405,25 @@ namespace DynamicBoltzmann {
 	};
 
 	/********************
+	Use a single lattice for training, irregardless of batch size
+	********************/
+
+	void BMLA::Impl::set_use_single_lattice(bool flag) {
+		_use_single_lattice = flag;
+	};
+
+	/********************
 	Solve for the h,j corresponding to a given lattice
 	********************/
 
-	void BMLA::Impl::solve(std::string fname, bool verbose)
+	void BMLA::Impl::solve(std::vector<std::string> fnames, bool verbose)
 	{
+		// Check size of filenames
+		if (_use_single_lattice == true && fnames.size() != 1) {
+			std::cerr << "Error! In _use_single_lattice mode, only provide one filename!" << std::endl;
+			exit(EXIT_FAILURE); 
+		};
+
 		// Reset the params to the guesses, and the moments to 0
 		for (auto it=_ixn_params.begin(); it!=_ixn_params.end(); it++) {
 			it->reset();
@@ -437,8 +461,8 @@ namespace DynamicBoltzmann {
 					std::cout << "." << std::flush;
 				};
 
-				// Reset the lattice by reading it in
-				_latt.read_from_file(fname);
+				// Reset the lattice by reading in a random
+				_latt.read_from_file(fnames[randI(0,fnames.size()-1)]);
 		 		
 				// Activate hidden
 				if (_hidden_layer_exists) {
@@ -457,7 +481,7 @@ namespace DynamicBoltzmann {
 				for (int cd_step=0; cd_step<_n_cd_steps; cd_step++)
 				{
 					// Sample
-					_latt.sample();
+					_latt.sample(false); // probabilistic
 
 					// Activate hidden
 					if (_hidden_layer_exists) {
@@ -466,12 +490,24 @@ namespace DynamicBoltzmann {
 							ithu->activate(false);
 						};
 					};
+
+					// Hidden layer:
+					/*
+					std::cout << "hidden layer:" << std::endl;
+					for (auto ithu = _hidden_units.begin(); ithu != _hidden_units.end(); ithu++) {
+						ithu->print_conns(false);
+						std::cout << ithu->get() << std::endl;
+					};
+					*/
 				};
 
 				// Record asleep moments
+				//std::cout << "---- retrieving asleep moments ----" << std::endl;
 				for (auto it=_ixn_params.begin(); it!=_ixn_params.end(); it++) {
 					it->moments_retrieve(IxnParam::ASLEEP, _n_batch);
 				};
+				//std::cout << "------------------------------" << std::endl;
+
 			};
 
 			// Print out the MSE
@@ -625,9 +661,21 @@ namespace DynamicBoltzmann {
 		_impl->set_mse_quit(mse_quit);
 	};
 
+	// Use a single lattice for training, irregardless of batch size
+	void BMLA::set_use_single_lattice(bool flag) {
+		_impl->set_use_single_lattice(flag);
+	};
+
 	// Solve for the h,j corresponding to a given lattice
 	void BMLA::solve(std::string fname, bool verbose) {
-		_impl->solve(fname,verbose);
+		std::vector<std::string> fnames;
+		fnames.push_back(fname);
+		_impl->solve(fnames,verbose);
+	};
+
+	// Solve for the h,j corresponding to a given lattice
+	void BMLA::solve(std::vector<std::string> fnames, bool verbose) {
+		_impl->solve(fnames,verbose);
 	};
 
 	// Update the initial params

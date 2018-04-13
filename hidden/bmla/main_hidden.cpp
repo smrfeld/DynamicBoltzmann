@@ -8,21 +8,45 @@ using namespace DynamicBoltzmann;
 
 int main() {
 
+	// MODE
+	// True = Solve for many triplets
+	// False = Solve for few triplets
+	bool solve_many = true;
+
 	int box_length = 1000;
 	int n_cd_steps = 10;
-	double dopt = 0.0002;
-	int n_opt = 100;
-	int n_batch = 50;
+	double dopt = 0.002;
+	int n_opt = 10000;
+	int n_batch = 10;
 
-	// Many
-	// Few
-	// h = -2.0, w = -0.04
+	// Initial h,W
+	double hinit,winit;
+	if (solve_many) {
+		// Many
+		hinit = 0.475533;
+		winit = -3.60267;
+	} else {
+		// Few
+		hinit = 0.860922;
+		winit = -5.26262;
+	};
 
+	// Dimensions
 	std::vector<Dim> dims;
-	dims.push_back(Dim("h",DimType::H,"A",-3.908));
-	dims.push_back(Dim("W",DimType::W,"A",1.0078));
+	dims.push_back(Dim("h",DimType::H,"A",hinit));
+	dims.push_back(Dim("W",DimType::W,"A",winit));
 
+	// BMLA solver
 	BMLA bmla(dims,{"A"},n_batch,box_length,dopt,n_opt,1);
+
+	// Write the solution traj
+	if (solve_many) {
+		// Many
+		bmla.set_write_soln_traj("hidden_soln_many_triplets.txt");
+	} else {
+		// Few
+		bmla.set_write_soln_traj("hidden_soln_few_triplets.txt");
+	};
 
 	// Set the number of CD steps
 	bmla.set_n_cd_steps(n_cd_steps);
@@ -59,8 +83,18 @@ int main() {
 	};
 
 	// Files to read
+	int i_start, i_end;
+	if (solve_many) {
+		// Many
+		i_start = 101;
+		i_end = 200;
+	} else {
+		// Few
+		i_start = 1;
+		i_end = 100;
+	};
 	std::vector<std::string> fnames;
-	for (int i=1; i<=100; i++) {
+	for (int i=i_start; i<=i_end; i++) {
 		fnames.push_back("../bimol_annihilation/lattice_v"+pad_str(i,3)+"/lattice/0000.txt");
 	};
 

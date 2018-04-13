@@ -78,6 +78,9 @@ namespace DynamicBoltzmann {
 		// Use a single lattice for training, irregardless of batch size
 		void set_use_single_lattice(bool flag);
 
+		// Set flag that we should write out the trajectory of parameters solved over the opt steps
+		void set_write_soln_traj(std::string fname);
+
 		// Solve for the h,j corresponding to a given lattice
 		void solve(std::string fname, bool verbose=false);
 		void solve(std::vector<std::string> fnames, bool verbose=false);
@@ -86,7 +89,7 @@ namespace DynamicBoltzmann {
 		void read(std::string fname);
 
 		// Write out the solutions
-		void write(std::string fname);
+		void write(std::string fname, bool append=false, int opt_step=-1);
 	};
 };
 

@@ -94,6 +94,9 @@ namespace DynamicBoltzmann {
 		// Use a single lattice, irregardless of batch size
 		bool _use_single_lattice;
 
+		// Filename to write soln traj to
+		std::string _fname_write_soln;
+
 		// Print
 		void _print_ixn_params(bool new_line=true) const;
 		void _print_moments(bool new_line=true) const;
@@ -142,6 +145,9 @@ namespace DynamicBoltzmann {
 		// Use a single lattice for training, irregardless of batch size
 		void set_use_single_lattice(bool flag);
 
+		// Set flag that we should write out the trajectory of parameters solved over the opt steps
+		void set_write_soln_traj(std::string fname);
+
 		// Solve for the h,j corresponding to a given lattice
 		void solve(std::vector<std::string> fnames, bool verbose=false);
 
@@ -149,7 +155,7 @@ namespace DynamicBoltzmann {
 		void read(std::string fname);
 
 		// Write out the solutions
-		void write(std::string fname);
+		void write(std::string fname, bool append, int opt_step);
 	};
 
 	/****************************************
@@ -173,6 +179,21 @@ namespace DynamicBoltzmann {
 		_lambda = 0.;
 		_hidden_layer_exists = false;
 		_use_single_lattice = false; // default
+		_fname_write_soln = "";
+
+		// Tell the lattice about what dims exist
+		for (auto d: dims) {
+			if (d.type==H) { 
+				_latt.set_exists_h(true);
+			} else if (d.type==J) {
+				_latt.set_exists_j(true);
+			} else if (d.type==K) {
+				_latt.set_exists_k(true);
+			} else if (d.type==W) {
+				_hidden_layer_exists = true;
+				_latt.set_exists_hidden(true);
+			};
+		};
 
 		// Create the species and add to the lattice
 		for (auto s: species) {
@@ -287,6 +308,7 @@ namespace DynamicBoltzmann {
 		_l2_reg = other._l2_reg;
 		_lambda = other._lambda;
 		_use_single_lattice = other._use_single_lattice;
+		_fname_write_soln = other._fname_write_soln;
 	};
 	void BMLA::Impl::_reset() {
 		_n_param = 0;
@@ -304,6 +326,7 @@ namespace DynamicBoltzmann {
 		_l2_reg = false;
 		_lambda = 0.;
 		_use_single_lattice = false;
+		_fname_write_soln = "";
 	};
 
 	/********************
@@ -393,11 +416,6 @@ namespace DynamicBoltzmann {
 	};
 	void BMLA::Impl::_add_hidden_unit(std::vector<Site*> conns, std::string species)
 	{
-		// Flag that a hidden layer exists
-		_hidden_layer_exists = true;
-		// Also tell the lattice - important for the annealer
-		_latt.set_hidden_layer_exists();
-
 		// Find the species
 		Species *sp = _find_species(species);
 
@@ -451,6 +469,11 @@ namespace DynamicBoltzmann {
 		_use_single_lattice = flag;
 	};
 
+	// Set flag that we should write out the trajectory of parameters solved over the opt steps
+	void BMLA::Impl::set_write_soln_traj(std::string fname) {
+		_fname_write_soln = fname;
+	};
+
 	/********************
 	Solve for the h,j corresponding to a given lattice
 	********************/
@@ -468,6 +491,11 @@ namespace DynamicBoltzmann {
 			it->reset();
 			it->moments_reset(IxnParam::AWAKE);
 			it->moments_reset(IxnParam::ASLEEP);
+		};
+
+		// Write the initial point for the solution
+		if (_fname_write_soln != "") {
+			write(_fname_write_soln,false,0);
 		};
 
 		// Iterate over optimization steps
@@ -520,7 +548,7 @@ namespace DynamicBoltzmann {
 				for (int cd_step=0; cd_step<_n_cd_steps; cd_step++)
 				{
 					// Sample
-					_latt.sample(false); // probabilistic
+					_latt.sample(true); // binary
 
 					// Activate hidden
 					if (_hidden_layer_exists) {
@@ -559,6 +587,11 @@ namespace DynamicBoltzmann {
 			// Update the params
 			for (auto it=_ixn_params.begin(); it!=_ixn_params.end(); it++) {
 				it->update(_dopt,_l2_reg,_lambda);
+			};
+
+			// Write the new solution (append)
+			if (_fname_write_soln != "") {
+				write(_fname_write_soln,true,i_opt+1);
 			};
 		};
 
@@ -599,11 +632,19 @@ namespace DynamicBoltzmann {
 	Write the solutions
 	********************/
 
-	void BMLA::Impl::write(std::string fname) {
+	void BMLA::Impl::write(std::string fname, bool append, int opt_step) {
 		std::ofstream f;
-		f.open (fname);
+		if (append) {
+			f.open(fname, std::ofstream::out | std::ofstream::app);
+		} else {
+			f.open(fname);
+		};
 		for (auto it=_ixn_params.begin(); it!=_ixn_params.end(); it++) {
-			f << it->name() << " " << it->get() << "\n";
+			if (opt_step != -1) {
+				f << opt_step << " " << it->name() << " " << it->get() << "\n";
+			} else {
+				f << it->name() << " " << it->get() << "\n";
+			};
 		};
 		f.close();	
 	};
@@ -717,6 +758,11 @@ namespace DynamicBoltzmann {
 		_impl->set_use_single_lattice(flag);
 	};
 
+	// Set flag that we should write out the trajectory of parameters solved over the opt steps
+	void BMLA::set_write_soln_traj(std::string fname) {
+		_impl->set_write_soln_traj(fname);
+	};
+
 	// Solve for the h,j corresponding to a given lattice
 	void BMLA::solve(std::string fname, bool verbose) {
 		std::vector<std::string> fnames;
@@ -735,8 +781,8 @@ namespace DynamicBoltzmann {
 	};
 
 	// Write out the solutions
-	void BMLA::write(std::string fname) {
-		_impl->write(fname);
+	void BMLA::write(std::string fname, bool append, int opt_step) {
+		_impl->write(fname,append,opt_step);
 	};
 };
 

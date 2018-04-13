@@ -129,13 +129,16 @@ namespace DynamicBoltzmann {
 	Increment counts
 	********************/
 
-	void Species::count_increment(double inc) { _count += inc; };
+	void Species::count_increment(double inc) { 
+		_count += inc; };
 	void Species::nn_count_increment(Species* other, double inc) { 
 		_nn_count[other] += inc; 
 	};
 	void Species::triplet_count_increment(Species* other1, Species* other2, double inc) {
 		_triplet_count[other1][other2] += inc; 
-		_triplet_count[other2][other1] += inc; 
+		if (other1 != other2) {
+			_triplet_count[other2][other1] += inc; 
+		};
 	};
 
 	/********************

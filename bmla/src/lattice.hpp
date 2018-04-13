@@ -49,13 +49,7 @@ namespace DynamicBoltzmann {
 	class Site {
 	private:
 
-		// Is it binary (vs probabilistic)
-		bool _binary;
-
-		// If binary, this is the species
-		Species *_sp_binary;
-
-		// If probabilistic, these are the probs
+		// Probs of species/empty
 		std::map<Species*, double> _probs;
 		double _prob_empty;
 
@@ -65,15 +59,8 @@ namespace DynamicBoltzmann {
 		void _copy(const Site& other);
 
 		// Add/Remove counts on a given species (not _sp_binary, unless it is passed)
-		void _remove_counts_on_species_binary(Species *sp);
-		void _add_counts_on_species_binary(Species *sp);
-		void _remove_counts_on_species_prob(Species *sp, double prob);
-		void _add_counts_on_species_prob(Species *sp, double prob);
-
-		// Clear a site from being binary/probabilistic
-		// Note: flips to the opposite mode
-		void _clear_binary();
-		void _clear_prob();
+		void _remove_counts_on_species(Species *sp, double prob);
+		void _add_counts_on_species(Species *sp, double prob);
 
 	public:
 		int dim;
@@ -81,6 +68,7 @@ namespace DynamicBoltzmann {
 		int y;
 		int z;
 		std::vector<latt_it> nbrs;
+		std::vector<std::pair<latt_it,latt_it>> triplets;
 
 		// Connectivity to any hidden units
 		// A species-dependent graph :)
@@ -89,47 +77,38 @@ namespace DynamicBoltzmann {
 		// Constructor
 		Site();
 		Site(int xIn);
-		Site(int xIn, Species *spIn);
 		Site(int xIn, int yIn);
-		Site(int xIn, int yIn, Species *spIn);
 		Site(int xIn, int yIn, int zIn);
-		Site(int xIn, int yIn, int zIn, Species *spIn);
 		Site(const Site& other);
 		Site(Site&& other);
 		Site& operator=(const Site& other);
 		Site& operator=(Site&& other);
 		~Site();
 
+		// Add a species possibility
+		void add_species(Species* sp);
+
 		// Get a probability
 		// If binary, returns 1.0 for a certain species
 		// Pass nullptr to get prob of empty
 		double get_prob(Species *sp) const;
-		// Get all probs - if binary, returns an empty
+		// Get all probs
 		const std::map<Species*, double>& get_probs() const;
 		// Set probability
 		// Pass nullptr to set probability of being empty
 		void set_prob(Species *sp, double prob);
+		// Set site to be empty
+		void set_site_empty();
+		// Set site to have binary probs
+		void set_site_binary(Species *sp);
 
 		// Get J and K activations
-		// Go through all possible species probabilities x J of the coupling for the given species
+		// Go through all possible species: (probabilities) times (J of the coupling for the given species)
 		double get_act_j(Species *sp) const;
 		double get_act_k(Species *sp) const;
 
-		// Increment NN counts given that we are neighboring this given species which exists with this given prob
-		// Note: internally acts bidirectionally
-		void increment_nn_counts_for_neighbor_prob(Species *sp_nbr, double prob);
-
-		// If binary, gets the species
-		// Else returns nullptr if empty OR probabilistic
-		Species* get_species_binary() const;
-		// Sets a site to binary with some species
-		// Pass nullptr to make an empty binary site
-		void set_species_binary(Species *sp);
-		// Set a site to be empty
-		void set_site_empty_binary();
-
-		// Check if the site is binary
-		bool binary() const;
+		// Check if site is empty
+		bool empty() const;
 	};
 	// Comparator
 	bool operator <(const Site& a, const Site& b);
@@ -163,7 +142,10 @@ namespace DynamicBoltzmann {
 		std::vector<Species*> _sp_vec;
 
 		// Flag - are hidden units present? (needed for annealing)
-		bool _hidden_layer_exists;
+		bool _exists_hidden;
+		bool _exists_h;
+		bool _exists_j;
+		bool _exists_k;
 
 		// Sample an unnormalized probability vector
 		int _sample_prop_vec(std::vector<double> &props);
@@ -206,7 +188,10 @@ namespace DynamicBoltzmann {
 		Indicate that the hidden unit exists
 		********************/
 
-		void set_hidden_layer_exists();
+		void set_exists_hidden(bool flag=true);
+		void set_exists_h(bool flag=true);
+		void set_exists_j(bool flag=true);
+		void set_exists_k(bool flag=true);
 
 		/********************
 		Find a pointer to a site by index

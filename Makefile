@@ -12,6 +12,9 @@ TARGET_LIB = lib/libdynamicboltz.so
 BUILD_DIR = build
 # source dir
 SOURCE_DIR = src
+# install dir
+INSTALL_LIB_DIR = /usr/local/lib
+INSTALL_INCLUDE_DIR = /usr/local/include/dynamicboltz
 
 # source files
 SRC_NAMES = basis_func.cpp dynamic_boltzmann.cpp general.cpp grid.cpp hidden_unit.cpp ixn_param_traj.cpp lattice.cpp species.cpp var_term_traj.cpp
@@ -19,7 +22,7 @@ SRCS = $(addprefix $(SOURCE_DIR)/, $(SRC_NAMES))
 OBJS = $(addprefix $(BUILD_DIR)/, $(SRC_NAMES:.cpp=.o))
 DEPS = $(OBJS:.o=.d)
 
-.PHONY: all clean
+.PHONY: all clean install
 
 all: $(BUILD_DIR) $(TARGET_LIB)
 
@@ -40,3 +43,9 @@ endif
 
 clean:
 	$(RM) ${TARGET_LIB} $(OBJS) $(DEPS)
+
+install:
+	mkdir -p $(INSTALL_LIB_DIR)
+	mkdir -p $(INSTALL_INCLUDE_DIR)
+	cp -p $(TARGET_LIB) $(INSTALL_LIB_DIR)
+	cp -p include/*.hpp $(INSTALL_INCLUDE_DIR)

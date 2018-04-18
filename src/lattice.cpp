@@ -144,7 +144,9 @@ namespace DynamicBoltzmann {
 		};
 		_dim = dim;
 		_box_length = box_length;
-		_hidden_layer_exists = false;
+		_exists_w = false;
+		_exists_h = false;
+		_exists_j = false;
 
 		// Make a fully linked list of sites
 		if (dim == 1) {
@@ -251,14 +253,18 @@ namespace DynamicBoltzmann {
 		_box_length = other._box_length;
 		_sp_map = other._sp_map;
 		_sp_vec = other._sp_vec;
-		_hidden_layer_exists = other._hidden_layer_exists;
+		_exists_w = other._exists_w;
+		_exists_h = other._exists_h;
+		_exists_j = other._exists_j;		
 	};
 	void Lattice::_reset() {
 		_box_length = 0;
 		_sp_map.clear();
 		_sp_vec.clear();
 		_latt.clear();
-		_hidden_layer_exists = false;
+		_exists_w = false;
+		_exists_h = false;
+		_exists_j = false;
 	};
 
 	/********************
@@ -281,11 +287,17 @@ namespace DynamicBoltzmann {
 	};
 
 	/********************
-	Indicate that the hidden unit exists
+	Indicate what interactions exist
 	********************/
 
-	void Lattice::set_hidden_layer_exists() {
-		_hidden_layer_exists = true;
+	void Lattice::set_exists_w(bool flag) {
+		_exists_w = flag;
+	};
+	void Lattice::set_exists_h(bool flag) {
+		_exists_h = flag;
+	};
+	void Lattice::set_exists_j(bool flag) {
+		_exists_j = flag;
 	};
 
 	/********************
@@ -525,19 +537,26 @@ namespace DynamicBoltzmann {
 			
 			// Go through all possible species this could be, calculate propensities
 			for (auto sp_new: _sp_vec) {
+				// Reset
+				energy = 0.;
+
 				// Bias
-				energy = sp_new->h();
+				if (_exists_h) {
+					energy = sp_new->h();
+				};
 
 				// NNs for J
-				for (auto it_nbr: it->nbrs) {
-					// Occupied?
-					if (it_nbr->sp) {
-						energy += sp_new->j(it_nbr->sp);
+				if (_exists_j) {
+					for (auto it_nbr: it->nbrs) {
+						// Occupied?
+						if (it_nbr->sp) {
+							energy += sp_new->j(it_nbr->sp);
+						};
 					};
 				};
 
 				// Hidden layer exists?
-				if (_hidden_layer_exists) {
+				if (_exists_w) {
 
 					// Check if this species has connections to hidden units
 					it_hups = it->hidden_conns.find(sp_new);
@@ -562,7 +581,7 @@ namespace DynamicBoltzmann {
 			if (i_chosen==0) {
 				// Flip down (new spin = 0) if needed
 				if (it->sp != nullptr) {
-					erase_mol(it); // Does not invalidate iterator
+					erase_mol(it); // Does not invalidate iterator, just deletes the species on this site
 				};
 			} else {
 				// Make the appropriate species at this site if needed (checks internally)

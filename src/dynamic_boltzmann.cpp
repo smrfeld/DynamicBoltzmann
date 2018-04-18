@@ -5,6 +5,8 @@
 #include <fstream>
 #include <algorithm>
 
+#include "var_term_traj.hpp"
+
 /************************************
 * Namespace for DynamicBoltzmann
 ************************************/
@@ -18,12 +20,16 @@ namespace DynamicBoltzmann {
 	Dim::Dim(std::string name, DimType type, std::string species, std::vector<std::string> basis_func_dims, double min, double max, int n, double init) : Dim(name,type,species, "", basis_func_dims, min, max, n, init) {};
 	Dim::Dim(std::string name, DimType type, std::string species1, std::string species2, std::vector<std::string> basis_func_dims, double min, double max, int n, double init)
 	{
-		if ( (species1 == "") 
-			|| 
-			((type==H && species2 != "") || (type==W && species2 != "") || (type==J && species2 == ""))
-			) {
-			std::cerr << "ERROR! Dim specification is incorrect." << std::endl;
-			exit(EXIT_FAILURE);
+		if (type == B || type == H || type == W) {
+			if (species1 == "" || species2 != "") {
+				std::cerr << "ERROR! Dim specification is incorrect for H, B or W." << std::endl;
+				exit(EXIT_FAILURE);
+			};
+		} else if (type == J) {
+			if (species1 == "" || species2 == "") {
+				std::cerr << "ERROR! Dim specification is incorrect for J." << std::endl;
+				exit(EXIT_FAILURE);
+			};
 		};
 
 		this->name = name;
@@ -38,14 +44,186 @@ namespace DynamicBoltzmann {
 	};
 
 	/****************************************
-	OptProblem
+	OptProblem - IMPLEMENTATION
+	****************************************/
+
+	class OptProblem::Impl {
+
+	private:
+
+		/********************
+		Parameters
+		********************/
+
+		// The directory to write to
+		std::string _dir_io;
+
+		// Number of dimensions
+		int _n_param;
+
+		// List of interaction parameters
+		std::list<IxnParamTraj> _ixn_params;
+
+		// List of basis funcs
+		std::list<BasisFunc> _bfs;
+
+		// List of variational terms
+		std::list<VarTermTraj> _var_terms;
+
+		// List of hidden units, and flag if they exist
+		bool _hidden_layer_exists;
+		std::list<HiddenUnit> _hidden_units;
+
+		// Time dimension
+		Grid _time;
+
+		// Species present
+		std::list<Species> _species;
+
+		// Filenames to choose from
+		std::vector<std::string> _fnames;
+
+		// Number of steps in this nu solution
+		int _n_t_soln;
+
+		// The current time in the optimization step
+		int _t_opt;
+
+		// Batch size
+		int _n_batch;
+
+		// Number of CD steps
+		int _n_cd_steps;
+
+		// Lattice size
+		int _box_length;
+
+		// Lattice to hold the current sample of the batch
+		Lattice _latt;
+
+		// Update step for optimization
+		double _dopt;
+
+		// Number opt steps
+		int _n_opt;
+
+		// Start index for the files to read
+		int _fname_start_idx;
+
+		// Flags
+		bool _write_bf_only_last;
+
+		// Add a hidden unit
+		void _add_hidden_unit(std::vector<Site*> conns, std::string species);
+
+		// Search functions
+		Species* _find_species(std::string name, bool enforce_success=true);
+		IxnParamTraj* _find_ixn_param(std::string name, bool enforce_success=true);
+		IxnParamTraj* _find_ixn_param_j_by_species(std::string species_name_1, std::string species_name_2, bool enforce_success=true);
+		IxnParamTraj* _find_ixn_param_w_by_species(std::string species_name, bool enforce_success=true);
+		BasisFunc* _find_basis_func(std::string name, bool enforce_success=true);
+		VarTermTraj* _find_var_term(std::string name, bool enforce_success=true);
+
+		// Constructor helpers
+		void _clean_up();
+		void _reset();
+		void _copy(const Impl& other);
+
+	public:
+
+		/********************
+		Constructor
+		********************/
+
+		Impl(std::vector<Dim> dims, std::vector<std::string> species, double t_max, int n_t, int batch_size, int box_length, double dopt, int n_opt, int lattice_dim=3);
+		Impl(Impl&& other);
+	    Impl& operator=(Impl&& other);
+		~Impl();
+
+		/********************
+		Set properties	
+		********************/
+
+		// Any dim
+		void add_hidden_unit(std::vector<std::vector<int>> lattice_idxs, std::string species);
+		// 1D specific
+		void add_hidden_unit(std::vector<int> lattice_idxs, std::string species);
+
+		// Sets dir for IO
+		void set_dir_io(std::string dir);
+
+		// Sets the filename index to start reading
+		void set_fname_start_idx(int idx);
+		
+		// Adds a filename for the lattices
+		void add_fname(std::string f);
+
+		// Set the number of CD steps
+		void set_n_cd_steps(int n_steps);
+
+		/********************
+		Validate setup by printing
+		********************/
+
+		void validate_setup() const;
+
+		/********************
+		Solve interaction parameter traj
+		********************/
+
+		void solve_ixn_param_traj();
+
+		/********************
+		Solve for variational trajectory
+		********************/
+
+		void solve_var_traj();
+
+		/********************
+		Solve
+		********************/
+
+		void solve(bool verbose=false, bool same_lattice=false);
+		void solve_varying_ic(bool verbose=false);
+
+		/********************
+		Read some initial conditions
+		********************/
+
+		void read_init_cond(std::string dir);
+
+		/********************
+		Write
+		********************/
+
+		void write_bf_grids() const;
+		void write_t_grid() const;
+
+		void write_ixn_params(std::string dir, int idx) const;
+		void write_ixn_params(std::string dir, int idx1, int idx2) const;
+		void write_bfs(std::string dir, int idx) const;
+		void write_var_terms(std::string dir, int idx) const;
+		void write_moments(std::string dir, int idx) const;
+		void write_moments(std::string dir, int idx1, int idx2) const;
+
+		void set_flag_write_bf_only_final();
+
+		/********************
+		Read
+		********************/
+
+		void read_bf(std::string bf_name, std::string fname);
+	};
+
+	/****************************************
+	OptProblem - IMPLEMENTATION DEFINITIONS
 	****************************************/
 
 	/********************
 	Constructor
 	********************/
 
-	OptProblem::OptProblem(std::vector<Dim> dims, std::vector<std::string> species, double t_max, int n_t, int batch_size, int box_length, double dopt, int n_opt, int lattice_dim) : _latt(lattice_dim,box_length), _time("time",0.0,t_max,n_t)
+	OptProblem::Impl::Impl(std::vector<Dim> dims, std::vector<std::string> species, double t_max, int n_t, int batch_size, int box_length, double dopt, int n_opt, int lattice_dim) : _latt(lattice_dim,box_length), _time("time",0.0,t_max,n_t)
 	{
 		// Set parameters
 		if (DIAG_SETUP) { std::cout << "Copying params..." << std::flush; };
@@ -61,6 +239,23 @@ namespace DynamicBoltzmann {
 		_fname_start_idx = 0; // default
 		_write_bf_only_last = false; // default
 		_hidden_layer_exists = false; // default
+		if (DIAG_SETUP) { std::cout << "ok." << std::endl; };
+
+		// Tell the lattice about what dims exist
+		if (DIAG_SETUP) { std::cout << "Telling lattice what dims exist..." << std::flush; };
+		for (auto d: dims) {
+			if (d.type==H) {
+				_latt.set_exists_h(true);
+			} else if (d.type==J) {
+				_latt.set_exists_j(true);
+			} else if (d.type==W) {
+				_hidden_layer_exists = true;
+				_latt.set_exists_w(true);
+			} else if (d.type==B) {
+				_hidden_layer_exists = true;
+				// No need to tell lattice, since it only affects hidden unit activation and not sampling
+			};
+		};
 		if (DIAG_SETUP) { std::cout << "ok." << std::endl; };
 
 		// Create the species and add to the lattice
@@ -208,28 +403,13 @@ namespace DynamicBoltzmann {
 		if (DIAG_SETUP) { std::cout << "ok." << std::endl; };
 	};
 
-	OptProblem::OptProblem(const OptProblem& other) : _time(other._time)
-	{
-		_copy(other);
-	};
-
-	OptProblem::OptProblem(OptProblem&& other) : _time(other._time)
+	OptProblem::Impl::Impl(Impl&& other) : _time(other._time)
 	{
 		_copy(other);
 		other._reset();
 	};
 
-	OptProblem& OptProblem::operator=(const OptProblem& other)
-	{
-		if (this != &other)
-		{			
-			_clean_up();
-			_copy(other);
-		};
-		return *this;		
-	};
-
-	OptProblem& OptProblem::operator=(OptProblem&& other)
+	OptProblem::Impl& OptProblem::Impl::Impl::operator=(Impl&& other)
 	{
 		if (this != &other)
 		{
@@ -240,7 +420,7 @@ namespace DynamicBoltzmann {
 		return *this;		
 	};
 
-	OptProblem::~OptProblem() {
+	OptProblem::Impl::~Impl() {
 		_clean_up();
 	};
 
@@ -248,11 +428,11 @@ namespace DynamicBoltzmann {
 	Helpers for constructors
 	********************/
 
-	void OptProblem::_clean_up()
+	void OptProblem::Impl::_clean_up()
 	{
 		// Nothing...
 	};
-	void OptProblem::_reset()
+	void OptProblem::Impl::_reset()
 	{
 		_dir_io = "";
 		_n_param = 0;
@@ -273,7 +453,7 @@ namespace DynamicBoltzmann {
 		_write_bf_only_last = false;
 	};
 
-	void OptProblem::_copy(const OptProblem& other)
+	void OptProblem::Impl::_copy(const Impl& other)
 	{
 		_dir_io = other._dir_io;
 		_n_param = other._n_param;
@@ -301,7 +481,7 @@ namespace DynamicBoltzmann {
 	Set properties
 	********************/
 
-	void OptProblem::add_hidden_unit(std::vector<std::vector<int>> lattice_idxs, std::string species) 
+	void OptProblem::Impl::add_hidden_unit(std::vector<std::vector<int>> lattice_idxs, std::string species) 
 	{
 		// Find sites indicated by connections
 		std::vector<Site*> conns;
@@ -322,7 +502,7 @@ namespace DynamicBoltzmann {
 		// Add
 		_add_hidden_unit(conns,species);
 	};
-	void OptProblem::add_hidden_unit(std::vector<int> lattice_idxs, std::string species) 
+	void OptProblem::Impl::add_hidden_unit(std::vector<int> lattice_idxs, std::string species) 
 	{
 		// Find sites indicated by connections
 		std::vector<Site*> conns;
@@ -333,13 +513,8 @@ namespace DynamicBoltzmann {
 		// Add
 		_add_hidden_unit(conns,species);
 	};
-	void OptProblem::_add_hidden_unit(std::vector<Site*> conns, std::string species)
+	void OptProblem::Impl::_add_hidden_unit(std::vector<Site*> conns, std::string species)
 	{
-		// Flag that a hidden layer exists
-		_hidden_layer_exists = true;
-		// Also tell the lattice - important for the annealer
-		_latt.set_hidden_layer_exists();
-
 		// Find the species
 		Species *sp = _find_species(species);
 
@@ -359,19 +534,19 @@ namespace DynamicBoltzmann {
 		};
 	};
 
-	void OptProblem::set_dir_io(std::string dir) {
+	void OptProblem::Impl::set_dir_io(std::string dir) {
 		_dir_io = dir;
 	};
 
-	void OptProblem::set_fname_start_idx(int idx) {
+	void OptProblem::Impl::set_fname_start_idx(int idx) {
 		_fname_start_idx = idx;
 	};
 
-	void OptProblem::add_fname(std::string f) {
+	void OptProblem::Impl::add_fname(std::string f) {
 		_fnames.push_back(f);
 	};
 
-	void OptProblem::set_n_cd_steps(int n_steps) {
+	void OptProblem::Impl::set_n_cd_steps(int n_steps) {
 		_n_cd_steps = n_steps;
 	};
 
@@ -379,7 +554,7 @@ namespace DynamicBoltzmann {
 	Validate setup
 	********************/
 
-	void OptProblem::validate_setup() const {
+	void OptProblem::Impl::validate_setup() const {
 		std::cout << "------------------------" << std::endl;
 		for (auto it: _species) {
 			it.validate_setup();
@@ -400,7 +575,7 @@ namespace DynamicBoltzmann {
 	Solve interaction parameter traj
 	********************/
 
-	void OptProblem::solve_ixn_param_traj() {
+	void OptProblem::Impl::solve_ixn_param_traj() {
 		// Number of time points before the solution has gone out of bounds
 		_n_t_soln = 1;
 
@@ -429,7 +604,7 @@ namespace DynamicBoltzmann {
 	Solve variational term traj
 	********************/
 
-	void OptProblem::solve_var_traj() {
+	void OptProblem::Impl::solve_var_traj() {
 		// Go through all times
 		for (int it=1; it<_n_t_soln; it++) {
 			// Go through all var terms
@@ -445,7 +620,7 @@ namespace DynamicBoltzmann {
 	Solve --- Main optimization loop
 	********************/
 
-	void OptProblem::solve(bool verbose, bool same_lattice)
+	void OptProblem::Impl::solve(bool verbose, bool same_lattice)
 	{
 		// Write the grids
 		write_bf_grids();
@@ -649,7 +824,7 @@ namespace DynamicBoltzmann {
 	Solve over varying initial conditions
 	********************/
 
-	void OptProblem::solve_varying_ic(bool verbose)
+	void OptProblem::Impl::solve_varying_ic(bool verbose)
 	{
 		// Write the grids
 		write_bf_grids();
@@ -840,7 +1015,7 @@ namespace DynamicBoltzmann {
 	Read some initial conditions
 	********************/
 
-	void OptProblem::read_init_cond(std::string dir) {
+	void OptProblem::Impl::read_init_cond(std::string dir) {
 
 		std::ifstream f;
 		f.open(dir+"init.txt", std::ios::in);
@@ -879,47 +1054,47 @@ namespace DynamicBoltzmann {
 	Writing functions
 	********************/
 
-	void OptProblem::write_bf_grids() const {
+	void OptProblem::Impl::write_bf_grids() const {
 		for (auto it=_bfs.begin(); it!=_bfs.end(); it++) {
 			it->write_grid(_dir_io+"grid_"+it->name()+".txt");
 		};
 	};
-	void OptProblem::write_t_grid() const {
+	void OptProblem::Impl::write_t_grid() const {
 		_time.write_grid(_dir_io+"grid_time.txt");
 	};
 
-	void OptProblem::write_ixn_params(std::string dir, int idx) const {
+	void OptProblem::Impl::write_ixn_params(std::string dir, int idx) const {
 		for (auto it = _ixn_params.begin(); it!=_ixn_params.end(); it++) {
 			it->write_vals(dir,idx,_n_t_soln);
 		};
 	};
-	void OptProblem::write_ixn_params(std::string dir, int idx1, int idx2) const {
+	void OptProblem::Impl::write_ixn_params(std::string dir, int idx1, int idx2) const {
 		for (auto it = _ixn_params.begin(); it!=_ixn_params.end(); it++) {
 			it->write_vals(dir,idx1,idx2,_n_t_soln);
 		};
 	};
-	void OptProblem::write_bfs(std::string dir, int idx) const {
+	void OptProblem::Impl::write_bfs(std::string dir, int idx) const {
 		for (auto it=_bfs.begin(); it!=_bfs.end(); it++) {
 			it->write_vals(dir, idx);
 		};
 	};
-	void OptProblem::write_var_terms(std::string dir, int idx) const {
+	void OptProblem::Impl::write_var_terms(std::string dir, int idx) const {
 		for (auto it=_var_terms.begin(); it!=_var_terms.end(); it++) {
 			it->write_vals(dir,idx);
 		};
 	};
-	void OptProblem::write_moments(std::string dir, int idx) const {
+	void OptProblem::Impl::write_moments(std::string dir, int idx) const {
 		for (auto it = _ixn_params.begin(); it!=_ixn_params.end(); it++) {
 			it->write_moments(dir,idx,_n_t_soln);
 		};
 	};
-	void OptProblem::write_moments(std::string dir, int idx1, int idx2) const {
+	void OptProblem::Impl::write_moments(std::string dir, int idx1, int idx2) const {
 		for (auto it = _ixn_params.begin(); it!=_ixn_params.end(); it++) {
 			it->write_moments(dir,idx1,idx2,_n_t_soln);
 		};
 	};
 
-	void OptProblem::set_flag_write_bf_only_final()
+	void OptProblem::Impl::set_flag_write_bf_only_final()
 	{
 		_write_bf_only_last = true;
 	};
@@ -928,7 +1103,7 @@ namespace DynamicBoltzmann {
 	Read
 	********************/
 
-	void OptProblem::read_bf(std::string bf_name, std::string fname) 
+	void OptProblem::Impl::read_bf(std::string bf_name, std::string fname) 
 	{
 		// Find the basis func
 		BasisFunc* bf = _find_basis_func(bf_name);
@@ -940,14 +1115,14 @@ namespace DynamicBoltzmann {
 	};
 
 	/****************************************
-	OptProblem - PRIVATE
+	OptProblem - IMPLEMENTATION - PRIVATE
 	****************************************/
 
 	/********************
 	Search functions
 	********************/
 
-	Species* OptProblem::_find_species(std::string name, bool enforce_success) {
+	Species* OptProblem::Impl::_find_species(std::string name, bool enforce_success) {
 		for (auto it=_species.begin(); it!=_species.end(); it++) {
 			if (it->name() == name) {
 				return &*it;
@@ -960,7 +1135,7 @@ namespace DynamicBoltzmann {
 			return nullptr;
 		};
 	};
-	IxnParamTraj* OptProblem::_find_ixn_param(std::string name, bool enforce_success) {
+	IxnParamTraj* OptProblem::Impl::_find_ixn_param(std::string name, bool enforce_success) {
 		for (auto it=_ixn_params.begin(); it!=_ixn_params.end(); it++) {
 			if (it->name() == name) {
 				return &*it;
@@ -973,7 +1148,7 @@ namespace DynamicBoltzmann {
 			return nullptr;
 		};
 	};
-	IxnParamTraj* OptProblem::_find_ixn_param_j_by_species(std::string species_name_1, std::string species_name_2, bool enforce_success) {
+	IxnParamTraj* OptProblem::Impl::_find_ixn_param_j_by_species(std::string species_name_1, std::string species_name_2, bool enforce_success) {
 		for (auto it=_ixn_params.begin(); it!=_ixn_params.end(); it++) {
 			if (it->is_j_with_species(species_name_1,species_name_2)) {
 				return &*it;
@@ -986,7 +1161,7 @@ namespace DynamicBoltzmann {
 			return nullptr;
 		};
 	};
-	IxnParamTraj* OptProblem::_find_ixn_param_w_by_species(std::string species_name, bool enforce_success) {
+	IxnParamTraj* OptProblem::Impl::_find_ixn_param_w_by_species(std::string species_name, bool enforce_success) {
 		for (auto it=_ixn_params.begin(); it!=_ixn_params.end(); it++) {
 			if (it->is_w_with_species(species_name)) {
 				return &*it;
@@ -999,7 +1174,7 @@ namespace DynamicBoltzmann {
 			return nullptr;
 		};
 	};
-	BasisFunc* OptProblem::_find_basis_func(std::string name, bool enforce_success) {
+	BasisFunc* OptProblem::Impl::_find_basis_func(std::string name, bool enforce_success) {
 		for (auto it=_bfs.begin(); it!=_bfs.end(); it++) {
 			if (it->name() == name) {
 				return &*it;
@@ -1012,7 +1187,7 @@ namespace DynamicBoltzmann {
 			return nullptr;
 		};
 	};
-	VarTermTraj* OptProblem::_find_var_term(std::string name, bool enforce_success) {
+	VarTermTraj* OptProblem::Impl::_find_var_term(std::string name, bool enforce_success) {
 		for (auto it=_var_terms.begin(); it!=_var_terms.end(); it++) {
 			if (it->name() == name) {
 				return &*it;
@@ -1025,4 +1200,106 @@ namespace DynamicBoltzmann {
 			return nullptr;
 		};
 	};
+
+
+
+
+
+
+
+	/****************************************
+	OptProblem IMPL forwards
+	****************************************/
+
+	// Constructor
+	OptProblem::OptProblem(std::vector<Dim> dims, std::vector<std::string> species, double t_max, int n_t, int batch_size, int box_length, double dopt, int n_opt, int lattice_dim) : _impl(new Impl(dims,species,t_max,n_t,batch_size,box_length,dopt,n_opt,lattice_dim)) {};
+	OptProblem::OptProblem(OptProblem&& other) = default; // movable but no copies
+    OptProblem& OptProblem::operator=(OptProblem&& other) = default; // movable but no copies
+	OptProblem::~OptProblem() = default;
+
+	void OptProblem::add_hidden_unit(std::vector<std::vector<int>> lattice_idxs, std::string species) {
+		_impl->add_hidden_unit(lattice_idxs,species);
+	};
+	void OptProblem::add_hidden_unit(std::vector<int> lattice_idxs, std::string species) {
+		_impl->add_hidden_unit(lattice_idxs,species);
+	};
+
+	void OptProblem::set_dir_io(std::string dir) {
+		_impl->set_dir_io(dir);
+	};
+
+	void OptProblem::set_fname_start_idx(int idx) {
+		_impl->set_fname_start_idx(idx);
+	};
+
+	void OptProblem::add_fname(std::string f) {
+		_impl->add_fname(f);
+	};
+
+	void OptProblem::set_n_cd_steps(int n_steps) {
+		_impl->set_n_cd_steps(n_steps);
+	};
+
+	void OptProblem::validate_setup() const {
+		_impl->validate_setup();
+	};
+
+	void OptProblem::solve_ixn_param_traj() {
+		_impl->solve_ixn_param_traj();
+	};
+
+	void OptProblem::solve_var_traj() {
+		_impl->solve_var_traj();
+	};
+
+	void OptProblem::solve(bool verbose, bool same_lattice) {
+		_impl->solve(verbose,same_lattice);
+	};
+	void OptProblem::solve_varying_ic(bool verbose) {
+		_impl->solve_varying_ic(verbose);
+	};
+
+	void OptProblem::read_init_cond(std::string dir) {
+		_impl->read_init_cond(dir);
+	};
+
+	void OptProblem::write_bf_grids() const {
+		_impl->write_bf_grids();
+	};
+	void OptProblem::write_t_grid() const {
+		_impl->write_t_grid();
+	};
+
+	void OptProblem::write_ixn_params(std::string dir, int idx) const {
+		_impl->write_ixn_params(dir,idx);
+	};
+	void OptProblem::write_ixn_params(std::string dir, int idx1, int idx2) const {
+		_impl->write_ixn_params(dir,idx1,idx2);
+	};
+	void OptProblem::write_bfs(std::string dir, int idx) const {
+		_impl->write_bfs(dir,idx);
+	};
+	void OptProblem::write_var_terms(std::string dir, int idx) const {
+		_impl->write_var_terms(dir,idx);
+	};
+	void OptProblem::write_moments(std::string dir, int idx) const {
+		_impl->write_moments(dir,idx);
+	};
+	void OptProblem::write_moments(std::string dir, int idx1, int idx2) const {
+		_impl->write_moments(dir,idx1,idx2);
+	};
+
+	void OptProblem::set_flag_write_bf_only_final() {
+		_impl->set_flag_write_bf_only_final();
+	};
+
+	void OptProblem::read_bf(std::string bf_name, std::string fname) {
+		_impl->read_bf(bf_name,fname);
+	};
+
 };
+
+
+
+
+

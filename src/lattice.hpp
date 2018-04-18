@@ -111,8 +111,10 @@ namespace DynamicBoltzmann {
 		std::map<std::string,Species*> _sp_map;
 		std::vector<Species*> _sp_vec;
 
-		// Flag - are hidden units present? (needed for annealing)
-		bool _hidden_layer_exists;
+		// What types of interactions are present
+		bool _exists_w;
+		bool _exists_h;
+		bool _exists_j;
 
 		// Contructor helpers
 		void _clean_up();
@@ -146,10 +148,12 @@ namespace DynamicBoltzmann {
 		void add_species(Species *sp);
 
 		/********************
-		Indicate that the hidden unit exists
+		Indicate what interactions exist
 		********************/
 
-		void set_hidden_layer_exists();
+		void set_exists_w(bool flag);
+		void set_exists_h(bool flag);
+		void set_exists_j(bool flag);
 
 		/********************
 		Find a pointer to a site by index

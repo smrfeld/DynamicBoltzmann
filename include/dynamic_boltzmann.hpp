@@ -1,11 +1,16 @@
-#ifndef VAR_TERM_TRAJ_h
-#define VAR_TERM_TRAJ_h
-#include "../src/var_term_traj.hpp"
-#endif
-
 #ifndef LIST_H
 #define LIST_H
 #include <list>
+#endif
+
+#ifndef STRING_H
+#define STRING_H
+#include <string>
+#endif
+
+#ifndef VECTOR_H
+#define VECTOR_H
+#include <vector>
 #endif
 
 #define DIAG_SETUP 0
@@ -22,7 +27,7 @@ namespace DynamicBoltzmann {
 	****************************************/
 
 	// Type of dimension
-	enum DimType { H, J, W };
+	enum DimType { H, J, W, B };
 
 	struct Dim {
 		// Name
@@ -58,83 +63,8 @@ namespace DynamicBoltzmann {
 
 	private:
 
-		/********************
-		Parameters
-		********************/
-
-		// The directory to write to
-		std::string _dir_io;
-
-		// Number of dimensions
-		int _n_param;
-
-		// List of interaction parameters
-		std::list<IxnParamTraj> _ixn_params;
-
-		// List of basis funcs
-		std::list<BasisFunc> _bfs;
-
-		// List of variational terms
-		std::list<VarTermTraj> _var_terms;
-
-		// List of hidden units, and flag if they exist
-		bool _hidden_layer_exists;
-		std::list<HiddenUnit> _hidden_units;
-
-		// Time dimension
-		Grid _time;
-
-		// Species present
-		std::list<Species> _species;
-
-		// Filenames to choose from
-		std::vector<std::string> _fnames;
-
-		// Number of steps in this nu solution
-		int _n_t_soln;
-
-		// The current time in the optimization step
-		int _t_opt;
-
-		// Batch size
-		int _n_batch;
-
-		// Number of CD steps
-		int _n_cd_steps;
-
-		// Lattice size
-		int _box_length;
-
-		// Lattice to hold the current sample of the batch
-		Lattice _latt;
-
-		// Update step for optimization
-		double _dopt;
-
-		// Number opt steps
-		int _n_opt;
-
-		// Start index for the files to read
-		int _fname_start_idx;
-
-		// Flags
-		bool _write_bf_only_last;
-
-		// Add a hidden unit
-		void _add_hidden_unit(std::vector<Site*> conns, std::string species);
-
-		// Search functions
-		Species* _find_species(std::string name, bool enforce_success=true);
-		IxnParamTraj* _find_ixn_param(std::string name, bool enforce_success=true);
-		IxnParamTraj* _find_ixn_param_j_by_species(std::string species_name_1, std::string species_name_2, bool enforce_success=true);
-		IxnParamTraj* _find_ixn_param_w_by_species(std::string species_name, bool enforce_success=true);
-		BasisFunc* _find_basis_func(std::string name, bool enforce_success=true);
-		VarTermTraj* _find_var_term(std::string name, bool enforce_success=true);
-
-		// Constructor helpers
-		void _clean_up();
-		void _reset();
-		void _copy(const OptProblem& other);
+		class Impl;
+		std::unique_ptr<Impl> _impl;
 
 	public:
 
@@ -157,26 +87,13 @@ namespace DynamicBoltzmann {
 		OptProblem(std::vector<Dim> dims, std::vector<std::string> species, double t_max, int n_t, int batch_size, int box_length, double dopt, int n_opt, int lattice_dim=3);
 
 		/**
-		 * @brief      Copy constructor
-		 * @param[in]  other  The other
-		 */
-		OptProblem(const OptProblem& other);
-
-		/**
-		 * @brief      Move constructor
+		 * @brief      Move constructor (movable but no copies)
 		 * @param[in]  other  The other
 		 */
 		OptProblem(OptProblem&& other);
 
-		/**
-		 * @brief      Copy assignment
-		 * @param[in]  other  The other
-		 * @return     Copied
-		 */
-		OptProblem& operator=(const OptProblem& other);
-
 	    /**
-	     * @brief      Move assignment
+	     * @brief      Move assignment (movable but no copies)
 	     * @param[in]  other  The other
 	     * @return     Moved
 	     */

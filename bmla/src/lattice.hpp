@@ -62,6 +62,9 @@ namespace DynamicBoltzmann {
 		void _remove_counts_on_species(Species *sp, double prob);
 		void _add_counts_on_species(Species *sp, double prob);
 
+		// Sample a vector of propensities (cumulative probabilities)
+		int _sample_prop_vec(std::vector<double> &props);
+
 	public:
 		int dim;
 		int x;
@@ -109,6 +112,9 @@ namespace DynamicBoltzmann {
 
 		// Check if site is empty
 		bool empty() const;
+
+		// Binarize the site
+		void binarize();
 	};
 	// Comparator
 	bool operator <(const Site& a, const Site& b);
@@ -142,17 +148,15 @@ namespace DynamicBoltzmann {
 		std::vector<Species*> _sp_vec;
 
 		// Flag - are hidden units present? (needed for annealing)
-		bool _exists_hidden;
+		bool _exists_w;
+		bool _exists_b;
 		bool _exists_h;
 		bool _exists_j;
 		bool _exists_k;
 
-		// Sample an unnormalized probability vector
+		// Sample a vector of propensities (cumulative probabilities)
 		int _sample_prop_vec(std::vector<double> &props);
 		
-		// Sample a vector of propensities (cumulative probabilities)
-		int _sample_prob_vec(std::vector<double> &probs);
-
 		// Contructor helpers
 		void _clean_up();
 		void _reset();
@@ -177,6 +181,7 @@ namespace DynamicBoltzmann {
 		********************/
 
 		int dim() const;
+		int box_length() const;
 
 		/********************
 		Add a species
@@ -188,10 +193,11 @@ namespace DynamicBoltzmann {
 		Indicate that the hidden unit exists
 		********************/
 
-		void set_exists_hidden(bool flag=true);
+		void set_exists_w(bool flag=true);
 		void set_exists_h(bool flag=true);
 		void set_exists_j(bool flag=true);
 		void set_exists_k(bool flag=true);
+		// No need for b, since it only affects hidden units
 
 		/********************
 		Find a pointer to a site by index
@@ -209,6 +215,12 @@ namespace DynamicBoltzmann {
 		int size();
 
 		/********************
+		Binarize
+		********************/
+
+		void binarize();
+
+		/********************
 		Write lattice to a file
 		********************/
 
@@ -218,7 +230,13 @@ namespace DynamicBoltzmann {
 		Read lattice from a file
 		********************/
 
-		void read_from_file(std::string fname);
+		void read_from_file(std::string fname, bool binary=true);
+
+		/********************
+		Populate randomly according to some counts
+		********************/
+
+		void populate_randomly(std::map<Species*, int> counts);
 
 		/********************
 		Sample

@@ -31,6 +31,8 @@ namespace DynamicBoltzmann {
 
 		_val = val_guess;
 
+		_val_ave = 0.0;
+
 		_asleep = 0.0;
 		_awake = 0.0;
 	};
@@ -69,8 +71,10 @@ namespace DynamicBoltzmann {
 		_sp2 = other._sp2;
 		_sp3 = other._sp3;
 		_conns = other._conns;
+		_hidden_units = other._hidden_units;
 		_val = other._val;
 		_val_guess = other._val_guess;
+		_val_ave = other._val_ave;
 		_asleep = other._asleep;
 		_awake = other._awake;
 	};
@@ -81,8 +85,10 @@ namespace DynamicBoltzmann {
 		_sp2 = nullptr;
 		_sp3 = nullptr;
 		_conns.clear();
+		_hidden_units.clear();
 		_val = 0.;
 		_val_guess = 0.;
+		_val_ave = 0.;
 		_asleep = 0.;
 		_awake = 0.;
 	};
@@ -91,6 +97,14 @@ namespace DynamicBoltzmann {
 	/********************
 	Check if this ixn param is...
 	********************/
+
+	bool IxnParam::is_h_with_species(std::string species_name) const {
+		if (_type == Hp && _sp1->name() == species_name) {
+			return true;
+		} else {
+			return false;
+		};
+	};
 
 	bool IxnParam::is_w_with_species(std::string species_name) const {
 		if (_type == Wp && _sp1->name() == species_name) {
@@ -121,8 +135,17 @@ namespace DynamicBoltzmann {
 		return false;
 	};
 
+	bool IxnParam::is_b_with_species(std::string species_name) const {
+		if (_type == Bp && _sp1->name() == species_name) {
+			return true;
+		} else {
+			return false;
+		};
+	};
+
 	/********************
 	Add a visible->hidden unit connection
+	If we are Wp
 	********************/
 
 	void IxnParam::add_visible_hidden_connection(Site *sptr, HiddenUnit *hup) {
@@ -131,6 +154,19 @@ namespace DynamicBoltzmann {
 			exit(EXIT_FAILURE);
 		};
 		_conns.push_back(std::make_pair(sptr,hup));
+	};
+
+	/********************
+	Add a hidden unit to monitor
+	If we are Bp
+	********************/
+
+	void IxnParam::add_hidden_unit(HiddenUnit *hup) {
+		if (_type != Bp) {
+			std::cerr << "ERROR: adding hidden unit to wrong type of IxnParam" << std::endl;
+			exit(EXIT_FAILURE);
+		};
+		_hidden_units.push_back(hup);
 	};
 
 	/********************
@@ -212,8 +248,8 @@ namespace DynamicBoltzmann {
 				_asleep += 1. * _sp1->triplet_count(_sp2,_sp3) / batch_size;
 			};
 		} else if (_type == Wp) {
-			double inc = 0.0;
 			// Run through all connections
+			double inc = 0.0;
 			for (auto c: _conns) {
 				/*
 				std::cout << "visible: " << c.first->x << " " << c.first->y << " " << c.first->z << " hidden: ";
@@ -228,6 +264,17 @@ namespace DynamicBoltzmann {
 			} else if (moment_type==ASLEEP) {
 				_asleep += 1. * inc / batch_size;
 			};
+		} else if (_type == Bp) {
+			// Run through all hidden units that are monitored
+			double inc = 0.0;
+			for (auto hup: _hidden_units) {
+				inc += hup->get();
+			};
+			if (moment_type==AWAKE) {
+				_awake += 1. * inc / batch_size;
+			} else if (moment_type==ASLEEP) {
+				_asleep += 1. * inc / batch_size;
+			};
 		};
 	};
 
@@ -235,6 +282,19 @@ namespace DynamicBoltzmann {
 		return (_awake - _asleep);
 	};
 
+	/********************
+	Average value
+	********************/
+
+	void IxnParam::reset_ave() {
+		_val_ave = 0.;
+	}
+	void IxnParam::increment_ave(int n_samples) {
+		_val_ave += _val / n_samples;
+	};
+	double IxnParam::get_ave() const {
+		return _val_ave;
+	};
 };
 
 

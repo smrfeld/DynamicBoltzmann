@@ -26,6 +26,9 @@ namespace DynamicBoltzmann {
 		// Sites I am connected to
 		std::vector<Site*> _conn;
 
+		// Bias
+		IxnParam *_bias;
+
 		// Species that I love
 		Species *_sp;
 
@@ -66,10 +69,22 @@ namespace DynamicBoltzmann {
 		double get() const;
 
 		/********************
+		Set the bias
+		********************/
+
+		void set_bias(IxnParam *ip);
+
+		/********************
 		Activate
 		********************/
 
 		void activate(bool binary); 
+
+		/********************
+		Binarize
+		********************/
+
+		void binarize();
 
 	};
 };

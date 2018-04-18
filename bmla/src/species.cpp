@@ -66,6 +66,21 @@ namespace DynamicBoltzmann {
 		_w_ptr = other._w_ptr;
 		_k_ptr = other._k_ptr;
 	};
+
+	/********************
+	Initialize counts by informing this species of the existence of all others
+	********************/
+
+	void Species::init_counts(std::list<Species>& sp_list) {
+		// Make all the entries
+		for (auto sp_it=sp_list.begin(); sp_it != sp_list.end(); sp_it++) {
+			_nn_count[&(*sp_it)] = 0.0;
+			for (auto sp_it2=sp_list.begin(); sp_it2 != sp_list.end(); sp_it2++) {
+				_triplet_count[&(*sp_it)][&(*sp_it2)] = 0.0;
+			};	
+		};
+	};
+
 	/********************
 	Set h, j ptr
 	********************/
@@ -75,8 +90,6 @@ namespace DynamicBoltzmann {
 	};
 	void Species::add_j_ptr(Species* sp, IxnParam *j_ptr) {
 		_j_ptr[sp] = j_ptr;
-		// Also add entry in nn count
-		_nn_count[sp] = 0;
 	};
 	void Species::set_w_ptr(IxnParam *w_ptr) {
 		_w_ptr = w_ptr;
@@ -84,9 +97,6 @@ namespace DynamicBoltzmann {
 	void Species::add_k_ptr(Species* sp1, Species* sp2, IxnParam *k_ptr) {
 		_k_ptr[sp1][sp2] = k_ptr;
 		_k_ptr[sp2][sp1] = k_ptr;
-		// Also add entry in triplet count
-		_triplet_count[sp1][sp2] = 0;
-		_triplet_count[sp2][sp1] = 0;
 	};
 
 	/********************

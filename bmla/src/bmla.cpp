@@ -22,9 +22,9 @@ namespace DynamicBoltzmann {
 	Dim::Dim(std::string name, DimType type, std::string species1, std::string species2, double guess) : Dim(name, type, species1, species2, "", guess) {};
 	Dim::Dim(std::string name, DimType type, std::string species1, std::string species2, std::string species3, double guess)
 	{
-		if (type == H || type == W) {
+		if (type == B || type == H || type == W) {
 			if (species1 == "" || species2 != "" || species3 != "") {
-				std::cerr << "ERROR! Dim specification is incorrect for H or W." << std::endl;
+				std::cerr << "ERROR! Dim specification is incorrect for H, B or W." << std::endl;
 				exit(EXIT_FAILURE);
 			};
 		} else if (type == J) {
@@ -97,6 +97,12 @@ namespace DynamicBoltzmann {
 		// Filename to write soln traj to
 		std::string _fname_write_soln;
 
+		// Filename to write moment traj to
+		std::string _fname_write_moments;
+
+		// Whether or not the visible layer is binary
+		bool _visible_binary;
+
 		// Print
 		void _print_ixn_params(bool new_line=true) const;
 		void _print_moments(bool new_line=true) const;
@@ -110,10 +116,11 @@ namespace DynamicBoltzmann {
 
 		// Search functions
 		Species* _find_species(std::string name, bool enforce_success=true);
-		IxnParam* _find_ixn_param(std::string name, bool enforce_success=true);
+		IxnParam* _find_ixn_param_by_name(std::string name, bool enforce_success=true);
 		IxnParam* _find_ixn_param_j_by_species(std::string species_name_1, std::string species_name_2, bool enforce_success=true);
 		IxnParam* _find_ixn_param_w_by_species(std::string species_name, bool enforce_success=true);
 		IxnParam* _find_ixn_param_k_by_species(std::string species_name_1, std::string species_name_2, std::string species_name_3, bool enforce_success=true);
+		IxnParam* _find_ixn_param_b_by_species(std::string species_name, bool enforce_success=true);
 
 		// Constructor helpers
 		void _clean_up();
@@ -148,14 +155,26 @@ namespace DynamicBoltzmann {
 		// Set flag that we should write out the trajectory of parameters solved over the opt steps
 		void set_write_soln_traj(std::string fname);
 
+		// Set flag that we should write out the trajectory of moments solved for
+		void set_write_moment_traj(std::string fname);
+
+		// Set flag the visible units are binary
+		// Default = true
+		void set_binary_visible(bool flag);
+
 		// Solve for the h,j corresponding to a given lattice
-		void solve(std::vector<std::string> fnames, bool verbose=false);
+		void solve(std::vector<std::string> fnames, bool asleep_visible_are_binary, bool asleep_hidden_are_binary, bool asleep_final_visible_are_binary, bool asleep_final_hidden_are_binary, bool verbose=false);
+
+		// At the current ixns params, sample and report the specified moments
+		void sample(int n_batches, int n_cd_steps, bool asleep_visible_are_binary, bool asleep_hidden_are_binary, bool asleep_final_visible_are_binary, bool asleep_final_hidden_are_binary, bool report_h, bool report_j, bool report_k);
 
 		// Update the initial params
 		void read(std::string fname);
 
 		// Write out the solutions
 		void write(std::string fname, bool append, int opt_step);
+		void write_moments(std::string fname, bool append, int idx1);
+		void write_moments(std::string fname, bool append, int idx1, int idx2);
 	};
 
 	/****************************************
@@ -180,6 +199,8 @@ namespace DynamicBoltzmann {
 		_hidden_layer_exists = false;
 		_use_single_lattice = false; // default
 		_fname_write_soln = "";
+		_fname_write_moments = "";
+		_visible_binary = true;
 
 		// Tell the lattice about what dims exist
 		for (auto d: dims) {
@@ -191,7 +212,10 @@ namespace DynamicBoltzmann {
 				_latt.set_exists_k(true);
 			} else if (d.type==W) {
 				_hidden_layer_exists = true;
-				_latt.set_exists_hidden(true);
+				_latt.set_exists_w(true);
+			} else if (d.type==B) {
+				_hidden_layer_exists = true;
+				// No need to tell lattice, since it only affects hidden unit activation and not sampling
 			};
 		};
 
@@ -203,6 +227,11 @@ namespace DynamicBoltzmann {
 			_latt.add_species(&(_species.back()));
 		};
 
+		// Tell the species about the other species to initialize counts
+		for (auto itsp = _species.begin(); itsp!=_species.end(); itsp++) {
+			itsp->init_counts(_species);
+		};
+
 		// Create the interaction params
 		for (auto d: dims) {
 			if (d.type==H) { 
@@ -211,6 +240,8 @@ namespace DynamicBoltzmann {
 				_ixn_params.push_back(IxnParam(d.name,Jp,_find_species(d.species1),_find_species(d.species2),d.guess));
 			} else if (d.type==W) { 
 				_ixn_params.push_back(IxnParam(d.name,Wp,_find_species(d.species1),d.guess));
+			} else if (d.type==B) {
+				_ixn_params.push_back(IxnParam(d.name,Bp,_find_species(d.species1),d.guess));
 			} else if (d.type==K) {
 				// Check that Lattice dim is 1 - only 1 is allowed!
 				if (lattice_dim != 1) {
@@ -226,7 +257,7 @@ namespace DynamicBoltzmann {
 		Species *sp1=nullptr, *sp2=nullptr, *sp3=nullptr;
 		IxnParam *ip_ptr=nullptr;
 		for (auto d: dims) {
-			ip_ptr = _find_ixn_param(d.name);
+			ip_ptr = _find_ixn_param_by_name(d.name);
 			if (d.type==H) {
 				sp1 = _find_species(d.species1);
 				sp1->set_h_ptr(ip_ptr);
@@ -246,6 +277,7 @@ namespace DynamicBoltzmann {
 				sp2->add_k_ptr(sp1,sp3,ip_ptr);
 				sp3->add_k_ptr(sp1,sp2,ip_ptr);
 			};
+			// No need for Bp, since it only affects the hidden units (activation)
 		};
 		// Ensure the J,K of the species are complete - if there is no ixn param that descripes the coupling, add a nullptr entry in the dictionary - later check if nullptr, then return 0
 		// I think this is faster - otherwise there would be no reason to do it
@@ -309,6 +341,8 @@ namespace DynamicBoltzmann {
 		_lambda = other._lambda;
 		_use_single_lattice = other._use_single_lattice;
 		_fname_write_soln = other._fname_write_soln;
+		_fname_write_moments = other._fname_write_moments;
+		_visible_binary = other._visible_binary;
 	};
 	void BMLA::Impl::_reset() {
 		_n_param = 0;
@@ -327,6 +361,8 @@ namespace DynamicBoltzmann {
 		_lambda = 0.;
 		_use_single_lattice = false;
 		_fname_write_soln = "";
+		_fname_write_moments = "";
+		_visible_binary = true;
 	};
 
 	/********************
@@ -373,7 +409,7 @@ namespace DynamicBoltzmann {
 	double BMLA::Impl::_get_mse() const {
 		double mse=0.0;
 		for (auto it=_ixn_params.begin(); it!=_ixn_params.end(); it++) {
-			mse += abs(it->moments_diff())/it->get_moment(IxnParam::AWAKE);
+			mse += abs(it->moments_diff())/abs(it->get_moment(IxnParam::AWAKE));
 		};
 		return 100*mse/_n_param;
 	};
@@ -433,6 +469,16 @@ namespace DynamicBoltzmann {
 		for (auto sptr: conns) {
 			ip->add_visible_hidden_connection(sptr,&_hidden_units.back());
 		};
+
+		// See if a bias exists for hidden units with this species
+		ip = _find_ixn_param_b_by_species(species,false); // can fail
+		if (ip) {
+			// Tell the bias that this hidden unit exists
+			ip->add_hidden_unit(&_hidden_units.back());
+
+			// Tell the hidden unit that this is it's bias
+			_hidden_units.back().set_bias(ip);
+		};
 	};
 
 	/********************
@@ -474,11 +520,22 @@ namespace DynamicBoltzmann {
 		_fname_write_soln = fname;
 	};
 
+	// Set flag that we should write out the trajectory of moments solved for
+	void BMLA::Impl::set_write_moment_traj(std::string fname) {
+		_fname_write_moments = fname;
+	};
+
+	// Set flag the visible units are binary
+	// Default = true
+	void BMLA::Impl::set_binary_visible(bool flag) {
+		_visible_binary = flag;
+	};
+
 	/********************
 	Solve for the h,j corresponding to a given lattice
 	********************/
 
-	void BMLA::Impl::solve(std::vector<std::string> fnames, bool verbose)
+	void BMLA::Impl::solve(std::vector<std::string> fnames, bool asleep_visible_are_binary, bool asleep_hidden_are_binary, bool asleep_final_visible_are_binary, bool asleep_final_hidden_are_binary, bool verbose)
 	{
 		// Check size of filenames
 		if (_use_single_lattice == true && fnames.size() != 1) {
@@ -529,12 +586,20 @@ namespace DynamicBoltzmann {
 				};
 
 				// Reset the lattice by reading in a random
-				_latt.read_from_file(fnames[randI(0,fnames.size()-1)]);
-		 		
+				if (_visible_binary) {
+					// Binary
+					_latt.read_from_file(fnames[randI(0,fnames.size()-1)],true);
+				} else {
+					// Probabilistic
+					_latt.read_from_file(fnames[randI(0,fnames.size()-1)],false);
+					// Sample -> binary
+					// _latt.binarize();
+				};
+
 				// Activate hidden
 				if (_hidden_layer_exists) {
 					for (auto ithu = _hidden_units.begin(); ithu != _hidden_units.end(); ithu++) {
-						// When using real data, always use binary states
+						// When using data, always use binary units
 						ithu->activate(true);
 					};
 				};
@@ -548,13 +613,20 @@ namespace DynamicBoltzmann {
 				for (int cd_step=0; cd_step<_n_cd_steps; cd_step++)
 				{
 					// Sample
-					_latt.sample(true); // binary
+					if (cd_step != _n_cd_steps-1) {
+						_latt.sample(asleep_visible_are_binary);
+					} else {
+						_latt.sample(asleep_final_visible_are_binary);
+					};
 
 					// Activate hidden
 					if (_hidden_layer_exists) {
 						for (auto ithu = _hidden_units.begin(); ithu != _hidden_units.end(); ithu++) {
-							// When using reconstructions, always use raw probabilities
-							ithu->activate(false);
+							if (cd_step != _n_cd_steps-1) {
+								ithu->activate(asleep_hidden_are_binary);
+							} else {
+								ithu->activate(asleep_final_hidden_are_binary);
+							};
 						};
 					};
 
@@ -584,6 +656,17 @@ namespace DynamicBoltzmann {
 				_print_mse();
 			};
 
+			// Write the moments if needed
+			if (_fname_write_moments != "") {
+				if (i_opt==0) {
+					// Make new
+					write_moments(_fname_write_moments,false,i_opt+1);
+				} else {
+					// Append
+					write_moments(_fname_write_moments,true,i_opt+1);
+				};
+			};
+
 			// Update the params
 			for (auto it=_ixn_params.begin(); it!=_ixn_params.end(); it++) {
 				it->update(_dopt,_l2_reg,_lambda);
@@ -600,6 +683,156 @@ namespace DynamicBoltzmann {
 		_print_ixn_params();
 		_print_moments();
 		_print_mse();
+	};
+
+
+	/********************
+	At the current ixns params, sample and report the specified moments
+	********************/
+
+	void BMLA::Impl::sample(int n_batches, int n_cd_steps, bool asleep_visible_are_binary, bool asleep_hidden_are_binary, bool asleep_final_visible_are_binary, bool asleep_final_hidden_are_binary, bool report_h, bool report_j, bool report_k) {
+
+		int n,n_possible;
+		std::map<Species*,int> counts;
+		std::list<Species>::iterator sp_it1,sp_it2,sp_it3;
+
+		// Store the moments over the batches
+		std::map<Species*, double> h_ave,h_latest;
+		std::map<Species*, std::map<Species*, double>> j_ave,j_latest;
+		std::map<Species*, std::map<Species*, std::map<Species*, double>>> k_ave,k_latest;
+		if (report_h) {
+			for (sp_it1 = _species.begin(); sp_it1 != _species.end(); sp_it1++) {
+				h_ave[&(*sp_it1)] = 0.0;
+				h_latest[&(*sp_it1)] = 0.0;
+			};
+		};
+		if (report_j) {
+			for (sp_it1 = _species.begin(); sp_it1 != _species.end(); sp_it1++) {
+				for (sp_it2 = sp_it1; sp_it2 != _species.end(); sp_it2++) {
+					j_ave[&(*sp_it1)][&(*sp_it2)] = 0.0;
+					j_latest[&(*sp_it1)][&(*sp_it2)] = 0.0;
+				};
+			};
+		};
+		if (report_k) {
+			for (sp_it1 = _species.begin(); sp_it1 != _species.end(); sp_it1++) {
+				for (sp_it2 = sp_it1; sp_it2 != _species.end(); sp_it2++) {
+					for (sp_it3 = sp_it2; sp_it3 != _species.end(); sp_it3++) {
+						k_ave[&(*sp_it1)][&(*sp_it2)][&(*sp_it3)] = 0.0;
+						k_latest[&(*sp_it1)][&(*sp_it2)][&(*sp_it3)] = 0.0;
+					};
+				};
+			};
+		};
+
+		// Go over all batches
+		for (int batch_no=0; batch_no<n_batches; batch_no++)
+		{
+
+			std::cout << "." << std::flush;
+
+			// Start by populating lattice randomly
+
+			// Random number of initial particles (min is 1, max is box vol)
+			n = randI(1, pow(_latt.box_length(),_latt.dim()));
+
+			// Random initial counts
+			// Don't populate too much, else this is hard to find empty sites to place mols!
+			// At most half the lattice is filled
+			n_possible = pow(_latt.box_length(),_latt.dim()) / 2;
+			counts.clear();
+			for (std::list<Species>::iterator sp=_species.begin(); sp != _species.end(); sp++) {
+				counts[&(*sp)] = randI(0,n_possible);
+				n_possible -= counts[&(*sp)];
+				if (n_possible < 0) { n_possible = 0; };
+			};
+
+			// Populate at random positions
+			_latt.populate_randomly(counts);
+
+			// Activate hidden
+			if (_hidden_layer_exists) {
+				for (auto ithu = _hidden_units.begin(); ithu != _hidden_units.end(); ithu++) {
+					// When using real data, always use binary states
+					ithu->activate(true);
+				};
+			};
+
+			// Sample
+			for (int cd_step=0; cd_step<n_cd_steps; cd_step++) {
+				// Sample
+				if (cd_step != n_cd_steps-1) {
+					_latt.sample(asleep_visible_are_binary);
+				} else {
+					_latt.sample(asleep_final_visible_are_binary);
+				};
+
+				// Activate hidden
+				if (_hidden_layer_exists) {
+					for (auto ithu = _hidden_units.begin(); ithu != _hidden_units.end(); ithu++) {
+						if (cd_step != n_cd_steps-1) {
+							ithu->activate(asleep_hidden_are_binary);
+						} else {
+							ithu->activate(asleep_final_hidden_are_binary);
+						}
+					};
+				};
+			};
+
+			// Calculate the moments
+			if (report_h) {
+				for (sp_it1=_species.begin(); sp_it1 != _species.end(); sp_it1++) {
+					h_latest[&(*sp_it1)] = 1.0*sp_it1->count();
+					h_ave[&(*sp_it1)] += h_latest[&(*sp_it1)] / n_batches;
+				};
+			};
+			if (report_j) {
+				for (sp_it1=_species.begin(); sp_it1 != _species.end(); sp_it1++) {
+					for (sp_it2=sp_it1; sp_it2 != _species.end(); sp_it2++) {
+						j_latest[&(*sp_it1)][&(*sp_it2)] = 1.0*sp_it1->nn_count(&(*sp_it2));
+						j_ave[&(*sp_it1)][&(*sp_it2)] += j_latest[&(*sp_it1)][&(*sp_it2)] / n_batches;
+					};
+				};
+			};
+			if (report_k) {
+				for (sp_it1=_species.begin(); sp_it1 != _species.end(); sp_it1++) {
+					for (sp_it2=sp_it1; sp_it2 != _species.end(); sp_it2++) {
+						for (sp_it3=sp_it2; sp_it3 != _species.end(); sp_it3++) {
+							k_latest[&(*sp_it1)][&(*sp_it2)][&(*sp_it3)] = 1.0*sp_it1->triplet_count(&(*sp_it2),&(*sp_it3));
+							k_ave[&(*sp_it1)][&(*sp_it2)][&(*sp_it3)] += k_latest[&(*sp_it1)][&(*sp_it2)][&(*sp_it3)] / n_batches;
+						};
+					};
+				};
+			};
+
+		};
+		std::cout << std::endl;
+
+		// Report the moments
+		if (report_h) {
+			std::cout << "--- h moments ---" << std::endl;
+			for (auto pr: h_ave) {
+				std::cout << pr.first->name() << " ave: " << pr.second << " final: " << h_latest[pr.first] << std::endl;
+			};
+		};
+		if (report_j) {
+			std::cout << "--- j moments ---" << std::endl;
+			for (auto pr1: j_ave) {
+				for (auto pr2: pr1.second) {
+					std::cout << pr1.first->name() << " " << pr2.first->name() << " ave: " << pr2.second << " final: " << j_latest[pr1.first][pr2.first] << std::endl;
+				};
+			};
+		};
+		if (report_k) {
+			std::cout << "--- k moments ---" << std::endl;
+			for (auto pr1: k_ave) {
+				for (auto pr2: pr1.second) {
+						for (auto pr3: pr2.second) {
+						std::cout << pr1.first->name() << " " << pr2.first->name() << " " << pr3.first->name() << " ave: " << pr3.second << " final: " << k_latest[pr1.first][pr2.first][pr3.first] << std::endl;
+					};
+				};
+			};
+		};
 	};
 
 	/********************
@@ -621,7 +854,7 @@ namespace DynamicBoltzmann {
 			    iss >> ixn_name;
 			    iss >> guess;
 		    	// Add
-			    _find_ixn_param(ixn_name)->set_guess(atof(guess.c_str()));
+			    _find_ixn_param_by_name(ixn_name)->set_guess(atof(guess.c_str()));
 		    	ixn_name=""; guess="";
 			};
 		};
@@ -649,6 +882,30 @@ namespace DynamicBoltzmann {
 		f.close();	
 	};
 
+	void BMLA::Impl::write_moments(std::string fname, bool append, int idx1) {
+		write_moments(fname,append,idx1,-1);
+	};
+	void BMLA::Impl::write_moments(std::string fname, bool append, int idx1, int idx2) {
+		std::ofstream f;
+		if (append) {
+			f.open(fname, std::ofstream::out | std::ofstream::app);
+		} else {
+			f.open(fname);
+		};
+		for (auto it=_ixn_params.begin(); it!=_ixn_params.end(); it++) {
+			if (idx1 != -1 && idx2 != -1) {
+				f << idx1 << " " << idx2 << " " << it->name() << " " << it->get_moment(IxnParam::AWAKE) << " " << it->get_moment(IxnParam::ASLEEP) << "\n";
+			} else if (idx2 != -1) {
+				f << idx2 << " " << it->name() << " " << it->get_moment(IxnParam::AWAKE) << " " << it->get_moment(IxnParam::ASLEEP) << "\n";
+			} else if (idx1 != -1) {
+				f << idx1 << " " << it->name() << " " << it->get_moment(IxnParam::AWAKE) << " " << it->get_moment(IxnParam::ASLEEP) << "\n";
+			} else {
+				f << it->name() << " " << it->get_moment(IxnParam::AWAKE) << " " << it->get_moment(IxnParam::ASLEEP) << "\n";
+			};
+		};
+		f.close();	
+	};
+
 	/********************
 	Search functions
 	********************/
@@ -666,7 +923,7 @@ namespace DynamicBoltzmann {
 			return nullptr;
 		};
 	};
-	IxnParam* BMLA::Impl::_find_ixn_param(std::string name, bool enforce_success) {
+	IxnParam* BMLA::Impl::_find_ixn_param_by_name(std::string name, bool enforce_success) {
 		for (auto it=_ixn_params.begin(); it!=_ixn_params.end(); it++) {
 			if (it->name() == name) {
 				return &*it;
@@ -674,6 +931,19 @@ namespace DynamicBoltzmann {
 		};
 		if (enforce_success) {
 			std::cerr << "ERROR: could not find ixn param: " << name << std::endl;
+			exit(EXIT_FAILURE);
+		} else {
+			return nullptr;
+		};
+	};
+	IxnParam* BMLA::Impl::_find_ixn_param_b_by_species(std::string species_name, bool enforce_success) {
+		for (auto it=_ixn_params.begin(); it!=_ixn_params.end(); it++) {
+			if (it->is_b_with_species(species_name)) {
+				return &*it;
+			};
+		};
+		if (enforce_success) {
+			std::cerr << "ERROR: could not find B ixn param for species: " << species_name << std::endl;
 			exit(EXIT_FAILURE);
 		} else {
 			return nullptr;
@@ -763,16 +1033,32 @@ namespace DynamicBoltzmann {
 		_impl->set_write_soln_traj(fname);
 	};
 
-	// Solve for the h,j corresponding to a given lattice
-	void BMLA::solve(std::string fname, bool verbose) {
-		std::vector<std::string> fnames;
-		fnames.push_back(fname);
-		_impl->solve(fnames,verbose);
+	// Set flag that we should write out the trajectory of moments solved for
+	void BMLA::set_write_moment_traj(std::string fname) {
+		_impl->set_write_moment_traj(fname);
+	};
+
+	// Set flag the visible units are binary
+	// Default = true
+	void BMLA::set_binary_visible(bool flag) {
+		_impl->set_binary_visible(flag);
 	};
 
 	// Solve for the h,j corresponding to a given lattice
-	void BMLA::solve(std::vector<std::string> fnames, bool verbose) {
-		_impl->solve(fnames,verbose);
+	void BMLA::solve(std::string fname, bool asleep_visible_are_binary, bool asleep_hidden_are_binary, bool asleep_final_visible_are_binary, bool asleep_final_hidden_are_binary, bool verbose) {
+		std::vector<std::string> fnames;
+		fnames.push_back(fname);
+		_impl->solve(fnames,asleep_visible_are_binary,asleep_hidden_are_binary,asleep_final_visible_are_binary,asleep_final_hidden_are_binary,verbose);
+	};
+
+	// Solve for the h,j corresponding to a given lattice
+	void BMLA::solve(std::vector<std::string> fnames, bool asleep_visible_are_binary, bool asleep_hidden_are_binary, bool asleep_final_visible_are_binary, bool asleep_final_hidden_are_binary, bool verbose) {
+		_impl->solve(fnames,asleep_visible_are_binary,asleep_hidden_are_binary,asleep_final_visible_are_binary,asleep_final_hidden_are_binary,verbose);
+	};
+
+	// At the current ixns params, sample and report the specified moments
+	void BMLA::sample(int n_batches, int n_cd_steps, bool asleep_visible_are_binary, bool asleep_hidden_are_binary, bool asleep_final_visible_are_binary, bool asleep_final_hidden_are_binary, bool report_h, bool report_j, bool report_k) {
+		_impl->sample(n_batches, n_cd_steps, asleep_visible_are_binary, asleep_hidden_are_binary, asleep_final_visible_are_binary, asleep_final_hidden_are_binary, report_h,report_j,report_k);
 	};
 
 	// Update the initial params

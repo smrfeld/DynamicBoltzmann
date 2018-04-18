@@ -11,24 +11,24 @@ int main() {
 	// MODE
 	// True = Solve for many triplets
 	// False = Solve for few triplets
-	bool solve_many = true;
+	bool solve_many = false;
 
 	int box_length = 1000;
-	int n_cd_steps = 10;
+	int n_cd_steps = 1000;
 	double dopt = 0.002;
-	int n_opt = 10000;
-	int n_batch = 10;
+	int n_opt = 1000;
+	int n_batch = 20;
 
 	// Initial h,W
 	double hinit,winit;
 	if (solve_many) {
 		// Many
-		hinit = 0.475533;
-		winit = -3.60267;
+		hinit = 0.526651;
+		winit = -3.45391;
 	} else {
 		// Few
-		hinit = 0.860922;
-		winit = -5.26262;
+		hinit = 1.16313;
+		winit = -5.23657;
 	};
 
 	// Dimensions

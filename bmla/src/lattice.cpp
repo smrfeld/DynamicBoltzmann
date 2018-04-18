@@ -251,6 +251,40 @@ namespace DynamicBoltzmann {
 		};
 	};
 
+	// Binarize the site
+	void Site::binarize() {
+		// Propensity vector
+		std::vector<double> props;
+		std::vector<Species*> sp_vec;
+		props.push_back(0.0);
+		props.push_back(_prob_empty);
+		for (auto pr: _probs) {
+			props.push_back(props.back()+pr.second);
+			sp_vec.push_back(pr.first);
+		};
+
+		int i = _sample_prop_vec(props);
+		if (i==0) {
+			set_site_empty();
+		} else {
+			set_site_binary(sp_vec[i-1]);
+		};
+	};
+
+	// Sample a vector of propensities (cumulative probabilities)
+	int Site::_sample_prop_vec(std::vector<double> &props) {
+		// Sample RV
+		double r = randD(0.0,props.back());
+
+		// Find interval
+		for (int i=0; i<props.size()-1; i++) {
+			if (props[i] <= r && r <= props[i+1]) {
+				return i;
+			};
+		};
+		return 0; // never get here
+	};
+
 	/****************************************
 	Site - PRIVATE
 	****************************************/
@@ -318,7 +352,7 @@ namespace DynamicBoltzmann {
 		};
 		_dim = dim;
 		_box_length = box_length;
-		_exists_hidden = false;
+		_exists_w = false;
 		_exists_h = false;
 		_exists_j = false;
 		_exists_k = false;
@@ -428,7 +462,7 @@ namespace DynamicBoltzmann {
 		_box_length = other._box_length;
 		_sp_map = other._sp_map;
 		_sp_vec = other._sp_vec;
-		_exists_hidden = other._exists_hidden;
+		_exists_w = other._exists_w;
 		_exists_h = other._exists_h;
 		_exists_j = other._exists_j;
 		_exists_k = other._exists_k;
@@ -438,7 +472,7 @@ namespace DynamicBoltzmann {
 		_sp_map.clear();
 		_sp_vec.clear();
 		_latt.clear();
-		_exists_hidden = false;
+		_exists_w = false;
 		_exists_h = false;
 		_exists_j = false;
 		_exists_k = false;
@@ -450,6 +484,10 @@ namespace DynamicBoltzmann {
 
 	int Lattice::dim() const {
 		return _dim;
+	};
+
+	int Lattice::box_length() const {
+		return _box_length;
 	};
 
 	/********************
@@ -472,8 +510,8 @@ namespace DynamicBoltzmann {
 	Indicate that the hidden unit exists
 	********************/
 
-	void Lattice::set_exists_hidden(bool flag) {
-		_exists_hidden = flag;
+	void Lattice::set_exists_w(bool flag) {
+		_exists_w = flag;
 	};
 	void Lattice::set_exists_h(bool flag) {
 		_exists_h = flag;
@@ -557,6 +595,16 @@ namespace DynamicBoltzmann {
 	int Lattice::size() { return _latt.size(); };
 
 	/********************
+	Binarize
+	********************/
+
+	void Lattice::binarize() {
+		for (latt_it lit=_latt.begin(); lit != _latt.end(); lit++) {
+			lit->binarize();
+		};
+	};
+
+	/********************
 	Write lattice to a file
 	********************/
 
@@ -574,7 +622,7 @@ namespace DynamicBoltzmann {
 	Read lattice from a file
 	********************/
 
-	void Lattice::read_from_file(std::string fname)
+	void Lattice::read_from_file(std::string fname, bool binary)
 	{
 		// Clear the current lattice
 		clear();
@@ -586,6 +634,8 @@ namespace DynamicBoltzmann {
 		std::string line;
 		std::istringstream iss;
 		latt_it lit;
+		std::string prob="";
+		double prob_val;
 		if (f.is_open()) { // make sure we found it
 			while (getline(f,line)) {
 				if (line == "") { continue; };
@@ -598,6 +648,10 @@ namespace DynamicBoltzmann {
 				    iss >> z;
 			    };
 			    iss >> sp;
+			    if (!binary) {
+			    	// Read the prob
+			    	iss >> prob;
+			    };
 		    	// Add to lattice
 		    	if (_dim == 1) {
 		    		lit = _look_up(atoi(x.c_str()));
@@ -606,14 +660,67 @@ namespace DynamicBoltzmann {
 			    } else if (_dim == 3) {
 			    	lit = _look_up(atoi(x.c_str()),atoi(y.c_str()),atoi(z.c_str()));
 			    };
-	    		lit->set_prob(_sp_map[sp],1.0);
+			    if (binary) {
+		    		lit->set_prob(_sp_map[sp],1.0);
+		    	} else {
+		    		prob_val = atof(prob.c_str());
+		    		lit->set_prob(_sp_map[sp],prob_val);
+		    		lit->set_prob(nullptr,1.0-prob_val);
+		    	};
 	    		// Reset
-		    	sp=""; x=""; y=""; z="";
+		    	sp=""; x=""; y=""; z=""; prob="";
 			};
 		};
 		f.close();
 
 		// std::cout << "Read: " << fname << std::endl;
+	};
+
+	/********************
+	Populate randomly according to some counts
+	********************/
+
+	void Lattice::populate_randomly(std::map<Species*, int> counts) {
+		// Clear the current lattice
+		clear();
+
+		bool did_place;
+		int ctr_tries;
+		latt_it lit;
+
+		// Go through the species
+		for (auto pr: counts) {
+			// Go through counts
+			for (int i=0; i<pr.second; i++) {
+				// Try to place
+				did_place = false;
+				ctr_tries = 0;
+				while (did_place == false && ctr_tries < 1000) { // Try 1000 different places
+			    	if (_dim == 1) {
+			    		lit = _look_up(randI(1,_box_length));
+				    } else if (_dim == 2) {
+			    		lit = _look_up(randI(1,_box_length),randI(1,_box_length));
+				    } else if (_dim == 3) {
+			    		lit = _look_up(randI(1,_box_length),randI(1,_box_length),randI(1,_box_length));
+				    };
+				    // Check if empty
+				    if (lit->empty()) {
+				    	// Yes, it's empty - place!
+				    	did_place = true;
+				    	lit->set_prob(pr.first,1.0);
+				    } else {
+				    	// Try again!
+				    	ctr_tries++;
+				    };
+				};
+				// Check we didn't run out
+				if (ctr_tries >= 1000) {
+					std::cerr << "WARNING! Couldn't place all the mols for species: " << pr.first->name() << " wanted to place: " << pr.second << " mols but only got to: " << i << std::endl;
+					// Don't try to place any more
+					break;
+				};
+			};
+		};
 	};
 
 	/********************
@@ -627,18 +734,21 @@ namespace DynamicBoltzmann {
 		double energy;
 		std::map<Species*, std::vector<HiddenUnit*>>::iterator it_hups;
 		int i_chosen;
-		std::vector<double> props;
+		std::vector<double> props,probs;
 		latt_it lit;
+		double tot;
 
 		// Go through all lattice sites
 		for (it = _latt.begin(); it != _latt.end(); it++) {
 
-			// Clear props
+			// Clear props, probs
 			props.clear();
+			probs.clear();
 			props.push_back(0.0);
 
 			// Empty = 1
 			props.push_back(1.0);
+			probs.push_back(1.0);
 
 			// Go through all possible species this could be, calculate propensities
 			for (auto sp_new: _sp_vec) {
@@ -659,8 +769,8 @@ namespace DynamicBoltzmann {
 					energy += it->get_act_k(sp_new);	
 				};
 
-				// Hidden layer exists?
-				if (_exists_hidden) {
+				// Hidden layer weights exist?
+				if (_exists_w) {
 
 					// Check if this species has connections to hidden units
 					it_hups = it->hidden_conns.find(sp_new);
@@ -675,6 +785,7 @@ namespace DynamicBoltzmann {
 
 				// Append prop
 				props.push_back(props.back()+exp(energy));
+				probs.push_back(exp(energy));
 			};
 		
 			/*
@@ -700,13 +811,17 @@ namespace DynamicBoltzmann {
 				};
 			} else {
 
-				// Write into species
-				/*
-				it->set_prob(nullptr,prob_empty_store[&(*it)]);
-				for (auto sp: _sp_vec) {
-					it->set_prob(sp,prob_store[&(*it)][sp]);
+				// Normalize probs
+				tot=0.0;
+				for (auto pr: probs) {
+					tot += pr;
 				};
-				*/
+
+				// Write into species
+				it->set_prob(nullptr,probs[0]/tot);
+				for (int i=0; i<_sp_vec.size(); i++) {
+					it->set_prob(_sp_vec[i],probs[i+1]/tot);
+				};
 
 				/*
 				for (auto pr: probs) {
@@ -757,14 +872,6 @@ namespace DynamicBoltzmann {
 	/********************
 	Sample probabilities/propensities
 	********************/
-
-	// Sample an unnormalized probability vector
-	int Lattice::_sample_prob_vec(std::vector<double> &probs) {
-		unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
-		std::default_random_engine generator(seed);
-		std::discrete_distribution<int> dd(probs.begin(),probs.end());
-		return dd(generator);
-	};
 
 	// Sample a vector of propensities (cumulative probabilities)
 	int Lattice::_sample_prop_vec(std::vector<double> &props) {

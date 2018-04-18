@@ -24,7 +24,7 @@ namespace DynamicBoltzmann {
 	****************************************/
 
 	// Enumeration of type of dimension
-	enum IxnParamType { Hp, Jp, Wp, Kp };
+	enum IxnParamType { Hp, Jp, Wp, Kp, Bp };
 
 	class IxnParam {
 
@@ -48,11 +48,18 @@ namespace DynamicBoltzmann {
 		// Connects sites (visible) to hidden units
 		std::vector<std::pair<Site*,HiddenUnit*> > _conns;
 
+		// If Bp:
+		// List of hidden units
+		std::vector<HiddenUnit*> _hidden_units;
+
 		// Number of time points in these trajs
 		int _n_t;
 
 		// Value
 		double _val;
+
+		// An average value, manually updated
+		double _val_ave;
 
 		// Initial guess
 		double _val_guess;
@@ -79,12 +86,19 @@ namespace DynamicBoltzmann {
 		~IxnParam();
 
 		// Check if this ixn param is...
+		bool is_h_with_species(std::string species_name) const;
 		bool is_w_with_species(std::string species_name) const;
 		bool is_j_with_species(std::string species_name_1, std::string species_name_2) const;
 		bool is_k_with_species(std::string species_name_1, std::string species_name_2, std::string species_name_3) const;
+		bool is_b_with_species(std::string species_name) const;
 
+		// If Wp
 		// Add a visible->hidden unit connection
 		void add_visible_hidden_connection(Site *sptr, HiddenUnit *hup);
+
+		// If Bp
+		// Add a hidden unit to monitor
+		void add_hidden_unit(HiddenUnit *hup);
 
 		// Update based on diff
 		void update(double dopt, bool l2_reg=false, double lambda=0.);
@@ -102,6 +116,11 @@ namespace DynamicBoltzmann {
 		void moments_retrieve(MomentType moment_type);
 		void moments_retrieve(MomentType moment_type, int batch_size);
 		double moments_diff() const;
+
+		// Average value
+		void reset_ave();
+		void increment_ave(int n_samples);
+		double get_ave() const;
 	};
 };
 

@@ -66,6 +66,9 @@ namespace DynamicBoltzmann {
 		Species& operator=(Species&& other);
 		~Species();
 
+		// Initialize counts by informing this species of the existence of all others
+		void init_counts(std::list<Species>& sp_list);
+
 		// Set h, j ptr
 		void set_h_ptr(IxnParam *h_ptr);
 		void add_j_ptr(Species* sp, IxnParam *j_ptr);

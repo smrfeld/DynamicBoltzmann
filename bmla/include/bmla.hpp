@@ -19,7 +19,7 @@ namespace DynamicBoltzmann {
 	****************************************/
 
 	// Type of dimension
-	enum DimType { H, J, K, W };
+	enum DimType { H, J, K, W, B };
 
 	struct Dim {
 		// Name
@@ -81,9 +81,19 @@ namespace DynamicBoltzmann {
 		// Set flag that we should write out the trajectory of parameters solved over the opt steps
 		void set_write_soln_traj(std::string fname);
 
+		// Set flag that we should write out the trajectory of moments solved for
+		void set_write_moment_traj(std::string fname);
+
+		// Set flag the visible units are binary
+		// Default = true
+		void set_binary_visible(bool flag);
+
 		// Solve for the h,j corresponding to a given lattice
-		void solve(std::string fname, bool verbose=false);
-		void solve(std::vector<std::string> fnames, bool verbose=false);
+		void solve(std::string fname, bool asleep_visible_are_binary=true, bool asleep_hidden_are_binary=true, bool asleep_final_visible_are_binary=true, bool asleep_final_hidden_are_binary=true, bool verbose=false);
+		void solve(std::vector<std::string> fnames, bool asleep_visible_are_binary=true, bool asleep_hidden_are_binary=true, bool asleep_final_visible_are_binary=true, bool asleep_final_hidden_are_binary=true, bool verbose=false);
+
+		// At the current ixns params, sample and report the specified moments
+		void sample(int n_batches, int n_cd_steps, bool asleep_visible_are_binary=true, bool asleep_hidden_are_binary=true, bool asleep_final_visible_are_binary=true, bool asleep_final_hidden_are_binary=true, bool report_h=true, bool report_j=true, bool report_k=true);
 
 		// Update the initial params
 		void read(std::string fname);

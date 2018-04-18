@@ -1,7 +1,7 @@
-#include "hidden_unit.hpp"
 #include "math.h"
 #include <iostream>
 #include "../include/general.hpp"
+#include "ixn_param.hpp" // includes hidden units
 
 /************************************
 * Namespace for DynamicBoltzmann
@@ -23,6 +23,7 @@ namespace DynamicBoltzmann {
 		_conn = conn;
 		_sp = sp;
 		_val = 0.0;
+		_bias = nullptr;
 	};
 	HiddenUnit::HiddenUnit(const HiddenUnit& other)
 	{
@@ -61,6 +62,7 @@ namespace DynamicBoltzmann {
 		_n_conn = 0;
 		_conn.clear();
 		_sp = nullptr;
+		_bias = nullptr;
 		_val = 0.;
 	};
 	void HiddenUnit::_copy(const HiddenUnit& other) {
@@ -68,6 +70,7 @@ namespace DynamicBoltzmann {
 		_conn = other._conn;
 		_sp = other._sp;
 		_val = other._val;
+		_bias = other._bias;
 	};
 
 	/********************
@@ -93,6 +96,14 @@ namespace DynamicBoltzmann {
 	};
 
 	/********************
+	Set the bias
+	********************/
+
+	void HiddenUnit::set_bias(IxnParam *ip) {
+		_bias = ip;
+	};
+
+	/********************
 	Activate
 	********************/
 
@@ -100,20 +111,36 @@ namespace DynamicBoltzmann {
 		// Go through all connected neurons
 		//std::cout << "Activating..." << std::endl;
 		double act = 0.0;
+
+		// Bias
+		if (_bias) {
+			act += _bias->get();
+		};
+
 		for (auto c: _conn) {
 			// weight * visible value for this species
 			act += _sp->w() * c->get_prob(_sp);
 		};
 
-		// Pass through sigmoid
+		// Pass through sigmoid -> probability
 		_val = _sigma(act);
+
+		// Binarize
 		if (binary) {
-			// 1 if probability = _val
-			if (randD(0.0,1.0) <= _val) {
-				_val = 1.;
-			} else {
-				_val = 0.;
-			};
+			binarize();
+		};
+	};
+
+	/********************
+	Binarize
+	********************/
+
+	void HiddenUnit::binarize() {
+		// 1 if probability = _val
+		if (randD(0.0,1.0) <= _val) {
+			_val = 1.;
+		} else {
+			_val = 0.;
 		};
 	};
 

@@ -118,7 +118,8 @@ namespace DynamicBoltzmann {
 
 		// Search functions
 		Species* _find_species(std::string name, bool enforce_success=true);
-		IxnParamTraj* _find_ixn_param(std::string name, bool enforce_success=true);
+		IxnParamTraj* _find_ixn_param_by_name(std::string name, bool enforce_success=true);
+		IxnParamTraj* _find_ixn_param_b_by_species(std::string species_name, bool enforce_success=true);
 		IxnParamTraj* _find_ixn_param_j_by_species(std::string species_name_1, std::string species_name_2, bool enforce_success=true);
 		IxnParamTraj* _find_ixn_param_w_by_species(std::string species_name, bool enforce_success=true);
 		BasisFunc* _find_basis_func(std::string name, bool enforce_success=true);
@@ -278,6 +279,8 @@ namespace DynamicBoltzmann {
 				_ixn_params.push_back(IxnParamTraj(d.name,Jp,_find_species(d.species1),_find_species(d.species2),d.min,d.max,d.n,d.init,n_t));
 			} else if (d.type==W) { 
 				_ixn_params.push_back(IxnParamTraj(d.name,Wp,_find_species(d.species1),d.min,d.max,d.n,d.init,n_t));
+			} else if (d.type==B) {
+				_ixn_params.push_back(IxnParamTraj(d.name,Bp,_find_species(d.species1),d.min,d.max,d.n,d.init,n_t));
 			};
 		};
 		if (DIAG_SETUP) { std::cout << "ok." << std::endl; };
@@ -287,7 +290,7 @@ namespace DynamicBoltzmann {
 		Species *sp1=nullptr, *sp2=nullptr;
 		IxnParamTraj *ip_ptr=nullptr;
 		for (auto d: dims) {
-			ip_ptr = _find_ixn_param(d.name);
+			ip_ptr = _find_ixn_param_by_name(d.name);
 			if (d.type==H) {
 				sp1 = _find_species(d.species1);
 				sp1->set_h_ptr(ip_ptr);
@@ -300,6 +303,7 @@ namespace DynamicBoltzmann {
 				sp1 = _find_species(d.species1);
 				sp1->set_w_ptr(ip_ptr);		
 			};
+			// No need to tell species about biases
 		};
 		for (auto itsp = _species.begin(); itsp!=_species.end(); itsp++) {
 			itsp->set_opt_time_ptr(&_t_opt);
@@ -325,7 +329,7 @@ namespace DynamicBoltzmann {
 			// Find the basis func dimensions
 			bf_ips.clear();
 			for (auto bfd: d.basis_func_dims) {
-				bf_ips.push_back(_find_ixn_param(bfd));
+				bf_ips.push_back(_find_ixn_param_by_name(bfd));
 			};
 			// Make the basis function
 			_bfs.push_back(BasisFunc("F_"+d.name,bf_ips));
@@ -354,12 +358,12 @@ namespace DynamicBoltzmann {
 				// Find the basis func dimensions
 				bf_ips.clear();
 				for (auto bfd: denom.basis_func_dims) {
-					bf_ips.push_back(_find_ixn_param(bfd));
+					bf_ips.push_back(_find_ixn_param_by_name(bfd));
 				};
 				// Find the basis func
 				bf_ptr = _find_basis_func("F_"+denom.name);
 				// Find the interaction param
-				ixn_param_ptr = _find_ixn_param(num.name);
+				ixn_param_ptr = _find_ixn_param_by_name(num.name);
 				// Find the basis func corresponding to the numerator
 				num_bf_ptr = _find_basis_func("F_"+num.name);
 				// Create the var term
@@ -378,7 +382,7 @@ namespace DynamicBoltzmann {
 				// Find the ixn params that are arguments to the num's basis func
 				bf_ips.clear();
 				for (auto bfd: num.basis_func_dims) {
-					bf_ips.push_back(_find_ixn_param(bfd));
+					bf_ips.push_back(_find_ixn_param_by_name(bfd));
 				};
 				// Find the variational term
 				vt_ptr = _find_var_term("var_"+num.name+"_wrt_"+denom->name());
@@ -401,6 +405,8 @@ namespace DynamicBoltzmann {
 			};
 		};
 		if (DIAG_SETUP) { std::cout << "ok." << std::endl; };
+
+
 	};
 
 	OptProblem::Impl::Impl(Impl&& other) : _time(other._time)
@@ -531,6 +537,19 @@ namespace DynamicBoltzmann {
 		IxnParamTraj *ip = _find_ixn_param_w_by_species(species);
 		for (auto sptr: conns) {
 			ip->add_visible_hidden_connection(sptr,&_hidden_units.back());
+		};
+
+		// See if a bias exists for hidden units with this species
+		ip = _find_ixn_param_b_by_species(species,false); // can fail
+		if (ip) {
+			// Tell the bias that this hidden unit exists
+			ip->add_hidden_unit(&_hidden_units.back());
+
+			// Tell the hidden unit that this is it's bias
+			_hidden_units.back().set_bias(ip);
+
+			// Tell the hidden unit what time it is
+			_hidden_units.back().set_t_opt_ptr(&_t_opt);
 		};
 	};
 
@@ -1033,7 +1052,7 @@ namespace DynamicBoltzmann {
 					sval += frag;
 
 					// Find the ixn param with this name
-					ip = _find_ixn_param(sname);
+					ip = _find_ixn_param_by_name(sname);
 					if (ip) {
 						ip->set_init_cond(std::stod(sval));
 					} else {
@@ -1135,7 +1154,7 @@ namespace DynamicBoltzmann {
 			return nullptr;
 		};
 	};
-	IxnParamTraj* OptProblem::Impl::_find_ixn_param(std::string name, bool enforce_success) {
+	IxnParamTraj* OptProblem::Impl::_find_ixn_param_by_name(std::string name, bool enforce_success) {
 		for (auto it=_ixn_params.begin(); it!=_ixn_params.end(); it++) {
 			if (it->name() == name) {
 				return &*it;
@@ -1143,6 +1162,20 @@ namespace DynamicBoltzmann {
 		};
 		if (enforce_success) {
 			std::cerr << "ERROR: could not find ixn param: " << name << std::endl;
+			exit(EXIT_FAILURE);
+		} else {
+			return nullptr;
+		};
+	};
+
+	IxnParamTraj* OptProblem::Impl::_find_ixn_param_b_by_species(std::string species_name, bool enforce_success) {
+		for (auto it=_ixn_params.begin(); it!=_ixn_params.end(); it++) {
+			if (it->is_b_with_species(species_name)) {
+				return &*it;
+			};
+		};
+		if (enforce_success) {
+			std::cerr << "ERROR: could not find visible-to-hidden ixn param for species: " << species_name << std::endl;
 			exit(EXIT_FAILURE);
 		} else {
 			return nullptr;

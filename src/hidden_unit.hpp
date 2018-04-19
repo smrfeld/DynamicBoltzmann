@@ -32,6 +32,12 @@ namespace DynamicBoltzmann {
 		// Value
 		double _val;
 
+		// Bias interaction parameter
+		IxnParamTraj *_bias;
+
+		// Pointer to the current time in the optimization
+		int *_t_opt_ptr;
+
 		// Activation function
 		double _sigma(double x) const;
 
@@ -58,6 +64,18 @@ namespace DynamicBoltzmann {
 		********************/
 
 		double get() const;
+
+		/********************
+		Set the time ptr
+		********************/
+
+		void set_t_opt_ptr(int *t_opt_ptr);
+
+		/********************
+		Set the bias
+		********************/
+
+		void set_bias(IxnParamTraj *ip);
 
 		/********************
 		Activate

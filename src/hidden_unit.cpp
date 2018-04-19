@@ -1,7 +1,7 @@
-#include "hidden_unit.hpp"
 #include "math.h"
 #include <iostream>
 #include "../include/general.hpp"
+#include "ixn_param_traj.hpp" // includes hidden unit hpp
 
 /************************************
 * Namespace for DynamicBoltzmann
@@ -23,6 +23,8 @@ namespace DynamicBoltzmann {
 		_conn = conn;
 		_sp = sp;
 		_val = 0.0;
+		_bias = nullptr;
+		_t_opt_ptr = nullptr;
 	};
 	HiddenUnit::HiddenUnit(const HiddenUnit& other)
 	{
@@ -62,12 +64,16 @@ namespace DynamicBoltzmann {
 		_conn.clear();
 		_sp = nullptr;
 		_val = 0.;
+		_bias = nullptr;
+		_t_opt_ptr = nullptr;
 	};
 	void HiddenUnit::_copy(const HiddenUnit& other) {
 		_n_conn = other._n_conn;
 		_conn = other._conn;
 		_sp = other._sp;
 		_val = other._val;
+		_bias = other._bias;
+		_t_opt_ptr = other._t_opt_ptr;
 	};
 
 	/********************
@@ -79,12 +85,34 @@ namespace DynamicBoltzmann {
 	};
 
 	/********************
+	Set the time ptr
+	********************/
+
+	void HiddenUnit::set_t_opt_ptr(int *t_opt_ptr) {
+		_t_opt_ptr = t_opt_ptr;
+	};
+
+	/********************
+	Set the bias
+	********************/
+
+	void HiddenUnit::set_bias(IxnParamTraj *ip) {
+		_bias = ip;
+	};
+
+	/********************
 	Activate
 	********************/
 
 	void HiddenUnit::activate(bool binary) {
-		// Go through all connected neurons
 		double act = 0.0;
+
+		// Bias
+		if (_bias) {
+			act += _bias->get_at_time(*_t_opt_ptr);
+		};
+
+		// Go through all connected neurons
 		for (auto c: _conn) {
 			if (c->sp == _sp) { // Check that this is the species that I love
 				act += c->sp->w(); // Gets the weight of this connection

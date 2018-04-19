@@ -18,7 +18,7 @@ namespace DynamicBoltzmann {
 	********************/
 
 	IxnParamTraj::IxnParamTraj(std::string name, IxnParamType type, Species *sp, double min, double max, int n, double val0, int n_t) : IxnParamTraj(name,type,sp,nullptr,min,max,n,val0,n_t) {
-		if (type != Wp && type != Hp) {
+		if (type != Wp && type != Hp && type != Bp) {
 			std::cerr << "ERROR: wrong IxnParamTraj constructor?" << std::endl;
 			exit(EXIT_FAILURE);
 		};
@@ -85,6 +85,7 @@ namespace DynamicBoltzmann {
 		_sp1 = other._sp1;
 		_sp2 = other._sp2;
 		_conns = other._conns;
+		_hidden_units = other._hidden_units;
 		_n_t = other._n_t;
 		_vals = new double[_n_t];
 		std::copy( other._vals, other._vals + _n_t, _vals );
@@ -100,6 +101,7 @@ namespace DynamicBoltzmann {
 		_sp1 = nullptr;
 		_sp2 = nullptr;
 		_conns.clear();
+		_hidden_units.clear();
 		_n_t = 0;
 		safeDelArr(_vals);
 		_val0 = 0.;
@@ -116,6 +118,14 @@ namespace DynamicBoltzmann {
 	/********************
 	Check if this ixn param is...
 	********************/
+
+	bool IxnParamTraj::is_h_with_species(std::string species_name) const {
+		if (_type == Hp && _sp1->name() == species_name) {
+			return true;
+		} else {
+			return false;
+		};
+	};
 
 	bool IxnParamTraj::is_w_with_species(std::string species_name) const {
 		if (_type == Wp && _sp1->name() == species_name) {
@@ -134,7 +144,16 @@ namespace DynamicBoltzmann {
 		return false;
 	};
 
+	bool IxnParamTraj::is_b_with_species(std::string species_name) const {
+		if (_type == Bp && _sp1->name() == species_name) {
+			return true;
+		} else {
+			return false;
+		};
+	};
+
 	/********************
+	If Wp;
 	Add a visible->hidden unit connection
 	********************/
 
@@ -144,6 +163,19 @@ namespace DynamicBoltzmann {
 			exit(EXIT_FAILURE);
 		};
 		_conns.push_back(std::make_pair(sptr,hup));
+	};
+
+	/********************
+	If Bp;
+	Add a hidden unit to monitor
+	********************/
+
+	void IxnParamTraj::add_hidden_unit(HiddenUnit *hup) {
+		if (_type != Bp) {
+			std::cerr << "ERROR: adding visible to hidden connection to wrong type of IxnParam" << std::endl;
+			exit(EXIT_FAILURE);
+		};
+		_hidden_units.push_back(hup);
 	};
 
 	/********************
@@ -243,6 +275,17 @@ namespace DynamicBoltzmann {
 				_awake[it] += inc / batch_size;
 			} else if (moment_type==ASLEEP) {
 				_asleep[it] += inc / batch_size;
+			};
+		} else if (_type == Bp) {
+			// Run through all hidden units that are monitored
+			double inc = 0.0;
+			for (auto hup: _hidden_units) {
+				inc += hup->get();
+			};
+			if (moment_type==AWAKE) {
+				_awake[it] += 1. * inc / batch_size;
+			} else if (moment_type==ASLEEP) {
+				_asleep[it] += 1. * inc / batch_size;
 			};
 		};
 	};

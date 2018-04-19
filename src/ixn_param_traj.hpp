@@ -35,7 +35,7 @@ namespace DynamicBoltzmann {
 	****************************************/
 
 	// Enumeration of type of dimension
-	enum IxnParamType { Hp, Jp, Wp };
+	enum IxnParamType { Hp, Jp, Wp, Bp };
 
 	class IxnParamTraj : public Grid {
 
@@ -53,6 +53,10 @@ namespace DynamicBoltzmann {
 		// If Wp:
 		// Connects sites (visible) to hidden units
 		std::vector<std::pair<Site*,HiddenUnit*> > _conns;
+
+		// If Bp:
+		// List of hidden units
+		std::vector<HiddenUnit*> _hidden_units;
 
 		// Number of time points in these trajs
 		int _n_t;
@@ -87,11 +91,18 @@ namespace DynamicBoltzmann {
 		~IxnParamTraj();
 
 		// Check if this ixn param is...
+		bool is_h_with_species(std::string species_name) const;
 		bool is_w_with_species(std::string species_name) const;
 		bool is_j_with_species(std::string species_name_1, std::string species_name_2) const;
+		bool is_b_with_species(std::string species_name) const;
 
+		// If Wp
 		// Add a visible->hidden unit connection
 		void add_visible_hidden_connection(Site *sptr, HiddenUnit *hup);
+
+		// If Bp
+		// Add a hidden unit to monitor
+		void add_hidden_unit(HiddenUnit *hup);
 
 		// Set/check basis func pointer
 		void set_basis_func_ptr(BasisFunc* bf);

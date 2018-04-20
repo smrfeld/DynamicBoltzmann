@@ -166,15 +166,15 @@ namespace DynamicBoltzmann {
 		void set_binary_visible(bool flag);
 
 		// Solve for the h,j corresponding to a given lattice
-		void solve(std::vector<std::string> fnames, bool asleep_visible_are_binary, bool asleep_hidden_are_binary, bool asleep_final_visible_are_binary, bool asleep_final_hidden_are_binary, bool verbose=false);
+		void solve(std::vector<std::string> fnames, BinaryChoices binary_choices, bool verbose=false);
 
 		// At the current ixns params, sample and report the specified moments
 		// batch size = 1
-		void sample(int n_cd_steps, bool asleep_visible_are_binary, bool asleep_hidden_are_binary, bool asleep_final_visible_are_binary, bool asleep_final_hidden_are_binary, bool report_h, bool report_j, bool report_k, bool verbose, bool write, std::string fname);
+		void sample(int n_cd_steps, bool write, std::string fname, BinaryChoices binary_choices, bool report_h, bool report_j, bool report_k, bool verbose);
 		// given batch size
-		void sample(int batch_size, int n_cd_steps, bool asleep_visible_are_binary, bool asleep_hidden_are_binary, bool asleep_final_visible_are_binary, bool asleep_final_hidden_are_binary, bool report_h, bool report_j, bool report_k, bool verbose, bool write, std::string fname);
+		void sample(int batch_size, int n_cd_steps, bool write, std::string fname, BinaryChoices binary_choices, bool report_h, bool report_j, bool report_k, bool verbose);
 		// Internal
-		MomRet _sample(int n_cd_steps, bool asleep_visible_are_binary, bool asleep_hidden_are_binary, bool asleep_final_visible_are_binary, bool asleep_final_hidden_are_binary, bool report_h, bool report_j, bool report_k);
+		MomRet _sample(int n_cd_steps, BinaryChoices binary_choices, bool report_h, bool report_j, bool report_k);
 
 		// Update the initial params
 		void read(std::string fname);
@@ -543,7 +543,7 @@ namespace DynamicBoltzmann {
 	Solve for the h,j corresponding to a given lattice
 	********************/
 
-	void BMLA::Impl::solve(std::vector<std::string> fnames, bool asleep_visible_are_binary, bool asleep_hidden_are_binary, bool asleep_final_visible_are_binary, bool asleep_final_hidden_are_binary, bool verbose)
+	void BMLA::Impl::solve(std::vector<std::string> fnames, BinaryChoices binary_choices, bool verbose)
 	{
 		// Check size of filenames
 		if (_use_single_lattice == true && fnames.size() != 1) {
@@ -622,18 +622,18 @@ namespace DynamicBoltzmann {
 				{
 					// Sample
 					if (cd_step != _n_cd_steps-1) {
-						_latt.sample(asleep_visible_are_binary);
+						_latt.sample(binary_choices.asleep_visible_are_binary);
 					} else {
-						_latt.sample(asleep_final_visible_are_binary);
+						_latt.sample(binary_choices.asleep_final_visible_are_binary);
 					};
 
 					// Activate hidden
 					if (_hidden_layer_exists) {
 						for (auto ithu = _hidden_units.begin(); ithu != _hidden_units.end(); ithu++) {
 							if (cd_step != _n_cd_steps-1) {
-								ithu->activate(asleep_hidden_are_binary);
+								ithu->activate(binary_choices.asleep_hidden_are_binary);
 							} else {
-								ithu->activate(asleep_final_hidden_are_binary);
+								ithu->activate(binary_choices.asleep_final_hidden_are_binary);
 							};
 						};
 					};
@@ -804,7 +804,7 @@ namespace DynamicBoltzmann {
 	};
 
 	// Internal sampling function
-	MomRet BMLA::Impl::_sample(int n_cd_steps, bool asleep_visible_are_binary, bool asleep_hidden_are_binary, bool asleep_final_visible_are_binary, bool asleep_final_hidden_are_binary, bool report_h, bool report_j, bool report_k) {
+	MomRet BMLA::Impl::_sample(int n_cd_steps, BinaryChoices binary_choices, bool report_h, bool report_j, bool report_k) {
 
 		std::list<Species>::iterator sp_it1,sp_it2,sp_it3;
 
@@ -864,18 +864,18 @@ namespace DynamicBoltzmann {
 
 			// Sample visibles
 			if (cd_step != n_cd_steps-1) {
-				_latt.sample(asleep_visible_are_binary);
+				_latt.sample(binary_choices.asleep_visible_are_binary);
 			} else {
-				_latt.sample(asleep_final_visible_are_binary);
+				_latt.sample(binary_choices.asleep_final_visible_are_binary);
 			};
 
 			// Activate hidden
 			if (_hidden_layer_exists) {
 				for (auto ithu = _hidden_units.begin(); ithu != _hidden_units.end(); ithu++) {
 					if (cd_step != n_cd_steps-1) {
-						ithu->activate(asleep_hidden_are_binary);
+						ithu->activate(binary_choices.asleep_hidden_are_binary);
 					} else {
-						ithu->activate(asleep_final_hidden_are_binary);
+						ithu->activate(binary_choices.asleep_final_hidden_are_binary);
 					}
 				};
 			};
@@ -909,7 +909,7 @@ namespace DynamicBoltzmann {
 	};
 
 	// batch size = 1
-	void BMLA::Impl::sample(int n_cd_steps, bool asleep_visible_are_binary, bool asleep_hidden_are_binary, bool asleep_final_visible_are_binary, bool asleep_final_hidden_are_binary, bool report_h, bool report_j, bool report_k, bool verbose, bool write, std::string fname) {
+	void BMLA::Impl::sample(int n_cd_steps, bool write, std::string fname, BinaryChoices binary_choices, bool report_h, bool report_j, bool report_k, bool verbose) {
 
 		// Check writing
 		if (write && fname == "") {
@@ -918,7 +918,7 @@ namespace DynamicBoltzmann {
 		};
 
 		// Sample
-		MomRet moms = _sample(n_cd_steps,asleep_visible_are_binary,asleep_hidden_are_binary,asleep_final_visible_are_binary,asleep_final_hidden_are_binary,report_h,report_j,report_k);
+		MomRet moms = _sample(n_cd_steps,binary_choices,report_h,report_j,report_k);
 
 		// Report the moments
 		if (verbose)
@@ -952,7 +952,7 @@ namespace DynamicBoltzmann {
 	};
 
 	// given batch size
-	void BMLA::Impl::sample(int batch_size, int n_cd_steps, bool asleep_visible_are_binary, bool asleep_hidden_are_binary, bool asleep_final_visible_are_binary, bool asleep_final_hidden_are_binary, bool report_h, bool report_j, bool report_k, bool verbose, bool write, std::string fname) {
+	void BMLA::Impl::sample(int batch_size, int n_cd_steps, bool write, std::string fname, BinaryChoices binary_choices, bool report_h, bool report_j, bool report_k, bool verbose) {
 
 		// Check writing
 		if (write && fname == "") {
@@ -968,7 +968,7 @@ namespace DynamicBoltzmann {
 		{
 			std::cout << "." << std::flush;
 
-			moms = _sample(n_cd_steps,asleep_visible_are_binary,asleep_hidden_are_binary,asleep_final_visible_are_binary,asleep_final_hidden_are_binary,report_h,report_j,report_k);
+			moms = _sample(n_cd_steps,binary_choices,report_h,report_j,report_k);
 
 			// Append
 			if (batch_no == 0) {
@@ -1220,25 +1220,25 @@ namespace DynamicBoltzmann {
 	};
 
 	// Solve for the h,j corresponding to a given lattice
-	void BMLA::solve(std::string fname, bool asleep_visible_are_binary, bool asleep_hidden_are_binary, bool asleep_final_visible_are_binary, bool asleep_final_hidden_are_binary, bool verbose) {
+	void BMLA::solve(std::string fname, BinaryChoices binary_choices, bool verbose) {
 		std::vector<std::string> fnames;
 		fnames.push_back(fname);
-		_impl->solve(fnames,asleep_visible_are_binary,asleep_hidden_are_binary,asleep_final_visible_are_binary,asleep_final_hidden_are_binary,verbose);
+		_impl->solve(fnames,binary_choices,verbose);
 	};
 
 	// Solve for the h,j corresponding to a given lattice
-	void BMLA::solve(std::vector<std::string> fnames, bool asleep_visible_are_binary, bool asleep_hidden_are_binary, bool asleep_final_visible_are_binary, bool asleep_final_hidden_are_binary, bool verbose) {
-		_impl->solve(fnames,asleep_visible_are_binary,asleep_hidden_are_binary,asleep_final_visible_are_binary,asleep_final_hidden_are_binary,verbose);
+	void BMLA::solve(std::vector<std::string> fnames, BinaryChoices binary_choices, bool verbose) {
+		_impl->solve(fnames,binary_choices,verbose);
 	};
 
 	// At the current ixns params, sample and report the specified moments
 	// batch size = 1
-	void BMLA::sample(int n_cd_steps, bool asleep_visible_are_binary, bool asleep_hidden_are_binary, bool asleep_final_visible_are_binary, bool asleep_final_hidden_are_binary, bool report_h, bool report_j, bool report_k, bool verbose, bool write, std::string fname) {
-		_impl->sample(n_cd_steps, asleep_visible_are_binary, asleep_hidden_are_binary, asleep_final_visible_are_binary, asleep_final_hidden_are_binary, report_h,report_j,report_k,verbose,write, fname);
+	void BMLA::sample(int n_cd_steps, bool write, std::string fname, BinaryChoices binary_choices, bool report_h, bool report_j, bool report_k, bool verbose) {
+		_impl->sample(n_cd_steps, write, fname, binary_choices, report_h,report_j,report_k,verbose);
 	};
 	// given batch size
-	void BMLA::sample(int batch_size, int n_cd_steps, bool asleep_visible_are_binary, bool asleep_hidden_are_binary, bool asleep_final_visible_are_binary, bool asleep_final_hidden_are_binary, bool report_h, bool report_j, bool report_k, bool verbose, bool write, std::string fname) {
-		_impl->sample(batch_size, n_cd_steps, asleep_visible_are_binary, asleep_hidden_are_binary, asleep_final_visible_are_binary, asleep_final_hidden_are_binary, report_h,report_j,report_k,verbose,write, fname);
+	void BMLA::sample(int batch_size, int n_cd_steps, bool write, std::string fname, BinaryChoices binary_choices, bool report_h, bool report_j, bool report_k, bool verbose) {
+		_impl->sample(batch_size, n_cd_steps, write, fname, binary_choices, report_h,report_j,report_k,verbose);
 	};
 
 	// Update the initial params

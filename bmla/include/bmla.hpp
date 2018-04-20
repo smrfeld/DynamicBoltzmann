@@ -43,6 +43,24 @@ namespace DynamicBoltzmann {
 	};
 
 	/****************************************
+	Struct to specify choices for binary vs. probabilistic
+	****************************************/
+
+	struct BinaryChoices {
+		bool asleep_visible_are_binary;
+		bool asleep_hidden_are_binary;
+		bool asleep_final_visible_are_binary;
+		bool asleep_final_hidden_are_binary;
+
+		BinaryChoices() {
+			asleep_visible_are_binary = true;
+			asleep_hidden_are_binary = true;
+			asleep_final_visible_are_binary = true;
+			asleep_final_hidden_are_binary = true;
+		};
+	};
+
+	/****************************************
 	BMLA
 	****************************************/
 
@@ -89,14 +107,14 @@ namespace DynamicBoltzmann {
 		void set_binary_visible(bool flag);
 
 		// Solve for the h,j corresponding to a given lattice
-		void solve(std::string fname, bool asleep_visible_are_binary=true, bool asleep_hidden_are_binary=true, bool asleep_final_visible_are_binary=true, bool asleep_final_hidden_are_binary=true, bool verbose=false);
-		void solve(std::vector<std::string> fnames, bool asleep_visible_are_binary=true, bool asleep_hidden_are_binary=true, bool asleep_final_visible_are_binary=true, bool asleep_final_hidden_are_binary=true, bool verbose=false);
+		void solve(std::string fname, BinaryChoices binary_choices, bool verbose=false);
+		void solve(std::vector<std::string> fnames, BinaryChoices binary_choices, bool verbose=false);
 
 		// At the current ixns params, sample and report the specified moments
 		// batch size = 1
-		void sample(int n_cd_steps, bool asleep_visible_are_binary=true, bool asleep_hidden_are_binary=true, bool asleep_final_visible_are_binary=true, bool asleep_final_hidden_are_binary=true, bool report_h=true, bool report_j=true, bool report_k=true, bool verbose=true, bool write=false, std::string fname="");
+		void sample(int n_cd_steps, bool write=false, std::string fname="", BinaryChoices binary_choices=BinaryChoices(), bool report_h=true, bool report_j=true, bool report_k=true, bool verbose=true);
 		// given batch size
-		void sample(int batch_size, int n_cd_steps, bool asleep_visible_are_binary=true, bool asleep_hidden_are_binary=true, bool asleep_final_visible_are_binary=true, bool asleep_final_hidden_are_binary=true, bool report_h=true, bool report_j=true, bool report_k=true, bool verbose=true, bool write=false, std::string fname="");
+		void sample(int batch_size, int n_cd_steps, bool write=false, std::string fname="", BinaryChoices binary_choices=BinaryChoices(), bool report_h=true, bool report_j=true, bool report_k=true, bool verbose=true);
 
 		// Update the initial params
 		void read(std::string fname);

@@ -106,6 +106,7 @@ namespace DynamicBoltzmann {
 		// Getters/setters
 		std::string name() const;
 		double get() const;
+		void set_val(double val);
 		void set_guess(double guess);
 		void reset();
 

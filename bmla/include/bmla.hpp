@@ -79,6 +79,9 @@ namespace DynamicBoltzmann {
 	    BMLA& operator=(BMLA&& other); // movable but no copies
 		~BMLA();
 
+		// Set a parameter for dim
+		void set_param_for_dim(std::string dim_name, double val);
+
 		// Any dim
 		void add_hidden_unit(std::vector<std::vector<int>> lattice_idxs, std::string species);
 		// 1D specific

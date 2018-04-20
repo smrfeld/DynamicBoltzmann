@@ -196,6 +196,9 @@ namespace DynamicBoltzmann {
 	{
 		return _val;
 	};
+	void IxnParam::set_val(double val) {
+		_val = val;
+	};
 	void IxnParam::set_guess(double guess) {
 		_val_guess = guess;
 	};

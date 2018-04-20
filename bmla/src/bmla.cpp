@@ -138,6 +138,9 @@ namespace DynamicBoltzmann {
 	    Impl& operator=(Impl&& other);
 		~Impl();
 
+		// Set a parameter for dim
+		void set_param_for_dim(std::string dim_name, double val);
+
 		// Any dim
 		void add_hidden_unit(std::vector<std::vector<int>> lattice_idxs, std::string species);
 		// 1D specific
@@ -420,6 +423,18 @@ namespace DynamicBoltzmann {
 			mse += abs(it->moments_diff())/abs(it->get_moment(IxnParam::AWAKE));
 		};
 		return 100*mse/_n_param;
+	};
+
+	/********************
+	Set a parameter for dim
+	********************/
+
+	void BMLA::Impl::set_param_for_dim(std::string dim_name, double val) {
+		// Find
+		IxnParam *ip = _find_ixn_param_by_name(dim_name);
+
+		// Guaranteed not to be null
+		ip->set_val(val);
 	};
 
 	/********************
@@ -1173,6 +1188,11 @@ namespace DynamicBoltzmann {
 	BMLA::BMLA(BMLA&& other) = default; // movable but no copies
     BMLA& BMLA::operator=(BMLA&& other) = default; // movable but no copies
 	BMLA::~BMLA() = default;
+
+	// Set a parameter for dim
+	void BMLA::set_param_for_dim(std::string dim_name, double val) {
+		_impl->set_param_for_dim(dim_name,val);
+	};
 
 	// Any dim
 	void BMLA::add_hidden_unit(std::vector<std::vector<int>> lattice_idxs, std::string species) {

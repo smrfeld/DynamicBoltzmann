@@ -41,6 +41,7 @@ namespace DynamicBoltzmann {
 		std::string _name;
 
 		// Counts
+		std::map<Species*,std::map<Species*,int>> _triplet_count;
 		std::map<Species*,int> _nn_count;
 		int _count;
 
@@ -75,6 +76,10 @@ namespace DynamicBoltzmann {
 		void add_j_ptr(Species* sp, IxnParamTraj *j_ptr);
 		void set_w_ptr(IxnParamTraj *w_ptr);
 
+		// Initialize counts for given other species
+		void count_nn_for_species(std::vector<Species*> sp_vec);
+		void count_triplets_for_species(std::vector<std::pair<Species*,Species*>> sp_vec);
+
 		// Validate setup
 		void validate_setup() const;
 
@@ -84,6 +89,7 @@ namespace DynamicBoltzmann {
 		double w() const;
 		int count() const;
 		int nn_count(Species* other) const;
+		int triplet_count(Species* other1, Species* other2) const;
 		std::string name() const;
 
 		// Increment counts
@@ -91,6 +97,8 @@ namespace DynamicBoltzmann {
 		void count_minus();
 		void nn_count_plus(Species* other);
 		void nn_count_minus(Species* other);
+		void triplet_count_plus(Species* other1, Species* other2);
+		void triplet_count_minus(Species* other1, Species* other2);
 
 		// Reset counts
 		void reset_counts();

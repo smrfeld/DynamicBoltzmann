@@ -322,6 +322,17 @@ namespace DynamicBoltzmann {
 		};
 		if (DIAG_SETUP) { std::cout << "ok." << std::endl; };
 
+		// Initialize counting structures on species
+		if (DIAG_SETUP) { std::cout << "Init counting on species..." << std::flush; };
+		std::vector<Species*> sp_vec;
+		for (auto it = _species.begin(); it != _species.end(); it++) {
+			sp_vec.push_back(&(*it));
+		};
+		for (auto it = _species.begin(); it != _species.end(); it++) {
+			it->count_nn_for_species(sp_vec);
+		};
+		if (DIAG_SETUP) { std::cout << "ok." << std::endl; };
+
 		// Create the basis functions
 		if (DIAG_SETUP) { std::cout << "Create basis funcs..." << std::flush; };
 		std::vector<IxnParamTraj*> bf_ips;
@@ -763,7 +774,7 @@ namespace DynamicBoltzmann {
 					if (_hidden_layer_exists) {
 						for (auto ithu = _hidden_units.begin(); ithu != _hidden_units.end(); ithu++) {
 							// When using real data, always use binary states
-							ithu->activate(false);
+							ithu->activate(true);
 						};
 					};
 
@@ -787,6 +798,7 @@ namespace DynamicBoltzmann {
 
 						if (DIAG_SOLVE) { std::cout << "      Anneal" << std::endl; };
 
+						// Binary
 						_latt.sample();
 
 						// Activate the hidden units if needed
@@ -795,8 +807,8 @@ namespace DynamicBoltzmann {
 
 						if (_hidden_layer_exists) {
 							for (auto ithu = _hidden_units.begin(); ithu != _hidden_units.end(); ithu++) {
-								// When using reconstructions, always use raw probabilities
-								ithu->activate(false);
+								// Binary
+								ithu->activate(true);
 							};
 						};
 					};

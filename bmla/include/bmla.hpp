@@ -93,7 +93,10 @@ namespace DynamicBoltzmann {
 		void solve(std::vector<std::string> fnames, bool asleep_visible_are_binary=true, bool asleep_hidden_are_binary=true, bool asleep_final_visible_are_binary=true, bool asleep_final_hidden_are_binary=true, bool verbose=false);
 
 		// At the current ixns params, sample and report the specified moments
-		void sample(int n_batches, int n_cd_steps, bool asleep_visible_are_binary=true, bool asleep_hidden_are_binary=true, bool asleep_final_visible_are_binary=true, bool asleep_final_hidden_are_binary=true, bool report_h=true, bool report_j=true, bool report_k=true);
+		// batch size = 1
+		void sample(int n_cd_steps, bool asleep_visible_are_binary=true, bool asleep_hidden_are_binary=true, bool asleep_final_visible_are_binary=true, bool asleep_final_hidden_are_binary=true, bool report_h=true, bool report_j=true, bool report_k=true, bool verbose=true, bool write=false, std::string fname="");
+		// given batch size
+		void sample(int batch_size, int n_cd_steps, bool asleep_visible_are_binary=true, bool asleep_hidden_are_binary=true, bool asleep_final_visible_are_binary=true, bool asleep_final_hidden_are_binary=true, bool report_h=true, bool report_j=true, bool report_k=true, bool verbose=true, bool write=false, std::string fname="");
 
 		// Update the initial params
 		void read(std::string fname);

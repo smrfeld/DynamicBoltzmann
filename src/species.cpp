@@ -52,6 +52,7 @@ namespace DynamicBoltzmann {
 	void Species::_reset() {
 		_name = "";
 		_nn_count.clear();
+		_triplet_count.clear();
 		_count = 0;
 		_t_opt_ptr = nullptr;
 		_h_ptr = nullptr;
@@ -61,6 +62,7 @@ namespace DynamicBoltzmann {
 	void Species::_copy(const Species& other) {
 		_name = other._name;
 		_nn_count = other._nn_count;
+		_triplet_count = other._triplet_count;
 		_count = other._count;
 		_t_opt_ptr = other._t_opt_ptr;
 		_h_ptr = other._h_ptr;
@@ -86,11 +88,25 @@ namespace DynamicBoltzmann {
 	};
 	void Species::add_j_ptr(Species* sp, IxnParamTraj *j_ptr) {
 		_j_ptr[sp] = j_ptr;
-		// Also add entry in nn count
-		_nn_count[sp] = 0;
 	};
 	void Species::set_w_ptr(IxnParamTraj *w_ptr) {
 		_w_ptr = w_ptr;
+	};
+
+	/********************
+	Initialize counts for given other species
+	********************/
+
+	void Species::count_nn_for_species(std::vector<Species*> sp_vec) {
+		for (auto sp: sp_vec) {
+			_nn_count[sp] = 0;
+		};
+	};
+	void Species::count_triplets_for_species(std::vector<std::pair<Species*,Species*>> sp_vec) {
+		for (auto sp_pair: sp_vec) {
+			_triplet_count[sp_pair.first][sp_pair.second] = 0;
+			_triplet_count[sp_pair.second][sp_pair.first] = 0;
+		};
 	};
 
 	/********************
@@ -141,6 +157,9 @@ namespace DynamicBoltzmann {
 	int Species::nn_count(Species *other) const {
 		return _nn_count.at(other);
 	};
+	int Species::triplet_count(Species* other1, Species* other2) const {
+		return _triplet_count.at(other1).at(other2);
+	};
 
 	std::string Species::name() const { return _name; };
 
@@ -152,6 +171,14 @@ namespace DynamicBoltzmann {
 	void Species::count_minus() { _count--; };
 	void Species::nn_count_plus(Species* other) { _nn_count[other]++; };
 	void Species::nn_count_minus(Species* other) { _nn_count[other]--; };
+	void Species::triplet_count_plus(Species* other1, Species* other2) { 
+		_triplet_count[other1][other2]++;
+		_triplet_count[other2][other1]++;
+	};
+	void Species::triplet_count_minus(Species* other1, Species* other2) { 
+		_triplet_count[other1][other2]--;
+		_triplet_count[other2][other1]--;
+	};
 
 	/********************
 	Reset counts
@@ -161,6 +188,11 @@ namespace DynamicBoltzmann {
 		_count = 0;
 		for (auto it=_nn_count.begin(); it!=_nn_count.end(); it++) {
 			it->second = 0;
+		};
+		for (auto it1=_triplet_count.begin(); it1!=_triplet_count.end(); it1++) {
+			for (auto it2 = it1->second.begin(); it2 != it1->second.end(); it2++) {
+				it2->second = 0;
+			};
 		};
 	};
 

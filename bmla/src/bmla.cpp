@@ -51,6 +51,9 @@ namespace DynamicBoltzmann {
 	BMLA - IMPLEMENTATION
 	****************************************/
 
+	// Declare
+	struct MomRet;
+
 	class BMLA::Impl {
 
 	private:
@@ -166,7 +169,12 @@ namespace DynamicBoltzmann {
 		void solve(std::vector<std::string> fnames, bool asleep_visible_are_binary, bool asleep_hidden_are_binary, bool asleep_final_visible_are_binary, bool asleep_final_hidden_are_binary, bool verbose=false);
 
 		// At the current ixns params, sample and report the specified moments
-		void sample(int n_batches, int n_cd_steps, bool asleep_visible_are_binary, bool asleep_hidden_are_binary, bool asleep_final_visible_are_binary, bool asleep_final_hidden_are_binary, bool report_h, bool report_j, bool report_k);
+		// batch size = 1
+		void sample(int n_cd_steps, bool asleep_visible_are_binary, bool asleep_hidden_are_binary, bool asleep_final_visible_are_binary, bool asleep_final_hidden_are_binary, bool report_h, bool report_j, bool report_k, bool verbose, bool write, std::string fname);
+		// given batch size
+		void sample(int batch_size, int n_cd_steps, bool asleep_visible_are_binary, bool asleep_hidden_are_binary, bool asleep_final_visible_are_binary, bool asleep_final_hidden_are_binary, bool report_h, bool report_j, bool report_k, bool verbose, bool write, std::string fname);
+		// Internal
+		MomRet _sample(int n_cd_steps, bool asleep_visible_are_binary, bool asleep_hidden_are_binary, bool asleep_final_visible_are_binary, bool asleep_final_hidden_are_binary, bool report_h, bool report_j, bool report_k);
 
 		// Update the initial params
 		void read(std::string fname);
@@ -690,27 +698,154 @@ namespace DynamicBoltzmann {
 	At the current ixns params, sample and report the specified moments
 	********************/
 
-	void BMLA::Impl::sample(int n_batches, int n_cd_steps, bool asleep_visible_are_binary, bool asleep_hidden_are_binary, bool asleep_final_visible_are_binary, bool asleep_final_hidden_are_binary, bool report_h, bool report_j, bool report_k) {
+	// Structure to return some moments
+	struct MomRet {
+		std::map<Species*,std::vector<double>> counts;
+		std::map<Species*, std::map<Species*, std::vector<double>>> nns;
+		std::map<Species*, std::map<Species*, std::map<Species*, std::vector<double>>>> triplets;
 
-		int n,n_possible;
-		std::map<Species*,int> counts;
+		// Incrementing
+		// Caution: no check if keys exist!
+		void increment(MomRet other, double batch_size=1.0) {
+			for (auto pr: other.counts) {
+				for (int i=0; i<pr.second.size(); i++) {
+					counts[pr.first][i] += pr.second[i] / batch_size;
+				};
+			};
+			for (auto pr1: other.nns) {
+				for (auto pr2: pr1.second) {
+					for (int i=0; i<pr2.second.size(); i++) {
+						nns[pr1.first][pr2.first][i] += pr2.second[i] / batch_size;
+					};
+				};
+			};
+			for (auto pr1: other.triplets) {
+				for (auto pr2: pr1.second) {
+					for (auto pr3: pr2.second) {
+						for (int i=0; i<pr3.second.size(); i++) {
+							triplets[pr1.first][pr2.first][pr3.first][i] += pr3.second[i] / batch_size;
+						};
+					};
+				};
+			};
+		};
+
+		// Ave of int vector
+		double _ave_of_vector(std::vector<double>& v) const {
+			if (v.size() == 0) { return 0.; };
+			double t=0.0;
+			for (auto x: v) {
+				t += x;
+			};
+			return t/v.size();
+		};
+
+
+		// Printing
+		void report_h() {
+			std::cout << "--- h moments ---" << std::endl;
+			for (auto pr: counts) {
+				std::cout << pr.first->name() << " ave: " << _ave_of_vector(pr.second) << " final: " << pr.second.back() << std::endl;
+			};
+		};
+		void report_j() {
+			std::cout << "--- j moments ---" << std::endl;
+			for (auto pr1: nns) {
+				for (auto pr2: pr1.second) {
+					std::cout << pr1.first->name() << " " << pr2.first->name() << " ave: " << _ave_of_vector(pr2.second) << " final: " << pr2.second.back() << std::endl;
+				};
+			};
+		};
+		void report_k() {
+			std::cout << "--- k moments ---" << std::endl;
+			for (auto pr1: triplets) {
+				for (auto pr2: pr1.second) {
+					for (auto pr3: pr2.second) {
+						std::cout << pr1.first->name() << " " << pr2.first->name() << " " << pr3.first->name() << " ave: " << _ave_of_vector(pr3.second) << " final: " << pr3.second.back() << std::endl;
+					};
+				};
+			};
+		};
+
+		// Writing
+		void write_h(std::ofstream &f) {
+			for (auto pr: counts) {
+				f << "h " <<  pr.first->name();
+				for (auto x: pr.second) {
+					f << " " << x;
+				};
+				f << std::endl;
+			};
+		};
+		void write_j(std::ofstream &f) {
+			for (auto pr1: nns) {
+				for (auto pr2: pr1.second) {
+					f << "J " <<  pr1.first->name() << " " << pr2.first->name();
+					for (auto x: pr2.second) {
+						f << " " << x;
+					};
+					f << std::endl;
+				};
+			};
+		};
+		void write_k(std::ofstream &f) {
+			for (auto pr1: triplets) {
+				for (auto pr2: pr1.second) {
+					for (auto pr3: pr2.second) {
+						f << "K " <<  pr1.first->name() << " " << pr2.first->name() << " " << pr3.first->name();
+						for (auto x: pr3.second) {
+							f << " " << x;
+						};
+						f << std::endl;
+					};
+				};
+			};
+		};
+	};
+
+	// Internal sampling function
+	MomRet BMLA::Impl::_sample(int n_cd_steps, bool asleep_visible_are_binary, bool asleep_hidden_are_binary, bool asleep_final_visible_are_binary, bool asleep_final_hidden_are_binary, bool report_h, bool report_j, bool report_k) {
+
 		std::list<Species>::iterator sp_it1,sp_it2,sp_it3;
 
-		// Store the moments over the batches
-		std::map<Species*, double> h_ave,h_latest;
-		std::map<Species*, std::map<Species*, double>> j_ave,j_latest;
-		std::map<Species*, std::map<Species*, std::map<Species*, double>>> k_ave,k_latest;
+		// Start by populating lattice randomly
+
+		// Random number of initial particles (min is 1, max is box vol)
+		int n = randI(1, pow(_latt.box_length(),_latt.dim()));
+
+		// Random initial counts
+		// Don't populate too much, else this is hard to find empty sites to place mols!
+		// At most half the lattice is filled
+		int n_possible = pow(_latt.box_length(),_latt.dim()) / 2;
+		std::map<Species*,int> counts;
+		for (std::list<Species>::iterator sp=_species.begin(); sp != _species.end(); sp++) {
+			counts[&(*sp)] = randI(0,n_possible);
+			n_possible -= counts[&(*sp)];
+			if (n_possible < 0) { n_possible = 0; };
+		};
+
+		// Populate at random positions
+		_latt.populate_randomly(counts);
+
+		// Activate hidden
+		if (_hidden_layer_exists) {
+			for (auto ithu = _hidden_units.begin(); ithu != _hidden_units.end(); ithu++) {
+				// When using real data, always use binary states
+				ithu->activate(true);
+			};
+		};
+
+		// Calculate and store initial moments
+		MomRet moms;
 		if (report_h) {
 			for (sp_it1 = _species.begin(); sp_it1 != _species.end(); sp_it1++) {
-				h_ave[&(*sp_it1)] = 0.0;
-				h_latest[&(*sp_it1)] = 0.0;
+				moms.counts[&(*sp_it1)].push_back(sp_it1->count());
 			};
 		};
 		if (report_j) {
 			for (sp_it1 = _species.begin(); sp_it1 != _species.end(); sp_it1++) {
 				for (sp_it2 = sp_it1; sp_it2 != _species.end(); sp_it2++) {
-					j_ave[&(*sp_it1)][&(*sp_it2)] = 0.0;
-					j_latest[&(*sp_it1)][&(*sp_it2)] = 0.0;
+					moms.nns[&(*sp_it1)][&(*sp_it2)].push_back(sp_it1->nn_count(&(*sp_it2)));
 				};
 			};
 		};
@@ -718,79 +853,43 @@ namespace DynamicBoltzmann {
 			for (sp_it1 = _species.begin(); sp_it1 != _species.end(); sp_it1++) {
 				for (sp_it2 = sp_it1; sp_it2 != _species.end(); sp_it2++) {
 					for (sp_it3 = sp_it2; sp_it3 != _species.end(); sp_it3++) {
-						k_ave[&(*sp_it1)][&(*sp_it2)][&(*sp_it3)] = 0.0;
-						k_latest[&(*sp_it1)][&(*sp_it2)][&(*sp_it3)] = 0.0;
+						moms.triplets[&(*sp_it1)][&(*sp_it2)][&(*sp_it3)].push_back(sp_it1->triplet_count(&(*sp_it2),&(*sp_it3)));
 					};
 				};
 			};
 		};
 
-		// Go over all batches
-		for (int batch_no=0; batch_no<n_batches; batch_no++)
-		{
+		// CD
+		for (int cd_step=0; cd_step<n_cd_steps; cd_step++) {
 
-			std::cout << "." << std::flush;
-
-			// Start by populating lattice randomly
-
-			// Random number of initial particles (min is 1, max is box vol)
-			n = randI(1, pow(_latt.box_length(),_latt.dim()));
-
-			// Random initial counts
-			// Don't populate too much, else this is hard to find empty sites to place mols!
-			// At most half the lattice is filled
-			n_possible = pow(_latt.box_length(),_latt.dim()) / 2;
-			counts.clear();
-			for (std::list<Species>::iterator sp=_species.begin(); sp != _species.end(); sp++) {
-				counts[&(*sp)] = randI(0,n_possible);
-				n_possible -= counts[&(*sp)];
-				if (n_possible < 0) { n_possible = 0; };
+			// Sample visibles
+			if (cd_step != n_cd_steps-1) {
+				_latt.sample(asleep_visible_are_binary);
+			} else {
+				_latt.sample(asleep_final_visible_are_binary);
 			};
-
-			// Populate at random positions
-			_latt.populate_randomly(counts);
 
 			// Activate hidden
 			if (_hidden_layer_exists) {
 				for (auto ithu = _hidden_units.begin(); ithu != _hidden_units.end(); ithu++) {
-					// When using real data, always use binary states
-					ithu->activate(true);
-				};
-			};
-
-			// Sample
-			for (int cd_step=0; cd_step<n_cd_steps; cd_step++) {
-				// Sample
-				if (cd_step != n_cd_steps-1) {
-					_latt.sample(asleep_visible_are_binary);
-				} else {
-					_latt.sample(asleep_final_visible_are_binary);
-				};
-
-				// Activate hidden
-				if (_hidden_layer_exists) {
-					for (auto ithu = _hidden_units.begin(); ithu != _hidden_units.end(); ithu++) {
-						if (cd_step != n_cd_steps-1) {
-							ithu->activate(asleep_hidden_are_binary);
-						} else {
-							ithu->activate(asleep_final_hidden_are_binary);
-						}
-					};
+					if (cd_step != n_cd_steps-1) {
+						ithu->activate(asleep_hidden_are_binary);
+					} else {
+						ithu->activate(asleep_final_hidden_are_binary);
+					}
 				};
 			};
 
 			// Calculate the moments
 			if (report_h) {
 				for (sp_it1=_species.begin(); sp_it1 != _species.end(); sp_it1++) {
-					h_latest[&(*sp_it1)] = 1.0*sp_it1->count();
-					h_ave[&(*sp_it1)] += h_latest[&(*sp_it1)] / n_batches;
+					moms.counts[&(*sp_it1)].push_back(sp_it1->count());
 				};
 			};
 			if (report_j) {
 				for (sp_it1=_species.begin(); sp_it1 != _species.end(); sp_it1++) {
 					for (sp_it2=sp_it1; sp_it2 != _species.end(); sp_it2++) {
-						j_latest[&(*sp_it1)][&(*sp_it2)] = 1.0*sp_it1->nn_count(&(*sp_it2));
-						j_ave[&(*sp_it1)][&(*sp_it2)] += j_latest[&(*sp_it1)][&(*sp_it2)] / n_batches;
+						moms.nns[&(*sp_it1)][&(*sp_it2)].push_back(sp_it1->nn_count(&(*sp_it2)));
 					};
 				};
 			};
@@ -798,40 +897,116 @@ namespace DynamicBoltzmann {
 				for (sp_it1=_species.begin(); sp_it1 != _species.end(); sp_it1++) {
 					for (sp_it2=sp_it1; sp_it2 != _species.end(); sp_it2++) {
 						for (sp_it3=sp_it2; sp_it3 != _species.end(); sp_it3++) {
-							k_latest[&(*sp_it1)][&(*sp_it2)][&(*sp_it3)] = 1.0*sp_it1->triplet_count(&(*sp_it2),&(*sp_it3));
-							k_ave[&(*sp_it1)][&(*sp_it2)][&(*sp_it3)] += k_latest[&(*sp_it1)][&(*sp_it2)][&(*sp_it3)] / n_batches;
+							moms.triplets[&(*sp_it1)][&(*sp_it2)][&(*sp_it3)].push_back(sp_it1->triplet_count(&(*sp_it2),&(*sp_it3)));
 						};
 					};
 				};
 			};
+		};
 
+		// Return
+		return moms;
+	};
+
+	// batch size = 1
+	void BMLA::Impl::sample(int n_cd_steps, bool asleep_visible_are_binary, bool asleep_hidden_are_binary, bool asleep_final_visible_are_binary, bool asleep_final_hidden_are_binary, bool report_h, bool report_j, bool report_k, bool verbose, bool write, std::string fname) {
+
+		// Check writing
+		if (write && fname == "") {
+			std::cerr << "ERROR: provide a filename for writing!" << std::endl;
+			exit(EXIT_FAILURE);
+		};
+
+		// Sample
+		MomRet moms = _sample(n_cd_steps,asleep_visible_are_binary,asleep_hidden_are_binary,asleep_final_visible_are_binary,asleep_final_hidden_are_binary,report_h,report_j,report_k);
+
+		// Report the moments
+		if (verbose)
+		{
+			if (report_h) {
+				moms.report_h();
+			};
+			if (report_j) {
+				moms.report_j();
+			};
+			if (report_k) {
+				moms.report_k();
+			};
+		};
+
+		// Write if needed
+		if (write) {
+			std::ofstream f;
+			f.open(fname);
+			if (report_h) {
+				moms.write_h(f);
+			};
+			if (report_j) {
+				moms.write_j(f);
+			};
+			if (report_k) {
+				moms.write_k(f);
+			};
+			f.close();
+		};
+	};
+
+	// given batch size
+	void BMLA::Impl::sample(int batch_size, int n_cd_steps, bool asleep_visible_are_binary, bool asleep_hidden_are_binary, bool asleep_final_visible_are_binary, bool asleep_final_hidden_are_binary, bool report_h, bool report_j, bool report_k, bool verbose, bool write, std::string fname) {
+
+		// Check writing
+		if (write && fname == "") {
+			std::cerr << "ERROR: provide a filename for writing!" << std::endl;
+			exit(EXIT_FAILURE);
+		};
+
+		// Store average
+		MomRet moms_ave, moms;
+
+		// Go through batches
+		for (int batch_no=0; batch_no<batch_size; batch_no++)
+		{
+			std::cout << "." << std::flush;
+
+			moms = _sample(n_cd_steps,asleep_visible_are_binary,asleep_hidden_are_binary,asleep_final_visible_are_binary,asleep_final_hidden_are_binary,report_h,report_j,report_k);
+
+			// Append
+			if (batch_no == 0) {
+				moms_ave = moms;
+			} else {
+				moms_ave.increment(moms,1.0*batch_size);
+			};
 		};
 		std::cout << std::endl;
 
 		// Report the moments
-		if (report_h) {
-			std::cout << "--- h moments ---" << std::endl;
-			for (auto pr: h_ave) {
-				std::cout << pr.first->name() << " ave: " << pr.second << " final: " << h_latest[pr.first] << std::endl;
+		if (verbose)
+		{
+			if (report_h) {
+				moms_ave.report_h();
+			};
+			if (report_j) {
+				moms_ave.report_j();
+			};
+			if (report_k) {
+				moms_ave.report_k();
 			};
 		};
-		if (report_j) {
-			std::cout << "--- j moments ---" << std::endl;
-			for (auto pr1: j_ave) {
-				for (auto pr2: pr1.second) {
-					std::cout << pr1.first->name() << " " << pr2.first->name() << " ave: " << pr2.second << " final: " << j_latest[pr1.first][pr2.first] << std::endl;
-				};
+
+		// Write if needed
+		if (write) {
+			std::ofstream f;
+			f.open(fname);
+			if (report_h) {
+				moms_ave.write_h(f);
 			};
-		};
-		if (report_k) {
-			std::cout << "--- k moments ---" << std::endl;
-			for (auto pr1: k_ave) {
-				for (auto pr2: pr1.second) {
-						for (auto pr3: pr2.second) {
-						std::cout << pr1.first->name() << " " << pr2.first->name() << " " << pr3.first->name() << " ave: " << pr3.second << " final: " << k_latest[pr1.first][pr2.first][pr3.first] << std::endl;
-					};
-				};
+			if (report_j) {
+				moms_ave.write_j(f);
 			};
+			if (report_k) {
+				moms_ave.write_k(f);
+			};
+			f.close();
 		};
 	};
 
@@ -1057,8 +1232,13 @@ namespace DynamicBoltzmann {
 	};
 
 	// At the current ixns params, sample and report the specified moments
-	void BMLA::sample(int n_batches, int n_cd_steps, bool asleep_visible_are_binary, bool asleep_hidden_are_binary, bool asleep_final_visible_are_binary, bool asleep_final_hidden_are_binary, bool report_h, bool report_j, bool report_k) {
-		_impl->sample(n_batches, n_cd_steps, asleep_visible_are_binary, asleep_hidden_are_binary, asleep_final_visible_are_binary, asleep_final_hidden_are_binary, report_h,report_j,report_k);
+	// batch size = 1
+	void BMLA::sample(int n_cd_steps, bool asleep_visible_are_binary, bool asleep_hidden_are_binary, bool asleep_final_visible_are_binary, bool asleep_final_hidden_are_binary, bool report_h, bool report_j, bool report_k, bool verbose, bool write, std::string fname) {
+		_impl->sample(n_cd_steps, asleep_visible_are_binary, asleep_hidden_are_binary, asleep_final_visible_are_binary, asleep_final_hidden_are_binary, report_h,report_j,report_k,verbose,write, fname);
+	};
+	// given batch size
+	void BMLA::sample(int batch_size, int n_cd_steps, bool asleep_visible_are_binary, bool asleep_hidden_are_binary, bool asleep_final_visible_are_binary, bool asleep_final_hidden_are_binary, bool report_h, bool report_j, bool report_k, bool verbose, bool write, std::string fname) {
+		_impl->sample(batch_size, n_cd_steps, asleep_visible_are_binary, asleep_hidden_are_binary, asleep_final_visible_are_binary, asleep_final_hidden_are_binary, report_h,report_j,report_k,verbose,write, fname);
 	};
 
 	// Update the initial params

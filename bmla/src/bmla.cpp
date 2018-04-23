@@ -691,9 +691,9 @@ namespace DynamicBoltzmann {
 	void BMLA::Impl::_sample(int n_cd_steps, OptionsSampling options) {
 
 		// Reset stored counters
-		for (auto ctr: _counters) {
-			if (ctr.report_during_sampling()) {
-				ctr.storage_clear();
+		for (auto it_ctr = _counters.begin(); it_ctr != _counters.end(); it_ctr++) {
+			if (it_ctr->report_during_sampling()) {
+				it_ctr->storage_clear();
 			};
 		};
 
@@ -730,9 +730,9 @@ namespace DynamicBoltzmann {
 		};
 
 		// Store counts
-		for (auto ctr: _counters) {
-			if (ctr.report_during_sampling()) {
-				ctr.storage_committ_current_count();
+		for (auto it_ctr = _counters.begin(); it_ctr != _counters.end(); it_ctr++) {
+			if (it_ctr->report_during_sampling()) {
+				it_ctr->storage_committ_current_count();
 			};
 		};
 
@@ -758,9 +758,9 @@ namespace DynamicBoltzmann {
 			};
 
 			// Store counts
-			for (auto ctr: _counters) {
-				if (ctr.report_during_sampling()) {
-					ctr.storage_committ_current_count();
+			for (auto it_ctr = _counters.begin(); it_ctr != _counters.end(); it_ctr++) {
+				if (it_ctr->report_during_sampling()) {
+					it_ctr->storage_committ_current_count();
 				};
 			};
 		};
@@ -801,9 +801,9 @@ namespace DynamicBoltzmann {
 		};
 
 		// Reset stored counters
-		for (auto ctr: _counters) {
-			if (ctr.report_during_sampling()) {
-				ctr.storage_averaged_clear();
+		for (auto it_ctr = _counters.begin(); it_ctr != _counters.end(); it_ctr++) {
+			if (it_ctr->report_during_sampling()) {
+				it_ctr->storage_averaged_clear();
 			};
 		};		
 
@@ -816,9 +816,9 @@ namespace DynamicBoltzmann {
 			_sample(n_cd_steps,options);
 
 			// Store the moments
-			for (auto ctr: _counters) {
-				if (ctr.report_during_sampling()) {
-					ctr.storage_averaged_committ_current_traj(batch_size);
+			for (auto it_ctr = _counters.begin(); it_ctr != _counters.end(); it_ctr++) {
+				if (it_ctr->report_during_sampling()) {
+					it_ctr->storage_averaged_committ_current_traj(batch_size);
 				};
 			};
 
@@ -828,9 +828,9 @@ namespace DynamicBoltzmann {
 		// Report the moments
 		if (options.verbose)
 		{
-			for (auto ctr: _counters) {
-				if (ctr.report_during_sampling()) {
-					ctr.storage_averaged_print();
+			for (auto it_ctr = _counters.begin(); it_ctr != _counters.end(); it_ctr++) {
+				if (it_ctr->report_during_sampling()) {
+					it_ctr->storage_averaged_print();
 				};
 			};
 		};
@@ -839,9 +839,9 @@ namespace DynamicBoltzmann {
 		if (options.write_traj) {
 			std::ofstream f;
 			f.open(options.fname_write_traj);
-			for (auto ctr: _counters) {
-				if (ctr.report_during_sampling()) {
-					ctr.storage_averaged_write(f);
+			for (auto it_ctr = _counters.begin(); it_ctr != _counters.end(); it_ctr++) {
+				if (it_ctr->report_during_sampling()) {
+					it_ctr->storage_averaged_write(f);
 				};
 			};
 			f.close();

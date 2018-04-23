@@ -193,13 +193,13 @@ namespace DynamicBoltzmann {
 	void Counter::storage_committ_current_count() {
 		_counts_stored.push_back(_count);
 	};
-	double Counter::storage_get_ave_count() const {
-		if (_counts_stored.size() == 0) { return 0.; };
+	double Counter::storage_averaged_get_ave_count() const {
+		if (_counts_stored_averaged.size() == 0) { return 0.; };
 		double t=0.0;
-		for (auto x: _counts_stored) {
+		for (auto x: _counts_stored_averaged) {
 			t += x;
 		};
-		return t/_counts_stored.size();
+		return t/_counts_stored_averaged.size();
 	};
 
 	// Average the storage
@@ -235,7 +235,7 @@ namespace DynamicBoltzmann {
 		};
 		std::cout << "---" << std::endl;
 		if (_counts_stored_averaged.size() > 0) {
-			std::cout << "ave: " << storage_get_ave_count() << " final: " << _counts_stored_averaged.back() << std::endl;
+			std::cout << "ave: " << storage_averaged_get_ave_count() << " final: " << _counts_stored_averaged.back() << std::endl;
 		};
 	};
 	void Counter::storage_averaged_write(std::ofstream &f) {

@@ -96,10 +96,10 @@ namespace DynamicBoltzmann {
 		// Committ current count to storage
 		void storage_clear();
 		void storage_committ_current_count();
-		double storage_get_ave_count() const;
 
 		// Average the storage
 		void storage_averaged_committ_current_traj(int average_size);
+		double storage_averaged_get_ave_count() const;
 		void storage_averaged_clear();
 		void storage_averaged_print() const;
 		void storage_averaged_write(std::ofstream &f);

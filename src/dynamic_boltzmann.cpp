@@ -4,7 +4,7 @@
 #include <ctime>
 #include <fstream>
 #include <algorithm>
-
+#include <set>
 #include "var_term_traj.hpp"
 
 /************************************
@@ -55,9 +55,6 @@ namespace DynamicBoltzmann {
 		Parameters
 		********************/
 
-		// The directory to write to
-		std::string _dir_io;
-
 		// Number of dimensions
 		int _n_param;
 
@@ -80,44 +77,17 @@ namespace DynamicBoltzmann {
 		// Species present
 		std::list<Species> _species;
 
-		// Filenames to choose from
-		std::vector<std::string> _fnames;
-
 		// Number of steps in this nu solution
 		int _n_t_soln;
 
 		// The current time in the optimization step
 		int _t_opt;
 
-		// Batch size
-		int _n_batch;
-
-		// Number of CD steps
-		int _n_cd_steps;
-
-		// Flag to use nesterov
-		bool _nesterov_flag;
-
-		// Flag to use the same lattice in the batch
-		bool _same_lattice_in_batch;
-
 		// Lattice size
 		int _box_length;
 
 		// Lattice to hold the current sample of the batch
 		Lattice _latt;
-
-		// Update step for optimization
-		double _dopt;
-
-		// Number opt steps
-		int _n_opt;
-
-		// Start index for the files to read
-		int _fname_start_idx;
-
-		// Flags
-		bool _write_bf_only_last;
 
 		// Add a hidden unit
 		void _add_hidden_unit(std::vector<Site*> conns, std::string species);
@@ -142,7 +112,7 @@ namespace DynamicBoltzmann {
 		Constructor
 		********************/
 
-		Impl(std::vector<Dim> dims, std::vector<std::string> species, double t_max, int n_t, int batch_size, int box_length, double dopt, int n_opt, int lattice_dim=3);
+		Impl(std::vector<Dim> dims, double t_max, int n_t, int box_length, int lattice_dim);
 		Impl(Impl&& other);
 	    Impl& operator=(Impl&& other);
 		~Impl();
@@ -155,24 +125,6 @@ namespace DynamicBoltzmann {
 		void add_hidden_unit(std::vector<std::vector<int>> lattice_idxs, std::string species);
 		// 1D specific
 		void add_hidden_unit(std::vector<int> lattice_idxs, std::string species);
-
-		// Sets dir for IO
-		void set_dir_io(std::string dir);
-
-		// Sets the filename index to start reading
-		void set_fname_start_idx(int idx);
-		
-		// Adds a filename for the lattices
-		void add_fname(std::string f);
-
-		// Set the number of CD steps
-		void set_n_cd_steps(int n_steps);
-
-		// Use Nesterov rather than stochastic gradient descent
-		void set_use_nesterov(bool flag);
-
-		// Use the same lattice for the batch
-		void set_use_same_lattice_in_batch(bool flag);
 
 		/********************
 		Validate setup by printing
@@ -196,8 +148,14 @@ namespace DynamicBoltzmann {
 		Solve
 		********************/
 
-		void solve(bool verbose=false);
-		void solve_varying_ic(bool verbose=false);
+		void solve(std::vector<std::string> fnames, int n_opt, int batch_size, int n_cd_steps, double dopt, OptionsSolve options);
+		void solve_varying_ic(std::vector<std::string> fnames, int n_opt, int batch_size, int n_cd_steps, double dopt, OptionsSolve options);
+
+		/********************
+		Read basis func
+		********************/
+
+		void read_basis_func(std::string bf_name, std::string fname);
 
 		/********************
 		Read some initial conditions
@@ -209,8 +167,8 @@ namespace DynamicBoltzmann {
 		Write
 		********************/
 
-		void write_bf_grids() const;
-		void write_t_grid() const;
+		void write_bf_grids(std::string dir) const;
+		void write_t_grid(std::string dir) const;
 
 		void write_ixn_params(std::string dir, int idx) const;
 		void write_ixn_params(std::string dir, int idx1, int idx2) const;
@@ -218,14 +176,6 @@ namespace DynamicBoltzmann {
 		void write_var_terms(std::string dir, int idx) const;
 		void write_moments(std::string dir, int idx) const;
 		void write_moments(std::string dir, int idx1, int idx2) const;
-
-		void set_flag_write_bf_only_final();
-
-		/********************
-		Read
-		********************/
-
-		void read_bf(std::string bf_name, std::string fname);
 	};
 
 	/****************************************
@@ -236,24 +186,24 @@ namespace DynamicBoltzmann {
 	Constructor
 	********************/
 
-	OptProblem::Impl::Impl(std::vector<Dim> dims, std::vector<std::string> species, double t_max, int n_t, int batch_size, int box_length, double dopt, int n_opt, int lattice_dim) : _latt(lattice_dim,box_length), _time("time",0.0,t_max,n_t)
+	OptProblem::Impl::Impl(std::vector<Dim> dims, double t_max, int n_t, int box_length, int lattice_dim) : _latt(lattice_dim,box_length), _time("time",0.0,t_max,n_t)
 	{
 		// Set parameters
 		if (DIAG_SETUP) { std::cout << "Copying params..." << std::flush; };
 		_n_param = dims.size();
-		_dopt = dopt;
-		_n_opt = n_opt;
-		_n_cd_steps = 1; // default
-		_nesterov_flag = false; // default
-		_same_lattice_in_batch = false; // default
 		_box_length = box_length;
-		_n_batch = batch_size;
 		_t_opt = 0;
 		_n_t_soln = 0;
-		_dir_io = "data/"; // default
-		_fname_start_idx = 0; // default
-		_write_bf_only_last = false; // default
-		_hidden_layer_exists = false; // default
+		_hidden_layer_exists = false;
+		if (DIAG_SETUP) { std::cout << "ok." << std::endl; };
+
+		// Set of species that exist
+		if (DIAG_SETUP) { std::cout << "Creating set of species..." << std::flush; };
+		std::set<std::string> species;
+		for (auto d: dims) {
+			if (d.species1 != "") { species.insert(d.species1); };
+			if (d.species2 != "") { species.insert(d.species2); };
+		};
 		if (DIAG_SETUP) { std::cout << "ok." << std::endl; };
 
 		// Tell the lattice about what dims exist
@@ -465,7 +415,6 @@ namespace DynamicBoltzmann {
 	};
 	void OptProblem::Impl::_reset()
 	{
-		_dir_io = "";
 		_n_param = 0;
 		_ixn_params.clear();
 		_bfs.clear();
@@ -473,22 +422,13 @@ namespace DynamicBoltzmann {
 		_hidden_layer_exists = false;
 		_hidden_units.clear();
 		_species.clear();
-		_fnames.clear();
 		_n_t_soln = 0;
 		_t_opt = 0;
-		_n_batch = 0;
-		_n_cd_steps = 1;
-		_nesterov_flag = false;
-		_same_lattice_in_batch = false;
 		_box_length = 0;
-		_dopt = 0;
-		_fname_start_idx = 0;
-		_write_bf_only_last = false;
 	};
 
 	void OptProblem::Impl::_copy(const Impl& other)
 	{
-		_dir_io = other._dir_io;
 		_n_param = other._n_param;
 		_ixn_params = other._ixn_params;
 		_bfs = other._bfs;
@@ -497,19 +437,10 @@ namespace DynamicBoltzmann {
 		_hidden_units = other._hidden_units;
 		_time = other._time;
 		_species = other._species;
-		_fnames = other._fnames;
 		_n_t_soln = other._n_t_soln;
 		_t_opt = other._t_opt;
-		_n_batch = other._n_batch;
-		_n_cd_steps = other._n_cd_steps;
-		_nesterov_flag = other._nesterov_flag;
-		_same_lattice_in_batch = other._same_lattice_in_batch;
 		_box_length = other._box_length;
 		_latt = other._latt;
-		_dopt = other._dopt;
-		_n_opt = other._n_opt;
-		_fname_start_idx = other._fname_start_idx;
-		_write_bf_only_last = other._write_bf_only_last;
 	};
 
 	/********************
@@ -582,30 +513,6 @@ namespace DynamicBoltzmann {
 		};
 	};
 
-	void OptProblem::Impl::set_dir_io(std::string dir) {
-		_dir_io = dir;
-	};
-
-	void OptProblem::Impl::set_fname_start_idx(int idx) {
-		_fname_start_idx = idx;
-	};
-
-	void OptProblem::Impl::add_fname(std::string f) {
-		_fnames.push_back(f);
-	};
-
-	void OptProblem::Impl::set_n_cd_steps(int n_steps) {
-		_n_cd_steps = n_steps;
-	};
-
-	void OptProblem::Impl::set_use_nesterov(bool flag) {
-		_nesterov_flag = flag;
-	};
-
-	void OptProblem::Impl::set_use_same_lattice_in_batch(bool flag) {
-		_same_lattice_in_batch = flag;
-	};
-
 	/********************
 	Validate setup
 	********************/
@@ -676,22 +583,24 @@ namespace DynamicBoltzmann {
 	Solve --- Main optimization loop
 	********************/
 
-	void OptProblem::Impl::solve(bool verbose)
+	void OptProblem::Impl::solve(std::vector<std::string> fnames, int n_opt, int batch_size, int n_cd_steps, double dopt, OptionsSolve options)
 	{
 		// Write the grids
-		write_bf_grids();
-		write_t_grid();
+		if (options.write) {
+			write_bf_grids(options.dir_write);
+			write_t_grid(options.dir_write);
+		};
 
 		// Iterate over optimization steps
-		for (int i_opt=0; i_opt<_n_opt; i_opt++)
+		for (int i_opt=0; i_opt<n_opt; i_opt++)
 		{
-			std::cout << "Opt step " << i_opt << " / " << _n_opt-1 << std::endl;
+			std::cout << "Opt step " << i_opt << " / " << n_opt-1 << std::endl;
 
 			/*****
 			Step 0 - Check nesterov
 			*****/
 
-			if (_nesterov_flag) {
+			if (options.nesterov) {
 				// If first opt step, do nothing, but set the "prev" point to the current to initialize
 				if (i_opt == 0) {
 					for (auto itbf=_bfs.begin(); itbf!=_bfs.end(); itbf++) {
@@ -706,8 +615,8 @@ namespace DynamicBoltzmann {
 			};
 
 			// Write the basis funcs
-			if (!_write_bf_only_last) {
-				write_bfs(_dir_io+"F/",i_opt);
+			if (options.write && !options.write_bf_only_final) {
+				write_bfs(options.dir_write+"F/",i_opt);
 			};
 
 			/*****
@@ -719,7 +628,9 @@ namespace DynamicBoltzmann {
 			solve_ixn_param_traj();
 
 			// Write
-			write_ixn_params(_dir_io+"ixn_params/",i_opt);
+			if (options.write) {
+				write_ixn_params(options.dir_write+"ixn_params/",i_opt);
+			};
 
 			if (DIAG_SOLVE) { std::cout << "OK" << std::endl; };
 
@@ -732,7 +643,11 @@ namespace DynamicBoltzmann {
 			solve_var_traj();
 
 			// Write
-			//write_var_terms(_dir_io+"var_terms/",i_opt);
+			/*
+			if (options.write) {
+				write_var_terms(options.dir_write+"var_terms/",i_opt);
+			};
+			*/
 			
 			if (DIAG_SOLVE) { std::cout << "OK" << std::endl; };
 
@@ -742,21 +657,21 @@ namespace DynamicBoltzmann {
 
 			if (DIAG_SOLVE) { std::cout << "Random batch" << std::endl; };
 
-			std::vector<std::string> fnames, fnames_possible=_fnames;
+			std::vector<std::string> fnames, fnames_remaining=fnames;
 			std::vector<std::string>::iterator itf;
-			if (_same_lattice_in_batch == false) {
-				for (int i_batch=0; i_batch<_n_batch; i_batch++) {
-					itf = fnames_possible.begin();
-					std::advance(itf,randI(0,fnames_possible.size()-1));
+			if (!options.use_same_lattice_in_batch) {
+				for (int i_batch=0; i_batch<batch_size; i_batch++) {
+					itf = fnames_remaining.begin();
+					std::advance(itf,randI(0,fnames_remaining.size()-1));
 					fnames.push_back(*itf);
-					fnames_possible.erase(itf); // don't choose again
+					fnames_remaining.erase(itf); // don't choose again
 				};
 			} else {
 				// Pick a rand
-				itf = fnames_possible.begin();
-				std::advance(itf,randI(0,fnames_possible.size()-1));
+				itf = fnames_remaining.begin();
+				std::advance(itf,randI(0,fnames_remaining.size()-1));
 				fnames.push_back(*itf);
-				for (int i_batch=1; i_batch<_n_batch; i_batch++) {
+				for (int i_batch=1; i_batch<batch_size; i_batch++) {
 					// Only this one
 					fnames.push_back(fnames.back());
 				};
@@ -785,7 +700,7 @@ namespace DynamicBoltzmann {
 			// Use the class variable _t_opt to iterate
 			for (_t_opt=0; _t_opt < _n_t_soln; _t_opt++)
 			{
-				if (verbose) {
+				if (options.verbose) {
 					std::cout << "time: " << _t_opt << std::flush;
 				};
 
@@ -795,9 +710,9 @@ namespace DynamicBoltzmann {
 
 				if (DIAG_SOLVE) { std::cout << "   Looping over batch" << std::endl; };
 
-				for (int i_batch=0; i_batch<_n_batch; i_batch++) 
+				for (int i_batch=0; i_batch<batch_size; i_batch++) 
 				{
-					if (verbose) {
+					if (options.verbose) {
 						std::cout << "." << std::flush;
 					};
 
@@ -807,7 +722,14 @@ namespace DynamicBoltzmann {
 
 					if (DIAG_SOLVE) { std::cout << "      Read in batch" << std::endl; };
 
-					_latt.read_from_file(fnames[i_batch] + pad_str(_fname_start_idx+_t_opt,4) + ".txt");
+					if (options.awake_visible_are_binary) {
+						// Binary
+						_latt.read_from_file(fnames[i_batch] + pad_str(options.time_idx_start+_t_opt,4) + ".txt");
+					} else {
+						// Probabilistic
+						std::cerr << "Error! Probabilistic awake visible units not supported yet!" << std::endl;
+						exit(EXIT_FAILURE);
+					};
 
 					/*****
 					Step 5.1.2 - Activate the hidden units if needed
@@ -817,8 +739,7 @@ namespace DynamicBoltzmann {
 
 					if (_hidden_layer_exists) {
 						for (auto ithu = _hidden_units.begin(); ithu != _hidden_units.end(); ithu++) {
-							// When using real data, always use binary states
-							ithu->activate(true);
+							ithu->activate(options.awake_hidden_are_binary);
 						};
 					};
 
@@ -829,21 +750,34 @@ namespace DynamicBoltzmann {
 					if (DIAG_SOLVE) { std::cout << "      Record awake moments" << std::endl; };
 
 					for (auto itp = _ixn_params.begin(); itp != _ixn_params.end(); itp++) {
-						itp->moments_retrieve_at_time(IxnParamTraj::AWAKE,_t_opt,_n_batch);
+						itp->moments_retrieve_at_time(IxnParamTraj::AWAKE,_t_opt,batch_size);
 					};
 
 					/*****
 					Step 5.1.4 - CD steps
 					*****/
 
-					for (int cd_step=0; cd_step<_n_cd_steps; cd_step++)
+					for (int cd_step=0; cd_step<n_cd_steps; cd_step++)
 					{
 						// Sample
 
 						if (DIAG_SOLVE) { std::cout << "      Anneal" << std::endl; };
 
-						// Binary
-						_latt.sample();
+						if (cd_step != n_cd_steps-1) {
+							if (options.asleep_visible_are_binary) {
+								_latt.sample();
+							} else {
+								std::cerr << "Error! Probabilistic asleep visible units not supported yet!" << std::endl;
+								exit(EXIT_FAILURE);
+							};
+						} else {
+							if (options.asleep_final_visible_are_binary) {
+								_latt.sample();
+							} else {
+								std::cerr << "Error! Probabilistic asleep visible units not supported yet!" << std::endl;
+								exit(EXIT_FAILURE);
+							};
+						};
 
 						// Activate the hidden units if needed
 
@@ -851,8 +785,11 @@ namespace DynamicBoltzmann {
 
 						if (_hidden_layer_exists) {
 							for (auto ithu = _hidden_units.begin(); ithu != _hidden_units.end(); ithu++) {
-								// Binary
-								ithu->activate(true);
+								if (cd_step != n_cd_steps-1) {
+									ithu->activate(options.asleep_hidden_are_binary);
+								} else {
+									ithu->activate(options.asleep_final_hidden_are_binary);
+								};
 							};
 						};
 					};
@@ -864,11 +801,11 @@ namespace DynamicBoltzmann {
 					if (DIAG_SOLVE) { std::cout << "      Record asleep moments" << std::endl; };
 
 					for (auto itp = _ixn_params.begin(); itp != _ixn_params.end(); itp++) {
-						itp->moments_retrieve_at_time(IxnParamTraj::ASLEEP,_t_opt,_n_batch);
+						itp->moments_retrieve_at_time(IxnParamTraj::ASLEEP,_t_opt,batch_size);
 					};
 				};
 
-				if (verbose) {
+				if (options.verbose) {
 					std::cout << std::endl;
 				};
 
@@ -878,19 +815,23 @@ namespace DynamicBoltzmann {
 			if (DIAG_SOLVE) { std::cout << "OK" << std::endl; };
 
 			// Write the moments
-			write_moments(_dir_io+"moments/",i_opt);
+			if (options.write) {
+				write_moments(options.dir_write+"moments/",i_opt);
+			};
 
 			/*****
 			Step 6 - Update the basis funcs
 			*****/
 
 			for (auto itbf=_bfs.begin(); itbf!=_bfs.end(); itbf++) {
-				itbf->update(_n_t_soln, _time.delta(), _dopt);
+				itbf->update(_n_t_soln, _time.delta(), dopt);
 			};
 		};
 
 		// Write the basis funcs one last time
-		write_bfs(_dir_io+"F/",_n_opt);
+		if (options.write) {
+			write_bfs(options.dir_write+"F/",n_opt);
+		};
 	};
 
 
@@ -899,24 +840,28 @@ namespace DynamicBoltzmann {
 	Solve over varying initial conditions
 	********************/
 
-	void OptProblem::Impl::solve_varying_ic(bool verbose)
+	void OptProblem::Impl::solve_varying_ic(std::vector<std::string> fnames, int n_opt, int batch_size, int n_cd_steps, double dopt, OptionsSolve options)
 	{
 		// Write the grids
-		write_bf_grids();
-		write_t_grid();
+		if (options.write) {
+			write_bf_grids(options.dir_write);
+			write_t_grid(options.dir_write);
+		};
 
-		// Declare
-		std::vector<std::string> fnames, fnames_possible;
+		// For the batch
+		std::vector<std::string> fnames_to_use, fnames_remaining;
 		std::vector<std::string>::iterator itf;
 		std::vector<int> batch_idxs;
 
 		// Iterate over optimization steps
-		for (int i_opt=0; i_opt<_n_opt; i_opt++)
+		for (int i_opt=0; i_opt<n_opt; i_opt++)
 		{
-			std::cout << "Opt step " << i_opt << " / " << _n_opt-1 << std::endl;
+			std::cout << "Opt step " << i_opt << " / " << n_opt-1 << std::endl;
 
 			// Write the basis funcs
-			write_bfs(_dir_io+"F/",i_opt);
+			if (options.write && !options.write_bf_only_final) {
+				write_bfs(options.dir_write+"F/",i_opt);
+			};
 
 			/*****
 			Step 1 - Pick a random batch
@@ -925,15 +870,20 @@ namespace DynamicBoltzmann {
 			if (DIAG_SOLVE) { std::cout << "Random batch" << std::endl; };
 
 			std::cout << "Random batch" << std::endl;
-			fnames.clear();
-			fnames_possible=_fnames;
+			fnames_to_use.clear();
+			fnames_remaining=fnames;
 			batch_idxs.clear();
-			for (int i_batch=0; i_batch<_n_batch; i_batch++) {
-				itf = fnames_possible.begin();
-				std::advance(itf,randI(0,fnames_possible.size()-1));
-				fnames.push_back(*itf);
-				batch_idxs.push_back(find(_fnames.begin(), _fnames.end(), fnames.back()) - _fnames.begin());
-				fnames_possible.erase(itf);
+			// Go through the batch size
+			for (int i_batch=0; i_batch<batch_size; i_batch++) {
+				// Grab a filename
+				itf = fnames_remaining.begin();
+				std::advance(itf,randI(0,fnames_remaining.size()-1));
+				// Add that this is to be used
+				fnames_to_use.push_back(*itf);
+				// Record the idx of this filename
+				batch_idxs.push_back(find(fnames.begin(), fnames.end(), fnames_to_use.back()) - fnames.begin());
+				// Don't choose this again
+				fnames_remaining.erase(itf);
 			};
 			std::cout << "OK" << std::endl;
 
@@ -945,10 +895,10 @@ namespace DynamicBoltzmann {
 
 			if (DIAG_SOLVE) { std::cout << "   Looping over batch" << std::endl; };
 
-			for (int i_batch=0; i_batch<_n_batch; i_batch++) 
+			for (int i_batch=0; i_batch<batch_size; i_batch++) 
 			{
-				if (verbose) {
-					std::cout << "sample: " << i_batch << " / " << _n_batch << std::endl;
+				if (options.verbose) {
+					std::cout << "sample: " << i_batch << " / " << batch_size << std::endl;
 				};
 
 				/*****
@@ -966,7 +916,7 @@ namespace DynamicBoltzmann {
 				solve_ixn_param_traj();
 
 				// Write
-				write_ixn_params(_dir_io+"ixn_params/",i_opt,batch_idxs[i_batch]);
+				write_ixn_params(options.dir_write+"ixn_params/",i_opt,batch_idxs[i_batch]);
 
 				if (DIAG_SOLVE) { std::cout << "OK" << std::endl; };
 
@@ -979,7 +929,7 @@ namespace DynamicBoltzmann {
 				solve_var_traj();
 
 				// Write
-				//write_var_terms(_dir_io+"var_terms/",i_opt);
+				//write_var_terms(options.dir_write+"var_terms/",i_opt);
 				
 				if (DIAG_SOLVE) { std::cout << "OK" << std::endl; };
 
@@ -1004,7 +954,7 @@ namespace DynamicBoltzmann {
 				// Use the class variable _t_opt to iterate
 				for (_t_opt=0; _t_opt < _n_t_soln; _t_opt++)
 				{
-					if (verbose) {
+					if (options.verbose) {
 						std::cout << "." << std::flush;
 					};
 
@@ -1014,10 +964,29 @@ namespace DynamicBoltzmann {
 
 					if (DIAG_SOLVE) { std::cout << "      Read in batch" << std::endl; };
 
-					_latt.read_from_file(fnames[i_batch] + pad_str(_fname_start_idx+_t_opt,4) + ".txt");
+					if (options.awake_visible_are_binary) {
+						// Binary
+						_latt.read_from_file(fnames[i_batch] + pad_str(options.time_idx_start+_t_opt,4) + ".txt");
+					} else {
+						// Probabilistic
+						std::cerr << "Error! Probabilistic awake visible units are not supported yet." << std::endl;
+						exit(EXIT_FAILURE);
+					};
 
 					/*****
-					Step 2.5.2 - Record the awake moments
+					Step 2.5.2 - Activate the hidden units if needed
+					*****/
+
+					if (DIAG_SOLVE) { std::cout << "      Activating hidden units" << std::endl; };
+
+					if (_hidden_layer_exists) {
+						for (auto ithu = _hidden_units.begin(); ithu != _hidden_units.end(); ithu++) {
+							ithu->activate(options.awake_hidden_are_binary);
+						};
+					};
+
+					/*****
+					Step 2.5.3 - Record the awake moments
 					*****/
 
 					if (DIAG_SOLVE) { std::cout << "      Record awake moments" << std::endl; };
@@ -1027,16 +996,44 @@ namespace DynamicBoltzmann {
 					};
 
 					/*****
-					Step 2.5.3 - CD steps - alternate sampling and activating
+					Step 2.5.4 - CD steps - alternate sampling and activating
 					*****/
 
-					for (int cd_step=0; cd_step<_n_cd_steps; cd_step++) {
+					for (int cd_step=0; cd_step<n_cd_steps; cd_step++) {
 
-						// Anneal
+						// Sample
 
-						if (DIAG_SOLVE) { std::cout << "      Anneal" << std::endl; };
+						if (DIAG_SOLVE) { std::cout << "      Sample" << std::endl; };
 
-						_latt.sample();
+						if (cd_step != n_cd_steps-1) {
+							if (options.asleep_visible_are_binary) {
+								_latt.sample();
+							} else {
+								std::cerr << "Error! Probabilistic asleep visible units not supported yet!" << std::endl;
+								exit(EXIT_FAILURE);
+							};
+						} else {
+							if (options.asleep_final_visible_are_binary) {
+								_latt.sample();
+							} else {
+								std::cerr << "Error! Probabilistic asleep visible units not supported yet!" << std::endl;
+								exit(EXIT_FAILURE);
+							};
+						};
+
+						// Activate the hidden units if needed
+
+						if (DIAG_SOLVE) { std::cout << "      Activating hidden units" << std::endl; };
+
+						if (_hidden_layer_exists) {
+							for (auto ithu = _hidden_units.begin(); ithu != _hidden_units.end(); ithu++) {
+								if (cd_step != n_cd_steps-1) {
+									ithu->activate(options.asleep_hidden_are_binary);
+								} else {
+									ithu->activate(options.asleep_final_hidden_are_binary);
+								};
+							};
+						};
 
 						// Record the asleep moments
 
@@ -1049,7 +1046,7 @@ namespace DynamicBoltzmann {
 					};
 				};
 
-				if (verbose) {
+				if (options.verbose) {
 					std::cout << std::endl;
 				};
 
@@ -1059,14 +1056,16 @@ namespace DynamicBoltzmann {
 				Step 2.6 - Write the moments
 				*****/
 
-				write_moments(_dir_io+"moments/",i_opt,batch_idxs[i_batch]);
+				if (options.write) {
+					write_moments(options.dir_write+"moments/",i_opt,batch_idxs[i_batch]);
+				};
 
 				/*****
 				Step 2.7 - Gather the update (but dont commit)
 				*****/
 
 				for (auto itbf=_bfs.begin(); itbf!=_bfs.end(); itbf++) {
-					itbf->update_gather(_n_t_soln, _time.delta(), _dopt);
+					itbf->update_gather(_n_t_soln, _time.delta(), dopt);
 				};
 
 			};
@@ -1082,7 +1081,9 @@ namespace DynamicBoltzmann {
 		};
 
 		// Write the basis funcs one last time
-		write_bfs(_dir_io+"F/",_n_opt);
+		if (options.write) {
+			write_bfs(options.dir_write+"F/",n_opt);
+		};
 	};
 
 
@@ -1129,13 +1130,13 @@ namespace DynamicBoltzmann {
 	Writing functions
 	********************/
 
-	void OptProblem::Impl::write_bf_grids() const {
+	void OptProblem::Impl::write_bf_grids(std::string dir) const {
 		for (auto it=_bfs.begin(); it!=_bfs.end(); it++) {
-			it->write_grid(_dir_io+"grid_"+it->name()+".txt");
+			it->write_grid(dir+"grid_"+it->name()+".txt");
 		};
 	};
-	void OptProblem::Impl::write_t_grid() const {
-		_time.write_grid(_dir_io+"grid_time.txt");
+	void OptProblem::Impl::write_t_grid(std::string dir) const {
+		_time.write_grid(dir+"grid_time.txt");
 	};
 
 	void OptProblem::Impl::write_ixn_params(std::string dir, int idx) const {
@@ -1169,16 +1170,11 @@ namespace DynamicBoltzmann {
 		};
 	};
 
-	void OptProblem::Impl::set_flag_write_bf_only_final()
-	{
-		_write_bf_only_last = true;
-	};
-
 	/********************
 	Read
 	********************/
 
-	void OptProblem::Impl::read_bf(std::string bf_name, std::string fname) 
+	void OptProblem::Impl::read_basis_func(std::string bf_name, std::string fname) 
 	{
 		// Find the basis func
 		BasisFunc* bf = _find_basis_func(bf_name);
@@ -1301,7 +1297,7 @@ namespace DynamicBoltzmann {
 	****************************************/
 
 	// Constructor
-	OptProblem::OptProblem(std::vector<Dim> dims, std::vector<std::string> species, double t_max, int n_t, int batch_size, int box_length, double dopt, int n_opt, int lattice_dim) : _impl(new Impl(dims,species,t_max,n_t,batch_size,box_length,dopt,n_opt,lattice_dim)) {};
+	OptProblem::OptProblem(std::vector<Dim> dims, double t_max, int n_t, int box_length, int lattice_dim) : _impl(new Impl(dims,t_max,n_t,box_length,lattice_dim)) {};
 	OptProblem::OptProblem(OptProblem&& other) = default; // movable but no copies
     OptProblem& OptProblem::operator=(OptProblem&& other) = default; // movable but no copies
 	OptProblem::~OptProblem() = default;
@@ -1313,58 +1309,26 @@ namespace DynamicBoltzmann {
 		_impl->add_hidden_unit(lattice_idxs,species);
 	};
 
-	void OptProblem::set_dir_io(std::string dir) {
-		_impl->set_dir_io(dir);
-	};
-
-	void OptProblem::set_fname_start_idx(int idx) {
-		_impl->set_fname_start_idx(idx);
-	};
-
-	void OptProblem::add_fname(std::string f) {
-		_impl->add_fname(f);
-	};
-
-	void OptProblem::set_n_cd_steps(int n_steps) {
-		_impl->set_n_cd_steps(n_steps);
-	};
-
 	void OptProblem::validate_setup() const {
 		_impl->validate_setup();
 	};
 
-	void OptProblem::set_use_nesterov(bool flag) {
-		_impl->set_use_nesterov(flag);
+	void OptProblem::solve(std::vector<std::string> fnames, int n_opt, int batch_size, int n_cd_steps, double dopt, OptionsSolve options) {
+		_impl->solve(fnames,n_opt,batch_size,n_cd_steps,dopt,options);
+	};
+	void OptProblem::solve_varying_ic(std::vector<std::string> fnames, int n_opt, int batch_size, int n_cd_steps, double dopt, OptionsSolve options) {
+		_impl->solve_varying_ic(fnames,n_opt,batch_size,n_cd_steps,dopt,options);
 	};
 
-	void OptProblem::set_use_same_lattice_in_batch(bool flag) {
-		_impl->set_use_same_lattice_in_batch(flag);
+	void OptProblem::read_basis_func(std::string bf_name, std::string fname) {
+		_impl->read_basis_func(bf_name,fname);
 	};
 
-	void OptProblem::solve_ixn_param_traj() {
-		_impl->solve_ixn_param_traj();
+	void OptProblem::write_bf_grids(std::string dir) const {
+		_impl->write_bf_grids(dir);
 	};
-
-	void OptProblem::solve_var_traj() {
-		_impl->solve_var_traj();
-	};
-
-	void OptProblem::solve(bool verbose) {
-		_impl->solve(verbose);
-	};
-	void OptProblem::solve_varying_ic(bool verbose) {
-		_impl->solve_varying_ic(verbose);
-	};
-
-	void OptProblem::read_init_cond(std::string dir) {
-		_impl->read_init_cond(dir);
-	};
-
-	void OptProblem::write_bf_grids() const {
-		_impl->write_bf_grids();
-	};
-	void OptProblem::write_t_grid() const {
-		_impl->write_t_grid();
+	void OptProblem::write_t_grid(std::string dir) const {
+		_impl->write_t_grid(dir);
 	};
 
 	void OptProblem::write_ixn_params(std::string dir, int idx) const {
@@ -1384,14 +1348,6 @@ namespace DynamicBoltzmann {
 	};
 	void OptProblem::write_moments(std::string dir, int idx1, int idx2) const {
 		_impl->write_moments(dir,idx1,idx2);
-	};
-
-	void OptProblem::set_flag_write_bf_only_final() {
-		_impl->set_flag_write_bf_only_final();
-	};
-
-	void OptProblem::read_bf(std::string bf_name, std::string fname) {
-		_impl->read_bf(bf_name,fname);
 	};
 
 };

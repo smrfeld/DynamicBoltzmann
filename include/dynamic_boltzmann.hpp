@@ -56,6 +56,60 @@ namespace DynamicBoltzmann {
 	};
 
 	/****************************************
+	Options for solving
+	****************************************/
+
+	struct OptionsSolve {
+
+		// Verbose
+		bool verbose;
+
+		// Nesterov
+		bool nesterov;
+
+		// Use the same lattice for all samples in the batch
+		bool use_same_lattice_in_batch;
+
+		// Whether to write data
+		bool write;
+		std::string dir_write;
+
+		// Write only the final basis function
+		bool write_bf_only_final;
+
+		// Time indexes to start
+		int time_idx_start;
+
+		// Are the following units binary/probabilistic
+		bool awake_visible_are_binary;
+		bool awake_hidden_are_binary;
+		bool asleep_visible_are_binary;
+		bool asleep_hidden_are_binary;
+		bool asleep_final_visible_are_binary;
+		bool asleep_final_hidden_are_binary;
+
+		/********************
+		Constructor
+		********************/
+
+		OptionsSolve() {
+			verbose = true;
+			nesterov = true;
+			use_same_lattice_in_batch = false;
+			write = false;
+			dir_write = "";
+			write_bf_only_final = false;
+			time_idx_start = 0;
+			awake_visible_are_binary = true;
+			awake_hidden_are_binary = true;
+			asleep_visible_are_binary = true;
+			asleep_hidden_are_binary = true;
+			asleep_final_visible_are_binary = true;
+			asleep_final_hidden_are_binary = true;
+		};
+	};
+
+	/****************************************
 	OptProblem
 	****************************************/
 
@@ -84,7 +138,7 @@ namespace DynamicBoltzmann {
 		 * @param[in]  n_opt        No. optimization steps
 		 * @param[in]  lattice_dim  The lattice dimension
 		 */
-		OptProblem(std::vector<Dim> dims, std::vector<std::string> species, double t_max, int n_t, int batch_size, int box_length, double dopt, int n_opt, int lattice_dim=3);
+		OptProblem(std::vector<Dim> dims, double t_max, int n_t, int box_length, int lattice_dim=3);
 
 		/**
 		 * @brief      Move constructor (movable but no copies)
@@ -105,41 +159,14 @@ namespace DynamicBoltzmann {
 		~OptProblem();
 
 		/********************
-		Set properties	
+		Set hidden layer	
 		********************/
 
 		// Any dim
 		void add_hidden_unit(std::vector<std::vector<int>> lattice_idxs, std::string species);
 		// 1D specific
 		void add_hidden_unit(std::vector<int> lattice_idxs, std::string species);
-
-		/**
-		 * @brief      Sets the dir for i/o.
-		 * @param[in]  dir   The dir
-		 */
-		void set_dir_io(std::string dir);
-
-		/**
-		 * @brief      Sets the filename index to start reading.
-		 * @param[in]  idx   The index
-		 */
-		void set_fname_start_idx(int idx);
 		
-		/**
-		 * @brief      Adds a filename for the lattices.
-		 * @param[in]  f     The filename
-		 */
-		void add_fname(std::string f);
-
-		// Set the number of CD steps
-		void set_n_cd_steps(int n_steps);
-
-		// Use Nesterov rather than stochastic gradient descent
-		void set_use_nesterov(bool flag);
-
-		// Use the same lattice for the batch
-		void set_use_same_lattice_in_batch(bool flag);
-
 		/********************
 		Validate setup
 		********************/
@@ -150,37 +177,27 @@ namespace DynamicBoltzmann {
 		void validate_setup() const;
 
 		/********************
-		Solve interaction parameter traj
-		********************/
-
-		void solve_ixn_param_traj();
-
-		/********************
-		Solve for variational trajectory
-		********************/
-
-		void solve_var_traj();
-
-		/********************
 		Solve
 		********************/
 
-		void solve(bool verbose=false);
-		void solve_varying_ic(bool verbose=false);
+		void solve(std::vector<std::string> fnames, int n_opt, int batch_size, int n_cd_steps, double dopt, OptionsSolve options=OptionsSolve());
+		void solve_varying_ic(std::vector<std::string> fnames, int n_opt, int batch_size, int n_cd_steps, double dopt, OptionsSolve options=OptionsSolve());
 
 		/********************
-		Read some initial conditions
+		Read basis function
 		********************/
 
-		void read_init_cond(std::string dir);
+		void read_basis_func(std::string bf_name, std::string fname);
 
 		/********************
 		Write
 		********************/
 
-		void write_bf_grids() const;
-		void write_t_grid() const;
+		// Grids
+		void write_bf_grids(std::string dir) const;
+		void write_t_grid(std::string dir) const;
 
+		// Solved values
 		void write_ixn_params(std::string dir, int idx) const;
 		void write_ixn_params(std::string dir, int idx1, int idx2) const;
 		void write_bfs(std::string dir, int idx) const;
@@ -188,13 +205,6 @@ namespace DynamicBoltzmann {
 		void write_moments(std::string dir, int idx) const;
 		void write_moments(std::string dir, int idx1, int idx2) const;
 
-		void set_flag_write_bf_only_final();
-
-		/********************
-		Read
-		********************/
-
-		void read_bf(std::string bf_name, std::string fname);
 	};
 
 

@@ -7,6 +7,10 @@
 #include <set>
 #include "var_term_traj.hpp"
 
+
+#define DIAG_SETUP 0
+#define DIAG_SOLVE 0
+
 /************************************
 * Namespace for DynamicBoltzmann
 ************************************/
@@ -657,23 +661,27 @@ namespace DynamicBoltzmann {
 
 			if (DIAG_SOLVE) { std::cout << "Random batch" << std::endl; };
 
-			std::vector<std::string> fnames, fnames_remaining=fnames;
+			std::vector<std::string> fnames_to_use, fnames_remaining=fnames;
 			std::vector<std::string>::iterator itf;
 			if (!options.use_same_lattice_in_batch) {
 				for (int i_batch=0; i_batch<batch_size; i_batch++) {
+					// Choose
 					itf = fnames_remaining.begin();
 					std::advance(itf,randI(0,fnames_remaining.size()-1));
-					fnames.push_back(*itf);
-					fnames_remaining.erase(itf); // don't choose again
+					// Add
+					fnames_to_use.push_back(*itf);
+					// Don't choose again
+					fnames_remaining.erase(itf);
 				};
 			} else {
-				// Pick a rand
+				// Use a single lattice - pick a rand
 				itf = fnames_remaining.begin();
 				std::advance(itf,randI(0,fnames_remaining.size()-1));
-				fnames.push_back(*itf);
+				// Add
+				fnames_to_use.push_back(*itf);
 				for (int i_batch=1; i_batch<batch_size; i_batch++) {
 					// Only this one
-					fnames.push_back(fnames.back());
+					fnames_to_use.push_back(fnames_to_use.back());
 				};
 			};
 
@@ -724,7 +732,7 @@ namespace DynamicBoltzmann {
 
 					if (options.awake_visible_are_binary) {
 						// Binary
-						_latt.read_from_file(fnames[i_batch] + pad_str(options.time_idx_start+_t_opt,4) + ".txt");
+						_latt.read_from_file(fnames_to_use[i_batch] + pad_str(options.time_idx_start+_t_opt,4) + ".txt");
 					} else {
 						// Probabilistic
 						std::cerr << "Error! Probabilistic awake visible units not supported yet!" << std::endl;
@@ -905,7 +913,7 @@ namespace DynamicBoltzmann {
 				Step 2.1 - Read the IC
 				*****/
 
-				read_init_cond(fnames[i_batch]+"../");
+				read_init_cond(fnames_to_use[i_batch]+"../");
 
 				/*****
 				Step 2.2 - Solve the current trajectory
@@ -966,7 +974,7 @@ namespace DynamicBoltzmann {
 
 					if (options.awake_visible_are_binary) {
 						// Binary
-						_latt.read_from_file(fnames[i_batch] + pad_str(options.time_idx_start+_t_opt,4) + ".txt");
+						_latt.read_from_file(fnames_to_use[i_batch] + pad_str(options.time_idx_start+_t_opt,4) + ".txt");
 					} else {
 						// Probabilistic
 						std::cerr << "Error! Probabilistic awake visible units are not supported yet." << std::endl;

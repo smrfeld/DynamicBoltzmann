@@ -13,9 +13,6 @@
 #include <vector>
 #endif
 
-#define DIAG_SETUP 0
-#define DIAG_SOLVE 0
-
 /************************************
 * Namespace for DynamicBoltzmann
 ************************************/

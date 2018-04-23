@@ -160,6 +160,7 @@ namespace DynamicBoltzmann {
 	// Set probability
 	// Pass nullptr to set probability of being empty
 	void Site::set_prob(Species *sp, double prob) {
+
 		// nullptr for prob of empty
 		if (sp == nullptr) {
 			_prob_empty = prob;
@@ -273,6 +274,7 @@ namespace DynamicBoltzmann {
 		_add_counts_on_species(sp,-1.0*prob);
 	};
 	void Site::_add_counts_on_species(Species *sp, double prob) {
+
 		// Counts
 		sp->count_increment(prob);
 
@@ -586,7 +588,7 @@ namespace DynamicBoltzmann {
 					lit3 = _look_up(lit->x+2);
 					lit->nbrs_quartics.push_back(LattIt3(lit1,lit2,lit3));
 				};
-				if (lit->x != _box_length-3 && lit->x != _box_length-2 && lit->x != _box_length-1) {
+				if (lit->x != _box_length-2 && lit->x != _box_length-1 && lit->x != _box_length) {
 					// Three to the right
 					lit1 = _look_up(lit->x+1);
 					lit2 = _look_up(lit->x+2);
@@ -801,7 +803,7 @@ namespace DynamicBoltzmann {
 
 			// Go through all possible species this could be, calculate propensities
 			for (auto sp_new: _sp_vec) {
-				// std::cout << "Doing: " << it->x << " for sp " << sp_new->name() << std::endl;
+				//std::cout << "Doing: " << it->x << " for sp " << sp_new->name() << std::endl;
 
 				// Bias
 				if (_sampling_exists_h) {
@@ -858,6 +860,7 @@ namespace DynamicBoltzmann {
 					// Make the appropriate species at this site (guaranteed empty)
 					it->set_site_binary(_sp_vec[i_chosen-1]);
 				};
+
 			} else {
 
 				// Normalize probs

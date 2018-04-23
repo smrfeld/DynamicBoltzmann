@@ -95,6 +95,12 @@ namespace DynamicBoltzmann {
 		// Number of CD steps
 		int _n_cd_steps;
 
+		// Flag to use nesterov
+		bool _nesterov_flag;
+
+		// Flag to use the same lattice in the batch
+		bool _same_lattice_in_batch;
+
 		// Lattice size
 		int _box_length;
 
@@ -162,6 +168,12 @@ namespace DynamicBoltzmann {
 		// Set the number of CD steps
 		void set_n_cd_steps(int n_steps);
 
+		// Use Nesterov rather than stochastic gradient descent
+		void set_use_nesterov(bool flag);
+
+		// Use the same lattice for the batch
+		void set_use_same_lattice_in_batch(bool flag);
+
 		/********************
 		Validate setup by printing
 		********************/
@@ -184,7 +196,7 @@ namespace DynamicBoltzmann {
 		Solve
 		********************/
 
-		void solve(bool verbose=false, bool same_lattice=false);
+		void solve(bool verbose=false);
 		void solve_varying_ic(bool verbose=false);
 
 		/********************
@@ -232,6 +244,8 @@ namespace DynamicBoltzmann {
 		_dopt = dopt;
 		_n_opt = n_opt;
 		_n_cd_steps = 1; // default
+		_nesterov_flag = false; // default
+		_same_lattice_in_batch = false; // default
 		_box_length = box_length;
 		_n_batch = batch_size;
 		_t_opt = 0;
@@ -464,6 +478,8 @@ namespace DynamicBoltzmann {
 		_t_opt = 0;
 		_n_batch = 0;
 		_n_cd_steps = 1;
+		_nesterov_flag = false;
+		_same_lattice_in_batch = false;
 		_box_length = 0;
 		_dopt = 0;
 		_fname_start_idx = 0;
@@ -486,6 +502,8 @@ namespace DynamicBoltzmann {
 		_t_opt = other._t_opt;
 		_n_batch = other._n_batch;
 		_n_cd_steps = other._n_cd_steps;
+		_nesterov_flag = other._nesterov_flag;
+		_same_lattice_in_batch = other._same_lattice_in_batch;
 		_box_length = other._box_length;
 		_latt = other._latt;
 		_dopt = other._dopt;
@@ -580,6 +598,14 @@ namespace DynamicBoltzmann {
 		_n_cd_steps = n_steps;
 	};
 
+	void OptProblem::Impl::set_use_nesterov(bool flag) {
+		_nesterov_flag = flag;
+	};
+
+	void OptProblem::Impl::set_use_same_lattice_in_batch(bool flag) {
+		_same_lattice_in_batch = flag;
+	};
+
 	/********************
 	Validate setup
 	********************/
@@ -650,7 +676,7 @@ namespace DynamicBoltzmann {
 	Solve --- Main optimization loop
 	********************/
 
-	void OptProblem::Impl::solve(bool verbose, bool same_lattice)
+	void OptProblem::Impl::solve(bool verbose)
 	{
 		// Write the grids
 		write_bf_grids();
@@ -660,6 +686,24 @@ namespace DynamicBoltzmann {
 		for (int i_opt=0; i_opt<_n_opt; i_opt++)
 		{
 			std::cout << "Opt step " << i_opt << " / " << _n_opt-1 << std::endl;
+
+			/*****
+			Step 0 - Check nesterov
+			*****/
+
+			if (_nesterov_flag) {
+				// If first opt step, do nothing, but set the "prev" point to the current to initialize
+				if (i_opt == 0) {
+					for (auto itbf=_bfs.begin(); itbf!=_bfs.end(); itbf++) {
+						itbf->nesterov_set_prev_equal_curr();
+					};
+				} else {
+					// Move to the intermediate point
+					for (auto itbf=_bfs.begin(); itbf!=_bfs.end(); itbf++) {
+						itbf->nesterov_move_to_intermediate_pt(i_opt);
+					};
+				};
+			};
 
 			// Write the basis funcs
 			if (!_write_bf_only_last) {
@@ -700,7 +744,7 @@ namespace DynamicBoltzmann {
 
 			std::vector<std::string> fnames, fnames_possible=_fnames;
 			std::vector<std::string>::iterator itf;
-			if (same_lattice == false) {
+			if (_same_lattice_in_batch == false) {
 				for (int i_batch=0; i_batch<_n_batch; i_batch++) {
 					itf = fnames_possible.begin();
 					std::advance(itf,randI(0,fnames_possible.size()-1));
@@ -1289,6 +1333,14 @@ namespace DynamicBoltzmann {
 		_impl->validate_setup();
 	};
 
+	void OptProblem::set_use_nesterov(bool flag) {
+		_impl->set_use_nesterov(flag);
+	};
+
+	void OptProblem::set_use_same_lattice_in_batch(bool flag) {
+		_impl->set_use_same_lattice_in_batch(flag);
+	};
+
 	void OptProblem::solve_ixn_param_traj() {
 		_impl->solve_ixn_param_traj();
 	};
@@ -1297,8 +1349,8 @@ namespace DynamicBoltzmann {
 		_impl->solve_var_traj();
 	};
 
-	void OptProblem::solve(bool verbose, bool same_lattice) {
-		_impl->solve(verbose,same_lattice);
+	void OptProblem::solve(bool verbose) {
+		_impl->solve(verbose);
 	};
 	void OptProblem::solve_varying_ic(bool verbose) {
 		_impl->solve_varying_ic(verbose);

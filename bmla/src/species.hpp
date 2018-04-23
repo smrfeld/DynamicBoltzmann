@@ -16,6 +16,12 @@
 #include <map>
 #endif
 
+// Counter
+#ifndef COUNTER_h
+#define COUNTER_h
+#include "counter.hpp"
+#endif
+
 /************************************
 * Namespace for Gillespie3D
 ************************************/
@@ -27,7 +33,27 @@ namespace DynamicBoltzmann {
 	****************************************/
 
 	class IxnParam;
-	class HiddenUnit;
+
+	/****************************************
+	Doublets, Triplets of Species ptrs
+	****************************************/
+
+	struct Species2 {
+		Species *sp1;
+		Species *sp2;
+		Species2(Species* sp1, Species* sp2);
+	};
+	// Comparator
+	bool operator <(const Species2& a, const Species2& b);
+
+	struct Species3 {
+		Species *sp1;
+		Species *sp2;
+		Species *sp3;
+		Species3(Species* sp1, Species* sp2, Species *sp3);
+	};
+	// Comparator
+	bool operator <(const Species3& a, const Species3& b);
 
 	/****************************************
 	Species
@@ -40,15 +66,16 @@ namespace DynamicBoltzmann {
 		// Name
 		std::string _name;
 
-		// Counts
-		std::map<Species*, std::map<Species*, double>> _triplet_count;
-		std::map<Species*,double> _nn_count;
-		double _count;
+		// Counters involved
+		Counter* _count;
+		std::map<Species*, Counter*> _nn_count;
+		std::map<Species2, Counter*> _triplet_count;
+		std::map<Species3, Counter*> _quartic_count;
 
 		// Pointers to the interaction params
 		IxnParam *_h_ptr;
 		std::map<Species*,IxnParam*> _j_ptr;
-		std::map<Species*,std::map<Species*,IxnParam*>> _k_ptr;
+		std::map<Species2,IxnParam*> _k_ptr;
 		IxnParam *_w_ptr;
 
 		// Constructor helpers
@@ -66,29 +93,38 @@ namespace DynamicBoltzmann {
 		Species& operator=(Species&& other);
 		~Species();
 
-		// Initialize counts by informing this species of the existence of all others
-		void init_counts(std::list<Species>& sp_list);
+		// Set counters
+		void set_counter(Counter *ctr);
+		void add_nn_counter(Species *sp, Counter *ctr);
+		void add_triplet_counter(Species *sp1, Species *sp2, Counter *ctr);
+		void add_quartic_counter(Species *sp1, Species *sp2, Species *sp3, Counter *ctr);
 
 		// Set h, j ptr
 		void set_h_ptr(IxnParam *h_ptr);
 		void add_j_ptr(Species* sp, IxnParam *j_ptr);
-		void set_w_ptr(IxnParam *w_ptr);
 		void add_k_ptr(Species* sp1, Species* sp2, IxnParam *k_ptr);
+		void set_w_ptr(IxnParam *w_ptr);
 
-		// Setters/getters
+		// Ixn params
 		double h() const;
 		double j(Species* other) const;
 		double w() const;
 		double k(Species* other1, Species *other2) const;
+
+		// Counts
 		double count() const;
 		double nn_count(Species* other) const;
 		double triplet_count(Species* other1, Species *other2) const;
+		double quartic_count(Species* other1, Species *other2, Species *other3) const;
+
+		// Name
 		std::string name() const;
 
 		// Increment counts
 		void count_increment(double inc);
 		void nn_count_increment(Species* other, double inc);
 		void triplet_count_increment(Species* other1, Species* other2, double inc);
+		void quartic_count_increment(Species* other1, Species* other2, Species *other3, double inc);
 
 		// Reset counts
 		void reset_counts();

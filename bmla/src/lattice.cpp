@@ -1,4 +1,4 @@
-#include "ixn_param.hpp"
+#include "ixn_param.hpp" // also includes lattice header
 #include <iostream>
 #include <fstream>
 #include <numeric>
@@ -19,7 +19,6 @@ namespace DynamicBoltzmann {
 	****************************************/
 
 	// Constructor
-	Site::Site() : Site(0,0,0) { dim=0; };
 	Site::Site(int xIn) : Site(xIn,0,0) { dim=1; };
 	Site::Site(int xIn, int yIn) : Site(xIn,yIn,0) { dim=2; };
 	Site::Site(int xIn, int yIn, int zIn) {
@@ -63,7 +62,8 @@ namespace DynamicBoltzmann {
 		y = 0;
 		z = 0;
 		nbrs.clear();
-		triplets.clear();
+		nbrs_triplets.clear();
+		nbrs_quartics.clear();
 		hidden_conns.clear();
 		_prob_empty = 0.0;
 		_probs.clear();
@@ -74,7 +74,8 @@ namespace DynamicBoltzmann {
 		y = other.y;
 		z = other.z;
 		nbrs = other.nbrs;
-		triplets = other.triplets;
+		nbrs_triplets = other.nbrs_triplets;
+		nbrs_quartics = other.nbrs_quartics;
 		hidden_conns = other.hidden_conns;
 		_prob_empty = other._prob_empty;
 		_probs = other._probs;
@@ -131,7 +132,7 @@ namespace DynamicBoltzmann {
     };
 
 	// Add a species possibility
-	void Site::add_species(Species* sp) {
+	void Site::add_species_possibility(Species* sp) {
 		_probs[sp] = 0.0;
 	};
 
@@ -212,28 +213,21 @@ namespace DynamicBoltzmann {
 			// Go through all probs
 			for (auto pr: prs) {
 				// J * prob
-				// std::cout << "   Act j: nbr prob = " << pr.second << std::endl;
 				act += sp->j(pr.first) * pr.second;
 			};
 		};
 		return act;
 	};
 	double Site::get_act_k(Species *sp) const {
-		// std::cout << "Getting activation for site: " << x << std::endl;
 		double act=0.0;
 		// Go through all pairs to consider
-		latt_it lit1,lit2;
-		for (auto lit_pair: triplets) {
-			lit1 = lit_pair.first;
-			lit2 = lit_pair.second;
-			// std::cout << "   Considering: " << lit1->x << " " << lit2->x << std::endl; 
+		for (auto trip: nbrs_triplets) {
 			// Get all probs
-			const std::map<Species*, double> prs1 = lit1->get_probs();
-			const std::map<Species*, double> prs2 = lit2->get_probs();
+			const std::map<Species*, double> prs1 = trip.lit1->get_probs();
+			const std::map<Species*, double> prs2 = trip.lit2->get_probs();
 			// Go through all probs
 			for (auto pr1: prs1) {
 				for (auto pr2: prs2) {
-					// std::cout << "      Species: " << sp->name() << " " << pr1.first->name() << " " << pr2.first->name() << " have probs " << pr1.second << " " << pr2.second << " k value " << sp->k(pr1.first,pr2.first) << std::endl;					
 					// K * prob * prob
 					act += sp->k(pr1.first,pr2.first) * pr1.second * pr2.second;
 				};
@@ -263,26 +257,12 @@ namespace DynamicBoltzmann {
 			sp_vec.push_back(pr.first);
 		};
 
-		int i = _sample_prop_vec(props);
+		int i = sample_prop_vec(props);
 		if (i==0) {
 			set_site_empty();
 		} else {
 			set_site_binary(sp_vec[i-1]);
 		};
-	};
-
-	// Sample a vector of propensities (cumulative probabilities)
-	int Site::_sample_prop_vec(std::vector<double> &props) {
-		// Sample RV
-		double r = randD(0.0,props.back());
-
-		// Find interval
-		for (int i=0; i<props.size()-1; i++) {
-			if (props[i] <= r && r <= props[i+1]) {
-				return i;
-			};
-		};
-		return 0; // never get here
 	};
 
 	/****************************************
@@ -295,41 +275,41 @@ namespace DynamicBoltzmann {
 	void Site::_add_counts_on_species(Species *sp, double prob) {
 		// Counts
 		sp->count_increment(prob);
-		// NNs
+
+		// NNs, if needed
 		for (auto nbr_it: nbrs) {
 			// Get all the probs
 			const std::map<Species*, double> prs = nbr_it->get_probs();
 			for (auto pr: prs) {
-				// Increment counts bidirectionally
-				// prob * prob
-				pr.first->nn_count_increment(sp,prob*pr.second);
-				if (pr.first != sp) {
-					sp->nn_count_increment(pr.first, prob*pr.second);
-				};				
+				// Increment
+				sp->nn_count_increment(pr.first,prob*pr.second);
 			};
 		};
-		// Triplets
-		// std::cout << "Updating triplet for site: " << x << std::endl;
-		latt_it lit1, lit2;
-		for (auto tpair: triplets) {
-			lit1 = tpair.first;
-			lit2 = tpair.second;
-			// std::cout << "   Pair: " << lit1->x << " " << lit2->x << " ";
+
+		// Triplets, if needed
+		for (auto trip: nbrs_triplets) {
 			// Get all the probs
-			const std::map<Species*, double> prs1 = lit1->get_probs();
-			const std::map<Species*, double> prs2 = lit2->get_probs();
+			const std::map<Species*, double> prs1 = trip.lit1->get_probs();
+			const std::map<Species*, double> prs2 = trip.lit2->get_probs();
 			for (auto pr1: prs1) {
 				for (auto pr2: prs2) {
-					// std::cout << "Probs: " << pr1.second << " " << pr2.second << " increment: " << prob*pr1.second*pr2.second << " added to: " << sp->triplet_count(pr1.first, pr2.first);
-					// Increment counts tridirectionally
-					// prob * prob * prob
+					// Increment
 					sp->triplet_count_increment(pr1.first,pr2.first,prob*pr1.second*pr2.second);
-					// std::cout << " now: " << sp->triplet_count(pr1.first, pr2.first) << std::endl;
-					if (pr1.first != sp) {
-						pr1.first->triplet_count_increment(sp,pr2.first,prob*pr1.second*pr2.second);
-					};
-					if (pr2.first != sp) {
-						pr2.first->triplet_count_increment(sp,pr1.first,prob*pr1.second*pr2.second);
+				};
+			};
+		};
+
+		// Quartics, if needed
+		for (auto quart: nbrs_quartics) {
+			// Get all the probs
+			const std::map<Species*, double> prs1 = quart.lit1->get_probs();
+			const std::map<Species*, double> prs2 = quart.lit2->get_probs();
+			const std::map<Species*, double> prs3 = quart.lit3->get_probs();
+			for (auto pr1: prs1) {
+				for (auto pr2: prs2) {
+					for (auto pr3: prs3) {
+						// Increment
+						sp->quartic_count_increment(pr1.first,pr2.first,pr3.first,prob*pr1.second*pr2.second*pr3.second);
 					};
 				};
 			};
@@ -352,10 +332,17 @@ namespace DynamicBoltzmann {
 		};
 		_dim = dim;
 		_box_length = box_length;
-		_exists_w = false;
-		_exists_h = false;
-		_exists_j = false;
-		_exists_k = false;
+
+		// What ixns exist? for sampling
+		_sampling_exists_w = false;
+		_sampling_exists_h = false;
+		_sampling_exists_j = false;
+		_sampling_exists_k = false;
+
+		// Does the lattice have the following structure?
+		_latt_has_nn_structure = false;
+		_latt_has_triplet_structure = false;
+		_latt_has_quartic_structure = false;
 
 		// Make a fully linked list of sites
 		if (dim == 1) {
@@ -377,56 +364,6 @@ namespace DynamicBoltzmann {
 				};
 			};
 		};
-
-		// Set up neighbors
-		std::vector<Site> nbrs;
-		latt_it lit = _latt.begin();
-		while (lit != _latt.end()) {
-			// Neighbors
-			nbrs.clear();
-			if (lit->x-1 >= 1) {
-				nbrs.push_back(Site(lit->x-1,lit->y,lit->z));
-			};
-			if (lit->x+1 <= box_length) {
-				nbrs.push_back(Site(lit->x+1,lit->y,lit->z));
-			};
-			if (dim == 2 || dim == 3) {
-				if (lit->y-1 >= 1) {
-					nbrs.push_back(Site(lit->x,lit->y-1,lit->z));
-				};
-				if (lit->y+1 <= box_length) {
-					nbrs.push_back(Site(lit->x,lit->y+1,lit->z));
-				};
-			};
-			if (dim == 3) {
-				if (lit->z-1 >= 1) {
-					nbrs.push_back(Site(lit->x,lit->y,lit->z-1));
-				};
-				if (lit->z+1 <= box_length) {
-					nbrs.push_back(Site(lit->x,lit->y,lit->z+1));
-				};
-			};
-
-			// Go through neighbors
-			for (auto nbr: nbrs) {
-				// Add as nbr
-				if (dim == 1) {
-					lit->nbrs.push_back(_look_up(nbr.x));
-				} else if (dim == 2) {
-					lit->nbrs.push_back(_look_up(nbr.x,nbr.y));
-				} else if (dim == 3) {
-					lit->nbrs.push_back(_look_up(nbr.x,nbr.y,nbr.z));
-				};
-			};
-
-			// Next
-			lit++;
-		};
-
-	};
-	Lattice::Lattice() {
-		_dim = 0;
-		_box_length = 0;
 	};
 	Lattice::Lattice(const Lattice& other) {
 		_copy(other);
@@ -462,20 +399,26 @@ namespace DynamicBoltzmann {
 		_box_length = other._box_length;
 		_sp_map = other._sp_map;
 		_sp_vec = other._sp_vec;
-		_exists_w = other._exists_w;
-		_exists_h = other._exists_h;
-		_exists_j = other._exists_j;
-		_exists_k = other._exists_k;
+		_sampling_exists_w = other._sampling_exists_w;
+		_sampling_exists_h = other._sampling_exists_h;
+		_sampling_exists_j = other._sampling_exists_j;
+		_sampling_exists_k = other._sampling_exists_k;
+		_latt_has_nn_structure = other._latt_has_nn_structure;
+		_latt_has_triplet_structure = other._latt_has_triplet_structure;
+		_latt_has_quartic_structure = other._latt_has_quartic_structure;
 	};
 	void Lattice::_reset() {
 		_box_length = 0;
 		_sp_map.clear();
 		_sp_vec.clear();
 		_latt.clear();
-		_exists_w = false;
-		_exists_h = false;
-		_exists_j = false;
-		_exists_k = false;
+		_sampling_exists_w = false;
+		_sampling_exists_h = false;
+		_sampling_exists_j = false;
+		_sampling_exists_k = false;
+		_latt_has_nn_structure = false;
+		_latt_has_triplet_structure = false;
+		_latt_has_quartic_structure = false;
 	};
 
 	/********************
@@ -494,14 +437,14 @@ namespace DynamicBoltzmann {
 	Add a species
 	********************/
 
-	void Lattice::add_species(Species *sp) {
+	void Lattice::add_species_possibility(Species *sp) {
 		if (sp) { // not null
 			_sp_map[sp->name()] = sp;
 			_sp_vec.push_back(sp);
 
 			// Add to all the sites
 			for (latt_it lit=_latt.begin(); lit != _latt.end(); lit++) {
-				lit->add_species(sp);
+				lit->add_species_possibility(sp);
 			};
 		};
 	};
@@ -510,44 +453,150 @@ namespace DynamicBoltzmann {
 	Indicate that the hidden unit exists
 	********************/
 
-	void Lattice::set_exists_w(bool flag) {
-		_exists_w = flag;
+	void Lattice::set_sampling_flag_exists_w(bool flag) {
+		_sampling_exists_w = flag;
 	};
-	void Lattice::set_exists_h(bool flag) {
-		_exists_h = flag;
+	void Lattice::set_sampling_flag_exists_h(bool flag) {
+		_sampling_exists_h = flag;
 	};
-	void Lattice::set_exists_j(bool flag) {
-		_exists_j = flag;
+	void Lattice::set_sampling_flag_exists_j(bool flag) {
+		_sampling_exists_j = flag;
 	};
-	void Lattice::set_exists_k(bool flag) {
+	void Lattice::set_sampling_flag_exists_k(bool flag) {
 		if (_dim != 1) {
 			std::cerr << "ERROR: triplets are only supported for d=1 currently" << std::endl;
 			exit(EXIT_FAILURE);
 		};
-		// Flag
-		_exists_k = flag;
+		_sampling_exists_k = flag;
+	};
 
-		// Make sure to also set up triplets for the sites
-		latt_it lit1,lit2;
-		for (latt_it lit = _latt.begin(); lit != _latt.end(); lit++) {
-			if (lit->x != 1 && lit->x != 2) {
-				// Both to the left
-				lit1 = _look_up(lit->x-2);
-				lit2 = _look_up(lit->x-1);
-				lit->triplets.push_back(std::make_pair(lit1,lit2));
+	/********************
+	Initialize structure for NNs, triplets, etc.
+	********************/
+
+	void Lattice::init_nn_structure() {
+		// Check: only do this once!
+		if (!_latt_has_nn_structure) {
+
+			// Set up neighbors
+			std::vector<Site> nbrs;
+			latt_it lit = _latt.begin();
+			while (lit != _latt.end()) {
+				// Neighbors
+				nbrs.clear();
+				if (lit->x-1 >= 1) {
+					nbrs.push_back(Site(lit->x-1,lit->y,lit->z));
+				};
+				if (lit->x+1 <= _box_length) {
+					nbrs.push_back(Site(lit->x+1,lit->y,lit->z));
+				};
+				if (_dim == 2 || _dim == 3) {
+					if (lit->y-1 >= 1) {
+						nbrs.push_back(Site(lit->x,lit->y-1,lit->z));
+					};
+					if (lit->y+1 <= _box_length) {
+						nbrs.push_back(Site(lit->x,lit->y+1,lit->z));
+					};
+				};
+				if (_dim == 3) {
+					if (lit->z-1 >= 1) {
+						nbrs.push_back(Site(lit->x,lit->y,lit->z-1));
+					};
+					if (lit->z+1 <= _box_length) {
+						nbrs.push_back(Site(lit->x,lit->y,lit->z+1));
+					};
+				};
+
+				// Go through neighbors
+				for (auto nbr: nbrs) {
+					// Add as nbr
+					if (_dim == 1) {
+						lit->nbrs.push_back(_look_up(nbr.x));
+					} else if (_dim == 2) {
+						lit->nbrs.push_back(_look_up(nbr.x,nbr.y));
+					} else if (_dim == 3) {
+						lit->nbrs.push_back(_look_up(nbr.x,nbr.y,nbr.z));
+					};
+				};
+
+				// Next
+				lit++;
 			};
-			if (lit->x != 1 && lit->x != _box_length) {
-				// One left, one right
-				lit1 = _look_up(lit->x-1);
-				lit2 = _look_up(lit->x+1);
-				lit->triplets.push_back(std::make_pair(lit1,lit2));
+
+			// Now we have the structure
+			_latt_has_nn_structure = true;
+		};
+	};
+
+	void Lattice::init_triplet_structure() {
+		// Check: only do this once!
+		if (!_latt_has_triplet_structure) {
+
+			latt_it lit1,lit2;
+			for (latt_it lit = _latt.begin(); lit != _latt.end(); lit++) {
+				if (lit->x != 1 && lit->x != 2) {
+					// Both to the left
+					lit1 = _look_up(lit->x-2);
+					lit2 = _look_up(lit->x-1);
+					lit->nbrs_triplets.push_back(LattIt2(lit1,lit2));
+				};
+				if (lit->x != 1 && lit->x != _box_length) {
+					// One left, one right
+					lit1 = _look_up(lit->x-1);
+					lit2 = _look_up(lit->x+1);
+					lit->nbrs_triplets.push_back(LattIt2(lit1,lit2));
+				};
+				if (lit->x != _box_length-1 && lit->x != _box_length) {
+					// Both to the right
+					lit1 = _look_up(lit->x+1);
+					lit2 = _look_up(lit->x+2);
+					lit->nbrs_triplets.push_back(LattIt2(lit1,lit2));
+				};
 			};
-			if (lit->x != _box_length-1 && lit->x != _box_length) {
-				// Both to the right
-				lit1 = _look_up(lit->x+1);
-				lit2 = _look_up(lit->x+2);
-				lit->triplets.push_back(std::make_pair(lit1,lit2));
+
+			// Now we have the structure
+			_latt_has_triplet_structure = true;
+		};
+	};
+
+	void Lattice::init_quartic_structure() {
+		// Check: only do this once!
+		if (!_latt_has_quartic_structure) {
+
+			latt_it lit1,lit2,lit3;
+			for (latt_it lit = _latt.begin(); lit != _latt.end(); lit++) {
+				if (lit->x != 1 && lit->x != 2 && lit->x != 3) {
+					// Three to the left
+					lit1 = _look_up(lit->x-3);
+					lit2 = _look_up(lit->x-2);
+					lit3 = _look_up(lit->x-1);
+					lit->nbrs_quartics.push_back(LattIt3(lit1,lit2,lit3));
+				};
+				if (lit->x != 1 && lit->x != 2 && lit->x != _box_length) {
+					// Two to the left, one to the right
+					lit1 = _look_up(lit->x-2);
+					lit2 = _look_up(lit->x-1);
+					lit3 = _look_up(lit->x+1);
+					lit->nbrs_quartics.push_back(LattIt3(lit1,lit2,lit3));
+				};
+				if (lit->x != 1 && lit->x != _box_length-1 && lit->x != _box_length) {
+					// One left, two to the right
+					lit1 = _look_up(lit->x-1);
+					lit2 = _look_up(lit->x+1);
+					lit3 = _look_up(lit->x+2);
+					lit->nbrs_quartics.push_back(LattIt3(lit1,lit2,lit3));
+				};
+				if (lit->x != _box_length-3 && lit->x != _box_length-2 && lit->x != _box_length-1) {
+					// Three to the right
+					lit1 = _look_up(lit->x+1);
+					lit2 = _look_up(lit->x+2);
+					lit3 = _look_up(lit->x+3);
+					lit->nbrs_quartics.push_back(LattIt3(lit1,lit2,lit3));
+				};
 			};
+
+			// Now we have the structure
+			_latt_has_quartic_structure = true;
 		};
 	};
 
@@ -755,22 +804,22 @@ namespace DynamicBoltzmann {
 				// std::cout << "Doing: " << it->x << " for sp " << sp_new->name() << std::endl;
 
 				// Bias
-				if (_exists_h) {
+				if (_sampling_exists_h) {
 					energy = sp_new->h();
 				};
 
 				// NNs for J
-				if (_exists_j) {
+				if (_sampling_exists_j) {
 					energy += it->get_act_j(sp_new);
 				};
 
 				// Triplets for K
-				if (_exists_k && _dim == 1) { // Only dim 1 currently supported
+				if (_sampling_exists_k && _dim == 1) { // Only dim 1 currently supported
 					energy += it->get_act_k(sp_new);	
 				};
 
 				// Hidden layer weights exist?
-				if (_exists_w) {
+				if (_sampling_exists_w) {
 
 					// Check if this species has connections to hidden units
 					it_hups = it->hidden_conns.find(sp_new);
@@ -787,7 +836,7 @@ namespace DynamicBoltzmann {
 				props.push_back(props.back()+exp(energy));
 				probs.push_back(exp(energy));
 			};
-		
+
 			/*
 			for (auto pr: props) {
 				std::cout << pr << " ";
@@ -800,7 +849,7 @@ namespace DynamicBoltzmann {
 
 				// Sample RV
 				// i_chosen = _sample_prob_vec(probs);
-				i_chosen = _sample_prop_vec(props);
+				i_chosen = sample_prop_vec(props);
 
 				if (i_chosen==0) {
 					// Flip down (new spin = 0)
@@ -868,23 +917,4 @@ namespace DynamicBoltzmann {
 		std::advance(it,n);
 		return it;
 	};
-
-	/********************
-	Sample probabilities/propensities
-	********************/
-
-	// Sample a vector of propensities (cumulative probabilities)
-	int Lattice::_sample_prop_vec(std::vector<double> &props) {
-		// Sample RV
-		double r = randD(0.0,props.back());
-
-		// Find interval
-		for (int i=0; i<props.size()-1; i++) {
-			if (props[i] <= r && r <= props[i+1]) {
-				return i;
-			};
-		};
-		return 0; // never get here
-	};
-
 };

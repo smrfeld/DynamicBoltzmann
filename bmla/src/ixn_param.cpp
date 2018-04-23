@@ -98,49 +98,32 @@ namespace DynamicBoltzmann {
 	Check if this ixn param is...
 	********************/
 
-	bool IxnParam::is_h_with_species(std::string species_name) const {
-		if (_type == Hp && _sp1->name() == species_name) {
-			return true;
-		} else {
-			return false;
-		};
-	};
-
-	bool IxnParam::is_w_with_species(std::string species_name) const {
-		if (_type == Wp && _sp1->name() == species_name) {
-			return true;
-		} else {
-			return false;
-		};
-	};
-
-	bool IxnParam::is_j_with_species(std::string species_name_1, std::string species_name_2) const {
-		if (_type == Jp) {
-			if ((_sp1->name() == species_name_1 && _sp2->name() == species_name_2) || (_sp1->name() == species_name_2 && _sp2->name() == species_name_1)) {
+	bool IxnParam::is_type_with_species(IxnParamType type, std::string s) const {
+		if (_type == type) {
+			if (_sp1->name() == s) {
 				return true;
 			};
 		};
 		return false;
 	};
-
-	bool IxnParam::is_k_with_species(std::string species_name_1, std::string species_name_2, std::string species_name_3) const {
-		if (_type == Kp) {
-			if ((_sp1->name() == species_name_1 && _sp2->name() == species_name_2 && _sp3->name() == species_name_3) 
-				|| (_sp1->name() == species_name_3 && _sp2->name() == species_name_1 && _sp3->name() == species_name_2)
-				|| (_sp1->name() == species_name_2 && _sp2->name() == species_name_3 && _sp3->name() == species_name_1)
+	bool IxnParam::is_type_with_species(IxnParamType type, std::string s1, std::string s2) const {
+		if (_type == type) {
+			if ((_sp1->name() == s1 && _sp2->name() == s2) || (_sp1->name() == s2 && _sp2->name() == s1)) {
+				return true;
+			};
+		};
+		return false;
+	};
+	bool IxnParam::is_type_with_species(IxnParamType type, std::string s1, std::string s2, std::string s3) const{
+		if (_type == type) {
+			if ((_sp1->name() == s1 && _sp2->name() == s2 && _sp3->name() == s3) 
+				|| (_sp1->name() == s3 && _sp2->name() == s1 && _sp3->name() == s2)
+				|| (_sp1->name() == s2 && _sp2->name() == s3 && _sp3->name() == s1)
 				) {
 				return true;
 			};
 		};
 		return false;
-	};
-
-	bool IxnParam::is_b_with_species(std::string species_name) const {
-		if (_type == Bp && _sp1->name() == species_name) {
-			return true;
-		} else {
-			return false;
-		};
 	};
 
 	/********************

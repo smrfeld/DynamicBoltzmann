@@ -134,6 +134,12 @@ namespace DynamicBoltzmann {
 		// Set the number of CD steps
 		void set_n_cd_steps(int n_steps);
 
+		// Use Nesterov rather than stochastic gradient descent
+		void set_use_nesterov(bool flag);
+
+		// Use the same lattice for the batch
+		void set_use_same_lattice_in_batch(bool flag);
+
 		/********************
 		Validate setup
 		********************/
@@ -159,7 +165,7 @@ namespace DynamicBoltzmann {
 		Solve
 		********************/
 
-		void solve(bool verbose=false, bool same_lattice=false);
+		void solve(bool verbose=false);
 		void solve_varying_ic(bool verbose=false);
 
 		/********************

@@ -4,6 +4,13 @@
 #include <string>
 #endif
 
+// vector
+#ifndef VECTOR_h
+#define VECTOR_h
+#include <vector>
+#endif
+
+
 /************************************
 * Namespace for DynamicBoltzmann
 ************************************/
@@ -41,4 +48,11 @@ namespace DynamicBoltzmann {
 			delete[] p; p=nullptr;
 		};
 	};
+
+	/********************
+	Sample a vector of propensities (cumulative probabilities)		
+	********************/
+
+	int sample_prop_vec(std::vector<double> &props);
+
 };

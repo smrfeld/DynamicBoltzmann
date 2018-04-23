@@ -43,8 +43,33 @@ namespace DynamicBoltzmann {
 	typedef std::list<Site>::iterator latt_it;
 
 	/****************************************
-	Structure to hold a lattice site
+	Structure to hold iterators to neighbors
 	****************************************/
+
+	struct LattIt2 {
+		latt_it lit1,lit2;
+		LattIt2(latt_it l1, latt_it l2) {
+			lit1 = l1;
+			lit2 = l2;
+		};
+	};
+
+	struct LattIt3 {
+		latt_it lit1,lit2,lit3;
+		LattIt3(latt_it l1, latt_it l2, latt_it l3) {
+			lit1 = l1;
+			lit2 = l2;
+			lit3 = l3;
+		};
+	};
+
+	/****************************************
+	Class to hold a lattice site
+	****************************************/
+
+	// Declare lattice, hiddens
+	class Lattice;
+	class HiddenUnit;
 
 	class Site {
 	private:
@@ -53,32 +78,30 @@ namespace DynamicBoltzmann {
 		std::map<Species*, double> _probs;
 		double _prob_empty;
 
+		// Add/Remove counts on a given species (not _sp_binary, unless it is passed)
+		void _remove_counts_on_species(Species *sp, double prob);
+		void _add_counts_on_species(Species *sp, double prob);
+
 		// Constructor helpers
 		void _clean_up();
 		void _reset();
 		void _copy(const Site& other);
 
-		// Add/Remove counts on a given species (not _sp_binary, unless it is passed)
-		void _remove_counts_on_species(Species *sp, double prob);
-		void _add_counts_on_species(Species *sp, double prob);
-
-		// Sample a vector of propensities (cumulative probabilities)
-		int _sample_prop_vec(std::vector<double> &props);
-
 	public:
+
 		int dim;
 		int x;
 		int y;
 		int z;
 		std::vector<latt_it> nbrs;
-		std::vector<std::pair<latt_it,latt_it>> triplets;
+		std::vector<LattIt2> nbrs_triplets;
+		std::vector<LattIt3> nbrs_quartics;
 
 		// Connectivity to any hidden units
 		// A species-dependent graph :)
 		std::map<Species*, std::vector<HiddenUnit*>> hidden_conns;
 
 		// Constructor
-		Site();
 		Site(int xIn);
 		Site(int xIn, int yIn);
 		Site(int xIn, int yIn, int zIn);
@@ -89,7 +112,7 @@ namespace DynamicBoltzmann {
 		~Site();
 
 		// Add a species possibility
-		void add_species(Species* sp);
+		void add_species_possibility(Species* sp);
 
 		// Get a probability
 		// If binary, returns 1.0 for a certain species
@@ -148,15 +171,17 @@ namespace DynamicBoltzmann {
 		std::vector<Species*> _sp_vec;
 
 		// Flag - are hidden units present? (needed for annealing)
-		bool _exists_w;
-		bool _exists_b;
-		bool _exists_h;
-		bool _exists_j;
-		bool _exists_k;
+		// Note: only those needed for annealing
+		bool _sampling_exists_w;
+		bool _sampling_exists_h;
+		bool _sampling_exists_j;
+		bool _sampling_exists_k;
 
-		// Sample a vector of propensities (cumulative probabilities)
-		int _sample_prop_vec(std::vector<double> &props);
-		
+		// Does the lattice have the following structure... ?
+		bool _latt_has_nn_structure;
+		bool _latt_has_triplet_structure;
+		bool _latt_has_quartic_structure;
+
 		// Contructor helpers
 		void _clean_up();
 		void _reset();
@@ -169,7 +194,6 @@ namespace DynamicBoltzmann {
 		********************/
 
 		Lattice(int dim, int box_length);
-		Lattice();
 		Lattice(const Lattice& other);
 		Lattice(Lattice&& other);
 		Lattice& operator=(const Lattice& other);
@@ -187,17 +211,25 @@ namespace DynamicBoltzmann {
 		Add a species
 		********************/
 
-		void add_species(Species *sp);
+		void add_species_possibility(Species *sp);
 
 		/********************
 		Indicate that the hidden unit exists
 		********************/
 
-		void set_exists_w(bool flag=true);
-		void set_exists_h(bool flag=true);
-		void set_exists_j(bool flag=true);
-		void set_exists_k(bool flag=true);
+		void set_sampling_flag_exists_w(bool flag=true);
+		void set_sampling_flag_exists_h(bool flag=true);
+		void set_sampling_flag_exists_j(bool flag=true);
+		void set_sampling_flag_exists_k(bool flag=true);
 		// No need for b, since it only affects hidden units
+
+		/********************
+		Initialize lattice structure of NNs, triplets, etc
+		********************/
+
+		void init_nn_structure();
+		void init_triplet_structure();
+		void init_quartic_structure();
 
 		/********************
 		Find a pointer to a site by index

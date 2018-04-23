@@ -17,7 +17,7 @@ INSTALL_LIB_DIR = /usr/local/lib
 INSTALL_INCLUDE_DIR = /usr/local/include/bmla
 
 # source files
-SRC_NAMES = bmla.cpp ixn_param.cpp species.cpp lattice.cpp general.cpp hidden_unit.cpp
+SRC_NAMES = bmla.cpp ixn_param.cpp species.cpp lattice.cpp general.cpp hidden_unit.cpp counter.cpp
 SRCS = $(addprefix $(SOURCE_DIR)/, $(SRC_NAMES))
 OBJS = $(addprefix $(BUILD_DIR)/, $(SRC_NAMES:.cpp=.o))
 DEPS = $(OBJS:.o=.d)

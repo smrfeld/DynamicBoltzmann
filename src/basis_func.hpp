@@ -111,6 +111,9 @@ namespace DynamicBoltzmann {
 		// Update, if needed
 		double *_update_gathered;
 
+		// Stored update for nesterov
+		Array *_nesterov_prev_pt;
+
 		// Derivatives
 		bool *_derivs;
 
@@ -131,6 +134,12 @@ namespace DynamicBoltzmann {
 		BasisFunc& operator=(const BasisFunc& other);
 		~BasisFunc();
 
+		// Move to the nesterov intermediate point
+		void nesterov_move_to_intermediate_pt(int opt_step);
+
+		// Set prev nesterov
+		void nesterov_set_prev_equal_curr();
+
 		// Add pointers needed to update
 		void add_update_ptrs(IxnParamTraj* ixn_param, VarTermTraj* var_term);
 
@@ -145,7 +154,7 @@ namespace DynamicBoltzmann {
 		std::string name() const;
 
 		// Calculate the new basis function
-		void update(int n_t, double dt, double dopt);
+		void update(int n_t, double dt, double dopt);		
 		void update_gather(int n_t, double dt, double dopt);
 		void update_committ_gathered();
 

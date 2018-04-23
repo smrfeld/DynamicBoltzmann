@@ -86,11 +86,9 @@ namespace DynamicBoltzmann {
 		~IxnParam();
 
 		// Check if this ixn param is...
-		bool is_h_with_species(std::string species_name) const;
-		bool is_w_with_species(std::string species_name) const;
-		bool is_j_with_species(std::string species_name_1, std::string species_name_2) const;
-		bool is_k_with_species(std::string species_name_1, std::string species_name_2, std::string species_name_3) const;
-		bool is_b_with_species(std::string species_name) const;
+		bool is_type_with_species(IxnParamType type, std::string s) const;
+		bool is_type_with_species(IxnParamType type, std::string s1, std::string s2) const;
+		bool is_type_with_species(IxnParamType type, std::string s1, std::string s2, std::string s3) const;
 
 		// If Wp
 		// Add a visible->hidden unit connection

@@ -261,6 +261,8 @@ namespace DynamicBoltzmann {
 		_p_cube = new double[int(pow(4,_n_params))];
 
 		_update_gathered = nullptr; // allocated later if needed
+
+		_nesterov_prev_pt = nullptr;
 	};
 	BasisFunc::BasisFunc(const BasisFunc& other) : Array(other) {
 		_copy(other);
@@ -304,6 +306,12 @@ namespace DynamicBoltzmann {
 		} else {
 			_update_gathered = nullptr;
 		};
+
+		if (other._nesterov_prev_pt) {
+			_nesterov_prev_pt = new Array(*(other._nesterov_prev_pt));
+		} else {
+			_nesterov_prev_pt = nullptr;
+		};
 	};
 	void BasisFunc::_clean_up() {
 		safeDelArr(_derivs);
@@ -314,6 +322,54 @@ namespace DynamicBoltzmann {
 		safeDelArr(_fracs);
 		safeDelArr(_p_cube);
 		safeDelArr(_update_gathered);
+		if (_nesterov_prev_pt) {
+			delete _nesterov_prev_pt;
+			_nesterov_prev_pt = nullptr;
+		};
+	};
+
+	/********************
+	Move to the nesterov intermediate point
+	********************/
+
+	void BasisFunc::nesterov_move_to_intermediate_pt(int opt_step) {
+		if (!_nesterov_prev_pt) {
+			std::cerr << "Error! No prev nesterov pt exists in basis func " << _name << std::endl;
+			exit(EXIT_FAILURE);
+		};
+
+		// Move to the intermediate point
+		double curr;
+		for (int i=0; i<_val_len; i++) {
+			// Tem store the old
+			curr = _vals[i];
+
+			// Move
+			_vals[i] = curr + (opt_step - 1.0) / (opt_step + 2.0) * (curr - _nesterov_prev_pt->get_by_idx(i));
+
+			// The current point will next be the old
+			_nesterov_prev_pt->set_by_idx(i, curr);
+		};
+	};
+
+	/********************
+	Set prev nesterov
+	********************/
+
+	void BasisFunc::nesterov_set_prev_equal_curr() {
+		if (!_nesterov_prev_pt) {
+			// Get dims
+			std::vector<IxnParamTraj*> ipts;
+			for (auto pr: _update_ptrs) {
+				ipts.push_back(pr.first);
+			};
+			// Make
+			_nesterov_prev_pt = new Array(ipts);
+		};
+		// Copy
+		for (int i=0; i<_val_len; i++) {
+			_nesterov_prev_pt->set_by_idx(i, _vals[i]);
+		};
 	};
 
 	/********************

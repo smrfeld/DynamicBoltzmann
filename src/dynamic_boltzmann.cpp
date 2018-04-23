@@ -7,7 +7,6 @@
 #include <set>
 #include "var_term_traj.hpp"
 
-
 #define DIAG_SETUP 0
 #define DIAG_SOLVE 0
 
@@ -877,7 +876,6 @@ namespace DynamicBoltzmann {
 
 			if (DIAG_SOLVE) { std::cout << "Random batch" << std::endl; };
 
-			std::cout << "Random batch" << std::endl;
 			fnames_to_use.clear();
 			fnames_remaining=fnames;
 			batch_idxs.clear();
@@ -893,7 +891,6 @@ namespace DynamicBoltzmann {
 				// Don't choose this again
 				fnames_remaining.erase(itf);
 			};
-			std::cout << "OK" << std::endl;
 
 			if (DIAG_SOLVE) { std::cout << "OK" << std::endl; };
 
@@ -906,7 +903,7 @@ namespace DynamicBoltzmann {
 			for (int i_batch=0; i_batch<batch_size; i_batch++) 
 			{
 				if (options.verbose) {
-					std::cout << "sample: " << i_batch << " / " << batch_size << std::endl;
+					std::cout << "Sample in the batch: " << i_batch << " / " << batch_size << std::endl;
 				};
 
 				/*****

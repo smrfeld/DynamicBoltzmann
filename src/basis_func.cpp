@@ -554,7 +554,6 @@ namespace DynamicBoltzmann {
 			// alloc
 			_update_gathered = new double[_val_len];
 			std::fill_n(_update_gathered,_val_len,0.);
-			std::cout << "!!! Alloced" << std::endl;
 		};
 
 		// Go through all idxs

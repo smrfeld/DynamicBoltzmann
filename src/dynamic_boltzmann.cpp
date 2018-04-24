@@ -590,7 +590,7 @@ namespace DynamicBoltzmann {
 	void OptProblem::Impl::solve(std::vector<std::string> fnames, int n_opt, int batch_size, int n_cd_steps, double dopt, OptionsSolve options)
 	{
 		// Clear/make directories if needed
-		if (options.write) {
+		if (options.write && options.clear_dir) {
 			system(("rm -rf " + options.dir_write).c_str());
 			system(("mkdir " + options.dir_write).c_str());
 			system(("mkdir " + options.dir_write + "/F").c_str());
@@ -864,7 +864,7 @@ namespace DynamicBoltzmann {
 	void OptProblem::Impl::solve_varying_ic(std::vector<std::pair<std::string,int>> fnames, int n_opt, int batch_size, int n_cd_steps, double dopt, OptionsSolve options)
 	{
 		// Clear/make directories if needed
-		if (options.write) {
+		if (options.write && options.clear_dir) {
 			system(("rm -rf " + options.dir_write).c_str());
 			system(("mkdir " + options.dir_write).c_str());
 			system(("mkdir " + options.dir_write + "/F").c_str());
@@ -1046,7 +1046,7 @@ namespace DynamicBoltzmann {
 					if (DIAG_SOLVE) { std::cout << "      Record awake moments" << std::endl; };
 
 					for (auto itp = _ixn_params.begin(); itp != _ixn_params.end(); itp++) {
-						itp->moments_retrieve_at_time(IxnParamTraj::AWAKE,_t_opt);
+						itp->moments_retrieve_at_time(IxnParamTraj::AWAKE,_t_opt,batch_size);
 					};
 
 					/*****
@@ -1096,7 +1096,7 @@ namespace DynamicBoltzmann {
 					if (DIAG_SOLVE) { std::cout << "      Record asleep moments" << std::endl; };
 
 					for (auto itp = _ixn_params.begin(); itp != _ixn_params.end(); itp++) {
-						itp->moments_retrieve_at_time(IxnParamTraj::ASLEEP,_t_opt);
+						itp->moments_retrieve_at_time(IxnParamTraj::ASLEEP,_t_opt,batch_size);
 					};
 
 				};

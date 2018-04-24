@@ -79,6 +79,9 @@ namespace DynamicBoltzmann {
 		// Write only the final basis function
 		bool write_bf_only_final;
 
+		// Clear directory
+		bool clear_dir;
+
 		// Time indexes to start
 		int time_idx_start;
 
@@ -106,6 +109,7 @@ namespace DynamicBoltzmann {
 			write = false;
 			dir_write = "";
 			write_bf_only_final = false;
+			clear_dir = true;
 			time_idx_start = 0;
 			awake_visible_are_binary = true;
 			awake_hidden_are_binary = true;

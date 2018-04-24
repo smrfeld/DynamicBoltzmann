@@ -153,7 +153,7 @@ namespace DynamicBoltzmann {
 		********************/
 
 		void solve(std::vector<std::string> fnames, int n_opt, int batch_size, int n_cd_steps, double dopt, OptionsSolve options);
-		void solve_varying_ic(std::vector<std::string> fnames, int n_opt, int batch_size, int n_cd_steps, double dopt, OptionsSolve options);
+		void solve_varying_ic(std::vector<std::pair<std::string,int>> fnames, int n_opt, int batch_size, int n_cd_steps, double dopt, OptionsSolve options);
 
 		/********************
 		Read basis func
@@ -687,10 +687,6 @@ namespace DynamicBoltzmann {
 					fnames_to_use.push_back(fnames_to_use.back());
 				};
 			} else {
-				// Files to always use in every batch
-				if (options.fnames_used_in_every_batch.size() > 0) {
-					fnames_to_use = options.fnames_used_in_every_batch;
-				};
 				while (fnames_to_use.size() < batch_size) {
 					// Choose
 					itf = fnames_remaining.begin();
@@ -865,7 +861,7 @@ namespace DynamicBoltzmann {
 	Solve over varying initial conditions
 	********************/
 
-	void OptProblem::Impl::solve_varying_ic(std::vector<std::string> fnames, int n_opt, int batch_size, int n_cd_steps, double dopt, OptionsSolve options)
+	void OptProblem::Impl::solve_varying_ic(std::vector<std::pair<std::string,int>> fnames, int n_opt, int batch_size, int n_cd_steps, double dopt, OptionsSolve options)
 	{
 		// Clear/make directories if needed
 		if (options.write) {
@@ -876,13 +872,6 @@ namespace DynamicBoltzmann {
 			system(("mkdir " + options.dir_write + "/moments").c_str());
 		};
 
-		// Check filename indexes
-		if (options.fname_idxs.size() == 0) {
-			for (int i=1; i<=fnames.size(); i++) {
-				options.fname_idxs.push_back(i);
-			};
-		};
-
 		// Write the grids
 		if (options.write) {
 			write_bf_grids(options.dir_write);
@@ -891,10 +880,8 @@ namespace DynamicBoltzmann {
 
 		// For choosing the batch
 		int i_chosen;
-		std::vector<std::string> fnames_to_use, fnames_remaining;
-		std::vector<std::string>::iterator itf;
-		std::vector<int> fname_idxs_to_use,fname_idxs_remaining;
-		std::vector<int>::iterator itf_idx;
+		std::vector<std::pair<std::string,int>> fnames_to_use, fnames_remaining;
+		std::vector<std::pair<std::string,int>>::iterator itf;
 
 		// Iterate over optimization steps
 		for (int i_opt=0; i_opt<n_opt; i_opt++)
@@ -932,33 +919,26 @@ namespace DynamicBoltzmann {
 
 			// Clear
 			fnames_to_use.clear();
-			fname_idxs_to_use.clear();
 			// Reset
 			fnames_remaining=fnames;
-			fname_idxs_remaining=options.fname_idxs;
 
 			// Files to always use in every batch
 			if (options.fnames_used_in_every_batch.size() > 0) {
 				fnames_to_use = options.fnames_used_in_every_batch;
-				fname_idxs_to_use = options.fname_idxs_used_in_every_batch;
 			};
 
 			// Go through the batch size
 			while (fnames_to_use.size() < batch_size) {
 				// Grab a filename
 				itf = fnames_remaining.begin();
-				itf_idx = fname_idxs_remaining.begin();
 				i_chosen = randI(0,fnames_remaining.size()-1);
 				std::advance(itf,i_chosen);
-				std::advance(itf_idx,i_chosen);
 
 				// Add that this is to be used
 				fnames_to_use.push_back(*itf);
-				fname_idxs_to_use.push_back(*itf_idx);
 
 				// Don't choose this again
 				fnames_remaining.erase(itf);
-				fname_idxs_remaining.erase(itf_idx);
 			};
 
 			if (DIAG_SOLVE) { std::cout << "OK" << std::endl; };
@@ -972,14 +952,14 @@ namespace DynamicBoltzmann {
 			for (int i_batch=0; i_batch<batch_size; i_batch++) 
 			{
 				if (options.verbose) {
-					std::cout << "Doing sample: " << i_batch << " / " << batch_size << " file: " << fnames_to_use[i_batch] << std::endl;
+					std::cout << "Doing sample: " << i_batch << " / " << batch_size << " file: " << fnames_to_use[i_batch].first << std::endl;
 				};
 
 				/*****
 				Step 2.1 - Read the IC
 				*****/
 
-				read_init_cond(fnames_to_use[i_batch]+"../");
+				read_init_cond(fnames_to_use[i_batch].first+"../");
 
 				/*****
 				Step 2.2 - Solve the current trajectory
@@ -990,7 +970,7 @@ namespace DynamicBoltzmann {
 				solve_ixn_param_traj();
 
 				// Write
-				write_ixn_params(options.dir_write+"ixn_params/",i_opt,fname_idxs_to_use[i_batch]);
+				write_ixn_params(options.dir_write+"ixn_params/",i_opt,fnames_to_use[i_batch].second);
 
 				if (DIAG_SOLVE) { std::cout << "OK" << std::endl; };
 
@@ -1040,7 +1020,7 @@ namespace DynamicBoltzmann {
 
 					if (options.awake_visible_are_binary) {
 						// Binary
-						_latt.read_from_file(fnames_to_use[i_batch] + pad_str(options.time_idx_start+_t_opt,4) + ".txt");
+						_latt.read_from_file(fnames_to_use[i_batch].first + pad_str(options.time_idx_start+_t_opt,4) + ".txt");
 					} else {
 						// Probabilistic
 						std::cerr << "Error! Probabilistic awake visible units are not supported yet." << std::endl;
@@ -1132,7 +1112,7 @@ namespace DynamicBoltzmann {
 				*****/
 
 				if (options.write) {
-					write_moments(options.dir_write+"moments/",i_opt,fname_idxs_to_use[i_batch]);
+					write_moments(options.dir_write+"moments/",i_opt,fnames_to_use[i_batch].second);
 				};
 
 				/*****
@@ -1386,7 +1366,7 @@ namespace DynamicBoltzmann {
 	void OptProblem::solve(std::vector<std::string> fnames, int n_opt, int batch_size, int n_cd_steps, double dopt, OptionsSolve options) {
 		_impl->solve(fnames,n_opt,batch_size,n_cd_steps,dopt,options);
 	};
-	void OptProblem::solve_varying_ic(std::vector<std::string> fnames, int n_opt, int batch_size, int n_cd_steps, double dopt, OptionsSolve options) {
+	void OptProblem::solve_varying_ic(std::vector<std::pair<std::string,int>> fnames, int n_opt, int batch_size, int n_cd_steps, double dopt, OptionsSolve options) {
 		_impl->solve_varying_ic(fnames,n_opt,batch_size,n_cd_steps,dopt,options);
 	};
 

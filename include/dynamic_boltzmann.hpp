@@ -13,6 +13,11 @@
 #include <vector>
 #endif
 
+#ifndef UTILITY_H
+#define UTILITY_H
+#include <utility>
+#endif
+
 /************************************
 * Namespace for DynamicBoltzmann
 ************************************/
@@ -85,15 +90,10 @@ namespace DynamicBoltzmann {
 		bool asleep_final_visible_are_binary;
 		bool asleep_final_hidden_are_binary;
 
+		// For varying IC ONLY:
 		// Special filenames that should be used in every batch - these are used first, then the rest are randomly chosen
 		// Note: these should be removed from the other fnames
-		std::vector<std::string> fnames_used_in_every_batch;
-
-		// For varying IC: possible indexes for each of the filenames
-		// Default: ordered starting at 1
-		std::vector<int> fname_idxs;
-		std::vector<int> fname_idxs_used_in_every_batch;
-		// Note: these should not conflict!
+		std::vector<std::pair<std::string,int>> fnames_used_in_every_batch;
 
 		/********************
 		Constructor
@@ -188,7 +188,7 @@ namespace DynamicBoltzmann {
 		********************/
 
 		void solve(std::vector<std::string> fnames, int n_opt, int batch_size, int n_cd_steps, double dopt, OptionsSolve options=OptionsSolve());
-		void solve_varying_ic(std::vector<std::string> fnames, int n_opt, int batch_size, int n_cd_steps, double dopt, OptionsSolve options=OptionsSolve());
+		void solve_varying_ic(std::vector<std::pair<std::string,int>> fnames, int n_opt, int batch_size, int n_cd_steps, double dopt, OptionsSolve options=OptionsSolve());
 
 		/********************
 		Read basis function

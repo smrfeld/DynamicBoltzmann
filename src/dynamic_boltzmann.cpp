@@ -1046,7 +1046,7 @@ namespace DynamicBoltzmann {
 					if (DIAG_SOLVE) { std::cout << "      Record awake moments" << std::endl; };
 
 					for (auto itp = _ixn_params.begin(); itp != _ixn_params.end(); itp++) {
-						itp->moments_retrieve_at_time(IxnParamTraj::AWAKE,_t_opt,batch_size);
+						itp->moments_retrieve_at_time(IxnParamTraj::AWAKE,_t_opt);
 					};
 
 					/*****
@@ -1096,7 +1096,7 @@ namespace DynamicBoltzmann {
 					if (DIAG_SOLVE) { std::cout << "      Record asleep moments" << std::endl; };
 
 					for (auto itp = _ixn_params.begin(); itp != _ixn_params.end(); itp++) {
-						itp->moments_retrieve_at_time(IxnParamTraj::ASLEEP,_t_opt,batch_size);
+						itp->moments_retrieve_at_time(IxnParamTraj::ASLEEP,_t_opt);
 					};
 
 				};

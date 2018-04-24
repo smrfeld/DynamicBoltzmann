@@ -85,6 +85,16 @@ namespace DynamicBoltzmann {
 		bool asleep_final_visible_are_binary;
 		bool asleep_final_hidden_are_binary;
 
+		// Special filenames that should be used in every batch - these are used first, then the rest are randomly chosen
+		// Note: these should be removed from the other fnames
+		std::vector<std::string> fnames_used_in_every_batch;
+
+		// For varying IC: possible indexes for each of the filenames
+		// Default: ordered starting at 1
+		std::vector<int> fname_idxs;
+		std::vector<int> fname_idxs_used_in_every_batch;
+		// Note: these should not conflict!
+
 		/********************
 		Constructor
 		********************/

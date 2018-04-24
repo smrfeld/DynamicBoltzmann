@@ -293,6 +293,13 @@ namespace DynamicBoltzmann {
 	double IxnParamTraj::moments_diff_at_time(int it) {
 		return (_awake[it] - _asleep[it]);
 	};
+	double IxnParamTraj::moments_get_at_time(MomentType moment_type, int it) const {
+		if (moment_type == AWAKE) {
+			return _awake[it];
+		} else {
+			return _asleep[it];
+		};
+	};
 
 	/********************
 	Write into an ofstream

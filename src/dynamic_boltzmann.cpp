@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <set>
 #include "var_term_traj.hpp"
+#include <stdlib.h>
 
 #define DIAG_SETUP 0
 #define DIAG_SOLVE 0
@@ -588,11 +589,24 @@ namespace DynamicBoltzmann {
 
 	void OptProblem::Impl::solve(std::vector<std::string> fnames, int n_opt, int batch_size, int n_cd_steps, double dopt, OptionsSolve options)
 	{
+		// Clear/make directories if needed
+		if (options.write) {
+			system(("rm -rf " + options.dir_write).c_str());
+			system(("mkdir " + options.dir_write).c_str());
+			system(("mkdir " + options.dir_write + "/F").c_str());
+			system(("mkdir " + options.dir_write + "/ixn_params").c_str());
+			system(("mkdir " + options.dir_write + "/moments").c_str());
+		};
+
 		// Write the grids
 		if (options.write) {
 			write_bf_grids(options.dir_write);
 			write_t_grid(options.dir_write);
 		};
+
+		// For filenames
+		std::vector<std::string> fnames_to_use, fnames_remaining;
+		std::vector<std::string>::iterator itf;
 
 		// Iterate over optimization steps
 		for (int i_opt=0; i_opt<n_opt; i_opt++)
@@ -660,19 +674,9 @@ namespace DynamicBoltzmann {
 
 			if (DIAG_SOLVE) { std::cout << "Random batch" << std::endl; };
 
-			std::vector<std::string> fnames_to_use, fnames_remaining=fnames;
-			std::vector<std::string>::iterator itf;
-			if (!options.use_same_lattice_in_batch) {
-				for (int i_batch=0; i_batch<batch_size; i_batch++) {
-					// Choose
-					itf = fnames_remaining.begin();
-					std::advance(itf,randI(0,fnames_remaining.size()-1));
-					// Add
-					fnames_to_use.push_back(*itf);
-					// Don't choose again
-					fnames_remaining.erase(itf);
-				};
-			} else {
+			fnames_to_use.clear();
+			fnames_remaining=fnames;
+			if (options.use_same_lattice_in_batch) {
 				// Use a single lattice - pick a rand
 				itf = fnames_remaining.begin();
 				std::advance(itf,randI(0,fnames_remaining.size()-1));
@@ -681,6 +685,20 @@ namespace DynamicBoltzmann {
 				for (int i_batch=1; i_batch<batch_size; i_batch++) {
 					// Only this one
 					fnames_to_use.push_back(fnames_to_use.back());
+				};
+			} else {
+				// Files to always use in every batch
+				if (options.fnames_used_in_every_batch.size() > 0) {
+					fnames_to_use = options.fnames_used_in_every_batch;
+				};
+				while (fnames_to_use.size() < batch_size) {
+					// Choose
+					itf = fnames_remaining.begin();
+					std::advance(itf,randI(0,fnames_remaining.size()-1));
+					// Add
+					fnames_to_use.push_back(*itf);
+					// Don't choose again
+					fnames_remaining.erase(itf);
 				};
 			};
 
@@ -724,7 +742,7 @@ namespace DynamicBoltzmann {
 					};
 
 					/*****
-					Step 5.1.1 - Read in batch at this timestep
+					Step 5.1.1 - Read in sample at this timestep
 					*****/
 
 					if (DIAG_SOLVE) { std::cout << "      Read in batch" << std::endl; };
@@ -768,7 +786,7 @@ namespace DynamicBoltzmann {
 					{
 						// Sample
 
-						if (DIAG_SOLVE) { std::cout << "      Anneal" << std::endl; };
+						if (DIAG_SOLVE) { std::cout << "      Sample" << std::endl; };
 
 						if (cd_step != n_cd_steps-1) {
 							if (options.asleep_visible_are_binary) {
@@ -849,21 +867,57 @@ namespace DynamicBoltzmann {
 
 	void OptProblem::Impl::solve_varying_ic(std::vector<std::string> fnames, int n_opt, int batch_size, int n_cd_steps, double dopt, OptionsSolve options)
 	{
+		// Clear/make directories if needed
+		if (options.write) {
+			system(("rm -rf " + options.dir_write).c_str());
+			system(("mkdir " + options.dir_write).c_str());
+			system(("mkdir " + options.dir_write + "/F").c_str());
+			system(("mkdir " + options.dir_write + "/ixn_params").c_str());
+			system(("mkdir " + options.dir_write + "/moments").c_str());
+		};
+
+		// Check filename indexes
+		if (options.fname_idxs.size() == 0) {
+			for (int i=1; i<=fnames.size(); i++) {
+				options.fname_idxs.push_back(i);
+			};
+		};
+
 		// Write the grids
 		if (options.write) {
 			write_bf_grids(options.dir_write);
 			write_t_grid(options.dir_write);
 		};
 
-		// For the batch
+		// For choosing the batch
+		int i_chosen;
 		std::vector<std::string> fnames_to_use, fnames_remaining;
 		std::vector<std::string>::iterator itf;
-		std::vector<int> batch_idxs;
+		std::vector<int> fname_idxs_to_use,fname_idxs_remaining;
+		std::vector<int>::iterator itf_idx;
 
 		// Iterate over optimization steps
 		for (int i_opt=0; i_opt<n_opt; i_opt++)
 		{
 			std::cout << "Opt step " << i_opt << " / " << n_opt-1 << std::endl;
+
+			/*****
+			Step 0 - Check nesterov
+			*****/
+
+			if (options.nesterov) {
+				// If first opt step, do nothing, but set the "prev" point to the current to initialize
+				if (i_opt == 0) {
+					for (auto itbf=_bfs.begin(); itbf!=_bfs.end(); itbf++) {
+						itbf->nesterov_set_prev_equal_curr();
+					};
+				} else {
+					// Move to the intermediate point
+					for (auto itbf=_bfs.begin(); itbf!=_bfs.end(); itbf++) {
+						itbf->nesterov_move_to_intermediate_pt(i_opt);
+					};
+				};
+			};
 
 			// Write the basis funcs
 			if (options.write && !options.write_bf_only_final) {
@@ -876,20 +930,35 @@ namespace DynamicBoltzmann {
 
 			if (DIAG_SOLVE) { std::cout << "Random batch" << std::endl; };
 
+			// Clear
 			fnames_to_use.clear();
+			fname_idxs_to_use.clear();
+			// Reset
 			fnames_remaining=fnames;
-			batch_idxs.clear();
+			fname_idxs_remaining=options.fname_idxs;
+
+			// Files to always use in every batch
+			if (options.fnames_used_in_every_batch.size() > 0) {
+				fnames_to_use = options.fnames_used_in_every_batch;
+				fname_idxs_to_use = options.fname_idxs_used_in_every_batch;
+			};
+
 			// Go through the batch size
-			for (int i_batch=0; i_batch<batch_size; i_batch++) {
+			while (fnames_to_use.size() < batch_size) {
 				// Grab a filename
 				itf = fnames_remaining.begin();
-				std::advance(itf,randI(0,fnames_remaining.size()-1));
+				itf_idx = fname_idxs_remaining.begin();
+				i_chosen = randI(0,fnames_remaining.size()-1);
+				std::advance(itf,i_chosen);
+				std::advance(itf_idx,i_chosen);
+
 				// Add that this is to be used
 				fnames_to_use.push_back(*itf);
-				// Record the idx of this filename
-				batch_idxs.push_back(find(fnames.begin(), fnames.end(), fnames_to_use.back()) - fnames.begin());
+				fname_idxs_to_use.push_back(*itf_idx);
+
 				// Don't choose this again
 				fnames_remaining.erase(itf);
+				fname_idxs_remaining.erase(itf_idx);
 			};
 
 			if (DIAG_SOLVE) { std::cout << "OK" << std::endl; };
@@ -903,7 +972,7 @@ namespace DynamicBoltzmann {
 			for (int i_batch=0; i_batch<batch_size; i_batch++) 
 			{
 				if (options.verbose) {
-					std::cout << "Sample in the batch: " << i_batch << " / " << batch_size << std::endl;
+					std::cout << "Doing sample: " << i_batch << " / " << batch_size << " file: " << fnames_to_use[i_batch] << std::endl;
 				};
 
 				/*****
@@ -921,7 +990,7 @@ namespace DynamicBoltzmann {
 				solve_ixn_param_traj();
 
 				// Write
-				write_ixn_params(options.dir_write+"ixn_params/",i_opt,batch_idxs[i_batch]);
+				write_ixn_params(options.dir_write+"ixn_params/",i_opt,fname_idxs_to_use[i_batch]);
 
 				if (DIAG_SOLVE) { std::cout << "OK" << std::endl; };
 
@@ -1040,15 +1109,16 @@ namespace DynamicBoltzmann {
 							};
 						};
 
-						// Record the asleep moments
-
-						if (DIAG_SOLVE) { std::cout << "      Record asleep moments" << std::endl; };
-
-						for (auto itp = _ixn_params.begin(); itp != _ixn_params.end(); itp++) {
-							itp->moments_retrieve_at_time(IxnParamTraj::ASLEEP,_t_opt);
-						};
-
 					};
+
+					// Record the asleep moments
+
+					if (DIAG_SOLVE) { std::cout << "      Record asleep moments" << std::endl; };
+
+					for (auto itp = _ixn_params.begin(); itp != _ixn_params.end(); itp++) {
+						itp->moments_retrieve_at_time(IxnParamTraj::ASLEEP,_t_opt);
+					};
+
 				};
 
 				if (options.verbose) {
@@ -1062,7 +1132,7 @@ namespace DynamicBoltzmann {
 				*****/
 
 				if (options.write) {
-					write_moments(options.dir_write+"moments/",i_opt,batch_idxs[i_batch]);
+					write_moments(options.dir_write+"moments/",i_opt,fname_idxs_to_use[i_batch]);
 				};
 
 				/*****
@@ -1115,12 +1185,7 @@ namespace DynamicBoltzmann {
 
 					// Find the ixn param with this name
 					ip = _find_ixn_param_by_name(sname);
-					if (ip) {
-						ip->set_init_cond(std::stod(sval));
-					} else {
-						std::cerr << "ERROR: Ixn param with name " << sname << " not found while reading IC." << std::endl;
-						exit(EXIT_FAILURE); 
-					};
+					ip->set_init_cond(std::stod(sval));
 
 					// Reset
 					sname=""; sval=""; i_frag=0;

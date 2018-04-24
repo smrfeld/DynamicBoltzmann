@@ -127,6 +127,7 @@ namespace DynamicBoltzmann {
 		void moments_retrieve_at_time(MomentType moment_type, int it);
 		void moments_retrieve_at_time(MomentType moment_type, int it, int batch_size);
 		double moments_diff_at_time(int it);
+		double moments_get_at_time(MomentType moment_type, int it) const;
 
 		// Write into an ofstream
 		void write_vals(std::string dir, int idx, int n_t_traj) const;

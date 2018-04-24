@@ -316,7 +316,7 @@ namespace DynamicBoltzmann {
 	};
 	void IxnParamTraj::write_vals(std::string dir, int idx1, int idx2, int n_t_traj) const {
 		std::ofstream f;
-		f.open(dir+name()+"_"+pad_str(idx1,4)+"_"+pad_str(idx2,2)+".txt");
+		f.open(dir+name()+"_"+pad_str(idx1,4)+"_"+pad_str(idx2,4)+".txt");
 		for (int i=0; i<n_t_traj; i++) {
 			f << _vals[i];
 			if (i != n_t_traj-1) { f << "\n"; };
@@ -335,7 +335,7 @@ namespace DynamicBoltzmann {
 	};
 	void IxnParamTraj::write_moments(std::string dir, int idx1, int idx2, int n_t_traj) const {
 		std::ofstream f;
-		f.open(dir+name()+"_"+pad_str(idx1,4)+"_"+pad_str(idx2,2)+".txt");
+		f.open(dir+name()+"_"+pad_str(idx1,4)+"_"+pad_str(idx2,4)+".txt");
 		for (int i=0; i<n_t_traj; i++) {
 			f << _awake[i] << " " << _asleep[i];
 			if (i != n_t_traj-1) { f << "\n"; };

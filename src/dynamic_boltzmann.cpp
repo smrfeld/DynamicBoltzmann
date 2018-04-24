@@ -617,6 +617,8 @@ namespace DynamicBoltzmann {
 			Step 0 - Check nesterov
 			*****/
 
+			if (DIAG_SOLVE) { std::cout << "Taking Nesterov step" << std::endl; };
+
 			if (options.nesterov) {
 				// If first opt step, do nothing, but set the "prev" point to the current to initialize
 				if (i_opt == 0) {
@@ -633,7 +635,7 @@ namespace DynamicBoltzmann {
 
 			// Write the basis funcs
 			if (options.write && !options.write_bf_only_final) {
-				write_bfs(options.dir_write+"F/",i_opt);
+				write_bfs(options.dir_write+"F/",i_opt+options.opt_idx_start_writing);
 			};
 
 			/*****
@@ -646,7 +648,7 @@ namespace DynamicBoltzmann {
 
 			// Write
 			if (options.write) {
-				write_ixn_params(options.dir_write+"ixn_params/",i_opt);
+				write_ixn_params(options.dir_write+"ixn_params/",i_opt+options.opt_idx_start_writing);
 			};
 
 			if (DIAG_SOLVE) { std::cout << "OK" << std::endl; };
@@ -662,7 +664,7 @@ namespace DynamicBoltzmann {
 			// Write
 			/*
 			if (options.write) {
-				write_var_terms(options.dir_write+"var_terms/",i_opt);
+				write_var_terms(options.dir_write+"var_terms/",i_opt+options.opt_idx_start_writing);
 			};
 			*/
 			
@@ -745,7 +747,7 @@ namespace DynamicBoltzmann {
 
 					if (options.awake_visible_are_binary) {
 						// Binary
-						_latt.read_from_file(fnames_to_use[i_batch] + pad_str(options.time_idx_start+_t_opt,4) + ".txt");
+						_latt.read_from_file(fnames_to_use[i_batch] + pad_str(options.time_idx_start_reading+_t_opt,4) + ".txt");
 					} else {
 						// Probabilistic
 						std::cerr << "Error! Probabilistic awake visible units not supported yet!" << std::endl;
@@ -837,7 +839,7 @@ namespace DynamicBoltzmann {
 
 			// Write the moments
 			if (options.write) {
-				write_moments(options.dir_write+"moments/",i_opt);
+				write_moments(options.dir_write+"moments/",i_opt+options.opt_idx_start_writing);
 			};
 
 			/*****
@@ -908,7 +910,7 @@ namespace DynamicBoltzmann {
 
 			// Write the basis funcs
 			if (options.write && !options.write_bf_only_final) {
-				write_bfs(options.dir_write+"F/",i_opt);
+				write_bfs(options.dir_write+"F/",i_opt+options.opt_idx_start_writing);
 			};
 
 			/*****
@@ -970,7 +972,7 @@ namespace DynamicBoltzmann {
 				solve_ixn_param_traj();
 
 				// Write
-				write_ixn_params(options.dir_write+"ixn_params/",i_opt,fnames_to_use[i_batch].second);
+				write_ixn_params(options.dir_write+"ixn_params/",i_opt+options.opt_idx_start_writing,fnames_to_use[i_batch].second);
 
 				if (DIAG_SOLVE) { std::cout << "OK" << std::endl; };
 
@@ -983,7 +985,7 @@ namespace DynamicBoltzmann {
 				solve_var_traj();
 
 				// Write
-				//write_var_terms(options.dir_write+"var_terms/",i_opt);
+				//write_var_terms(options.dir_write+"var_terms/",i_opt+options.opt_idx_start_writing);
 				
 				if (DIAG_SOLVE) { std::cout << "OK" << std::endl; };
 
@@ -1020,7 +1022,7 @@ namespace DynamicBoltzmann {
 
 					if (options.awake_visible_are_binary) {
 						// Binary
-						_latt.read_from_file(fnames_to_use[i_batch].first + pad_str(options.time_idx_start+_t_opt,4) + ".txt");
+						_latt.read_from_file(fnames_to_use[i_batch].first + pad_str(options.time_idx_start_reading+_t_opt,4) + ".txt");
 					} else {
 						// Probabilistic
 						std::cerr << "Error! Probabilistic awake visible units are not supported yet." << std::endl;
@@ -1112,7 +1114,7 @@ namespace DynamicBoltzmann {
 				*****/
 
 				if (options.write) {
-					write_moments(options.dir_write+"moments/",i_opt,fnames_to_use[i_batch].second);
+					write_moments(options.dir_write+"moments/",i_opt+options.opt_idx_start_writing,fnames_to_use[i_batch].second);
 				};
 
 				/*****

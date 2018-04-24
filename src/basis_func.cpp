@@ -358,13 +358,8 @@ namespace DynamicBoltzmann {
 
 	void BasisFunc::nesterov_set_prev_equal_curr() {
 		if (!_nesterov_prev_pt) {
-			// Get dims
-			std::vector<IxnParamTraj*> ipts;
-			for (auto pr: _update_ptrs) {
-				ipts.push_back(pr.first);
-			};
 			// Make
-			_nesterov_prev_pt = new Array(ipts);
+			_nesterov_prev_pt = new Array(_ixn_params);
 		};
 		// Copy
 		for (int i=0; i<_val_len; i++) {

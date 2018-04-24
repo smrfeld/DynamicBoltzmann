@@ -83,7 +83,10 @@ namespace DynamicBoltzmann {
 		bool clear_dir;
 
 		// Time indexes to start
-		int time_idx_start;
+		int time_idx_start_reading;
+
+		// Optimization step to start writing
+		int opt_idx_start_writing;
 
 		// Are the following units binary/probabilistic
 		bool awake_visible_are_binary;
@@ -110,7 +113,8 @@ namespace DynamicBoltzmann {
 			dir_write = "";
 			write_bf_only_final = false;
 			clear_dir = true;
-			time_idx_start = 0;
+			time_idx_start_reading = 0;
+			opt_idx_start_writing = 0;
 			awake_visible_are_binary = true;
 			awake_hidden_are_binary = true;
 			asleep_visible_are_binary = true;

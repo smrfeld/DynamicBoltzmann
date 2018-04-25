@@ -122,9 +122,12 @@ namespace DynamicBoltzmann {
 			sps.push_back(_sp1->name());
 			sps.push_back(_sp2->name());
 			auto it1 = std::find(sps.begin(),sps.end(),s1);
-			auto it2 = std::find(sps.begin(),sps.end(),s2);;
-			if (it1 != sps.end() && it2 != sps.end()) {
-				return true;
+			if (it1 != sps.end()) {
+				sps.erase(it1);
+				auto it2 = std::find(sps.begin(),sps.end(),s2);
+				if (it2 != sps.end()) {
+					return true;
+				};
 			};
 		};
 		return false;
@@ -136,10 +139,15 @@ namespace DynamicBoltzmann {
 			sps.push_back(_sp2->name());
 			sps.push_back(_sp3->name());
 			auto it1 = std::find(sps.begin(),sps.end(),s1);
-			auto it2 = std::find(sps.begin(),sps.end(),s2);
-			auto it3 = std::find(sps.begin(),sps.end(),s3);
-			if (it1 != sps.end() && it2 != sps.end() && it3 != sps.end()) {
-				return true;
+			if (it1 != sps.end()) {
+				sps.erase(it1);
+				auto it2 = std::find(sps.begin(),sps.end(),s2);
+				if (it2 != sps.end()) {
+					auto it3 = std::find(sps.begin(),sps.end(),s3);
+					if (it3 != sps.end()) {
+						return true;
+					};
+				};
 			};
 		};
 		return false;
@@ -152,11 +160,18 @@ namespace DynamicBoltzmann {
 			sps.push_back(_sp3->name());
 			sps.push_back(_sp4->name());
 			auto it1 = std::find(sps.begin(),sps.end(),s1);
-			auto it2 = std::find(sps.begin(),sps.end(),s2);
-			auto it3 = std::find(sps.begin(),sps.end(),s3);
-			auto it4 = std::find(sps.begin(),sps.end(),s4);
-			if (it1 != sps.end() && it2 != sps.end() && it3 != sps.end() && it4 != sps.end()) {
-				return true;
+			if (it1 != sps.end()) {
+				sps.erase(it1);
+				auto it2 = std::find(sps.begin(),sps.end(),s2);
+				if (it2 != sps.end()) {
+					auto it3 = std::find(sps.begin(),sps.end(),s3);
+					if (it3 != sps.end()) {
+						auto it4 = std::find(sps.begin(),sps.end(),s4);
+						if (it4 != sps.end()) {
+							return true;
+						};
+					};
+				};
 			};
 		};
 		return false;

@@ -58,6 +58,28 @@ namespace DynamicBoltzmann {
 	};
 
 	/****************************************
+	Filename structure - only needed for solve_varying_ic
+	****************************************/
+
+	struct FName {
+
+		// Filename
+		std::string fname;
+
+		// Idx
+		int idx;
+
+		// Initial condition
+		std::string fname_ic;
+
+		FName(std::string fname, int idx, std::string fname_ic) {
+			this->fname=fname;
+			this->idx=idx;
+			this->fname_ic=fname_ic;
+		};
+	};
+
+	/****************************************
 	Options for solving
 	****************************************/
 
@@ -75,6 +97,9 @@ namespace DynamicBoltzmann {
 		// Whether to write data
 		bool write;
 		std::string dir_write;
+
+		// Write the variational terms
+		bool write_var_terms;
 
 		// Write only the final basis function
 		bool write_bf_only_final;
@@ -96,10 +121,14 @@ namespace DynamicBoltzmann {
 		bool asleep_final_visible_are_binary;
 		bool asleep_final_hidden_are_binary;
 
+		// Locality factor for variational term
+		bool local_decay;
+		double local_decay_factor;
+
 		// For varying IC ONLY:
 		// Special filenames that should be used in every batch - these are used first, then the rest are randomly chosen
 		// Note: these should be removed from the other fnames
-		std::vector<std::pair<std::string,int>> fnames_used_in_every_batch;
+		std::vector<FName> fnames_used_in_every_batch;
 
 		/********************
 		Constructor
@@ -111,6 +140,7 @@ namespace DynamicBoltzmann {
 			use_same_lattice_in_batch = false;
 			write = false;
 			dir_write = "";
+			write_var_terms = false;
 			write_bf_only_final = false;
 			clear_dir = true;
 			time_idx_start_reading = 0;
@@ -121,6 +151,8 @@ namespace DynamicBoltzmann {
 			asleep_hidden_are_binary = true;
 			asleep_final_visible_are_binary = true;
 			asleep_final_hidden_are_binary = true;
+			local_decay = false;
+			local_decay_factor = 0.;
 		};
 	};
 
@@ -192,11 +224,23 @@ namespace DynamicBoltzmann {
 		void validate_setup() const;
 
 		/********************
+		Solve interaction parameter traj
+		********************/
+
+		void solve_ixn_param_traj();
+
+		/********************
+		Solve for variational trajectory
+		********************/
+
+		void solve_var_traj();
+
+		/********************
 		Solve
 		********************/
 
 		void solve(std::vector<std::string> fnames, int n_opt, int batch_size, int n_cd_steps, double dopt, OptionsSolve options=OptionsSolve());
-		void solve_varying_ic(std::vector<std::pair<std::string,int>> fnames, int n_opt, int batch_size, int n_cd_steps, double dopt, OptionsSolve options=OptionsSolve());
+		void solve_varying_ic(std::vector<FName> fnames, int n_opt, int batch_size, int n_cd_steps, double dopt, OptionsSolve options=OptionsSolve());
 
 		/********************
 		Read basis function

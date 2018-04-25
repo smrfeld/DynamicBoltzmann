@@ -153,7 +153,7 @@ namespace DynamicBoltzmann {
 		********************/
 
 		void solve(std::vector<std::string> fnames, int n_opt, int batch_size, int n_cd_steps, double dopt, OptionsSolve options);
-		void solve_varying_ic(std::vector<std::pair<std::string,int>> fnames, int n_opt, int batch_size, int n_cd_steps, double dopt, OptionsSolve options);
+		void solve_varying_ic(std::vector<FName> fnames, int n_opt, int batch_size, int n_cd_steps, double dopt, OptionsSolve options);
 
 		/********************
 		Read basis func
@@ -590,12 +590,17 @@ namespace DynamicBoltzmann {
 	void OptProblem::Impl::solve(std::vector<std::string> fnames, int n_opt, int batch_size, int n_cd_steps, double dopt, OptionsSolve options)
 	{
 		// Clear/make directories if needed
-		if (options.write && options.clear_dir) {
+		if (options.clear_dir) {
 			system(("rm -rf " + options.dir_write).c_str());
-			system(("mkdir " + options.dir_write).c_str());
-			system(("mkdir " + options.dir_write + "/F").c_str());
-			system(("mkdir " + options.dir_write + "/ixn_params").c_str());
-			system(("mkdir " + options.dir_write + "/moments").c_str());
+		};
+		if (options.write) {
+			system(("mkdir -p " + options.dir_write).c_str());
+			system(("mkdir -p " + options.dir_write + "F").c_str());
+			system(("mkdir -p " + options.dir_write + "ixn_params").c_str());
+			system(("mkdir -p " + options.dir_write + "moments").c_str());
+		};
+		if (options.write_var_terms) {
+			system(("mkdir -p " + options.dir_write + "var_terms").c_str());
 		};
 
 		// Write the grids
@@ -608,10 +613,16 @@ namespace DynamicBoltzmann {
 		std::vector<std::string> fnames_to_use, fnames_remaining;
 		std::vector<std::string>::iterator itf;
 
+		// Opt step with offset
+		int i_opt;
+
 		// Iterate over optimization steps
-		for (int i_opt=0; i_opt<n_opt; i_opt++)
+		for (int i_opt_from_zero=0; i_opt_from_zero<n_opt; i_opt_from_zero++)
 		{
-			std::cout << "Opt step " << i_opt << " / " << n_opt-1 << std::endl;
+			std::cout << "Opt step " << i_opt_from_zero << " / " << n_opt-1 << std::endl;
+
+			// Offset
+			i_opt = i_opt_from_zero + options.opt_idx_start_writing;
 
 			/*****
 			Step 0 - Check nesterov
@@ -621,7 +632,7 @@ namespace DynamicBoltzmann {
 
 			if (options.nesterov) {
 				// If first opt step, do nothing, but set the "prev" point to the current to initialize
-				if (i_opt == 0) {
+				if (i_opt_from_zero == 0) {
 					for (auto itbf=_bfs.begin(); itbf!=_bfs.end(); itbf++) {
 						itbf->nesterov_set_prev_equal_curr();
 					};
@@ -635,7 +646,7 @@ namespace DynamicBoltzmann {
 
 			// Write the basis funcs
 			if (options.write && !options.write_bf_only_final) {
-				write_bfs(options.dir_write+"F/",i_opt+options.opt_idx_start_writing);
+				write_bfs(options.dir_write+"F/",i_opt);
 			};
 
 			/*****
@@ -648,7 +659,7 @@ namespace DynamicBoltzmann {
 
 			// Write
 			if (options.write) {
-				write_ixn_params(options.dir_write+"ixn_params/",i_opt+options.opt_idx_start_writing);
+				write_ixn_params(options.dir_write+"ixn_params/",i_opt);
 			};
 
 			if (DIAG_SOLVE) { std::cout << "OK" << std::endl; };
@@ -662,11 +673,9 @@ namespace DynamicBoltzmann {
 			solve_var_traj();
 
 			// Write
-			/*
-			if (options.write) {
-				write_var_terms(options.dir_write+"var_terms/",i_opt+options.opt_idx_start_writing);
+			if (options.write_var_terms) {
+				write_var_terms(options.dir_write+"var_terms/",i_opt);
 			};
-			*/
 			
 			if (DIAG_SOLVE) { std::cout << "OK" << std::endl; };
 
@@ -839,7 +848,7 @@ namespace DynamicBoltzmann {
 
 			// Write the moments
 			if (options.write) {
-				write_moments(options.dir_write+"moments/",i_opt+options.opt_idx_start_writing);
+				write_moments(options.dir_write+"moments/",i_opt);
 			};
 
 			/*****
@@ -847,13 +856,13 @@ namespace DynamicBoltzmann {
 			*****/
 
 			for (auto itbf=_bfs.begin(); itbf!=_bfs.end(); itbf++) {
-				itbf->update(_n_t_soln, _time.delta(), dopt);
+				itbf->update(_n_t_soln, _time.delta(), dopt, options.local_decay, options.local_decay_factor);
 			};
 		};
 
 		// Write the basis funcs one last time
 		if (options.write) {
-			write_bfs(options.dir_write+"F/",n_opt);
+			write_bfs(options.dir_write+"F/",n_opt+options.opt_idx_start_writing);
 		};
 	};
 
@@ -863,15 +872,20 @@ namespace DynamicBoltzmann {
 	Solve over varying initial conditions
 	********************/
 
-	void OptProblem::Impl::solve_varying_ic(std::vector<std::pair<std::string,int>> fnames, int n_opt, int batch_size, int n_cd_steps, double dopt, OptionsSolve options)
+	void OptProblem::Impl::solve_varying_ic(std::vector<FName> fnames, int n_opt, int batch_size, int n_cd_steps, double dopt, OptionsSolve options)
 	{
 		// Clear/make directories if needed
-		if (options.write && options.clear_dir) {
+		if (options.clear_dir) {
 			system(("rm -rf " + options.dir_write).c_str());
-			system(("mkdir " + options.dir_write).c_str());
-			system(("mkdir " + options.dir_write + "/F").c_str());
-			system(("mkdir " + options.dir_write + "/ixn_params").c_str());
-			system(("mkdir " + options.dir_write + "/moments").c_str());
+		};
+		if (options.write) {
+			system(("mkdir -p " + options.dir_write).c_str());
+			system(("mkdir -p " + options.dir_write + "F").c_str());
+			system(("mkdir -p " + options.dir_write + "ixn_params").c_str());
+			system(("mkdir -p " + options.dir_write + "moments").c_str());
+		};
+		if (options.write_var_terms) {
+			system(("mkdir -p " + options.dir_write + "var_terms").c_str());
 		};
 
 		// Write the grids
@@ -882,13 +896,19 @@ namespace DynamicBoltzmann {
 
 		// For choosing the batch
 		int i_chosen;
-		std::vector<std::pair<std::string,int>> fnames_to_use, fnames_remaining;
-		std::vector<std::pair<std::string,int>>::iterator itf;
+		std::vector<FName> fnames_to_use, fnames_remaining;
+		std::vector<FName>::iterator itf;
+
+		// Optimization step translated by the offset
+		int i_opt;
 
 		// Iterate over optimization steps
-		for (int i_opt=0; i_opt<n_opt; i_opt++)
+		for (int i_opt_from_zero=0; i_opt_from_zero<n_opt; i_opt_from_zero++)
 		{
-			std::cout << "Opt step " << i_opt << " / " << n_opt-1 << std::endl;
+			std::cout << "Opt step " << i_opt_from_zero << " / " << n_opt-1 << std::endl;
+
+			// Offset 
+			i_opt = i_opt_from_zero + options.opt_idx_start_writing;
 
 			/*****
 			Step 0 - Check nesterov
@@ -896,7 +916,7 @@ namespace DynamicBoltzmann {
 
 			if (options.nesterov) {
 				// If first opt step, do nothing, but set the "prev" point to the current to initialize
-				if (i_opt == 0) {
+				if (i_opt_from_zero == 0) {
 					for (auto itbf=_bfs.begin(); itbf!=_bfs.end(); itbf++) {
 						itbf->nesterov_set_prev_equal_curr();
 					};
@@ -910,7 +930,7 @@ namespace DynamicBoltzmann {
 
 			// Write the basis funcs
 			if (options.write && !options.write_bf_only_final) {
-				write_bfs(options.dir_write+"F/",i_opt+options.opt_idx_start_writing);
+				write_bfs(options.dir_write+"F/",i_opt);
 			};
 
 			/*****
@@ -954,14 +974,14 @@ namespace DynamicBoltzmann {
 			for (int i_batch=0; i_batch<batch_size; i_batch++) 
 			{
 				if (options.verbose) {
-					std::cout << "Doing sample: " << i_batch << " / " << batch_size << " file: " << fnames_to_use[i_batch].first << std::endl;
+					std::cout << "Doing sample: " << i_batch << " / " << batch_size << " file: " << fnames_to_use[i_batch].fname << std::endl;
 				};
 
 				/*****
 				Step 2.1 - Read the IC
 				*****/
 
-				read_init_cond(fnames_to_use[i_batch].first+"../");
+				read_init_cond(fnames_to_use[i_batch].fname_ic);
 
 				/*****
 				Step 2.2 - Solve the current trajectory
@@ -972,7 +992,9 @@ namespace DynamicBoltzmann {
 				solve_ixn_param_traj();
 
 				// Write
-				write_ixn_params(options.dir_write+"ixn_params/",i_opt+options.opt_idx_start_writing,fnames_to_use[i_batch].second);
+				if (options.write) {
+					write_ixn_params(options.dir_write+"ixn_params/",i_opt,fnames_to_use[i_batch].idx);
+				};
 
 				if (DIAG_SOLVE) { std::cout << "OK" << std::endl; };
 
@@ -985,7 +1007,9 @@ namespace DynamicBoltzmann {
 				solve_var_traj();
 
 				// Write
-				//write_var_terms(options.dir_write+"var_terms/",i_opt+options.opt_idx_start_writing);
+				if (options.write_var_terms) {
+					write_var_terms(options.dir_write+"var_terms/",i_opt);
+				};
 				
 				if (DIAG_SOLVE) { std::cout << "OK" << std::endl; };
 
@@ -1022,7 +1046,7 @@ namespace DynamicBoltzmann {
 
 					if (options.awake_visible_are_binary) {
 						// Binary
-						_latt.read_from_file(fnames_to_use[i_batch].first + pad_str(options.time_idx_start_reading+_t_opt,4) + ".txt");
+						_latt.read_from_file(fnames_to_use[i_batch].fname + pad_str(options.time_idx_start_reading+_t_opt,4) + ".txt");
 					} else {
 						// Probabilistic
 						std::cerr << "Error! Probabilistic awake visible units are not supported yet." << std::endl;
@@ -1114,7 +1138,7 @@ namespace DynamicBoltzmann {
 				*****/
 
 				if (options.write) {
-					write_moments(options.dir_write+"moments/",i_opt+options.opt_idx_start_writing,fnames_to_use[i_batch].second);
+					write_moments(options.dir_write+"moments/",i_opt,fnames_to_use[i_batch].idx);
 				};
 
 				/*****
@@ -1122,7 +1146,7 @@ namespace DynamicBoltzmann {
 				*****/
 
 				for (auto itbf=_bfs.begin(); itbf!=_bfs.end(); itbf++) {
-					itbf->update_gather(_n_t_soln, _time.delta(), dopt);
+					itbf->update_gather(_n_t_soln, _time.delta(), dopt, options.local_decay, options.local_decay_factor);
 				};
 
 			};
@@ -1139,7 +1163,7 @@ namespace DynamicBoltzmann {
 
 		// Write the basis funcs one last time
 		if (options.write) {
-			write_bfs(options.dir_write+"F/",n_opt);
+			write_bfs(options.dir_write+"F/",n_opt+options.opt_idx_start_writing);
 		};
 	};
 
@@ -1148,10 +1172,10 @@ namespace DynamicBoltzmann {
 	Read some initial conditions
 	********************/
 
-	void OptProblem::Impl::read_init_cond(std::string dir) {
+	void OptProblem::Impl::read_init_cond(std::string fname_ic) {
 
 		std::ifstream f;
-		f.open(dir+"init.txt", std::ios::in);
+		f.open(fname_ic, std::ios::in);
 		char frag[100]; // fragments of the line
 		std::string sname="",sval="";
 		int i_frag=0;
@@ -1365,10 +1389,17 @@ namespace DynamicBoltzmann {
 		_impl->validate_setup();
 	};
 
+	void OptProblem::solve_ixn_param_traj() {
+		_impl->solve_ixn_param_traj();
+	};
+	void OptProblem::solve_var_traj() {
+		_impl->solve_var_traj();
+	};
+
 	void OptProblem::solve(std::vector<std::string> fnames, int n_opt, int batch_size, int n_cd_steps, double dopt, OptionsSolve options) {
 		_impl->solve(fnames,n_opt,batch_size,n_cd_steps,dopt,options);
 	};
-	void OptProblem::solve_varying_ic(std::vector<std::pair<std::string,int>> fnames, int n_opt, int batch_size, int n_cd_steps, double dopt, OptionsSolve options) {
+	void OptProblem::solve_varying_ic(std::vector<FName> fnames, int n_opt, int batch_size, int n_cd_steps, double dopt, OptionsSolve options) {
 		_impl->solve_varying_ic(fnames,n_opt,batch_size,n_cd_steps,dopt,options);
 	};
 

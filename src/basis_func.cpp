@@ -529,21 +529,52 @@ namespace DynamicBoltzmann {
 	Calculate the new basis function
 	********************/
 
-	void BasisFunc::update(int n_t, double dt, double dopt) 
+	void BasisFunc::update(int n_t, double dt, double dopt, bool local_decay, double local_decay_factor) 
 	{
+		int *idxs;
+		double *nu_vals;
+		double decay = 1.0;
+		if (local_decay) {
+			idxs = new int[_n_params];
+			nu_vals = new double[_n_params];
+		};
+
 		// Go through all idxs
 		for (int i=0; i<_val_len; i++) {
-			// Go through all updating terms
-			for (auto p: _update_ptrs) {
-				// Go through all times
-				for (int t=0; t<n_t; t++) {
-					_vals[i] += dopt * dt * p.first->moments_diff_at_time(t) * p.second->get_at_time_by_idx(t, i);
+
+			// Get the idxs of this i, and the values
+			if (local_decay) {
+				get_idxs(i,idxs);
+				for (int j=0; j<_n_params; j++) {
+					nu_vals[j] = _ixn_params[j]->get_by_idx(idxs[j]);
+				};
+			};
+
+			// Go through all times
+			for (int t=0; t<n_t; t++) {
+
+				if (local_decay) {
+					decay = 1.0;
+					for (int j=0; j<_n_params; j++) {
+						// Current nu - grid point we are updating
+						decay *= exp(-pow(_ixn_params[j]->get_at_time(t) - nu_vals[j],2) / local_decay_factor);
+					};
+				};
+
+				// Go through all updating terms
+				for (auto p: _update_ptrs) {
+					_vals[i] += dopt * dt * p.first->moments_diff_at_time(t) * p.second->get_at_time_by_idx(t, i) * decay;
 				};
 			};
 		};
+
+		if (local_decay) {
+			safeDelArr(idxs);
+			safeDelArr(nu_vals);
+		};
 	};
 
-	void BasisFunc::update_gather(int n_t, double dt, double dopt) 
+	void BasisFunc::update_gather(int n_t, double dt, double dopt, bool local_decay, double local_decay_factor) 
 	{
 		if (!_update_gathered) {
 			// alloc
@@ -551,13 +582,39 @@ namespace DynamicBoltzmann {
 			std::fill_n(_update_gathered,_val_len,0.);
 		};
 
+		int *idxs;
+		double *nu_vals;
+		double decay = 1.0;
+		if (local_decay) {
+			idxs = new int[_n_params];
+			nu_vals = new double[_n_params];
+		};
+
 		// Go through all idxs
 		for (int i=0; i<_val_len; i++) {
-			// Go through all updating terms
-			for (auto p: _update_ptrs) {
-				// Go through all times
-				for (int t=0; t<n_t; t++) {
-					_update_gathered[i] += dopt * dt * p.first->moments_diff_at_time(t) * p.second->get_at_time_by_idx(t, i);
+
+			// Get the idxs of this i, and the values
+			if (local_decay) {
+				get_idxs(i,idxs);
+				for (int j=0; j<_n_params; j++) {
+					nu_vals[j] = _ixn_params[j]->get_by_idx(idxs[j]);
+				};
+			};
+
+			// Go through all times
+			for (int t=0; t<n_t; t++) {
+
+				if (local_decay) {
+					decay = 1.0;
+					for (int j=0; j<_n_params; j++) {
+						// Current nu - grid point we are updating
+						decay *= exp(-pow(_ixn_params[j]->get_at_time(t) - nu_vals[j],2) / local_decay_factor);
+					};
+				};
+
+				// Go through all updating terms
+				for (auto p: _update_ptrs) {
+					_update_gathered[i] += dopt * dt * p.first->moments_diff_at_time(t) * p.second->get_at_time_by_idx(t, i) * decay;
 				};
 			};
 		};
@@ -655,7 +712,7 @@ namespace DynamicBoltzmann {
 		// Go through ixn parmas
 		double r=1;
 		for (int ip=0; ip<_n_params; ip++) {
-			r *= exp(-pow(_ixn_params[ip]->get_at_time(it)-_ixn_params[ip]->get_by_idx(idxs[ip]),2)/(2.*1.0*_ixn_params[ip]->delta()))/sqrt(2.*M_PI*1.0*_ixn_params[ip]->delta());
+			r *= exp(-pow(_ixn_params[ip]->get_at_time(it)-_ixn_params[ip]->get_by_idx(idxs[ip]),2)/(2.*1.0*_ixn_params[ip]->delta())) / sqrt(2.*M_PI*1.0*_ixn_params[ip]->delta());
 		};
 
 		// Clean

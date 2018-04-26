@@ -130,10 +130,8 @@ namespace DynamicBoltzmann {
 		double moments_get_at_time(MomentType moment_type, int it) const;
 
 		// Write into an ofstream
-		void write_vals(std::string dir, int idx, int n_t_traj) const;
-		void write_vals(std::string dir, int idx1, int idx2, int n_t_traj) const;
-		void write_moments(std::string dir, int idx, int n_t_traj) const;
-		void write_moments(std::string dir, int idx1, int idx2, int n_t_traj) const;
+		void write_vals(std::string dir, int idx_opt_step, std::vector<int> idxs, int n_t_traj) const;
+		void write_moments(std::string dir, int idx_opt_step, std::vector<int> idxs, int n_t_traj) const;
 	};
 };
 

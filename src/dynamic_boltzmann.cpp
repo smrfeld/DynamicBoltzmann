@@ -153,7 +153,7 @@ namespace DynamicBoltzmann {
 		********************/
 
 		void solve(std::vector<std::string> fnames, int n_opt, int batch_size, int n_cd_steps, double dopt, OptionsSolve options);
-		void solve_varying_ic(std::vector<FName> fnames, int n_opt, int batch_size, int n_cd_steps, double dopt, OptionsSolve options);
+		void solve_varying_ic(std::vector<FName> fnames, std::vector<FName> fnames_used_in_every_batch, int n_opt, int batch_size, int n_cd_steps, double dopt, OptionsSolve options);
 
 		/********************
 		Read basis func
@@ -174,12 +174,12 @@ namespace DynamicBoltzmann {
 		void write_bf_grids(std::string dir) const;
 		void write_t_grid(std::string dir) const;
 
-		void write_ixn_params(std::string dir, int idx) const;
-		void write_ixn_params(std::string dir, int idx1, int idx2) const;
-		void write_bfs(std::string dir, int idx) const;
-		void write_var_terms(std::string dir, int idx) const;
-		void write_moments(std::string dir, int idx) const;
-		void write_moments(std::string dir, int idx1, int idx2) const;
+		void write_ixn_params(std::string dir, int idx_opt_step) const;
+		void write_ixn_params(std::string dir, int idx_opt_step, std::vector<int> idxs) const;
+		void write_bfs(std::string dir, int idx_opt_step) const;
+		void write_var_terms(std::string dir, int idx_opt_step) const;
+		void write_moments(std::string dir, int idx_opt_step) const;
+		void write_moments(std::string dir, int idx_opt_step, std::vector<int> idxs) const;
 	};
 
 	/****************************************
@@ -872,7 +872,7 @@ namespace DynamicBoltzmann {
 	Solve over varying initial conditions
 	********************/
 
-	void OptProblem::Impl::solve_varying_ic(std::vector<FName> fnames, int n_opt, int batch_size, int n_cd_steps, double dopt, OptionsSolve options)
+	void OptProblem::Impl::solve_varying_ic(std::vector<FName> fnames, std::vector<FName> fnames_used_in_every_batch, int n_opt, int batch_size, int n_cd_steps, double dopt, OptionsSolve options)
 	{
 		// Clear/make directories if needed
 		if (options.clear_dir) {
@@ -945,8 +945,8 @@ namespace DynamicBoltzmann {
 			fnames_remaining=fnames;
 
 			// Files to always use in every batch
-			if (options.fnames_used_in_every_batch.size() > 0) {
-				fnames_to_use = options.fnames_used_in_every_batch;
+			if (fnames_used_in_every_batch.size() > 0) {
+				fnames_to_use = fnames_used_in_every_batch;
 			};
 
 			// Go through the batch size
@@ -992,8 +992,8 @@ namespace DynamicBoltzmann {
 				solve_ixn_param_traj();
 
 				// Write
-				if (options.write) {
-					write_ixn_params(options.dir_write+"ixn_params/",i_opt,fnames_to_use[i_batch].idx);
+				if (options.write && fnames_to_use[i_batch].write) {
+					write_ixn_params(options.dir_write+"ixn_params/",i_opt,fnames_to_use[i_batch].idxs);
 				};
 
 				if (DIAG_SOLVE) { std::cout << "OK" << std::endl; };
@@ -1137,8 +1137,8 @@ namespace DynamicBoltzmann {
 				Step 2.6 - Write the moments
 				*****/
 
-				if (options.write) {
-					write_moments(options.dir_write+"moments/",i_opt,fnames_to_use[i_batch].idx);
+				if (options.write && fnames_to_use[i_batch].write) {
+					write_moments(options.dir_write+"moments/",i_opt,fnames_to_use[i_batch].idxs);
 				};
 
 				/*****
@@ -1215,34 +1215,34 @@ namespace DynamicBoltzmann {
 		_time.write_grid(dir+"grid_time.txt");
 	};
 
-	void OptProblem::Impl::write_ixn_params(std::string dir, int idx) const {
+	void OptProblem::Impl::write_ixn_params(std::string dir, int idx_opt_step) const {
 		for (auto it = _ixn_params.begin(); it!=_ixn_params.end(); it++) {
-			it->write_vals(dir,idx,_n_t_soln);
+			it->write_vals(dir,idx_opt_step,{},_n_t_soln);
 		};
 	};
-	void OptProblem::Impl::write_ixn_params(std::string dir, int idx1, int idx2) const {
+	void OptProblem::Impl::write_ixn_params(std::string dir, int idx_opt_step, std::vector<int> idxs) const {
 		for (auto it = _ixn_params.begin(); it!=_ixn_params.end(); it++) {
-			it->write_vals(dir,idx1,idx2,_n_t_soln);
+			it->write_vals(dir,idx_opt_step,idxs,_n_t_soln);
 		};
 	};
-	void OptProblem::Impl::write_bfs(std::string dir, int idx) const {
+	void OptProblem::Impl::write_bfs(std::string dir, int idx_opt_step) const {
 		for (auto it=_bfs.begin(); it!=_bfs.end(); it++) {
-			it->write_vals(dir, idx);
+			it->write_vals(dir, idx_opt_step);
 		};
 	};
-	void OptProblem::Impl::write_var_terms(std::string dir, int idx) const {
+	void OptProblem::Impl::write_var_terms(std::string dir, int idx_opt_step) const {
 		for (auto it=_var_terms.begin(); it!=_var_terms.end(); it++) {
-			it->write_vals(dir,idx);
+			it->write_vals(dir, idx_opt_step);
 		};
 	};
-	void OptProblem::Impl::write_moments(std::string dir, int idx) const {
+	void OptProblem::Impl::write_moments(std::string dir, int idx_opt_step) const {
 		for (auto it = _ixn_params.begin(); it!=_ixn_params.end(); it++) {
-			it->write_moments(dir,idx,_n_t_soln);
+			it->write_moments(dir,idx_opt_step,{},_n_t_soln);
 		};
 	};
-	void OptProblem::Impl::write_moments(std::string dir, int idx1, int idx2) const {
+	void OptProblem::Impl::write_moments(std::string dir, int idx_opt_step, std::vector<int> idxs) const {
 		for (auto it = _ixn_params.begin(); it!=_ixn_params.end(); it++) {
-			it->write_moments(dir,idx1,idx2,_n_t_soln);
+			it->write_moments(dir,idx_opt_step,idxs,_n_t_soln);
 		};
 	};
 
@@ -1400,7 +1400,10 @@ namespace DynamicBoltzmann {
 		_impl->solve(fnames,n_opt,batch_size,n_cd_steps,dopt,options);
 	};
 	void OptProblem::solve_varying_ic(std::vector<FName> fnames, int n_opt, int batch_size, int n_cd_steps, double dopt, OptionsSolve options) {
-		_impl->solve_varying_ic(fnames,n_opt,batch_size,n_cd_steps,dopt,options);
+		_impl->solve_varying_ic(fnames,{},n_opt,batch_size,n_cd_steps,dopt,options);
+	};
+	void OptProblem::solve_varying_ic(std::vector<FName> fnames, std::vector<FName> fnames_used_in_every_batch, int n_opt, int batch_size, int n_cd_steps, double dopt, OptionsSolve options) {
+		_impl->solve_varying_ic(fnames,fnames_used_in_every_batch,n_opt,batch_size,n_cd_steps,dopt,options);
 	};
 
 	void OptProblem::read_basis_func(std::string bf_name, std::string fname) {
@@ -1418,7 +1421,10 @@ namespace DynamicBoltzmann {
 		_impl->write_ixn_params(dir,idx);
 	};
 	void OptProblem::write_ixn_params(std::string dir, int idx1, int idx2) const {
-		_impl->write_ixn_params(dir,idx1,idx2);
+		_impl->write_ixn_params(dir,idx1,std::vector<int>({idx2}));
+	};
+	void OptProblem::write_ixn_params(std::string dir, int idx, std::vector<int> idxs) const {
+		_impl->write_ixn_params(dir,idx,idxs);
 	};
 	void OptProblem::write_bfs(std::string dir, int idx) const {
 		_impl->write_bfs(dir,idx);
@@ -1430,7 +1436,10 @@ namespace DynamicBoltzmann {
 		_impl->write_moments(dir,idx);
 	};
 	void OptProblem::write_moments(std::string dir, int idx1, int idx2) const {
-		_impl->write_moments(dir,idx1,idx2);
+		_impl->write_moments(dir,idx1,std::vector<int>({idx2}));
+	};
+	void OptProblem::write_moments(std::string dir, int idx, std::vector<int> idxs) const {
+		_impl->write_moments(dir,idx,idxs);
 	};
 
 };

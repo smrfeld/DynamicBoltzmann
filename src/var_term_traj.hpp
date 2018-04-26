@@ -72,7 +72,7 @@ namespace DynamicBoltzmann {
 		std::string name();
 
 		// Write
-		void write_vals(std::string dir, int idx) const;
+		void write_vals(std::string dir, int idx_opt_step) const;
 	};
 
 };

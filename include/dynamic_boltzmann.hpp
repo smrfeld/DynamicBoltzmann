@@ -66,16 +66,21 @@ namespace DynamicBoltzmann {
 		// Filename
 		std::string fname;
 
-		// Idx
-		int idx;
+		// Idxs, possibly more than one
+		std::vector<int> idxs;
 
 		// Initial condition
 		std::string fname_ic;
 
-		FName(std::string fname, int idx, std::string fname_ic) {
+		// Whether to write this idx
+		bool write;
+
+		FName(std::string fname, int idx, std::string fname_ic, bool write=true) : FName(fname,std::vector<int>({idx}),fname_ic,write) {};
+		FName(std::string fname, std::vector<int> idxs, std::string fname_ic, bool write=true) {
 			this->fname=fname;
-			this->idx=idx;
+			this->idxs=idxs;
 			this->fname_ic=fname_ic;
+			this->write = write;
 		};
 	};
 
@@ -124,11 +129,6 @@ namespace DynamicBoltzmann {
 		// Locality factor for variational term
 		bool local_decay;
 		double local_decay_factor;
-
-		// For varying IC ONLY:
-		// Special filenames that should be used in every batch - these are used first, then the rest are randomly chosen
-		// Note: these should be removed from the other fnames
-		std::vector<FName> fnames_used_in_every_batch;
 
 		/********************
 		Constructor
@@ -241,6 +241,7 @@ namespace DynamicBoltzmann {
 
 		void solve(std::vector<std::string> fnames, int n_opt, int batch_size, int n_cd_steps, double dopt, OptionsSolve options=OptionsSolve());
 		void solve_varying_ic(std::vector<FName> fnames, int n_opt, int batch_size, int n_cd_steps, double dopt, OptionsSolve options=OptionsSolve());
+		void solve_varying_ic(std::vector<FName> fnames, std::vector<FName> fnames_used_in_every_batch, int n_opt, int batch_size, int n_cd_steps, double dopt, OptionsSolve options=OptionsSolve());
 
 		/********************
 		Read basis function
@@ -259,10 +260,12 @@ namespace DynamicBoltzmann {
 		// Solved values
 		void write_ixn_params(std::string dir, int idx) const;
 		void write_ixn_params(std::string dir, int idx1, int idx2) const;
+		void write_ixn_params(std::string dir, int idx, std::vector<int> idxs) const;		
 		void write_bfs(std::string dir, int idx) const;
 		void write_var_terms(std::string dir, int idx) const;
 		void write_moments(std::string dir, int idx) const;
 		void write_moments(std::string dir, int idx1, int idx2) const;
+		void write_moments(std::string dir, int idx, std::vector<int> idxs) const;
 
 	};
 

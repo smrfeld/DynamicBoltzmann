@@ -171,7 +171,7 @@ namespace DynamicBoltzmann {
 
 		// Write/Read grid/vals
 		void write_grid(std::string fname) const;
-		void write_vals(std::string dir, int idx) const;
+		void write_vals(std::string dir, int idx_opt_step) const;
 		void read_vals(std::string fname);
 
 		// Get the delta source

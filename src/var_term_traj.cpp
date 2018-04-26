@@ -173,9 +173,9 @@ namespace DynamicBoltzmann {
 	Write
 	********************/
 
-	void VarTermTraj::write_vals(std::string dir,int idx) const {
+	void VarTermTraj::write_vals(std::string dir,int idx_opt_step) const {
 		std::ofstream f;
-		f.open(dir+_name+"_"+pad_str(idx,4)+".txt");
+		f.open(dir+_name+"_"+pad_str(idx_opt_step,4)+".txt");
 		for (int i=0; i<_val_len; i++) {
 			for (int t=0; t<_n_t; t++) {
 				f << _vals[t].get_by_idx(i);

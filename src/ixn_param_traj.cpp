@@ -305,18 +305,13 @@ namespace DynamicBoltzmann {
 	Write into an ofstream
 	********************/
 
-	void IxnParamTraj::write_vals(std::string dir, int idx, int n_t_traj) const {
+	void IxnParamTraj::write_vals(std::string dir, int idx_opt_step, std::vector<int> idxs, int n_t_traj) const {
 		std::ofstream f;
-		f.open(dir+name()+"_"+pad_str(idx,4)+".txt");
-		for (int i=0; i<n_t_traj; i++) {
-			f << _vals[i];
-			if (i != n_t_traj-1) { f << "\n"; };
+		std::string fname = dir+name()+"_"+pad_str(idx_opt_step,4);
+		for (auto idx: idxs) {
+			fname += "_" + pad_str(idx,4);
 		};
-		f.close();
-	};
-	void IxnParamTraj::write_vals(std::string dir, int idx1, int idx2, int n_t_traj) const {
-		std::ofstream f;
-		f.open(dir+name()+"_"+pad_str(idx1,4)+"_"+pad_str(idx2,4)+".txt");
+		f.open(fname+".txt");
 		for (int i=0; i<n_t_traj; i++) {
 			f << _vals[i];
 			if (i != n_t_traj-1) { f << "\n"; };
@@ -324,18 +319,13 @@ namespace DynamicBoltzmann {
 		f.close();
 	};
 
-	void IxnParamTraj::write_moments(std::string dir, int idx, int n_t_traj) const {
+	void IxnParamTraj::write_moments(std::string dir, int idx_opt_step, std::vector<int> idxs, int n_t_traj) const {
 		std::ofstream f;
-		f.open(dir+name()+"_"+pad_str(idx,4)+".txt");
-		for (int i=0; i<n_t_traj; i++) {
-			f << _awake[i] << " " << _asleep[i];
-			if (i != n_t_traj-1) { f << "\n"; };
+		std::string fname = dir+name()+"_"+pad_str(idx_opt_step,4);
+		for (auto idx: idxs) {
+			fname += "_" + pad_str(idx,4);
 		};
-		f.close();
-	};
-	void IxnParamTraj::write_moments(std::string dir, int idx1, int idx2, int n_t_traj) const {
-		std::ofstream f;
-		f.open(dir+name()+"_"+pad_str(idx1,4)+"_"+pad_str(idx2,4)+".txt");
+		f.open(fname+".txt");
 		for (int i=0; i<n_t_traj; i++) {
 			f << _awake[i] << " " << _asleep[i];
 			if (i != n_t_traj-1) { f << "\n"; };

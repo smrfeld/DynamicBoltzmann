@@ -153,7 +153,12 @@ namespace DynamicBoltzmann {
 		********************/
 
 		void solve(std::vector<std::string> fnames, int n_opt, int batch_size, int n_cd_steps, double dopt, OptionsSolve options);
+		void solve(std::vector<std::vector<std::string>> fnames, int n_opt, int n_cd_steps, double dopt, OptionsSolve options);
+		void _solve(std::vector<std::vector<std::string>> fnames_to_use, int n_opt, int n_cd_steps, double dopt, OptionsSolve options);
+
 		void solve_varying_ic(std::vector<FName> fnames, std::vector<FName> fnames_used_in_every_batch, int n_opt, int batch_size, int n_cd_steps, double dopt, OptionsSolve options);
+		void solve_varying_ic(std::vector<std::vector<FName>> fnames, int n_opt, int n_cd_steps, double dopt, OptionsSolve options);
+		void _solve_varying_ic(std::vector<std::vector<FName>> fnames_to_use, int n_opt, int n_cd_steps, double dopt, OptionsSolve options);
 
 		/********************
 		Read basis func
@@ -587,7 +592,74 @@ namespace DynamicBoltzmann {
 	Solve --- Main optimization loop
 	********************/
 
-	void OptProblem::Impl::solve(std::vector<std::string> fnames, int n_opt, int batch_size, int n_cd_steps, double dopt, OptionsSolve options)
+	void OptProblem::Impl::solve(std::vector<std::string> fnames, int n_opt, int batch_size, int n_cd_steps, double dopt, OptionsSolve options) {
+
+		// Pick filenames
+		std::vector<std::vector<std::string>> fnames_to_use;
+		std::vector<std::string> fnames_batch;
+		std::vector<std::string> fnames_remaining;
+		std::vector<std::string>::iterator itf;
+
+		for (int i_opt=0; i_opt < n_opt; i_opt++) {
+
+			// Clear batch
+			fnames_batch.clear();
+
+			// Reset remaining
+			fnames_remaining=fnames;
+
+			// Choose batch
+			if (options.use_same_lattice_in_batch) {
+				// Use a single lattice - pick a rand
+				itf = fnames_remaining.begin();
+				std::advance(itf,randI(0,fnames_remaining.size()-1));
+				// Add
+				fnames_batch.push_back(*itf);
+				// Only this one
+				for (int i_batch=1; i_batch<batch_size; i_batch++) {
+					fnames_batch.push_back(fnames_batch.back());
+				};
+			} else {
+				while (fnames_batch.size() < batch_size) {
+					// Choose a random one
+					itf = fnames_remaining.begin();
+					std::advance(itf,randI(0,fnames_remaining.size()-1));
+					// Add
+					fnames_batch.push_back(*itf);
+					// Don't choose again
+					fnames_remaining.erase(itf);
+				};
+			};
+
+			// Add the batch
+			fnames_to_use.push_back(fnames_batch);
+		};
+
+		// Main solve function
+		_solve(fnames_to_use, n_opt, n_cd_steps, dopt, options);
+	};
+
+	void OptProblem::Impl::solve(std::vector<std::vector<std::string>> fname_collection, int n_opt, int n_cd_steps, double dopt, OptionsSolve options) {
+
+		// Pick filenames
+		std::vector<std::vector<std::string>> fnames_to_use;
+		std::vector<std::string> fnames_batch;
+		std::vector<std::string>::iterator itf;
+
+		for (int i_opt=0; i_opt < n_opt; i_opt++) {
+			// Pick a random one
+			fnames_batch = fname_collection[randI(0,fname_collection.size()-1)];
+
+			// Add
+			fnames_to_use.push_back(fnames_batch);
+		};
+
+		// Main solve function
+		_solve(fnames_to_use, n_opt, n_cd_steps, dopt, options);
+
+	};
+
+	void OptProblem::Impl::_solve(std::vector<std::vector<std::string>> fnames_to_use, int n_opt, int n_cd_steps, double dopt, OptionsSolve options)
 	{
 		// Clear/make directories if needed
 		if (options.clear_dir) {
@@ -608,10 +680,6 @@ namespace DynamicBoltzmann {
 			write_bf_grids(options.dir_write);
 			write_t_grid(options.dir_write);
 		};
-
-		// For filenames
-		std::vector<std::string> fnames_to_use, fnames_remaining;
-		std::vector<std::string>::iterator itf;
 
 		// Opt step with offset
 		int i_opt;
@@ -680,38 +748,6 @@ namespace DynamicBoltzmann {
 			if (DIAG_SOLVE) { std::cout << "OK" << std::endl; };
 
 			/*****
-			Step 3 - Pick a random batch
-			*****/
-
-			if (DIAG_SOLVE) { std::cout << "Random batch" << std::endl; };
-
-			fnames_to_use.clear();
-			fnames_remaining=fnames;
-			if (options.use_same_lattice_in_batch) {
-				// Use a single lattice - pick a rand
-				itf = fnames_remaining.begin();
-				std::advance(itf,randI(0,fnames_remaining.size()-1));
-				// Add
-				fnames_to_use.push_back(*itf);
-				for (int i_batch=1; i_batch<batch_size; i_batch++) {
-					// Only this one
-					fnames_to_use.push_back(fnames_to_use.back());
-				};
-			} else {
-				while (fnames_to_use.size() < batch_size) {
-					// Choose
-					itf = fnames_remaining.begin();
-					std::advance(itf,randI(0,fnames_remaining.size()-1));
-					// Add
-					fnames_to_use.push_back(*itf);
-					// Don't choose again
-					fnames_remaining.erase(itf);
-				};
-			};
-
-			if (DIAG_SOLVE) { std::cout << "OK" << std::endl; };
-
-			/*****
 			Step 4 - reset the moments at all times
 			*****/
 
@@ -742,7 +778,7 @@ namespace DynamicBoltzmann {
 
 				if (DIAG_SOLVE) { std::cout << "   Looping over batch" << std::endl; };
 
-				for (int i_batch=0; i_batch<batch_size; i_batch++) 
+				for (int i_batch=0; i_batch<fnames_to_use[_t_opt].size(); i_batch++) 
 				{
 					if (options.verbose) {
 						std::cout << "." << std::flush;
@@ -756,7 +792,7 @@ namespace DynamicBoltzmann {
 
 					if (options.awake_visible_are_binary) {
 						// Binary
-						_latt.read_from_file(fnames_to_use[i_batch] + pad_str(options.time_idx_start_reading+_t_opt,4) + ".txt");
+						_latt.read_from_file(fnames_to_use[_t_opt][i_batch] + pad_str(options.time_idx_start_reading+_t_opt,4) + ".txt");
 					} else {
 						// Probabilistic
 						std::cerr << "Error! Probabilistic awake visible units not supported yet!" << std::endl;
@@ -782,7 +818,7 @@ namespace DynamicBoltzmann {
 					if (DIAG_SOLVE) { std::cout << "      Record awake moments" << std::endl; };
 
 					for (auto itp = _ixn_params.begin(); itp != _ixn_params.end(); itp++) {
-						itp->moments_retrieve_at_time(IxnParamTraj::AWAKE,_t_opt,batch_size);
+						itp->moments_retrieve_at_time(IxnParamTraj::AWAKE,_t_opt,fnames_to_use[_t_opt].size());
 					};
 
 					/*****
@@ -833,7 +869,7 @@ namespace DynamicBoltzmann {
 					if (DIAG_SOLVE) { std::cout << "      Record asleep moments" << std::endl; };
 
 					for (auto itp = _ixn_params.begin(); itp != _ixn_params.end(); itp++) {
-						itp->moments_retrieve_at_time(IxnParamTraj::ASLEEP,_t_opt,batch_size);
+						itp->moments_retrieve_at_time(IxnParamTraj::ASLEEP,_t_opt,fnames_to_use[_t_opt].size());
 					};
 				};
 
@@ -872,7 +908,69 @@ namespace DynamicBoltzmann {
 	Solve over varying initial conditions
 	********************/
 
-	void OptProblem::Impl::solve_varying_ic(std::vector<FName> fnames, std::vector<FName> fnames_used_in_every_batch, int n_opt, int batch_size, int n_cd_steps, double dopt, OptionsSolve options)
+	void OptProblem::Impl::solve_varying_ic(std::vector<FName> fnames, std::vector<FName> fnames_used_in_every_batch, int n_opt, int batch_size, int n_cd_steps, double dopt, OptionsSolve options) {
+
+		// Pick filenames
+		std::vector<std::vector<FName>> fnames_to_use;
+		std::vector<FName> fnames_batch;
+		std::vector<FName> fnames_remaining;
+		std::vector<FName>::iterator itf;
+		int i_chosen;
+
+		for (int i_opt=0; i_opt<n_opt; i_opt++) {
+
+			// Clear batch
+			fnames_batch.clear();
+
+			// Reset
+			fnames_remaining=fnames;
+
+			// Files to always use in every batch
+			if (fnames_used_in_every_batch.size() > 0) {
+				fnames_batch = fnames_used_in_every_batch;
+			};
+
+			// Go through the batch size
+			while (fnames_batch.size() < batch_size) {
+				// Grab a filename
+				itf = fnames_remaining.begin();
+				i_chosen = randI(0,fnames_remaining.size()-1);
+				std::advance(itf,i_chosen);
+
+				// Add that this is to be used
+				fnames_batch.push_back(*itf);
+
+				// Don't choose this again
+				fnames_remaining.erase(itf);
+			};
+
+			// Add the batch
+			fnames_to_use.push_back(fnames_batch);
+		};
+
+		// Main solve function
+		_solve_varying_ic(fnames_to_use, n_opt, n_cd_steps, dopt, options);
+	};
+
+	void OptProblem::Impl::solve_varying_ic(std::vector<std::vector<FName>> fname_collection, int n_opt, int n_cd_steps, double dopt, OptionsSolve options) {
+
+		// Pick filenames
+		std::vector<std::vector<FName>> fnames_to_use;
+		std::vector<FName> fnames_batch;
+
+		for (int i_opt=0; i_opt < n_opt; i_opt++) {
+			// Pick a random one
+			fnames_batch = fname_collection[randI(0,fname_collection.size()-1)];
+
+			// Add
+			fnames_to_use.push_back(fnames_batch);
+		};
+
+		// Main solve function
+		_solve_varying_ic(fnames_to_use, n_opt, n_cd_steps, dopt, options);
+	};
+
+	void OptProblem::Impl::_solve_varying_ic(std::vector<std::vector<FName>> fnames_to_use, int n_opt, int n_cd_steps, double dopt, OptionsSolve options)
 	{
 		// Clear/make directories if needed
 		if (options.clear_dir) {
@@ -894,21 +992,16 @@ namespace DynamicBoltzmann {
 			write_t_grid(options.dir_write);
 		};
 
-		// For choosing the batch
-		int i_chosen;
-		std::vector<FName> fnames_to_use, fnames_remaining;
-		std::vector<FName>::iterator itf;
-
 		// Optimization step translated by the offset
-		int i_opt;
+		int i_opt_translated;
 
 		// Iterate over optimization steps
-		for (int i_opt_from_zero=0; i_opt_from_zero<n_opt; i_opt_from_zero++)
+		for (int i_opt=0; i_opt<n_opt; i_opt++)
 		{
-			std::cout << "Opt step " << i_opt_from_zero << " / " << n_opt-1 << std::endl;
+			std::cout << "Opt step " << i_opt << " / " << n_opt-1 << std::endl;
 
 			// Offset 
-			i_opt = i_opt_from_zero + options.opt_idx_start_writing;
+			i_opt_translated = i_opt + options.opt_idx_start_writing;
 
 			/*****
 			Step 0 - Check nesterov
@@ -916,54 +1009,22 @@ namespace DynamicBoltzmann {
 
 			if (options.nesterov) {
 				// If first opt step, do nothing, but set the "prev" point to the current to initialize
-				if (i_opt_from_zero == 0) {
+				if (i_opt == 0) {
 					for (auto itbf=_bfs.begin(); itbf!=_bfs.end(); itbf++) {
 						itbf->nesterov_set_prev_equal_curr();
 					};
 				} else {
 					// Move to the intermediate point
 					for (auto itbf=_bfs.begin(); itbf!=_bfs.end(); itbf++) {
-						itbf->nesterov_move_to_intermediate_pt(i_opt);
+						itbf->nesterov_move_to_intermediate_pt(i_opt_translated);
 					};
 				};
 			};
 
 			// Write the basis funcs
 			if (options.write && !options.write_bf_only_final) {
-				write_bfs(options.dir_write+"F/",i_opt);
+				write_bfs(options.dir_write+"F/",i_opt_translated);
 			};
-
-			/*****
-			Step 1 - Pick a random batch
-			*****/
-
-			if (DIAG_SOLVE) { std::cout << "Random batch" << std::endl; };
-
-			// Clear
-			fnames_to_use.clear();
-			// Reset
-			fnames_remaining=fnames;
-
-			// Files to always use in every batch
-			if (fnames_used_in_every_batch.size() > 0) {
-				fnames_to_use = fnames_used_in_every_batch;
-			};
-
-			// Go through the batch size
-			while (fnames_to_use.size() < batch_size) {
-				// Grab a filename
-				itf = fnames_remaining.begin();
-				i_chosen = randI(0,fnames_remaining.size()-1);
-				std::advance(itf,i_chosen);
-
-				// Add that this is to be used
-				fnames_to_use.push_back(*itf);
-
-				// Don't choose this again
-				fnames_remaining.erase(itf);
-			};
-
-			if (DIAG_SOLVE) { std::cout << "OK" << std::endl; };
 
 			/*****
 			Step 2 - Iterate over batch
@@ -971,17 +1032,17 @@ namespace DynamicBoltzmann {
 
 			if (DIAG_SOLVE) { std::cout << "   Looping over batch" << std::endl; };
 
-			for (int i_batch=0; i_batch<batch_size; i_batch++) 
+			for (int i_batch=0; i_batch<fnames_to_use[i_opt].size(); i_batch++) 
 			{
 				if (options.verbose) {
-					std::cout << "Doing sample: " << i_batch << " / " << batch_size << " file: " << fnames_to_use[i_batch].fname << std::endl;
+					std::cout << "Doing sample: " << i_batch << " / " << fnames_to_use[i_opt].size() << " file: " << fnames_to_use[i_opt][i_batch].fname << std::endl;
 				};
 
 				/*****
 				Step 2.1 - Read the IC
 				*****/
 
-				read_init_cond(fnames_to_use[i_batch].fname_ic);
+				read_init_cond(fnames_to_use[i_opt][i_batch].fname_ic);
 
 				/*****
 				Step 2.2 - Solve the current trajectory
@@ -992,8 +1053,8 @@ namespace DynamicBoltzmann {
 				solve_ixn_param_traj();
 
 				// Write
-				if (options.write && fnames_to_use[i_batch].write) {
-					write_ixn_params(options.dir_write+"ixn_params/",i_opt,fnames_to_use[i_batch].idxs);
+				if (options.write && fnames_to_use[i_opt][i_batch].write) {
+					write_ixn_params(options.dir_write+"ixn_params/",i_opt_translated,fnames_to_use[i_opt][i_batch].idxs);
 				};
 
 				if (DIAG_SOLVE) { std::cout << "OK" << std::endl; };
@@ -1008,7 +1069,7 @@ namespace DynamicBoltzmann {
 
 				// Write
 				if (options.write_var_terms) {
-					write_var_terms(options.dir_write+"var_terms/",i_opt);
+					write_var_terms(options.dir_write+"var_terms/",i_opt_translated);
 				};
 				
 				if (DIAG_SOLVE) { std::cout << "OK" << std::endl; };
@@ -1046,7 +1107,7 @@ namespace DynamicBoltzmann {
 
 					if (options.awake_visible_are_binary) {
 						// Binary
-						_latt.read_from_file(fnames_to_use[i_batch].fname + pad_str(options.time_idx_start_reading+_t_opt,4) + ".txt");
+						_latt.read_from_file(fnames_to_use[i_opt][i_batch].fname + pad_str(options.time_idx_start_reading+_t_opt,4) + ".txt");
 					} else {
 						// Probabilistic
 						std::cerr << "Error! Probabilistic awake visible units are not supported yet." << std::endl;
@@ -1137,8 +1198,8 @@ namespace DynamicBoltzmann {
 				Step 2.6 - Write the moments
 				*****/
 
-				if (options.write && fnames_to_use[i_batch].write) {
-					write_moments(options.dir_write+"moments/",i_opt,fnames_to_use[i_batch].idxs);
+				if (options.write && fnames_to_use[i_opt][i_batch].write) {
+					write_moments(options.dir_write+"moments/",i_opt_translated,fnames_to_use[i_opt][i_batch].idxs);
 				};
 
 				/*****
@@ -1399,11 +1460,18 @@ namespace DynamicBoltzmann {
 	void OptProblem::solve(std::vector<std::string> fnames, int n_opt, int batch_size, int n_cd_steps, double dopt, OptionsSolve options) {
 		_impl->solve(fnames,n_opt,batch_size,n_cd_steps,dopt,options);
 	};
+	void OptProblem::solve(std::vector<std::vector<std::string>> fname_collection, int n_opt, int n_cd_steps, double dopt, OptionsSolve options) {
+		_impl->solve(fname_collection,n_opt,n_cd_steps,dopt,options);
+	};
+
 	void OptProblem::solve_varying_ic(std::vector<FName> fnames, int n_opt, int batch_size, int n_cd_steps, double dopt, OptionsSolve options) {
 		_impl->solve_varying_ic(fnames,{},n_opt,batch_size,n_cd_steps,dopt,options);
 	};
 	void OptProblem::solve_varying_ic(std::vector<FName> fnames, std::vector<FName> fnames_used_in_every_batch, int n_opt, int batch_size, int n_cd_steps, double dopt, OptionsSolve options) {
 		_impl->solve_varying_ic(fnames,fnames_used_in_every_batch,n_opt,batch_size,n_cd_steps,dopt,options);
+	};
+	void OptProblem::solve_varying_ic(std::vector<std::vector<FName>> fname_collection, int n_opt, int n_cd_steps, double dopt, OptionsSolve options) {
+		_impl->solve_varying_ic(fname_collection,n_opt,n_cd_steps,dopt,options);
 	};
 
 	void OptProblem::read_basis_func(std::string bf_name, std::string fname) {

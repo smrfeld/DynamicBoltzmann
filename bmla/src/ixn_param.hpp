@@ -58,8 +58,9 @@ namespace DynamicBoltzmann {
 		// Value
 		double _val;
 
-		// An average value, manually updated
-		double _val_ave;
+		// Solution traj
+		bool _track_soln_traj;
+		std::vector<double> _soln_traj;
 
 		// Initial guess
 		double _val_guess;
@@ -116,10 +117,11 @@ namespace DynamicBoltzmann {
 		void moments_retrieve(MomentType moment_type, int batch_size);
 		double moments_diff() const;
 
-		// Average value
-		void reset_ave();
-		void increment_ave(int n_samples);
+		// Store solution traj
+		void set_track_soln_traj(bool flag);
+		void reset_soln_traj();
 		double get_ave() const;
+		double get_ave(int last_n_steps) const;
 	};
 };
 

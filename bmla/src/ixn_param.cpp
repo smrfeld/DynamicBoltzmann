@@ -3,6 +3,7 @@
 #include <iostream>
 #include <fstream>
 #include "math.h"
+#include <algorithm>
 
 /************************************
 * Namespace for DynamicBoltzmann
@@ -31,7 +32,7 @@ namespace DynamicBoltzmann {
 
 		_val = val_guess;
 
-		_val_ave = 0.0;
+		_track_soln_traj = false;
 
 		_asleep = 0.0;
 		_awake = 0.0;
@@ -74,7 +75,8 @@ namespace DynamicBoltzmann {
 		_hidden_units = other._hidden_units;
 		_val = other._val;
 		_val_guess = other._val_guess;
-		_val_ave = other._val_ave;
+		_track_soln_traj = other._track_soln_traj;
+		_soln_traj = other._soln_traj;
 		_asleep = other._asleep;
 		_awake = other._awake;
 	};
@@ -88,7 +90,8 @@ namespace DynamicBoltzmann {
 		_hidden_units.clear();
 		_val = 0.;
 		_val_guess = 0.;
-		_val_ave = 0.;
+		_track_soln_traj = false;
+		_soln_traj.clear();
 		_asleep = 0.;
 		_awake = 0.;
 	};
@@ -157,6 +160,12 @@ namespace DynamicBoltzmann {
 	********************/
 
 	void IxnParam::update(double dopt, bool l2_reg, double lambda) {
+		// Store the old if needed
+		if (_track_soln_traj) {
+			_soln_traj.push_back(_val);
+		};
+
+		// Get new
 		_val += dopt * moments_diff();
 		if (l2_reg) {
 			if (_val > 0) {
@@ -269,17 +278,31 @@ namespace DynamicBoltzmann {
 	};
 
 	/********************
-	Average value
+	Store soln traj
 	********************/
 
-	void IxnParam::reset_ave() {
-		_val_ave = 0.;
-	}
-	void IxnParam::increment_ave(int n_samples) {
-		_val_ave += _val / n_samples;
+	void IxnParam::set_track_soln_traj(bool flag) {
+		_track_soln_traj = flag;
+	};
+	void IxnParam::reset_soln_traj() {
+		_soln_traj.clear();
 	};
 	double IxnParam::get_ave() const {
-		return _val_ave;
+		return get_ave(_soln_traj.size());
+	};
+	double IxnParam::get_ave(int last_n_steps) const {
+		if (!_track_soln_traj) {
+			std::cerr << "Error! Requesting average but solution was not tracked. Turn on track_soln_traj option!" << std::endl;
+			exit(EXIT_FAILURE);
+		};
+
+		double ave=0.0;
+		int i_start = std::max(int(_soln_traj.size()-last_n_steps),0);
+		int n = _soln_traj.size() - i_start;
+		for (auto i=i_start; i<_soln_traj.size(); i++) {
+			ave += _soln_traj[i];
+		};
+		return ave / n;
 	};
 };
 

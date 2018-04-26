@@ -84,6 +84,9 @@ namespace DynamicBoltzmann {
 		bool write_moment_traj;
 		std::string fname_write_moment_traj;
 
+		// Track the solution traj
+		bool track_soln_traj;
+
 		/********************
 		Constructor
 		********************/
@@ -105,6 +108,7 @@ namespace DynamicBoltzmann {
 			fname_write_soln_traj = "";
 			write_moment_traj = false;
 			fname_write_moment_traj = "";
+			track_soln_traj = false;
 		};
 	};
 
@@ -193,7 +197,10 @@ namespace DynamicBoltzmann {
 		void read(std::string fname);
 
 		// Write out the solutions
-		void write(std::string fname, bool append=false, int opt_step=-1);
+		void write(std::string fname, bool append=false);
+		void write(std::string fname, int idx, bool append=false);
+		void write_ave(std::string fname, int last_n_steps, bool append=false);
+		void write_ave(std::string fname, int last_n_steps, int idx, bool append=false);
 
 		// Add a counter for some species or nns
 		void add_counter(std::string s);

@@ -139,9 +139,9 @@ namespace DynamicBoltzmann {
 		void read(std::string fname);
 
 		// Write out the solutions
-		void write(std::string fname, bool append, int opt_step);
-		void write_moments(std::string fname, bool append, int idx1);
-		void write_moments(std::string fname, bool append, int idx1, int idx2);
+		void write(std::string fname, bool write_idx_opt_step, int idx_opt_step, bool append);
+		void write_ave(std::string fname, int last_n_steps, bool write_idx_opt_step, int idx_opt_step, bool append);
+		void write_moments(std::string fname, int idx_opt_step, bool append);
 
 		// Add a counter for some species or nns
 		void add_counter(std::string s);
@@ -541,11 +541,17 @@ namespace DynamicBoltzmann {
 			it->reset();
 			it->moments_reset(IxnParam::AWAKE);
 			it->moments_reset(IxnParam::ASLEEP);
+
+			// Reset solution trajs as needed
+			if (options.track_soln_traj) {
+				it->set_track_soln_traj(true);
+				it->reset_soln_traj();
+			};
 		};
 
 		// Write the initial point for the solution
 		if (options.write_soln_traj) {
-			write(options.fname_write_soln_traj,false,0);
+			write(options.fname_write_soln_traj,true,0,false);
 		};
 
 		// Iterate over optimization steps
@@ -658,10 +664,10 @@ namespace DynamicBoltzmann {
 			if (options.write_moment_traj) {
 				if (i_opt==0) {
 					// Make new
-					write_moments(options.fname_write_moment_traj,false,i_opt+1);
+					write_moments(options.fname_write_moment_traj,i_opt+1,false);
 				} else {
 					// Append
-					write_moments(options.fname_write_moment_traj,true,i_opt+1);
+					write_moments(options.fname_write_moment_traj,i_opt+1,true);
 				};
 			};
 
@@ -672,7 +678,7 @@ namespace DynamicBoltzmann {
 
 			// Write the new solution (append)
 			if (options.write_soln_traj) {
-				write(options.fname_write_soln_traj,true,i_opt+1);
+				write(options.fname_write_soln_traj,true,i_opt+1,true);
 			};
 		};
 
@@ -878,7 +884,7 @@ namespace DynamicBoltzmann {
 	Write the solutions
 	********************/
 
-	void BMLA::Impl::write(std::string fname, bool append, int opt_step) {
+	void BMLA::Impl::write(std::string fname, bool write_idx_opt_step, int idx_opt_step, bool append) {
 		std::ofstream f;
 		if (append) {
 			f.open(fname, std::ofstream::out | std::ofstream::app);
@@ -886,19 +892,32 @@ namespace DynamicBoltzmann {
 			f.open(fname);
 		};
 		for (auto it=_ixn_params.begin(); it!=_ixn_params.end(); it++) {
-			if (opt_step != -1) {
-				f << opt_step << " " << it->name() << " " << it->get() << "\n";
+			if (write_idx_opt_step) {
+				f << idx_opt_step << " " << it->name() << " " << it->get() << "\n";
 			} else {
 				f << it->name() << " " << it->get() << "\n";
 			};
 		};
 		f.close();	
 	};
+	void BMLA::Impl::write_ave(std::string fname, int last_n_steps, bool write_idx_opt_step, int idx_opt_step, bool append) {
+		std::ofstream f;
+		if (append) {
+			f.open(fname, std::ofstream::out | std::ofstream::app);
+		} else {
+			f.open(fname);
+		};
 
-	void BMLA::Impl::write_moments(std::string fname, bool append, int idx1) {
-		write_moments(fname,append,idx1,-1);
+		for (auto it=_ixn_params.begin(); it!=_ixn_params.end(); it++) {
+			if (write_idx_opt_step) {
+				f << idx_opt_step << " " << it->name() << " " << it->get_ave(last_n_steps) << "\n";
+			} else {
+				f << it->name() << " " << it->get() << "\n";
+			};
+		};
+		f.close();	
 	};
-	void BMLA::Impl::write_moments(std::string fname, bool append, int idx1, int idx2) {
+	void BMLA::Impl::write_moments(std::string fname, int idx_opt_step, bool append) {
 		std::ofstream f;
 		if (append) {
 			f.open(fname, std::ofstream::out | std::ofstream::app);
@@ -906,15 +925,7 @@ namespace DynamicBoltzmann {
 			f.open(fname);
 		};
 		for (auto it=_ixn_params.begin(); it!=_ixn_params.end(); it++) {
-			if (idx1 != -1 && idx2 != -1) {
-				f << idx1 << " " << idx2 << " " << it->name() << " " << it->get_moment(IxnParam::AWAKE) << " " << it->get_moment(IxnParam::ASLEEP) << "\n";
-			} else if (idx2 != -1) {
-				f << idx2 << " " << it->name() << " " << it->get_moment(IxnParam::AWAKE) << " " << it->get_moment(IxnParam::ASLEEP) << "\n";
-			} else if (idx1 != -1) {
-				f << idx1 << " " << it->name() << " " << it->get_moment(IxnParam::AWAKE) << " " << it->get_moment(IxnParam::ASLEEP) << "\n";
-			} else {
-				f << it->name() << " " << it->get_moment(IxnParam::AWAKE) << " " << it->get_moment(IxnParam::ASLEEP) << "\n";
-			};
+			f << idx_opt_step << " " << it->name() << " " << it->get_moment(IxnParam::AWAKE) << " " << it->get_moment(IxnParam::ASLEEP) << "\n";
 		};
 		f.close();	
 	};
@@ -1077,8 +1088,17 @@ namespace DynamicBoltzmann {
 	};
 
 	// Write out the solutions
-	void BMLA::write(std::string fname, bool append, int opt_step) {
-		_impl->write(fname,append,opt_step);
+	void BMLA::write(std::string fname, bool append) {
+		_impl->write(fname,false,0,append);
+	};
+	void BMLA::write(std::string fname, int idx, bool append) {
+		_impl->write(fname,true,idx,append);
+	};
+	void BMLA::write_ave(std::string fname, int last_n_steps, bool append) {
+		_impl->write_ave(fname,last_n_steps,false,0,append);
+	};
+	void BMLA::write_ave(std::string fname, int last_n_steps, int idx, bool append) {
+		_impl->write_ave(fname,last_n_steps,true,idx,append);
 	};
 
 	// Add a counter for some species or nns

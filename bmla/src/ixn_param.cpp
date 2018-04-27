@@ -112,41 +112,40 @@ namespace DynamicBoltzmann {
 
 	bool IxnParam::is_type_with_species(IxnParamType type, std::string s) const {
 		if (_type == type) {
-			if (_sp1->name() == s) {
-				return true;
+			if (!_all_species) {
+				if (_sp1->name() == s) {
+					return true;
+				};
 			};
 		};
 		return false;
 	};
 	bool IxnParam::is_type_with_species(IxnParamType type, std::string s1, std::string s2) const {
 		if (_type == type) {
-			if ((_sp1->name() == s1 && _sp2->name() == s2) || (_sp1->name() == s2 && _sp2->name() == s1)) {
-				return true;
+			if (!_all_species) {
+				if ((_sp1->name() == s1 && _sp2->name() == s2) || (_sp1->name() == s2 && _sp2->name() == s1)) {
+					return true;
+				};
 			};
 		};
 		return false;
 	};
 	bool IxnParam::is_type_with_species(IxnParamType type, std::string s1, std::string s2, std::string s3) const{
 		if (_type == type) {
-			if ((_sp1->name() == s1 && _sp2->name() == s2 && _sp3->name() == s3) 
-				|| (_sp1->name() == s3 && _sp2->name() == s1 && _sp3->name() == s2)
-				|| (_sp1->name() == s2 && _sp2->name() == s3 && _sp3->name() == s1)
-				) {
-				return true;
+			if (!_all_species) {
+				if ((_sp1->name() == s1 && _sp2->name() == s2 && _sp3->name() == s3) 
+					|| (_sp1->name() == s3 && _sp2->name() == s1 && _sp3->name() == s2)
+					|| (_sp1->name() == s2 && _sp2->name() == s3 && _sp3->name() == s1)
+					) {
+					return true;
+				};
 			};
 		};
 		return false;
 	};
-	bool IxnParam::is_type_with_species(IxnParamType type, std::vector<std::string> s_all) const {
+	bool IxnParam::is_type_for_any_species(IxnParamType type) const {
 		if (_type == type) {
 			if (_all_species) {
-				for (auto _sp: _sp_all) {
-					auto it = std::find(s_all.begin(), s_all.end(), _sp->name());
-					if (it == s_all.end()) {
-						// Not found
-						return false;
-					};
-				};
 				return true;
 			};
 		};
@@ -221,6 +220,24 @@ namespace DynamicBoltzmann {
 
 	void IxnParam::reset() {
 		_val = _val_guess;
+	};
+
+	std::vector<Species*> IxnParam::get_species() const {
+		if (_all_species) {
+			return _sp_all;
+		} else {
+			std::vector<Species*> sp;
+			if (_sp1) {
+				sp.push_back(_sp1);
+			};
+			if (_sp2) {
+				sp.push_back(_sp1);
+			};
+			if (_sp3) {
+				sp.push_back(_sp1);
+			};
+			return sp;
+		};
 	};
 
 	/********************

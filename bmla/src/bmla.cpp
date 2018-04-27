@@ -25,6 +25,7 @@ namespace DynamicBoltzmann {
 		};
 		this->name = name;
 		this->type = type;
+		this->all_species = true;
 		this->species1 = "";
 		this->species2 = "";
 		this->species3 = "";
@@ -53,6 +54,7 @@ namespace DynamicBoltzmann {
 
 		this->name = name;
 		this->type = type;
+		this->all_species = false;
 		this->species1 = species1;
 		this->species2 = species2;
 		this->species3 = species3;
@@ -98,8 +100,10 @@ namespace DynamicBoltzmann {
 		// Get the mse
 		double _get_mse() const;
 
-		// Add a hidden unit
-		void _add_hidden_unit(std::vector<Site*> conns, std::string species);
+		// Add a hidden unit		
+		void _add_hidden_unit(std::vector<Site*> conn_sites, std::vector<std::string> w_params, std::vector<std::string> b_params);
+		std::vector<Site*> _get_sites(std::vector<int> &lattice_idxs);
+		std::vector<Site*> _get_sites(std::vector<std::vector<int>> &lattice_idxs);
 
 		// Search functions
 		Species* _not_nullptr(Species* ptr);
@@ -112,6 +116,7 @@ namespace DynamicBoltzmann {
 		IxnParam* _find_ixn_param_by_species(IxnParamType type, std::string s);
 		IxnParam* _find_ixn_param_by_species(IxnParamType type, std::string s1, std::string s2);	
 		IxnParam* _find_ixn_param_by_species(IxnParamType type, std::string s1, std::string s2, std::string s3);
+		IxnParam* _find_ixn_param_for_any_species(IxnParamType type);
 		// Find counter
 		Counter* _find_ctr_by_species(std::string s);
 		Counter* _find_ctr_by_species(std::string s1, std::string s2);
@@ -135,9 +140,11 @@ namespace DynamicBoltzmann {
 		void set_param_for_dim(std::string dim_name, double val);
 
 		// Any dim
-		void add_hidden_unit(std::vector<std::vector<int>> lattice_idxs, std::string species);
+		void add_hidden_unit(std::vector<std::vector<int>> lattice_idxs, std::vector<std::string> w_params, std::vector<std::string> b_params);
 		// 1D specific
-		void add_hidden_unit(std::vector<int> lattice_idxs, std::string species);
+		void add_hidden_unit(std::vector<int> lattice_idxs, std::vector<std::string> w_params, std::vector<std::string> b_params);
+		// Validate
+		void validate_hidden() const;
 
 		// Solve for the h,j corresponding to a given lattice
 		void solve(std::vector<std::string> fnames, int n_opt, int batch_size, int n_cd_steps, double dopt, OptionsSolveBMLA options);
@@ -247,7 +254,7 @@ namespace DynamicBoltzmann {
 			} else if (d.type==W) { 
 
 				// Specific species or all?
-				if (d.species1 != "") {
+				if (!d.all_species) {
 					
 					// Specific species
 					
@@ -274,7 +281,7 @@ namespace DynamicBoltzmann {
 			} else if (d.type==B) {
 
 				// Specific species or all?
-				if (d.species1 != "") {
+				if (!d.all_species) {
 					
 					// Specific species
 
@@ -508,12 +515,11 @@ namespace DynamicBoltzmann {
 	};
 
 	/********************
-	Set properties
+	Find hidden unit connections
 	********************/
 
-	void BMLA::Impl::add_hidden_unit(std::vector<std::vector<int>> lattice_idxs, std::string species) 
-	{
-		// Find sites indicated by connections
+	// Any dim
+	std::vector<Site*> BMLA::Impl::_get_sites(std::vector<std::vector<int>> &lattice_idxs) {
 		std::vector<Site*> conns;
 		for (auto c: lattice_idxs) {
 			if (c.size() != _latt.dim()) {
@@ -528,49 +534,95 @@ namespace DynamicBoltzmann {
 				conns.push_back(_latt.get_site(c[0],c[1],c[2]));
 			};
 		};
-
-		// Add
-		_add_hidden_unit(conns,species);
+		return conns;
 	};
-	void BMLA::Impl::add_hidden_unit(std::vector<int> lattice_idxs, std::string species) 
-	{
-		// Find sites indicated by connections
+
+	// 1D specific
+	std::vector<Site*> BMLA::Impl::_get_sites(std::vector<int> &lattice_idxs) {
 		std::vector<Site*> conns;
 		for (auto c: lattice_idxs) {
 			conns.push_back(_latt.get_site(c));
 		};
-
-		// Add
-		_add_hidden_unit(conns,species);
+		return conns;
 	};
-	void BMLA::Impl::_add_hidden_unit(std::vector<Site*> conns, std::string species)
-	{
-		// Find the species
-		Species *sp = _not_nullptr(_find_species(species));
+
+	/********************
+	Add hidden unit
+	********************/
+
+	void BMLA::Impl::add_hidden_unit(std::vector<std::vector<int>> lattice_idxs, std::vector<std::string> w_params, std::vector<std::string> b_params) {
+		// Find sites indicated by connections
+		std::vector<Site*> conns = _get_sites(lattice_idxs);
+		// Make
+		_add_hidden_unit(conns, w_params, b_params);
+	};
+	void BMLA::Impl::add_hidden_unit(std::vector<int> lattice_idxs, std::vector<std::string> w_params, std::vector<std::string> b_params) {
+		// Find sites indicated by connections
+		std::vector<Site*> conns = _get_sites(lattice_idxs);
+		// Make
+		_add_hidden_unit(conns, w_params, b_params);
+	};
+
+	/********************
+	Add hidden unit internal
+	********************/
+
+	void BMLA::Impl::_add_hidden_unit(std::vector<Site*> conn_sites, std::vector<std::string> w_params, std::vector<std::string> b_params) {
+
+		// Find the ixn params listed
+		std::vector<IxnParam*> ip_w;
+		std::vector<IxnParam*> ip_b;
+		IxnParam *ip;
+		for (auto w: w_params) {
+			ip = _not_nullptr(_find_ixn_param_by_name(w));
+			ip_w.push_back(ip);
+		};
+		for (auto b: b_params) {
+			ip = _not_nullptr(_find_ixn_param_by_name(b));
+			ip_b.push_back(ip);
+		};
+
+		// Combine conn_sites and the ixn params
+		std::vector<std::pair<Site*,std::vector<IxnParam*>>> conns;
+		for (auto c: conn_sites) {
+			conns.push_back(std::make_pair(c,ip_w));
+		};
 
 		// Make hidden unit
-		_hidden_units.push_back(HiddenUnit(conns,sp));
+		_hidden_units.push_back(HiddenUnit(conns,ip_b));
 
-		// Go through lattice sites in this connection
-		// Indicate that for this species, they are linked to this hidden unit
-		for (auto s: conns) {
-			s->hidden_conns[sp].push_back(&_hidden_units.back());
+		// Go through lattice sites
+		std::vector<Species*> sp_vec;
+		for (auto c: conns) {
+			// Go through ixn params W
+			for (auto ipw: c.second) {
+				// Get the species associated with this ixn param
+				sp_vec = ipw->get_species();
+				// Go throug the species
+				for (auto sp: sp_vec) {
+					// Add to the site that this species has a conn to a hidden unit
+					c.first->hidden_conns[sp].push_back(&_hidden_units.back());
+				};
+
+				// Add to ixn param
+				ipw->add_visible_hidden_connection(c.first,&_hidden_units.back());
+			};
 		};
 
-		// Tell the appropriate interaction parameter that these these sites are connected to this hidden unit
-		IxnParam *ip = _not_nullptr(_find_ixn_param_by_species(IxnParamType::Wp, species));
-		for (auto sptr: conns) {
-			ip->add_visible_hidden_connection(sptr,&_hidden_units.back());
+		// Go through the biases b
+		for (auto b: ip_b) {
+			// Add this hidden unit
+			b->add_hidden_unit(&_hidden_units.back());
 		};
+	};
 
-		// See if a bias exists for hidden units with this species
-		ip = _find_ixn_param_by_species(IxnParamType::Bp, species); // can fail
-		if (ip) {
-			// Tell the bias that this hidden unit exists
-			ip->add_hidden_unit(&_hidden_units.back());
+	/********************
+	Validate hidden layer
+	********************/
 
-			// Tell the hidden unit that this is it's bias
-			_hidden_units.back().set_bias(ip);
+	void BMLA::Impl::validate_hidden() const {
+		for (auto it=_hidden_units.begin(); it != _hidden_units.end(); it++) {
+			it->print_conns(true);
 		};
 	};
 
@@ -916,6 +968,7 @@ namespace DynamicBoltzmann {
 		std::string guess="";
 		std::string line;
 		std::istringstream iss;
+		IxnParam* ip;
 		if (f.is_open()) { // make sure we found it
 			while (getline(f,line)) {
 				if (line == "") { continue; };
@@ -923,7 +976,9 @@ namespace DynamicBoltzmann {
 			    iss >> ixn_name;
 			    iss >> guess;
 		    	// Add
-			    _not_nullptr(_find_ixn_param_by_name(ixn_name))->set_guess(atof(guess.c_str()));
+		    	ip = _not_nullptr(_find_ixn_param_by_name(ixn_name));
+			    ip->set_guess(atof(guess.c_str()));
+			    ip->set_val(atof(guess.c_str()));
 		    	ixn_name=""; guess="";
 			};
 		};
@@ -1090,6 +1145,18 @@ namespace DynamicBoltzmann {
 		};
 		return nullptr;
 	};
+	IxnParam* BMLA::Impl::_find_ixn_param_for_any_species(IxnParamType type) {
+		if (type != Wp && type != Bp) {
+			std::cerr << "ERROR: only Wp or Bp for any species." << std::endl;
+			exit(EXIT_FAILURE);
+		};
+		for (auto it=_ixn_params.begin(); it!=_ixn_params.end(); it++) {
+			if (it->is_type_for_any_species(type)) {
+				return &*it;
+			};
+		};
+		return nullptr;
+	};
 
 	/****************************************
 	BMLA IMPL forwards
@@ -1107,12 +1174,16 @@ namespace DynamicBoltzmann {
 	};
 
 	// Add hidden unit for any dim
-	void BMLA::add_hidden_unit(std::vector<std::vector<int>> lattice_idxs, std::string species) {
-		_impl->add_hidden_unit(lattice_idxs,species);
+	void BMLA::add_hidden_unit(std::vector<std::vector<int>> lattice_idxs, std::vector<std::string> w_params, std::vector<std::string> b_params) {
+		_impl->add_hidden_unit(lattice_idxs, w_params, b_params);
 	};
 	// 1D specific
-	void BMLA::add_hidden_unit(std::vector<int> lattice_idxs, std::string species) {
-		_impl->add_hidden_unit(lattice_idxs,species);
+	void BMLA::add_hidden_unit(std::vector<int> lattice_idxs, std::vector<std::string> w_params, std::vector<std::string> b_params) {
+		_impl->add_hidden_unit(lattice_idxs,w_params,b_params);
+	};
+	// Validate
+	void BMLA::validate_hidden() const {
+		_impl->validate_hidden();
 	};
 
 	// Solve for the h,j corresponding to a given lattice

@@ -20,17 +20,11 @@ namespace DynamicBoltzmann {
 	{
 	private:
 
-		// Number of sites I am connected to
-		int _n_conn;
+		// Sites I am connected to, and the ixn params associated with that connection
+		std::vector< std::pair<Site*,std::vector<IxnParam*>> > _conn;
 
-		// Sites I am connected to
-		std::vector<Site*> _conn;
-
-		// Bias
-		IxnParam *_bias;
-
-		// Species that I love
-		Species *_sp;
+		// Biases
+		std::vector<IxnParam*> _bias;
 
 		// Value
 		double _val;
@@ -49,7 +43,7 @@ namespace DynamicBoltzmann {
 		Constructor
 		********************/
 
-		HiddenUnit(std::vector<Site*> conn, Species *sp);
+		HiddenUnit(std::vector< std::pair<Site*,std::vector<IxnParam*>> > conn, std::vector<IxnParam*> bias);
 		HiddenUnit(const HiddenUnit& other);
 		HiddenUnit(HiddenUnit&& other);
 		HiddenUnit& operator=(const HiddenUnit& other);
@@ -69,10 +63,10 @@ namespace DynamicBoltzmann {
 		double get() const;
 
 		/********************
-		Set the bias
+		Add a bias
 		********************/
 
-		void set_bias(IxnParam *ip);
+		void add_bias(IxnParam *ip);
 
 		/********************
 		Activate

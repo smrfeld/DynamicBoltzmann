@@ -17,13 +17,11 @@ namespace DynamicBoltzmann {
 	Constructor
 	********************/
 
-	HiddenUnit::HiddenUnit(std::vector<Site*> conn, Species *sp)
+	HiddenUnit::HiddenUnit(std::vector< std::pair<Site*,std::vector<IxnParam*>> > conn, std::vector<IxnParam*> bias)
 	{
-		_n_conn = conn.size();
 		_conn = conn;
-		_sp = sp;
+		_bias = bias;
 		_val = 0.0;
-		_bias = nullptr;
 	};
 	HiddenUnit::HiddenUnit(const HiddenUnit& other)
 	{
@@ -59,18 +57,14 @@ namespace DynamicBoltzmann {
 		// Nothing....
 	};
 	void HiddenUnit::_reset() {
-		_n_conn = 0;
 		_conn.clear();
-		_sp = nullptr;
-		_bias = nullptr;
+		_bias.clear();
 		_val = 0.;
 	};
 	void HiddenUnit::_copy(const HiddenUnit& other) {
-		_n_conn = other._n_conn;
 		_conn = other._conn;
-		_sp = other._sp;
-		_val = other._val;
 		_bias = other._bias;
+		_val = other._val;
 	};
 
 	/********************
@@ -78,9 +72,16 @@ namespace DynamicBoltzmann {
 	********************/
 
 	void HiddenUnit::print_conns(bool newline) const {
-		std::cout << "Connected to: ";
-		for (auto sp: _conn) {
-			std::cout << "(" << sp->x << "," << sp->y << "," << sp->z << ") ";
+		std::cout << "Hidden unit connected to: ";
+		for (auto c: _conn) {
+			std::cout << "(" << c.first->x << "," << c.first->y << "," << c.first->z << ") with params: ";
+			for (auto ip: c.second) {
+				std::cout << ip->name() << " ";
+			};
+		};
+		std::cout << " and biases: ";
+		for (auto ip: _bias) {
+			std::cout << ip->name() << " ";
 		};
 		if (newline) {
 			std::cout << std::endl;
@@ -99,8 +100,8 @@ namespace DynamicBoltzmann {
 	Set the bias
 	********************/
 
-	void HiddenUnit::set_bias(IxnParam *ip) {
-		_bias = ip;
+	void HiddenUnit::add_bias(IxnParam *ip) {
+		_bias.push_back(ip);
 	};
 
 	/********************
@@ -109,17 +110,25 @@ namespace DynamicBoltzmann {
 
 	void HiddenUnit::activate(bool binary) {
 		// Go through all connected neurons
-		//std::cout << "Activating..." << std::endl;
 		double act = 0.0;
 
 		// Bias
-		if (_bias) {
-			act += _bias->get();
+		for (auto b: _bias) {
+			act += b->get();
 		};
 
+		// Weights - go through all connected visible units
+		std::vector<Species*> sp_vec;
 		for (auto c: _conn) {
-			// weight * visible value for this species
-			act += _sp->w() * c->get_prob(_sp);
+			// Go through all ixn params associated with this connection
+			for (auto ip: c.second) {
+				// What species does this ixn param care about?
+				sp_vec = ip->get_species(); // Most Wp only 1, or all species if all species apply
+				for (auto sp: sp_vec) {
+					// Weight * prob of this species at this site
+					act += ip->get() * c.first->get_prob(sp);
+				};
+			};
 		};
 
 		// Pass through sigmoid -> probability

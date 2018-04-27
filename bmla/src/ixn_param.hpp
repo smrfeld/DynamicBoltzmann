@@ -94,7 +94,7 @@ namespace DynamicBoltzmann {
 		bool is_type_with_species(IxnParamType type, std::string s) const;
 		bool is_type_with_species(IxnParamType type, std::string s1, std::string s2) const;
 		bool is_type_with_species(IxnParamType type, std::string s1, std::string s2, std::string s3) const;
-		bool is_type_with_species(IxnParamType type, std::vector<std::string> s_all) const;
+		bool is_type_for_any_species(IxnParamType type) const;
 
 		// If Wp
 		// Add a visible->hidden unit connection
@@ -113,6 +113,7 @@ namespace DynamicBoltzmann {
 		void set_val(double val);
 		void set_guess(double guess);
 		void reset();
+		std::vector<Species*> get_species() const;
 
 		// Moments from lattice
 		enum MomentType {AWAKE, ASLEEP};

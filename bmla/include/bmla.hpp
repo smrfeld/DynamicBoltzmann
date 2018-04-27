@@ -35,6 +35,7 @@ namespace DynamicBoltzmann {
 		DimType type;
 
 		// Name of associated species
+		bool all_species;
 		std::string species1;
 		std::string species2;
 		std::string species3;
@@ -183,9 +184,11 @@ namespace DynamicBoltzmann {
 
 		// Add a hidden unit
 		// Any dim
-		void add_hidden_unit(std::vector<std::vector<int>> lattice_idxs, std::string species);
+		void add_hidden_unit(std::vector<std::vector<int>> lattice_idxs, std::vector<std::string> w_params, std::vector<std::string> b_params);
 		// 1D specific
-		void add_hidden_unit(std::vector<int> lattice_idxs, std::string species);
+		void add_hidden_unit(std::vector<int> lattice_idxs, std::vector<std::string> w_params, std::vector<std::string> b_params);
+		// Validate
+		void validate_hidden() const;
 
 		// Solve for the h,j corresponding to a given lattice
 		void solve(std::string fname, int n_opt, int batch_size, int n_cd_steps, double dopt, OptionsSolveBMLA options=OptionsSolveBMLA());

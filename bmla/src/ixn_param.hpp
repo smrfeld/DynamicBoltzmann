@@ -43,6 +43,9 @@ namespace DynamicBoltzmann {
 		Species *_sp2;
 		// If Kp: also sp3
 		Species *_sp3;
+		// All species
+		bool _all_species;
+		std::vector<Species*> _sp_all;
 
 		// If Wp:
 		// Connects sites (visible) to hidden units
@@ -77,6 +80,7 @@ namespace DynamicBoltzmann {
 	public:
 
 		// Constructor
+		IxnParam(std::string name, IxnParamType type, std::vector<Species*> sp_all, double val_guess);
 		IxnParam(std::string name, IxnParamType type, Species *sp, double val_guess);
 		IxnParam(std::string name, IxnParamType type, Species *sp1, Species *sp2, double val_guess);
 		IxnParam(std::string name, IxnParamType type, Species *sp1, Species *sp2, Species *sp3, double val_guess);
@@ -90,6 +94,7 @@ namespace DynamicBoltzmann {
 		bool is_type_with_species(IxnParamType type, std::string s) const;
 		bool is_type_with_species(IxnParamType type, std::string s1, std::string s2) const;
 		bool is_type_with_species(IxnParamType type, std::string s1, std::string s2, std::string s3) const;
+		bool is_type_with_species(IxnParamType type, std::vector<std::string> s_all) const;
 
 		// If Wp
 		// Add a visible->hidden unit connection

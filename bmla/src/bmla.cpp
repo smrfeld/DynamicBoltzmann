@@ -18,6 +18,18 @@ namespace DynamicBoltzmann {
 	Struct for specifying a dimension
 	****************************************/
 
+	Dim::Dim(std::string name, DimType type, double guess) {
+		if (type != B && type != W) {
+			std::cerr << "ERROR! Species-less types other than B,W are not supported yet." << std::endl;
+			exit(EXIT_FAILURE);
+		};
+		this->name = name;
+		this->type = type;
+		this->species1 = "";
+		this->species2 = "";
+		this->species3 = "";
+		this->guess = guess;
+	};
 	Dim::Dim(std::string name, DimType type, std::string species, double guess) : Dim(name, type, species, "", "", guess) {};
 	Dim::Dim(std::string name, DimType type, std::string species1, std::string species2, double guess) : Dim(name, type, species1, species2, "", guess) {};
 	Dim::Dim(std::string name, DimType type, std::string species1, std::string species2, std::string species3, double guess)
@@ -197,12 +209,16 @@ namespace DynamicBoltzmann {
 		};
 
 		// Create the species and add to the lattice
+		std::vector<Species*> sp_all; // all species
 		for (auto s: species) {
 			// Make species
 			_species.push_back(Species(s));
 
 			// Add to the lattice
 			_latt.add_species_possibility(&(_species.back()));
+
+			// Keep track of all
+			sp_all.push_back(&(_species.back()));
 		};
 
 		// Create the interaction params
@@ -230,20 +246,54 @@ namespace DynamicBoltzmann {
 
 			} else if (d.type==W) { 
 
-				// Create
-				sp = _not_nullptr(_find_species(d.species1));
-				_ixn_params.push_back(IxnParam(d.name,Wp,sp,d.guess));
+				// Specific species or all?
+				if (d.species1 != "") {
+					
+					// Specific species
+					
+					// Create
+					sp = _not_nullptr(_find_species(d.species1));
+					_ixn_params.push_back(IxnParam(d.name,Wp,sp,d.guess));
 
-				// Add to the species
-				sp->set_w_ptr(&_ixn_params.back());
+					// Add to the species
+					sp->add_w_ptr(&_ixn_params.back());
+
+				} else {
+
+					// All species
+
+					// Create
+					_ixn_params.push_back(IxnParam(d.name,Wp,sp_all,d.guess));
+
+					// Add to all species
+					for (auto spa: sp_all) {
+						spa->add_w_ptr(&_ixn_params.back());
+					};
+				};
 
 			} else if (d.type==B) {
 
-				// Create
-				sp = _not_nullptr(_find_species(d.species1));
-				_ixn_params.push_back(IxnParam(d.name,Bp,sp,d.guess));
+				// Specific species or all?
+				if (d.species1 != "") {
+					
+					// Specific species
 
-				// No need to add to species, since it only affects activations
+					// Create
+					sp = _not_nullptr(_find_species(d.species1));
+					_ixn_params.push_back(IxnParam(d.name,Bp,sp,d.guess));
+
+					// No need to add to species, since it only affects activations
+
+				} else {
+
+					// All species
+
+					// Create
+					_ixn_params.push_back(IxnParam(d.name,Bp,sp_all,d.guess));
+
+					// No need to add to species, since it only affects activations
+
+				};
 			} else if (d.type==K) {
 				// Check that Lattice dim is 1 - only 1 is allowed!
 				if (lattice_dim != 1) {

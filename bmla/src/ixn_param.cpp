@@ -19,6 +19,10 @@ namespace DynamicBoltzmann {
 	Constructor
 	********************/
 
+	IxnParam::IxnParam(std::string name, IxnParamType type, std::vector<Species*> sp_all, double val_guess) : IxnParam(name,type,nullptr,nullptr,nullptr,val_guess) {
+		_all_species = true;
+		_sp_all = sp_all;
+	};
 	IxnParam::IxnParam(std::string name, IxnParamType type, Species *sp, double val_guess) : IxnParam(name,type,sp,nullptr,nullptr,val_guess) {};
 	IxnParam::IxnParam(std::string name, IxnParamType type, Species *sp1, Species *sp2, double val_guess) : IxnParam(name,type,sp1,sp2,nullptr,val_guess) {};
 	IxnParam::IxnParam(std::string name, IxnParamType type, Species *sp1, Species *sp2, Species *sp3, double val_guess)	
@@ -28,6 +32,7 @@ namespace DynamicBoltzmann {
 		_sp1 = sp1;
 		_sp2 = sp2;
 		_sp3 = sp3;
+		_all_species = false;
 		_val_guess = val_guess;
 
 		_val = val_guess;
@@ -71,6 +76,8 @@ namespace DynamicBoltzmann {
 		_sp1 = other._sp1;
 		_sp2 = other._sp2;
 		_sp3 = other._sp3;
+		_all_species = other._all_species;
+		_sp_all = other._sp_all;
 		_conns = other._conns;
 		_hidden_units = other._hidden_units;
 		_val = other._val;
@@ -86,6 +93,8 @@ namespace DynamicBoltzmann {
 		_sp1 = nullptr;
 		_sp2 = nullptr;
 		_sp3 = nullptr;
+		_all_species = false;
+		_sp_all.clear();
 		_conns.clear();
 		_hidden_units.clear();
 		_val = 0.;
@@ -123,6 +132,21 @@ namespace DynamicBoltzmann {
 				|| (_sp1->name() == s3 && _sp2->name() == s1 && _sp3->name() == s2)
 				|| (_sp1->name() == s2 && _sp2->name() == s3 && _sp3->name() == s1)
 				) {
+				return true;
+			};
+		};
+		return false;
+	};
+	bool IxnParam::is_type_with_species(IxnParamType type, std::vector<std::string> s_all) const {
+		if (_type == type) {
+			if (_all_species) {
+				for (auto _sp: _sp_all) {
+					auto it = std::find(s_all.begin(), s_all.end(), _sp->name());
+					if (it == s_all.end()) {
+						// Not found
+						return false;
+					};
+				};
 				return true;
 			};
 		};
@@ -251,8 +275,13 @@ namespace DynamicBoltzmann {
 				c.second->print_conns(false);
 				std::cout << " vis val: " << c.first->get_prob(_sp1) << " hidden val: " << c.second->get() << std::endl;
 				*/
-				
-				inc += c.first->get_prob(_sp1) * c.second->get(); // v * h
+				if (_all_species) {
+					for (auto sp: _sp_all) {
+						inc += c.first->get_prob(sp) * c.second->get(); // v * h
+					};
+				} else {
+					inc += c.first->get_prob(_sp1) * c.second->get(); // v * h
+				};
 			};
 			if (moment_type==AWAKE) {
 				_awake += 1. * inc / batch_size;
@@ -263,7 +292,7 @@ namespace DynamicBoltzmann {
 			// Run through all hidden units that are monitored
 			double inc = 0.0;
 			for (auto hup: _hidden_units) {
-				inc += hup->get();
+				inc += hup->get(); // h
 			};
 			if (moment_type==AWAKE) {
 				_awake += 1. * inc / batch_size;

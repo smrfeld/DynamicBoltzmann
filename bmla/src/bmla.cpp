@@ -598,10 +598,10 @@ namespace DynamicBoltzmann {
 			for (auto ipw: c.second) {
 				// Get the species associated with this ixn param
 				sp_vec = ipw->get_species();
-				// Go throug the species
+				// Go through the species
 				for (auto sp: sp_vec) {
 					// Add to the site that this species has a conn to a hidden unit
-					c.first->hidden_conns[sp].push_back(&_hidden_units.back());
+					c.first->hidden_conns[sp].push_back(std::make_pair(&_hidden_units.back(),ip_w));
 				};
 
 				// Add to ixn param

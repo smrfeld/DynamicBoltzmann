@@ -783,7 +783,7 @@ namespace DynamicBoltzmann {
 		// Declarations
 		latt_it it;
 		double energy;
-		std::map<Species*, std::vector<HiddenUnit*>>::iterator it_hups;
+		std::map<Species*, std::vector< std::pair< HiddenUnit*, std::vector<IxnParam*> > > >::iterator it_hups;
 		int i_chosen;
 		std::vector<double> props,probs;
 		latt_it lit;
@@ -826,10 +826,13 @@ namespace DynamicBoltzmann {
 					// Check if this species has connections to hidden units
 					it_hups = it->hidden_conns.find(sp_new);
 					if (it_hups != it->hidden_conns.end()) {
-						// Yes it does - sum them up! Go over hidden units
-						for (auto hup: it_hups->second) {
-							// Weight * value of spin (0 or 1 if binary, else a prob)
-							energy += sp_new->w() * hup->get();
+						// Yes it does - sum them up! Go over connections
+						for (auto c: it_hups->second) {
+							// Go over all ixn params connecting this hidden unit
+							for (auto ipw: c.second) {
+								// Weight (from ixn param) * value of hidden spin
+								energy += ipw->get() * c.first->get();
+							};
 						};
 					};
 				};

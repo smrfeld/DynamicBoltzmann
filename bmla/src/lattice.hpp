@@ -99,7 +99,8 @@ namespace DynamicBoltzmann {
 
 		// Connectivity to any hidden units
 		// A species-dependent graph :)
-		std::map<Species*, std::vector<HiddenUnit*>> hidden_conns;
+		// For a given species, this visible unit is connected to these hidden units with these params
+		std::map<Species*, std::vector< std::pair< HiddenUnit*, std::vector<IxnParam*> > > > hidden_conns;
 
 		// Constructor
 		Site(int xIn);

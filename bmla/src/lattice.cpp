@@ -15,6 +15,93 @@
 namespace DynamicBoltzmann {
 
 	/****************************************
+	Class to hold a connection from visible to hidden
+	****************************************/
+
+	// Constructor
+	ConnectionVH::ConnectionVH(Site *site, HiddenUnit *hidden_unit, std::vector<IxnParam*> ips) {
+		_site = site;
+		_hidden_unit = hidden_unit;
+		for (auto ip: ips) {
+			add_ixn_param(ip);
+		};	
+	};
+	ConnectionVH::ConnectionVH(const ConnectionVH& other) {
+		_copy(other);
+	};
+	ConnectionVH::ConnectionVH(ConnectionVH&& other) {
+		_copy(other);
+		other._reset();
+	};
+	ConnectionVH& ConnectionVH::operator=(const ConnectionVH& other) {
+		if (this != &other) {
+			_clean_up();
+			_copy(other);
+		};
+		return *this;
+	};
+	ConnectionVH& ConnectionVH::operator=(ConnectionVH&& other) {
+		if (this != &other) {
+			_clean_up();
+			_copy(other);
+			other._reset();
+		};
+		return *this;
+	};
+	ConnectionVH::~ConnectionVH() {
+		_clean_up();
+	};
+	void ConnectionVH::_clean_up() {
+		// Nothing....
+	};
+	void ConnectionVH::_reset() {
+		_site = nullptr;
+		_hidden_unit = nullptr;
+		_ips.clear();
+	};
+	void ConnectionVH::_copy(const ConnectionVH& other) {
+		_site = other._site;
+		_hidden_unit = other._hidden_unit;
+		_ips = other._ips;
+	};
+
+	// Add ixn param
+	void ConnectionVH::add_ixn_param(IxnParam* ip) {
+		// Get the species associated with this ixn param
+		std::vector<Species*> sp_vec;
+		sp_vec = ip->get_species();
+		// Go through the species
+		for (auto sp: sp_vec) {
+			_ips[sp].push_back(ip);
+		};
+	};
+
+	// Get for a species on the visible unit
+	double ConnectionVH::get_act_visible(Species* sp_visible) {
+		double act=0.0;
+		auto it = _ips.find(sp_visible);
+		if (it != _ips.end()) {
+			for (auto ip: it->second) {
+				// Weight (from ixn param) * hidden units value
+				act += ip->get() * _hidden_unit->get();
+			};
+		};
+		return act;
+	};
+
+	// Get activation for a hidden (no species dependence yet)
+	double ConnectionVH::get_act_hidden() {
+		double act=0.0;
+		for (auto pr=_ips.begin(); pr != _ips.end(); pr++) {
+			for (auto ip: pr->second) {
+				// Weight (from ixn param) * visible units value
+				act += ip->get() * _site->get_prob(pr->first);
+			};
+		};
+		return act;
+	};
+
+	/****************************************
 	Struct to hold a lattice Site
 	****************************************/
 
@@ -823,17 +910,9 @@ namespace DynamicBoltzmann {
 				// Hidden layer weights exist?
 				if (_sampling_exists_w) {
 
-					// Check if this species has connections to hidden units
-					it_hups = it->hidden_conns.find(sp_new);
-					if (it_hups != it->hidden_conns.end()) {
-						// Yes it does - sum them up! Go over connections
-						for (auto c: it_hups->second) {
-							// Go over all ixn params connecting this hidden unit
-							for (auto ipw: c.second) {
-								// Weight (from ixn param) * value of hidden spin
-								energy += ipw->get() * c.first->get();
-							};
-						};
+					// Go through connections
+					for (auto connvh: it->hidden_conns) {
+						energy += connvh->get_act_visible(sp_new);
 					};
 				};
 

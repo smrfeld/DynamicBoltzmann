@@ -20,8 +20,8 @@ namespace DynamicBoltzmann {
 	{
 	private:
 
-		// Sites I am connected to, and the ixn params associated with that connection
-		std::vector< std::pair<Site*,std::vector<IxnParam*>> > _conn;
+		// Connections
+		std::vector<ConnectionVH*> _conn;
 
 		// Biases
 		std::vector<IxnParam*> _bias;
@@ -43,12 +43,18 @@ namespace DynamicBoltzmann {
 		Constructor
 		********************/
 
-		HiddenUnit(std::vector< std::pair<Site*,std::vector<IxnParam*>> > conn, std::vector<IxnParam*> bias);
+		HiddenUnit(std::vector<IxnParam*> bias);
 		HiddenUnit(const HiddenUnit& other);
 		HiddenUnit(HiddenUnit&& other);
 		HiddenUnit& operator=(const HiddenUnit& other);
 		HiddenUnit& operator=(HiddenUnit&& other);
 		~HiddenUnit();	
+
+		/********************
+		Add a connection
+		********************/
+
+		void add_connection(ConnectionVH* conn);
 
 		/********************
 		Print connections

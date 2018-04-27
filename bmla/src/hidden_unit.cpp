@@ -17,9 +17,8 @@ namespace DynamicBoltzmann {
 	Constructor
 	********************/
 
-	HiddenUnit::HiddenUnit(std::vector< std::pair<Site*,std::vector<IxnParam*>> > conn, std::vector<IxnParam*> bias)
+	HiddenUnit::HiddenUnit(std::vector<IxnParam*> bias)
 	{
-		_conn = conn;
 		_bias = bias;
 		_val = 0.0;
 	};
@@ -68,12 +67,22 @@ namespace DynamicBoltzmann {
 	};
 
 	/********************
+	Add a connection
+	********************/
+
+	void HiddenUnit::add_connection(ConnectionVH* conn) {
+		_conn.push_back(conn);
+	};
+
+	/********************
 	Print connections
 	********************/
 
 	void HiddenUnit::print_conns(bool newline) const {
+		/*
 		std::cout << "Hidden unit connected to: ";
 		for (auto c: _conn) {
+			c->print();
 			std::cout << "(" << c.first->x << "," << c.first->y << "," << c.first->z << ") with params: ";
 			for (auto ip: c.second) {
 				std::cout << ip->name() << " ";
@@ -86,6 +95,7 @@ namespace DynamicBoltzmann {
 		if (newline) {
 			std::cout << std::endl;
 		};
+		*/
 	};
 
 	/********************
@@ -117,6 +127,11 @@ namespace DynamicBoltzmann {
 			act += b->get();
 		};
 
+		// Get act from conns
+		for (auto c: _conn) {
+			act += c->get_act_hidden();
+		};
+		/*
 		// Weights - go through all connected visible units
 		std::vector<Species*> sp_vec;
 		for (auto c: _conn) {
@@ -130,7 +145,8 @@ namespace DynamicBoltzmann {
 				};
 			};
 		};
-
+		*/
+		
 		// Pass through sigmoid -> probability
 		_val = _sigma(act);
 

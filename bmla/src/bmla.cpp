@@ -81,6 +81,7 @@ namespace DynamicBoltzmann {
 		// List of hidden units, and flag if they exist
 		bool _hidden_layer_exists;
 		std::list<HiddenUnit> _hidden_units;
+		std::list<ConnectionVH> _conn_vh;
 
 		// Counters
 		std::list<Counter> _counters;
@@ -262,9 +263,7 @@ namespace DynamicBoltzmann {
 					sp = _not_nullptr(_find_species(d.species1));
 					_ixn_params.push_back(IxnParam(d.name,Wp,sp,d.guess));
 
-					// Add to the species
-					sp->add_w_ptr(&_ixn_params.back());
-
+					// No need to add to species - handled by ConnectionVH class
 				} else {
 
 					// All species
@@ -272,10 +271,7 @@ namespace DynamicBoltzmann {
 					// Create
 					_ixn_params.push_back(IxnParam(d.name,Wp,sp_all,d.guess));
 
-					// Add to all species
-					for (auto spa: sp_all) {
-						spa->add_w_ptr(&_ixn_params.back());
-					};
+					// No need to add to species - handled by ConnectionVH class
 				};
 
 			} else if (d.type==B) {
@@ -359,6 +355,7 @@ namespace DynamicBoltzmann {
 		_species = other._species;
 		_hidden_layer_exists = other._hidden_layer_exists;
 		_hidden_units = other._hidden_units;
+		_conn_vh = other._conn_vh;
 		_counters = other._counters;
 		_latt = other._latt;
 	};
@@ -368,6 +365,7 @@ namespace DynamicBoltzmann {
 		_species.clear();
 		_hidden_layer_exists = false;
 		_hidden_units.clear();
+		_conn_vh.clear();
 		_counters.clear();
 		_latt = Lattice(0,0);
 	};
@@ -582,14 +580,36 @@ namespace DynamicBoltzmann {
 			ip_b.push_back(ip);
 		};
 
+		// Make hidden unit
+		_hidden_units.push_back(HiddenUnit(ip_b));
+		HiddenUnit* hup = &_hidden_units.back();
+
+		// Make the connections
+		ConnectionVH *cvh;
+		for (auto s: conn_sites) {
+			// Make the connection
+			_conn_vh.push_back(ConnectionVH(s,hup,ip_w));
+			cvh = &_conn_vh.back();
+
+			// Add the connection to the hidden unit
+			hup->add_connection(cvh);
+
+			// Add the connection to the lattice site
+			s->hidden_conns.push_back(cvh);
+
+			// Add to ixn params
+			for (auto w: ip_w) {
+				w->add_visible_hidden_connection(s,hup);
+			};
+		};
+
+		/*
+
 		// Combine conn_sites and the ixn params
 		std::vector<std::pair<Site*,std::vector<IxnParam*>>> conns;
 		for (auto c: conn_sites) {
 			conns.push_back(std::make_pair(c,ip_w));
 		};
-
-		// Make hidden unit
-		_hidden_units.push_back(HiddenUnit(conns,ip_b));
 
 		// Go through lattice sites
 		std::vector<Species*> sp_vec;
@@ -608,6 +628,7 @@ namespace DynamicBoltzmann {
 				ipw->add_visible_hidden_connection(c.first,&_hidden_units.back());
 			};
 		};
+		*/
 
 		// Go through the biases b
 		for (auto b: ip_b) {

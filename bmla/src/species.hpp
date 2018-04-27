@@ -76,7 +76,6 @@ namespace DynamicBoltzmann {
 		IxnParam *_h_ptr;
 		std::map<Species*,IxnParam*> _j_ptr;
 		std::map<Species2,IxnParam*> _k_ptr;
-		std::vector<IxnParam*> _w_ptr;
 
 		// Constructor helpers
 		void _clean_up();
@@ -103,12 +102,10 @@ namespace DynamicBoltzmann {
 		void set_h_ptr(IxnParam *h_ptr);
 		void add_j_ptr(Species* sp, IxnParam *j_ptr);
 		void add_k_ptr(Species* sp1, Species* sp2, IxnParam *k_ptr);
-		void add_w_ptr(IxnParam *w_ptr);
 
 		// Ixn params
 		double h() const;
 		double j(Species* other) const;
-		double w() const;
 		double k(Species* other1, Species *other2) const;
 
 		// Counts

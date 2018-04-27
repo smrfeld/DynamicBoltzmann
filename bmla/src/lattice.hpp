@@ -64,12 +64,53 @@ namespace DynamicBoltzmann {
 	};
 
 	/****************************************
-	Class to hold a lattice site
+	Class to hold a connection from visible to hidden
 	****************************************/
 
 	// Declare lattice, hiddens
 	class Lattice;
 	class HiddenUnit;
+
+	class ConnectionVH {
+	private:
+
+		// Site
+		Site *_site;
+
+		// Hidden unit
+		HiddenUnit *_hidden_unit;
+
+		// Ixn params
+		std::map<Species*,std::vector<IxnParam*> > _ips;
+
+		// Constructor helpers
+		void _clean_up();
+		void _reset();
+		void _copy(const ConnectionVH& other);
+
+	public:
+
+		// Constructor
+		ConnectionVH(Site *site, HiddenUnit *hidden_unit, std::vector<IxnParam*> ips);
+		ConnectionVH(const ConnectionVH& other);
+		ConnectionVH(ConnectionVH&& other);
+		ConnectionVH& operator=(const ConnectionVH& other);
+		ConnectionVH& operator=(ConnectionVH&& other);
+		~ConnectionVH();
+
+		// Add ixn param
+		void add_ixn_param(IxnParam* ip);
+
+		// Get for a species on the visible unit
+		double get_act_visible(Species* sp_visible);
+
+		// Get activation for a hidden (no species dependence yet)
+		double get_act_hidden();
+	};
+
+	/****************************************
+	Class to hold a lattice site
+	****************************************/
 
 	class Site {
 	private:
@@ -99,8 +140,7 @@ namespace DynamicBoltzmann {
 
 		// Connectivity to any hidden units
 		// A species-dependent graph :)
-		// For a given species, this visible unit is connected to these hidden units with these params
-		std::map<Species*, std::vector< std::pair< HiddenUnit*, std::vector<IxnParam*> > > > hidden_conns;
+		std::vector<ConnectionVH*> hidden_conns;
 
 		// Constructor
 		Site(int xIn);

@@ -106,7 +106,6 @@ namespace DynamicBoltzmann {
 		_h_ptr = nullptr;
 		_j_ptr.clear();
 		_k_ptr.clear();
-		_w_ptr.clear();
 	};
 	void Species::_copy(const Species& other) {
 		_name = other._name;
@@ -117,7 +116,6 @@ namespace DynamicBoltzmann {
 		_h_ptr = other._h_ptr;
 		_j_ptr = other._j_ptr;
 		_k_ptr = other._k_ptr;
-		_w_ptr = other._w_ptr;
 	};
 
 	/********************
@@ -150,9 +148,6 @@ namespace DynamicBoltzmann {
 	void Species::add_k_ptr(Species* sp1, Species* sp2, IxnParam *k_ptr) {
 		_k_ptr[Species2(sp1,sp2)] = k_ptr;
 	};
-	void Species::add_w_ptr(IxnParam *w_ptr) {
-		_w_ptr.push_back(w_ptr);
-	};
 
 	/********************
 	Get ixn params
@@ -168,13 +163,6 @@ namespace DynamicBoltzmann {
 		} else {
 			return 0.0;
 		};
-	};
-	double Species::w() const {
-		double x=0.0;
-		for (auto ip: _w_ptr) {
-			x += ip->get();
-		};
-		return x;
 	};
 	double Species::k(Species* other1, Species *other2) const {
 		auto it = _k_ptr.find(Species2(other1,other2));

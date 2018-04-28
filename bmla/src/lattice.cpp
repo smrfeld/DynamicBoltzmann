@@ -57,45 +57,58 @@ namespace DynamicBoltzmann {
 	void ConnectionVH::_reset() {
 		_site = nullptr;
 		_hidden_unit = nullptr;
-		_ips.clear();
+		_ips_visible_hidden.clear();
+		_ips_hidden_visible.clear();
 	};
 	void ConnectionVH::_copy(const ConnectionVH& other) {
 		_site = other._site;
 		_hidden_unit = other._hidden_unit;
-		_ips = other._ips;
+		_ips_visible_hidden = other._ips_visible_hidden;
+		_ips_hidden_visible = other._ips_hidden_visible;
 	};
 
 	// Add ixn param
 	void ConnectionVH::add_ixn_param(IxnParam* ip) {
 		// Get the species associated with this ixn param
-		std::vector<Species*> sp_vec;
-		sp_vec = ip->get_species();
+		std::vector<SpeciesVH> sp_vec = ip->get_species_conn();
+
 		// Go through the species
-		for (auto sp: sp_vec) {
-			_ips[sp].push_back(ip);
+		for (auto spvh: sp_vec) {
+			// Store both ways
+			_ips_visible_hidden[spvh.sp_visible][spvh.sp_hidden].push_back(ip);
+			_ips_hidden_visible[spvh.sp_hidden][spvh.sp_visible].push_back(ip);
 		};
 	};
 
 	// Get for a species on the visible unit
 	double ConnectionVH::get_act_visible(Species* sp_visible) {
 		double act=0.0;
-		auto it = _ips.find(sp_visible);
-		if (it != _ips.end()) {
-			for (auto ip: it->second) {
-				// Weight (from ixn param) * hidden units value
-				act += ip->get() * _hidden_unit->get();
+		auto it = _ips_visible_hidden.find(sp_visible);
+		if (it != _ips_visible_hidden.end()) {
+			// Go through all hidden species
+			for (auto iph: it->second) {
+				// Go through all ixn params
+				for (auto ip: iph.second) {
+					// Weight (from ixn param) * hidden units value for this hidden species
+					act += ip->get() * _hidden_unit->get_prob(iph.first);
+				};
 			};
 		};
 		return act;
 	};
 
-	// Get activation for a hidden (no species dependence yet)
-	double ConnectionVH::get_act_hidden() {
+	// Get activation for a hidden
+	double ConnectionVH::get_act_hidden(HiddenSpecies* sp_hidden) {
 		double act=0.0;
-		for (auto pr=_ips.begin(); pr != _ips.end(); pr++) {
-			for (auto ip: pr->second) {
-				// Weight (from ixn param) * visible units value
-				act += ip->get() * _site->get_prob(pr->first);
+		auto it = _ips_hidden_visible.find(sp_hidden);
+		if (it != _ips_hidden_visible.end()) {
+			// Go through all visible species
+			for (auto ipv: it->second) {
+				// Go through all ixn params
+				for (auto ip: ipv.second) {
+					// Weight (from ixn param) * sites value for this visible species
+					act += ip->get() * _site->get_prob(ipv.first);
+				};
 			};
 		};
 		return act;

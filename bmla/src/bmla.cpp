@@ -15,51 +15,501 @@
 namespace DynamicBoltzmann {
 
 	/****************************************
-	Struct for specifying a dimension
+	Dim - IMPLEMENTATION
 	****************************************/
 
-	Dim::Dim(std::string name, DimType type, double guess) {
-		if (type != B && type != W) {
-			std::cerr << "ERROR! Species-less types other than B,W are not supported yet." << std::endl;
-			exit(EXIT_FAILURE);
-		};
-		this->name = name;
-		this->type = type;
-		this->all_species = true;
-		this->species1 = "";
-		this->species2 = "";
-		this->species3 = "";
-		this->guess = guess;
+	class Dim::Impl {
+	private:
+
+		// Name
+		std::string _name;
+
+		// Type
+		DimType _type;
+
+		// Name of associated species
+		bool _any_species;
+		std::vector<std::string> _species;
+		std::vector<std::vector<std::string> > _species_multiple;
+
+		// Guess
+		double _guess;
+
+		// Constructor helpers
+		void _clean_up();
+		void _copy(const Impl& other);
+		void _reset();
+
+	public:
+
+		// Constructor
+		Impl(std::string name, DimType type, double guess);
+		Impl(std::string name, DimType type, std::string species, double guess);
+		Impl(std::string name, DimType type, std::vector<std::string> species, double guess);
+		Impl(std::string name, DimType type, std::vector<std::vector<std::string>> species, double guess);
+		Impl(const Impl& other);
+		Impl(Impl&& other);
+	    Impl& operator=(const Impl& other);
+	    Impl& operator=(Impl&& other);
+		~Impl();
+
+		/********************
+		Getters
+		********************/
+
+		// Name
+		std::string name() const;
+
+		// Type
+		DimType type() const;
+
+		// Does it apply to all species?
+		bool any_species() const;
+
+		// Guess
+		double guess() const;
+
+		// Get species
+		std::vector<std::string> get_species_h() const;
+		std::vector<std::string> get_species_b() const;
+		std::vector<std::vector<std::string>> get_species_J() const;
+		std::vector<std::vector<std::string>> get_species_K() const;
+		std::vector<std::vector<std::string>> get_species_W() const;
+
+		/********************
+		Setters
+		********************/
+
+		// Add species
+		void add_species_h(std::string species);
+		void add_species_b(std::string species);
+		void add_species_J(std::string species1, std::string species2);
+		void add_species_K(std::string species1, std::string species2, std::string species3);
+		void add_species_W(std::string species_visible, std::string species_hidden);
 	};
-	Dim::Dim(std::string name, DimType type, std::string species, double guess) : Dim(name, type, species, "", "", guess) {};
-	Dim::Dim(std::string name, DimType type, std::string species1, std::string species2, double guess) : Dim(name, type, species1, species2, "", guess) {};
-	Dim::Dim(std::string name, DimType type, std::string species1, std::string species2, std::string species3, double guess)
-	{
-		if (type == B || type == H || type == W) {
-			if (species1 == "" || species2 != "" || species3 != "") {
-				std::cerr << "ERROR! Dim specification is incorrect for H, B or W." << std::endl;
-				exit(EXIT_FAILURE);
+
+	/********************
+	Constructor
+	********************/
+
+	Dim::Impl::Impl(std::string name, DimType type, double guess) {
+		_name = name;
+		_type = type;
+		_guess = guess;
+		// Yes any species
+		_any_species = true;
+	};
+	Dim::Impl::Impl(std::string name, DimType type, std::string species, double guess) {
+		_name = name;
+		_type = type;
+		_guess = guess;
+		// Not any species
+		_any_species = false;
+		// Add
+		if (_type == H) {
+			add_species_h(species);
+		} else if (_type == B) {
+			add_species_b(species);
+		};
+	};
+	Dim::Impl::Impl(std::string name, DimType type, std::vector<std::string> species, double guess) {
+		_name = name;
+		_type = type;
+		_guess = guess;
+		// Not any species
+		_any_species = false;
+		// Add
+		if (_type == H) {
+			for (auto s: species) {
+				add_species_h(s);
+			};
+		} else if (_type == B) {
+			for (auto s: species) {
+				add_species_b(s);
 			};
 		} else if (type == J) {
-			if (species1 == "" || species2 == "" || species3 != "") {
-				std::cerr << "ERROR! Dim specification is incorrect for J." << std::endl;
+			if (species.size() != 2) {
+				std::cerr << "Error! must be 2 species for J" << std::endl;
 				exit(EXIT_FAILURE);
+			};
+			add_species_J(species[0],species[1]);
+		} else if (type == K) {
+			if (species.size() != 3) {
+				std::cerr << "Error! must be 3 species for K" << std::endl;
+				exit(EXIT_FAILURE);
+			};
+			add_species_K(species[0],species[1],species[2]);
+		} else if (type == W) {
+			if (species.size() != 2) {
+				std::cerr << "Error! must be 2 species for W" << std::endl;
+				exit(EXIT_FAILURE);
+			};
+			add_species_W(species[0],species[1]);
+		};
+	};
+	Dim::Impl::Impl(std::string name, DimType type, std::vector<std::vector<std::string>> species, double guess) {
+		// Check type
+		if (type == B || type != H) {
+			std::cerr << "Error! Only for J or K or W." << std::endl;
+			exit(EXIT_FAILURE);
+		};
+		_name = name;
+		_type = type;
+		_guess = guess;
+		// Not any species
+		_any_species = false;
+		// Add
+		if (type == J) {
+			for (auto s_pair: species) {
+				if (s_pair.size() != 2) {
+					std::cerr << "Error! must be 2 species for J" << std::endl;
+					exit(EXIT_FAILURE);
+				};
+				add_species_J(s_pair[0],s_pair[1]);
 			};
 		} else if (type == K) {
-			if (species1 == "" || species2 == "" || species3 == "") {
-				std::cerr << "ERROR! Dim specification is incorrect for K." << std::endl;
-				exit(EXIT_FAILURE);
+			for (auto s_triplet: species) {
+				if (s_triplet.size() != 3) {
+					std::cerr << "Error! must be 3 species for K" << std::endl;
+					exit(EXIT_FAILURE);
+				};
+				add_species_K(s_triplet[0],s_triplet[1],s_triplet[2]);
+			};
+		} else if (type == W) {
+			for (auto s_pair: species) {
+				if (s_pair.size() != 2) {
+					std::cerr << "Error! must be 2 species for W" << std::endl;
+					exit(EXIT_FAILURE);
+				};
+				add_species_W(s_pair[0],s_pair[1]);
 			};
 		};
-
-		this->name = name;
-		this->type = type;
-		this->all_species = false;
-		this->species1 = species1;
-		this->species2 = species2;
-		this->species3 = species3;
-		this->guess = guess;
 	};
+	Dim::Impl::Impl(const Impl& other) {
+		_copy(other);
+	};
+	Dim::Impl::Impl(Impl&& other) {
+		_copy(other);
+		other._reset();
+	};
+    Dim::Impl& Dim::Impl::operator=(const Impl& other) {
+		if (this != &other) {
+			_clean_up();
+			_copy(other);
+		};
+		return *this;
+    };
+    Dim::Impl& Dim::Impl::operator=(Impl&& other) {
+		if (this != &other) {
+			_clean_up();
+			_copy(other);
+			other._reset();
+		};
+		return *this;
+    };
+	Dim::Impl::~Impl()
+	{
+		_clean_up();
+	};
+	void Dim::Impl::_clean_up() {
+		// Nothing...
+	};
+	void Dim::Impl::_copy(const Impl& other) {
+		_name = other._name;
+		_type = other._type;
+		_any_species = other._any_species;
+		_species = other._species;
+		_species_multiple = other._species_multiple;
+		_guess = other._guess;
+	};
+	void Dim::Impl::_reset() {
+		_name = "";
+		_any_species = false;
+		_species.clear();
+		_species_multiple.clear();
+		_guess = 0.;
+	};
+
+	/********************
+	Getters
+	********************/
+
+	// Name
+	std::string Dim::Impl::name() const {
+		return _name;
+	};
+
+	// Type
+	DimType Dim::Impl::type() const {
+		return _type;
+	};
+
+	// Does it apply to all species?
+	bool Dim::Impl::any_species() const {
+		return _any_species;
+	};
+
+	// Guess
+	double Dim::Impl::guess() const {
+		return _guess;
+	};
+
+	// Get species
+	std::vector<std::string> Dim::Impl::get_species_h() const {
+		if (_type != H) {
+			std::cerr << "Error! Requested species but not of type H." << std::endl;
+			exit(EXIT_FAILURE);
+		};
+		return _species;
+	};
+	std::vector<std::string> Dim::Impl::get_species_b() const {
+		if (_type != B) {
+			std::cerr << "Error! Requested species but not of type B." << std::endl;
+			exit(EXIT_FAILURE);
+		};
+		return _species;
+	};
+	std::vector<std::vector<std::string>> Dim::Impl::get_species_J() const {
+		if (_type != J) {
+			std::cerr << "Error! Requested species but not of type J." << std::endl;
+			exit(EXIT_FAILURE);
+		};
+		return _species_multiple;
+	};
+	std::vector<std::vector<std::string>> Dim::Impl::get_species_K() const {
+		if (_type != K) {
+			std::cerr << "Error! Requested species but not of type K." << std::endl;
+			exit(EXIT_FAILURE);
+		};
+		return _species_multiple;
+	};
+	std::vector<std::vector<std::string>> Dim::Impl::get_species_W() const {
+		if (_type != W) {
+			std::cerr << "Error! Requested species but not of type W." << std::endl;
+			exit(EXIT_FAILURE);
+		};
+		return _species_multiple;
+	};
+
+	/********************
+	Setters
+	********************/
+
+	// Add species
+	void Dim::Impl::add_species_h(std::string species) {
+		// Check type
+		if (_type != H) {
+			std::cerr << "Error! Not H." << std::endl;
+			exit(EXIT_FAILURE);
+		};
+		_any_species = false;
+		_species.push_back(species);
+	};
+	void Dim::Impl::add_species_b(std::string species) {
+		// Check type
+		if (_type != B) {
+			std::cerr << "Error! Not B." << std::endl;
+			exit(EXIT_FAILURE);
+		};
+		_any_species = false;
+		_species.push_back(species);
+	};
+	void Dim::Impl::add_species_J(std::string species1, std::string species2) {
+		// Check type
+		if (_type != J) {
+			std::cerr << "Error! Not J." << std::endl;
+			exit(EXIT_FAILURE);
+		};
+		_any_species = false;
+		_species_multiple.push_back(std::vector<std::string>({species1,species2}));
+	};
+	void Dim::Impl::add_species_K(std::string species1, std::string species2, std::string species3) {
+		// Check type
+		if (_type != K) {
+			std::cerr << "Error! Not K." << std::endl;
+			exit(EXIT_FAILURE);
+		};
+		_any_species = false;
+		_species_multiple.push_back(std::vector<std::string>({species1,species2,species3}));
+	};
+	void Dim::Impl::add_species_W(std::string species_visible, std::string species_hidden) {
+		// Check type
+		if (_type != W) {
+			std::cerr << "Error! Not W." << std::endl;
+			exit(EXIT_FAILURE);
+		};
+		_any_species = false;
+		_species_multiple.push_back(std::vector<std::string>({species_visible,species_hidden}));
+	};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	/****************************************
+	Dim - Impl forwards
+	****************************************/
+
+	Dim::Dim(std::string name, DimType type, double guess) : _impl(new Impl(name,type,guess)) {};
+	Dim::Dim(std::string name, DimType type, std::string species, double guess) : _impl(new Impl(name,type,species,guess)) {};
+	Dim::Dim(std::string name, DimType type, std::vector<std::string> species, double guess) : _impl(new Impl(name,type,species,guess)) {};
+	Dim::Dim(std::string name, DimType type, std::vector<std::vector<std::string>> species, double guess) : _impl(new Impl(name,type,species,guess)) {};
+	Dim::Dim(const Dim& other) : _impl(new Impl(*other._impl)) {};
+	Dim::Dim(Dim&& other) = default;
+	Dim& Dim::operator=(Dim other) {
+        _impl = std::move(other._impl);
+        return *this; 
+	};
+	Dim::~Dim() = default;
+
+	// Name
+	std::string Dim::name() const {
+		return _impl->name();
+	};
+
+	// Type
+	DimType Dim::type() const {
+		return _impl->type();
+	};
+
+	// Does it apply to all species?
+	bool Dim::any_species() const {
+		return _impl->any_species();
+	};
+
+	// Guess
+	double Dim::guess() const {
+		return _impl->guess();
+	};
+
+	// Get species
+	std::vector<std::string> Dim::get_species_h() const {
+		return _impl->get_species_h();
+	};
+	std::vector<std::string> Dim::get_species_b() const {
+		return _impl->get_species_b();
+	};
+	std::vector<std::vector<std::string>> Dim::get_species_J() const {
+		return _impl->get_species_J();
+	};
+	std::vector<std::vector<std::string>> Dim::get_species_K() const {
+		return _impl->get_species_K();
+	};
+	std::vector<std::vector<std::string>> Dim::get_species_W() const {
+		return _impl->get_species_W();
+	};
+
+	/********************
+	Setters
+	********************/
+
+	// Add species
+	void Dim::add_species_h(std::string species) {
+		_impl->add_species_h(species);
+	};
+	void Dim::add_species_b(std::string species) {
+		_impl->add_species_b(species);
+	};
+	void Dim::add_species_J(std::string species1, std::string species2) {
+		_impl->add_species_J(species1,species2);
+	};
+	void Dim::add_species_K(std::string species1, std::string species2, std::string species3) {
+		_impl->add_species_K(species1,species2,species3);
+	};
+	void Dim::add_species_W(std::string species_visible, std::string species_hidden) {
+		_impl->add_species_W(species_visible,species_hidden);
+	};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 	/****************************************
 	BMLA - IMPLEMENTATION
@@ -77,6 +527,7 @@ namespace DynamicBoltzmann {
 
 		// Species present
 		std::list<Species> _species;
+		std::list<HiddenSpecies> _hidden_species;
 
 		// List of hidden units, and flag if they exist
 		bool _hidden_layer_exists;
@@ -102,22 +553,21 @@ namespace DynamicBoltzmann {
 		double _get_mse() const;
 
 		// Add a hidden unit		
-		void _add_hidden_unit(std::vector<Site*> conn_sites, std::vector<std::string> w_params, std::vector<std::string> b_params);
+		void _add_hidden_unit(std::vector<std::string> species_possible, std::vector<Site*> conn_sites, std::vector<std::string> w_params, std::vector<std::string> b_params);
 		std::vector<Site*> _get_sites(std::vector<int> &lattice_idxs);
 		std::vector<Site*> _get_sites(std::vector<std::vector<int>> &lattice_idxs);
 
 		// Search functions
 		Species* _not_nullptr(Species* ptr);
+		HiddenSpecies* _not_nullptr(HiddenSpecies *ptr);
 		IxnParam* _not_nullptr(IxnParam* ptr);
 		Counter* _not_nullptr(Counter* ptr);
 		// Find species
 		Species* _find_species(std::string name);
+		// Find hidden species
+		HiddenSpecies* _find_hidden_species(std::string name);
 		// Find Ixn param
 		IxnParam* _find_ixn_param_by_name(std::string name);
-		IxnParam* _find_ixn_param_by_species(IxnParamType type, std::string s);
-		IxnParam* _find_ixn_param_by_species(IxnParamType type, std::string s1, std::string s2);	
-		IxnParam* _find_ixn_param_by_species(IxnParamType type, std::string s1, std::string s2, std::string s3);
-		IxnParam* _find_ixn_param_for_any_species(IxnParamType type);
 		// Find counter
 		Counter* _find_ctr_by_species(std::string s);
 		Counter* _find_ctr_by_species(std::string s1, std::string s2);
@@ -132,8 +582,10 @@ namespace DynamicBoltzmann {
 	public:
 
 		// Constructor
-		Impl(std::vector<Dim> dims, int box_length, int lattice_dim);
+		Impl(std::vector<Dim> dims, std::vector<std::string> species_visible, std::vector<std::string> species_hidden, int box_length, int lattice_dim);
+		Impl(const Impl& other);
 		Impl(Impl&& other);
+		Impl& operator=(const Impl& other);
 	    Impl& operator=(Impl&& other);
 		~Impl();
 
@@ -141,9 +593,9 @@ namespace DynamicBoltzmann {
 		void set_param_for_dim(std::string dim_name, double val);
 
 		// Any dim
-		void add_hidden_unit(std::vector<std::vector<int>> lattice_idxs, std::vector<std::string> w_params, std::vector<std::string> b_params);
+		void add_hidden_unit(std::vector<std::string> species_possible, std::vector<std::vector<int>> lattice_idxs, std::vector<std::string> w_params, std::vector<std::string> b_params);
 		// 1D specific
-		void add_hidden_unit(std::vector<int> lattice_idxs, std::vector<std::string> w_params, std::vector<std::string> b_params);
+		void add_hidden_unit(std::vector<std::string> species_possible, std::vector<int> lattice_idxs, std::vector<std::string> w_params, std::vector<std::string> b_params);
 		// Validate
 		void validate_hidden() const;
 
@@ -178,7 +630,7 @@ namespace DynamicBoltzmann {
 	Constructor
 	********************/
 
-	BMLA::Impl::Impl(std::vector<Dim> dims, int box_length, int lattice_dim) : _latt(lattice_dim,box_length) {
+	BMLA::Impl::Impl(std::vector<Dim> dims, std::vector<std::string> species_visible, std::vector<std::string> species_hidden, int box_length, int lattice_dim) : _latt(lattice_dim,box_length) {
 
 		// Number of dims
 		_n_param = dims.size();
@@ -186,118 +638,113 @@ namespace DynamicBoltzmann {
 		_hidden_layer_exists = false;
 
 		// Tell the lattice about what dims exist for sampling
-		for (auto d: dims) {
-			if (d.type==H) { 
+		for (auto d=dims.begin(); d!=dims.end(); d++) {
+			if (d->type()==H) { 
 				_latt.set_sampling_flag_exists_h(true);
-			} else if (d.type==J) {
+			} else if (d->type()==J) {
 				_latt.set_sampling_flag_exists_j(true);
 				// setup lattice for NNs
 				_latt.init_nn_structure();
-			} else if (d.type==K) {
+			} else if (d->type()==K) {
 				_latt.set_sampling_flag_exists_k(true);
 				// set up lattice for triplets
 				_latt.init_triplet_structure();
-			} else if (d.type==W) {
+			} else if (d->type()==W) {
 				_latt.set_sampling_flag_exists_w(true);
 				// Mark that it exists
 				_hidden_layer_exists = true;
-			} else if (d.type==B) {
+			} else if (d->type()==B) {
 				// No need to tell lattice, since it only affects hidden unit activation and not sampling
 				// Mark that hidden layer exists
 				_hidden_layer_exists = true;
 			};
 		};
 
-		// Compile the set of species that exist
-		std::set<std::string> species;
-		for (auto d: dims) {
-			if (d.species1 != "") { species.insert(d.species1); };
-			if (d.species2 != "") { species.insert(d.species2); };
-			if (d.species3 != "") { species.insert(d.species3); };
-		};
-
-		// Create the species and add to the lattice
-		std::vector<Species*> sp_all; // all species
-		for (auto s: species) {
+		// Create the visible species and add to the lattice
+		for (auto s: species_visible) {
 			// Make species
 			_species.push_back(Species(s));
 
 			// Add to the lattice
 			_latt.add_species_possibility(&(_species.back()));
+		};
 
-			// Keep track of all
-			sp_all.push_back(&(_species.back()));
+		// Create the hidden species
+		for (auto s: species_hidden) {
+			// Make species
+			_hidden_species.push_back(HiddenSpecies(s));
+		};
+
+		// Fix dims that have any species specification
+		for (auto d=dims.begin(); d!=dims.end(); d++) {
+			if (d->any_species()) {
+				if (d->type()==H) {
+					for (auto s: species_visible) {
+						d->add_species_h(s);
+					};
+				} else if (d->type()==B) {
+					for (auto s: species_hidden) {
+						d->add_species_b(s);
+					};
+				} else if (d->type()==J) {
+					for (auto s1: species_visible) {
+						for (auto s2: species_visible) {
+							d->add_species_J(s1,s2);
+						};
+					};
+				} else if (d->type()==K) {
+					for (auto s1: species_visible) {
+						for (auto s2: species_visible) {
+							for (auto s3: species_visible) {
+								d->add_species_K(s1,s2,s3);
+							};
+						};
+					};
+				} else if (d->type()==W) {
+					for (auto sv: species_visible) {
+						for (auto sh: species_hidden) {
+							d->add_species_W(sv,sh);
+						};
+					};
+				};
+			};
 		};
 
 		// Create the interaction params
 		Species *sp,*sp1,*sp2,*sp3;
-		for (auto d: dims) {
-			if (d.type==H) {
+		HiddenSpecies *sph;
+		for (auto d=dims.begin(); d!=dims.end(); d++) {
+
+			if (d->type()==H) {
 
 				// Create
-				sp = _not_nullptr(_find_species(d.species1));
-				_ixn_params.push_back(IxnParam(d.name,Hp,sp,d.guess));
+				_ixn_params.push_back(IxnParam(d->name(),Hp,d->guess()));
 
-				// Add to the species
-				sp->set_h_ptr(&_ixn_params.back());
+				for (auto s: d->get_species_h()) {
+					// Find and add the species
+					sp = _not_nullptr(_find_species(s));
+					_ixn_params.back().add_species(sp);
+					// Add ixn to the species
+					sp->add_h_ptr(&_ixn_params.back());
+				};
 
-			} else if (d.type==J) { 
+			} else if (d->type()==J) { 
 
 				// Create
-				sp1 = _not_nullptr(_find_species(d.species1));
-				sp2 = _not_nullptr(_find_species(d.species2));
-				_ixn_params.push_back(IxnParam(d.name,Jp,sp1,sp2,d.guess));
+				_ixn_params.push_back(IxnParam(d->name(),Jp,d->guess()));
 
-				// Add to the species
-				sp1->add_j_ptr(sp2,&_ixn_params.back());
-				sp2->add_j_ptr(sp1,&_ixn_params.back());
-
-			} else if (d.type==W) { 
-
-				// Specific species or all?
-				if (!d.all_species) {
-					
-					// Specific species
-					
-					// Create
-					sp = _not_nullptr(_find_species(d.species1));
-					_ixn_params.push_back(IxnParam(d.name,Wp,sp,d.guess));
-
-					// No need to add to species - handled by ConnectionVH class
-				} else {
-
-					// All species
-
-					// Create
-					_ixn_params.push_back(IxnParam(d.name,Wp,sp_all,d.guess));
-
-					// No need to add to species - handled by ConnectionVH class
+				for (auto s: d->get_species_J()) {
+					// Find and add the species
+					sp1 = _not_nullptr(_find_species(s[0]));
+					sp2 = _not_nullptr(_find_species(s[1]));
+					_ixn_params.back().add_species(sp1,sp2);
+					// Add ixn to the species
+					sp1->add_j_ptr(sp2,&_ixn_params.back());
+					sp2->add_j_ptr(sp1,&_ixn_params.back());
 				};
 
-			} else if (d.type==B) {
+			} else if (d->type()==K) {
 
-				// Specific species or all?
-				if (!d.all_species) {
-					
-					// Specific species
-
-					// Create
-					sp = _not_nullptr(_find_species(d.species1));
-					_ixn_params.push_back(IxnParam(d.name,Bp,sp,d.guess));
-
-					// No need to add to species, since it only affects activations
-
-				} else {
-
-					// All species
-
-					// Create
-					_ixn_params.push_back(IxnParam(d.name,Bp,sp_all,d.guess));
-
-					// No need to add to species, since it only affects activations
-
-				};
-			} else if (d.type==K) {
 				// Check that Lattice dim is 1 - only 1 is allowed!
 				if (lattice_dim != 1) {
 					std::cerr << "Error: triplets are currently only supported for lattice of dim 1" << std::endl;
@@ -305,34 +752,82 @@ namespace DynamicBoltzmann {
 				};
 
 				// Create
-				sp1 = _not_nullptr(_find_species(d.species1));
-				sp2 = _not_nullptr(_find_species(d.species2));
-				sp3 = _not_nullptr(_find_species(d.species3));
-				_ixn_params.push_back(IxnParam(d.name,Kp,sp1,sp2,sp3,d.guess));
+				_ixn_params.push_back(IxnParam(d->name(),Kp,d->guess()));
 
-				// Add to species
-				sp1->add_k_ptr(sp2,sp3,&_ixn_params.back());
-				sp2->add_k_ptr(sp1,sp3,&_ixn_params.back());
-				sp3->add_k_ptr(sp1,sp2,&_ixn_params.back());
+				for (auto s: d->get_species_K()) {
+					// Find and add the species
+					sp1 = _not_nullptr(_find_species(s[0]));
+					sp2 = _not_nullptr(_find_species(s[1]));
+					sp3 = _not_nullptr(_find_species(s[2]));
+					_ixn_params.back().add_species(sp1,sp2,sp3);
+					// Add ixn to the species
+					sp1->add_k_ptr(sp2,sp3,&_ixn_params.back());
+					sp2->add_k_ptr(sp1,sp3,&_ixn_params.back());
+					sp3->add_k_ptr(sp1,sp2,&_ixn_params.back());
+				};
+
+			} else if (d->type()==W) { 
+
+				// Create
+				_ixn_params.push_back(IxnParam(d->name(),Wp,d->guess()));
+
+				for (auto s: d->get_species_W()) {
+					// Find and add the species
+					sp = _not_nullptr(_find_species(s[0]));
+					sph = _not_nullptr(_find_hidden_species(s[1]));
+					_ixn_params.back().add_species(sp,sph);
+
+					// No need to add to species - handled by ConnectionVH class
+				};
+
+			} else if (d->type()==B) {
+
+				// Create
+				_ixn_params.push_back(IxnParam(d->name(),Bp,d->guess()));
+
+				for (auto s: d->get_species_b()) {
+					// Find and add the species
+					sph = _not_nullptr(_find_hidden_species(s));
+					_ixn_params.back().add_species(sph);
+
+					// No need to add to species - handled by ConnectionVH class
+				};
+
 			};
 		};
 
 		// Add a new counter for the dimensions
 		IxnParam *ip;
-		for (auto d: dims) {
-			if (d.type==H) {
-				add_counter(d.species1);
-			} else if (d.type==J) {
-				add_counter(d.species1,d.species2);
-			} else if (d.type==K) {
-				add_counter(d.species1,d.species2,d.species3);
+		for (auto d=dims.begin(); d!=dims.end(); d++) {
+			if (d->type()==H) {
+				for (auto s: d->get_species_h()) {
+					add_counter(s);
+				};
+			} else if (d->type()==J) {
+				for (auto s: d->get_species_J()) {
+					add_counter(s[0],s[1]);
+				};
+			} else if (d->type()==K) {
+				for (auto s: d->get_species_K()) {
+					add_counter(s[0],s[1],s[2]);
+				};
 			};
 		};
+	};
+	BMLA::Impl::Impl(const Impl& other) : _latt(other._latt) {
+		_copy(other);
 	};
 	BMLA::Impl::Impl(Impl&& other) : _latt(other._latt) {
 		_copy(other);
 		other._reset();
 	};
+    BMLA::Impl& BMLA::Impl::operator=(const Impl& other) {
+		if (this != &other) {
+			_clean_up();
+			_copy(other);
+		};
+		return *this;
+    };
     BMLA::Impl& BMLA::Impl::operator=(Impl&& other) {
 		if (this != &other) {
 			_clean_up();
@@ -548,24 +1043,24 @@ namespace DynamicBoltzmann {
 	Add hidden unit
 	********************/
 
-	void BMLA::Impl::add_hidden_unit(std::vector<std::vector<int>> lattice_idxs, std::vector<std::string> w_params, std::vector<std::string> b_params) {
+	void BMLA::Impl::add_hidden_unit(std::vector<std::string> species_possible, std::vector<std::vector<int>> lattice_idxs, std::vector<std::string> w_params, std::vector<std::string> b_params) {
 		// Find sites indicated by connections
 		std::vector<Site*> conns = _get_sites(lattice_idxs);
 		// Make
-		_add_hidden_unit(conns, w_params, b_params);
+		_add_hidden_unit(species_possible, conns, w_params, b_params);
 	};
-	void BMLA::Impl::add_hidden_unit(std::vector<int> lattice_idxs, std::vector<std::string> w_params, std::vector<std::string> b_params) {
+	void BMLA::Impl::add_hidden_unit(std::vector<std::string> species_possible, std::vector<int> lattice_idxs, std::vector<std::string> w_params, std::vector<std::string> b_params) {
 		// Find sites indicated by connections
 		std::vector<Site*> conns = _get_sites(lattice_idxs);
 		// Make
-		_add_hidden_unit(conns, w_params, b_params);
+		_add_hidden_unit(species_possible, conns, w_params, b_params);
 	};
 
 	/********************
 	Add hidden unit internal
 	********************/
 
-	void BMLA::Impl::_add_hidden_unit(std::vector<Site*> conn_sites, std::vector<std::string> w_params, std::vector<std::string> b_params) {
+	void BMLA::Impl::_add_hidden_unit(std::vector<std::string> species_possible, std::vector<Site*> conn_sites, std::vector<std::string> w_params, std::vector<std::string> b_params) {
 
 		// Find the ixn params listed
 		std::vector<IxnParam*> ip_w;
@@ -581,8 +1076,23 @@ namespace DynamicBoltzmann {
 		};
 
 		// Make hidden unit
-		_hidden_units.push_back(HiddenUnit(ip_b));
+		_hidden_units.push_back(HiddenUnit());
 		HiddenUnit* hup = &_hidden_units.back();
+
+		// Add all allowed hidden species to this hidden unit
+		HiddenSpecies *hsp;
+		for (auto hsp_name: species_possible) {
+			hsp = _not_nullptr(_find_hidden_species(hsp_name));
+			hup->add_hidden_species_possibility(hsp);
+		};
+
+		// Add the biases to the hidden units and vice versa
+		for (auto b: ip_b) {
+			// bias to hidden unit
+			hup->add_bias(b);
+			// hidden unit to bias
+			b->add_hidden_unit(hup);
+		};
 
 		// Make the connections
 		ConnectionVH *cvh;
@@ -601,39 +1111,6 @@ namespace DynamicBoltzmann {
 			for (auto w: ip_w) {
 				w->add_visible_hidden_connection(s,hup);
 			};
-		};
-
-		/*
-
-		// Combine conn_sites and the ixn params
-		std::vector<std::pair<Site*,std::vector<IxnParam*>>> conns;
-		for (auto c: conn_sites) {
-			conns.push_back(std::make_pair(c,ip_w));
-		};
-
-		// Go through lattice sites
-		std::vector<Species*> sp_vec;
-		for (auto c: conns) {
-			// Go through ixn params W
-			for (auto ipw: c.second) {
-				// Get the species associated with this ixn param
-				sp_vec = ipw->get_species();
-				// Go through the species
-				for (auto sp: sp_vec) {
-					// Add to the site that this species has a conn to a hidden unit
-					c.first->hidden_conns[sp].push_back(std::make_pair(&_hidden_units.back(),ip_w));
-				};
-
-				// Add to ixn param
-				ipw->add_visible_hidden_connection(c.first,&_hidden_units.back());
-			};
-		};
-		*/
-
-		// Go through the biases b
-		for (auto b: ip_b) {
-			// Add this hidden unit
-			b->add_hidden_unit(&_hidden_units.back());
 		};
 	};
 
@@ -661,7 +1138,7 @@ namespace DynamicBoltzmann {
 
 		// Reset the params to the guesses, and the moments to 0
 		for (auto it=_ixn_params.begin(); it!=_ixn_params.end(); it++) {
-			it->reset();
+			it->reset_to_guess();
 			it->moments_reset(IxnParam::AWAKE);
 			it->moments_reset(IxnParam::ASLEEP);
 
@@ -1067,6 +1544,13 @@ namespace DynamicBoltzmann {
 		};
 		return ptr;
 	};
+	HiddenSpecies* BMLA::Impl::_not_nullptr(HiddenSpecies* ptr) {
+		if (!ptr) {
+			std::cerr << "ERROR: could not find hidden species!" << std::endl;
+			exit(EXIT_FAILURE);
+		};
+		return ptr;
+	};
 	IxnParam* BMLA::Impl::_not_nullptr(IxnParam* ptr) {
 		if (!ptr) {
 			std::cerr << "ERROR: could not find IxnParam!" << std::endl;
@@ -1081,9 +1565,16 @@ namespace DynamicBoltzmann {
 		};
 		return ptr;
 	};
-
 	Species* BMLA::Impl::_find_species(std::string name) {
 		for (auto it=_species.begin(); it!=_species.end(); it++) {
+			if (it->name() == name) {
+				return &*it;
+			};
+		};
+		return nullptr;
+	};
+	HiddenSpecies* BMLA::Impl::_find_hidden_species(std::string name) {
+		for (auto it=_hidden_species.begin(); it!=_hidden_species.end(); it++) {
 			if (it->name() == name) {
 				return &*it;
 			};
@@ -1130,63 +1621,57 @@ namespace DynamicBoltzmann {
 		};
 		return nullptr;
 	};
-	IxnParam* BMLA::Impl::_find_ixn_param_by_species(IxnParamType type, std::string s) {
-		if (type != Hp && type != Wp && type != Bp) {
-			std::cerr << "ERROR: number of species does not match dimension type" << std::endl;
-			exit(EXIT_FAILURE);
-		};
-		for (auto it=_ixn_params.begin(); it!=_ixn_params.end(); it++) {
-			if (it->is_type_with_species(type,s)) {
-				return &*it;
-			};
-		};
-		return nullptr;
-	};
-	IxnParam* BMLA::Impl::_find_ixn_param_by_species(IxnParamType type, std::string s1, std::string s2) {
-		if (type != Jp) {
-			std::cerr << "ERROR: number of species does not match dimension type" << std::endl;
-			exit(EXIT_FAILURE);
-		};
-		for (auto it=_ixn_params.begin(); it!=_ixn_params.end(); it++) {
-			if (it->is_type_with_species(type,s1, s2)) {
-				return &*it;
-			};
-		};
-		return nullptr;
-	};
-	IxnParam* BMLA::Impl::_find_ixn_param_by_species(IxnParamType type, std::string s1, std::string s2, std::string s3) {
-		if (type != Kp) {
-			std::cerr << "ERROR: number of species does not match dimension type" << std::endl;
-			exit(EXIT_FAILURE);
-		};
-		for (auto it=_ixn_params.begin(); it!=_ixn_params.end(); it++) {
-			if (it->is_type_with_species(type,s1,s2,s3)) {
-				return &*it;
-			};
-		};
-		return nullptr;
-	};
-	IxnParam* BMLA::Impl::_find_ixn_param_for_any_species(IxnParamType type) {
-		if (type != Wp && type != Bp) {
-			std::cerr << "ERROR: only Wp or Bp for any species." << std::endl;
-			exit(EXIT_FAILURE);
-		};
-		for (auto it=_ixn_params.begin(); it!=_ixn_params.end(); it++) {
-			if (it->is_type_for_any_species(type)) {
-				return &*it;
-			};
-		};
-		return nullptr;
-	};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 	/****************************************
 	BMLA IMPL forwards
 	****************************************/
 
 	// Constructor
-	BMLA::BMLA(std::vector<Dim> dims, int box_length, int lattice_dim) : _impl(new Impl(dims,box_length,lattice_dim)) {};
-	BMLA::BMLA(BMLA&& other) = default; // movable but no copies
-    BMLA& BMLA::operator=(BMLA&& other) = default; // movable but no copies
+	BMLA::BMLA(std::vector<Dim> dims, std::vector<std::string> species_visible, std::vector<std::string> species_hidden, int box_length, int lattice_dim) : _impl(new Impl(dims,species_visible,species_hidden,box_length,lattice_dim)) {};
+	BMLA::BMLA(const BMLA& other) : _impl(new Impl(*other._impl)) {};
+	BMLA::BMLA(BMLA&& other) = default;
+	BMLA& BMLA::operator=(BMLA other) {
+        _impl = std::move(other._impl);
+        return *this; 
+	};
 	BMLA::~BMLA() = default;
 
 	// Set a parameter for dim
@@ -1195,12 +1680,12 @@ namespace DynamicBoltzmann {
 	};
 
 	// Add hidden unit for any dim
-	void BMLA::add_hidden_unit(std::vector<std::vector<int>> lattice_idxs, std::vector<std::string> w_params, std::vector<std::string> b_params) {
-		_impl->add_hidden_unit(lattice_idxs, w_params, b_params);
+	void BMLA::add_hidden_unit(std::vector<std::string> species_possible, std::vector<std::vector<int>> lattice_idxs, std::vector<std::string> w_params, std::vector<std::string> b_params) {
+		_impl->add_hidden_unit(species_possible, lattice_idxs, w_params, b_params);
 	};
 	// 1D specific
-	void BMLA::add_hidden_unit(std::vector<int> lattice_idxs, std::vector<std::string> w_params, std::vector<std::string> b_params) {
-		_impl->add_hidden_unit(lattice_idxs,w_params,b_params);
+	void BMLA::add_hidden_unit(std::vector<std::string> species_possible, std::vector<int> lattice_idxs, std::vector<std::string> w_params, std::vector<std::string> b_params) {
+		_impl->add_hidden_unit(species_possible, lattice_idxs,w_params,b_params);
 	};
 	// Validate
 	void BMLA::validate_hidden() const {

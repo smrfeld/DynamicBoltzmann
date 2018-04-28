@@ -33,6 +33,7 @@ namespace DynamicBoltzmann {
 	****************************************/
 
 	class IxnParam;
+	class HiddenSpecies;
 
 	/****************************************
 	Doublets, Triplets of Species ptrs
@@ -55,6 +56,15 @@ namespace DynamicBoltzmann {
 	// Comparator
 	bool operator <(const Species3& a, const Species3& b);
 
+	struct SpeciesVH {
+		Species *sp_visible;
+		HiddenSpecies *sp_hidden;
+
+		SpeciesVH(Species* sp_visible, HiddenSpecies *sp_hidden);
+	};
+	// Comparator
+	bool operator <(const SpeciesVH& a, const SpeciesVH& b);
+
 	/****************************************
 	Species
 	****************************************/
@@ -73,9 +83,9 @@ namespace DynamicBoltzmann {
 		std::map<Species3, Counter*> _quartic_count;
 
 		// Pointers to the interaction params
-		IxnParam *_h_ptr;
-		std::map<Species*,IxnParam*> _j_ptr;
-		std::map<Species2,IxnParam*> _k_ptr;
+		std::vector<IxnParam*> _h_ptrs;
+		std::map<Species*,std::vector<IxnParam*> > _j_ptrs;
+		std::map<Species2,std::vector<IxnParam*>> _k_ptrs;
 
 		// Constructor helpers
 		void _clean_up();
@@ -99,7 +109,7 @@ namespace DynamicBoltzmann {
 		void add_quartic_counter(Species *sp1, Species *sp2, Species *sp3, Counter *ctr);
 
 		// Set h, j ptr
-		void set_h_ptr(IxnParam *h_ptr);
+		void add_h_ptr(IxnParam *h_ptr);
 		void add_j_ptr(Species* sp, IxnParam *j_ptr);
 		void add_k_ptr(Species* sp1, Species* sp2, IxnParam *k_ptr);
 
@@ -128,5 +138,38 @@ namespace DynamicBoltzmann {
 	};
 	// Comparator
 	bool operator <(const Species& a, const Species& b);
+
+	/****************************************
+	HiddenSpecies
+	****************************************/
+	
+	class HiddenSpecies {
+
+	private:
+
+		// Name
+		std::string _name;
+
+		// Constructor helpers
+		void _clean_up();
+		void _reset();
+		void _copy(const HiddenSpecies& other);
+
+	public:
+
+		// Constructor
+		HiddenSpecies(std::string name);
+		HiddenSpecies(const HiddenSpecies& other);
+		HiddenSpecies(HiddenSpecies&& other);
+		HiddenSpecies& operator=(const HiddenSpecies& other);
+		HiddenSpecies& operator=(HiddenSpecies&& other);
+		~HiddenSpecies();
+
+		// Name
+		std::string name() const;
+	};
+	// Comparator
+	bool operator <(const HiddenSpecies& a, const HiddenSpecies& b);
+
 };
 

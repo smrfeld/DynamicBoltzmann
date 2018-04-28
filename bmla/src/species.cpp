@@ -55,6 +55,14 @@ namespace DynamicBoltzmann {
     	return std::tie(a.sp1, a.sp2, a.sp3) < std::tie(b.sp1, b.sp2, b.sp3);
 	};
 
+	SpeciesVH::SpeciesVH(Species* sp_visible, HiddenSpecies *sp_hidden) {
+		this->sp_visible = sp_visible;
+		this->sp_hidden = sp_hidden;
+	};
+	bool operator <(const SpeciesVH& a, const SpeciesVH& b) {
+    	return std::tie(a.sp_visible, a.sp_hidden) < std::tie(b.sp_visible, b.sp_hidden);
+	};
+
 	/****************************************
 	Species
 	****************************************/
@@ -64,9 +72,6 @@ namespace DynamicBoltzmann {
 
 		// Counters
 		_count = nullptr;
-
-		// Ptrs
-		_h_ptr = nullptr;
 	};
 	Species::Species(const Species& other) {
 		_copy(other);
@@ -103,9 +108,9 @@ namespace DynamicBoltzmann {
 		_nn_count.clear();
 		_triplet_count.clear();
 		_quartic_count.clear();
-		_h_ptr = nullptr;
-		_j_ptr.clear();
-		_k_ptr.clear();
+		_h_ptrs.clear();
+		_j_ptrs.clear();
+		_k_ptrs.clear();
 	};
 	void Species::_copy(const Species& other) {
 		_name = other._name;
@@ -113,9 +118,9 @@ namespace DynamicBoltzmann {
 		_nn_count = other._nn_count;
 		_triplet_count = other._triplet_count;
 		_quartic_count = other._quartic_count;
-		_h_ptr = other._h_ptr;
-		_j_ptr = other._j_ptr;
-		_k_ptr = other._k_ptr;
+		_h_ptrs = other._h_ptrs;
+		_j_ptrs = other._j_ptrs;
+		_k_ptrs = other._k_ptrs;
 	};
 
 	/********************
@@ -139,14 +144,14 @@ namespace DynamicBoltzmann {
 	Set h, j ptr
 	********************/
 
-	void Species::set_h_ptr(IxnParam *h_ptr) {
-		_h_ptr = h_ptr;
+	void Species::add_h_ptr(IxnParam *h_ptr) {
+		_h_ptrs.push_back(h_ptr);
 	};
 	void Species::add_j_ptr(Species* sp, IxnParam *j_ptr) {
-		_j_ptr[sp] = j_ptr;
+		_j_ptrs[sp].push_back(j_ptr);
 	};
 	void Species::add_k_ptr(Species* sp1, Species* sp2, IxnParam *k_ptr) {
-		_k_ptr[Species2(sp1,sp2)] = k_ptr;
+		_k_ptrs[Species2(sp1,sp2)].push_back(k_ptr);
 	};
 
 	/********************
@@ -154,23 +159,31 @@ namespace DynamicBoltzmann {
 	********************/
 
 	double Species::h() const {
-		return _h_ptr->get();
+		double act=0.0;
+		for (auto h: _h_ptrs) {
+			act += h->get();
+		};
+		return act;
 	};
 	double Species::j(Species *other) const {
-		auto it = _j_ptr.find(other);
-		if (it != _j_ptr.end()) {
-			return it->second->get();
-		} else {
-			return 0.0;
+		double act=0.0;
+		auto it = _j_ptrs.find(other);
+		if (it != _j_ptrs.end()) {
+			for (auto j: it->second) {
+				act += j->get();
+			};
 		};
+		return act;
 	};
 	double Species::k(Species* other1, Species *other2) const {
-		auto it = _k_ptr.find(Species2(other1,other2));
-		if (it != _k_ptr.end()) {
-			return it->second->get();
-		} else {
-			return 0.0;
+		double act=0.0;
+		auto it = _k_ptrs.find(Species2(other1,other2));
+		if (it != _k_ptrs.end()) {
+			for (auto k: it->second) {
+				act += k->get();
+			};
 		};
+		return act;
 	};
 
 	/********************
@@ -235,6 +248,64 @@ namespace DynamicBoltzmann {
 	********************/
 
 	bool operator <(const Species& a, const Species& b) {
+		return a.name() < b.name();
+	};
+
+
+	/****************************************
+	HiddenSpecies
+	****************************************/
+
+	HiddenSpecies::HiddenSpecies(std::string name) {
+		_name = name;
+	};
+	HiddenSpecies::HiddenSpecies(const HiddenSpecies& other) {
+		_copy(other);
+	};
+	HiddenSpecies::HiddenSpecies(HiddenSpecies&& other) {
+		_copy(other);
+		other._reset();
+	};
+	HiddenSpecies& HiddenSpecies::operator=(const HiddenSpecies& other) {
+		if (this != &other) {
+			_clean_up();
+			_copy(other);
+		};
+		return *this;
+	};
+	HiddenSpecies& HiddenSpecies::operator=(HiddenSpecies&& other) {
+		if (this != &other) {
+			_clean_up();
+			_copy(other);
+			other._reset();
+		};
+		return *this;
+	};
+	HiddenSpecies::~HiddenSpecies() {
+		_clean_up();
+	};
+
+	void HiddenSpecies::_clean_up() {
+		// Nothing...
+	};
+	void HiddenSpecies::_reset() {
+		_name = "";	
+	};
+	void HiddenSpecies::_copy(const HiddenSpecies& other) {
+		_name = other._name;
+	};
+
+	/********************
+	Name
+	********************/
+
+	std::string HiddenSpecies::name() const { return _name; };
+
+	/********************
+	Comparator
+	********************/
+
+	bool operator <(const HiddenSpecies& a, const HiddenSpecies& b) {
 		return a.name() < b.name();
 	};
 

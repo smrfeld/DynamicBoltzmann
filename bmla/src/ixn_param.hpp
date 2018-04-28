@@ -37,15 +37,17 @@ namespace DynamicBoltzmann {
 		IxnParamType _type;
 
 		// Species
-		// If Hp or Wp: only sp1
-		Species *_sp1;
-		// If Jp or Kp: also sp2
-		Species *_sp2;
-		// If Kp: also sp3
-		Species *_sp3;
-		// All species
-		bool _all_species;
-		std::vector<Species*> _sp_all;
+		
+		// For a visible bias
+		std::vector<Species*> _sp_bias_visible;
+		// For a hidden bias
+		std::vector<HiddenSpecies*> _sp_bias_hidden;
+		// For a visible J
+		std::vector<Species2> _sp_doublet;
+		// For a visible K
+		std::vector<Species3> _sp_triplet;
+		// For a visible to hidden weight W
+		std::vector<SpeciesVH> _sp_conn;
 
 		// If Wp:
 		// Connects sites (visible) to hidden units
@@ -79,43 +81,69 @@ namespace DynamicBoltzmann {
 
 	public:
 
-		// Constructor
-		IxnParam(std::string name, IxnParamType type, std::vector<Species*> sp_all, double val_guess);
-		IxnParam(std::string name, IxnParamType type, Species *sp, double val_guess);
-		IxnParam(std::string name, IxnParamType type, Species *sp1, Species *sp2, double val_guess);
-		IxnParam(std::string name, IxnParamType type, Species *sp1, Species *sp2, Species *sp3, double val_guess);
+		/********************
+		Constructor
+		********************/
+
+		IxnParam(std::string name, IxnParamType type, double val_guess);
 		IxnParam(const IxnParam& other);
 		IxnParam(IxnParam&& other);
 		IxnParam & operator=(const IxnParam& other);
 		IxnParam & operator=(IxnParam&& other);
 		~IxnParam();
 
-		// Check if this ixn param is...
-		bool is_type_with_species(IxnParamType type, std::string s) const;
-		bool is_type_with_species(IxnParamType type, std::string s1, std::string s2) const;
-		bool is_type_with_species(IxnParamType type, std::string s1, std::string s2, std::string s3) const;
-		bool is_type_for_any_species(IxnParamType type) const;
+		/********************
+		Add a species
+		********************/
 
-		// If Wp
-		// Add a visible->hidden unit connection
+		void add_species(Species *sp);
+		void add_species(HiddenSpecies *hsp);
+		void add_species(Species *sp1, Species *sp2);
+		void add_species(Species *sp1, Species *sp2, Species *sp3);
+		void add_species(Species *sp, HiddenSpecies *hsp);
+
+		/********************
+		If W: Add a visible->hidden unit connection
+		********************/
+
 		void add_visible_hidden_connection(Site *sptr, HiddenUnit *hup);
 
-		// If Bp
-		// Add a hidden unit to monitor
+		/********************
+		If B: Add a hidden unit to monitor
+		********************/
+
 		void add_hidden_unit(HiddenUnit *hup);
 
-		// Update based on diff
+		/********************
+		Update based on diff
+		********************/
+
 		void update(double dopt, bool l2_reg=false, double lambda=0.);
 
-		// Getters/setters
+		/********************
+		Setters/getters
+		********************/
+
 		std::string name() const;
 		double get() const;
 		void set_val(double val);
 		void set_guess(double guess);
-		void reset();
-		std::vector<Species*> get_species() const;
+		void reset_to_guess();
 
-		// Moments from lattice
+		/********************
+		Get species involved
+		********************/
+
+		std::vector<Species*> get_species_bias() const;
+		std::vector<HiddenSpecies*> get_species_hidden_bias() const;
+		std::vector<Species2> get_species_doublet() const;
+		std::vector<Species3> get_species_triplet() const;
+		std::vector<SpeciesVH> get_species_conn() const;
+
+		/********************
+		Moments from lattice
+		********************/
+
 		enum MomentType {AWAKE, ASLEEP};
 		double get_moment(MomentType moment_type) const;
 		void moments_reset(MomentType moment_type);
@@ -123,7 +151,10 @@ namespace DynamicBoltzmann {
 		void moments_retrieve(MomentType moment_type, int batch_size);
 		double moments_diff() const;
 
-		// Store solution traj
+		/********************
+		Store solution traj
+		********************/
+
 		void set_track_soln_traj(bool flag);
 		void reset_soln_traj();
 		double get_ave() const;

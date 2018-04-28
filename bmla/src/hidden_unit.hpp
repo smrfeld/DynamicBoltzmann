@@ -13,24 +13,22 @@ namespace DynamicBoltzmann {
 	Hidden unit
 	************************************/
 
-	// Forward declare a site
-	class Site;
-
 	class HiddenUnit
 	{
 	private:
+
+		// Species possible
+		std::vector<HiddenSpecies*> _sp_possible;
 
 		// Connections
 		std::vector<ConnectionVH*> _conn;
 
 		// Biases
-		std::vector<IxnParam*> _bias;
+		std::map<HiddenSpecies*, std::vector<IxnParam*> > _bias;
 
-		// Value
-		double _val;
-
-		// Activation function
-		double _sigma(double x) const;
+		// Probs
+		std::map<HiddenSpecies*, double> _probs;
+		double _prob_empty;
 
 		// Constructor helpers
 		void _clean_up();
@@ -43,12 +41,18 @@ namespace DynamicBoltzmann {
 		Constructor
 		********************/
 
-		HiddenUnit(std::vector<IxnParam*> bias);
+		HiddenUnit();
 		HiddenUnit(const HiddenUnit& other);
 		HiddenUnit(HiddenUnit&& other);
 		HiddenUnit& operator=(const HiddenUnit& other);
 		HiddenUnit& operator=(HiddenUnit&& other);
 		~HiddenUnit();	
+
+		/********************
+		Add possible species
+		********************/
+
+		void add_hidden_species_possibility(HiddenSpecies* sp);
 
 		/********************
 		Add a connection
@@ -66,7 +70,8 @@ namespace DynamicBoltzmann {
 		Getters
 		********************/
 
-		double get() const;
+		// Nullptr for prob of empty
+		double get_prob(HiddenSpecies *hsp) const;
 
 		/********************
 		Add a bias

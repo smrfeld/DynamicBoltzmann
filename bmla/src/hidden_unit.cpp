@@ -17,10 +17,9 @@ namespace DynamicBoltzmann {
 	Constructor
 	********************/
 
-	HiddenUnit::HiddenUnit(std::vector<IxnParam*> bias)
+	HiddenUnit::HiddenUnit()
 	{
-		_bias = bias;
-		_val = 0.0;
+		_prob_empty = 1.0;
 	};
 	HiddenUnit::HiddenUnit(const HiddenUnit& other)
 	{
@@ -56,14 +55,28 @@ namespace DynamicBoltzmann {
 		// Nothing....
 	};
 	void HiddenUnit::_reset() {
+		_sp_possible.clear();
 		_conn.clear();
 		_bias.clear();
-		_val = 0.;
+		_prob_empty = 1.0;
+		_probs.clear();
 	};
 	void HiddenUnit::_copy(const HiddenUnit& other) {
+		_sp_possible = other._sp_possible;
 		_conn = other._conn;
 		_bias = other._bias;
-		_val = other._val;
+		_prob_empty = other._prob_empty;
+		_probs = other._probs;
+	};
+
+	/********************
+	Add possible species
+	********************/
+
+	void HiddenUnit::add_hidden_species_possibility(HiddenSpecies* sp) {
+		_sp_possible.push_back(sp);
+		_probs[sp] = 0.;
+		_bias[sp] = std::vector<IxnParam*>();
 	};
 
 	/********************
@@ -102,8 +115,18 @@ namespace DynamicBoltzmann {
 	Getters
 	********************/
 
-	double HiddenUnit::get() const {
-		return _val;
+	double HiddenUnit::get_prob(HiddenSpecies *hsp) const {
+		if (!hsp) {
+			// Prob empty
+			return _prob_empty;
+		};
+
+		auto it = _probs.find(hsp);
+		if (it != _probs.end()) {
+			return it->second;
+		} else {
+			return 0.;
+		};
 	};
 
 	/********************
@@ -111,7 +134,18 @@ namespace DynamicBoltzmann {
 	********************/
 
 	void HiddenUnit::add_bias(IxnParam *ip) {
-		_bias.push_back(ip);
+		// Get species involved
+		std::vector<HiddenSpecies*> hsp_vec = ip->get_species_hidden_bias();
+
+		// Go through species
+		for (auto hsp: hsp_vec) {
+			// Check this is a possible species for this site
+			auto it = std::find(_sp_possible.begin(),_sp_possible.end(),hsp);
+			if (it != _sp_possible.end()) {
+				// Add
+				_bias[hsp].push_back(ip);
+			};
+		};
 	};
 
 	/********************
@@ -119,40 +153,76 @@ namespace DynamicBoltzmann {
 	********************/
 
 	void HiddenUnit::activate(bool binary) {
-		// Go through all connected neurons
-		double act = 0.0;
 
-		// Bias
-		for (auto b: _bias) {
-			act += b->get();
-		};
+		// Propensity vector
+		std::vector<double> props;
+		props.push_back(0.0);
 
-		// Get act from conns
-		for (auto c: _conn) {
-			act += c->get_act_hidden();
-		};
-		/*
-		// Weights - go through all connected visible units
-		std::vector<Species*> sp_vec;
-		for (auto c: _conn) {
-			// Go through all ixn params associated with this connection
-			for (auto ip: c.second) {
-				// What species does this ixn param care about?
-				sp_vec = ip->get_species(); // Most Wp only 1, or all species if all species apply
-				for (auto sp: sp_vec) {
-					// Weight * prob of this species at this site
-					act += ip->get() * c.first->get_prob(sp);
-				};
+		// Prop of empty
+		props.push_back(1.0);
+
+		// Go through all possible species
+		double energy;
+		HiddenSpecies *hsp;
+		for (auto hsp: _sp_possible) {
+
+			// Reset energy
+			energy = 0.0;
+
+			// Get bias
+			for (auto b: _bias[hsp]) {
+				energy += b->get();
 			};
+
+			// Connections
+			for (auto c: _conn) {
+				energy += c->get_act_hidden(hsp);
+			};
+
+			// Store prop
+			props.push_back(props.back()+exp(energy));
 		};
+
+		/*
+		std::cout << "props: ";
+		for (auto x: props) {
+			std::cout << x << " ";
+		};
+		std::cout << std::endl;
 		*/
 		
-		// Pass through sigmoid -> probability
-		_val = _sigma(act);
-
-		// Binarize
+		// Store/sample
+		int i_chosen;
 		if (binary) {
-			binarize();
+			// Binary
+
+			// Sample RV
+			i_chosen = sample_prop_vec(props);
+
+			if (i_chosen==0) {
+
+				// Empty!
+				for (auto hsp: _sp_possible) {
+					_probs[hsp] = 0.0;
+				};
+				_prob_empty = 1.0;
+
+			} else {
+
+				// Make species
+				for (auto hsp: _sp_possible) {
+					_probs[hsp] = 0.0;
+				};
+				_probs[_sp_possible[i_chosen-1]] = 1.0;
+				_prob_empty = 0.0;
+
+			};
+
+		} else {
+			// Probabilsitic
+
+			std::cerr << "Error! only binary hidden currently supported" << std::endl;
+			exit(EXIT_FAILURE);
 		};
 	};
 
@@ -162,19 +232,10 @@ namespace DynamicBoltzmann {
 
 	void HiddenUnit::binarize() {
 		// 1 if probability = _val
-		if (randD(0.0,1.0) <= _val) {
-			_val = 1.;
+		if (randD(0.0,1.0) <= _probs.begin()->second) {
+			_probs[_probs.begin()->first] = 1.;
 		} else {
-			_val = 0.;
+			_probs[_probs.begin()->first] = 0.;
 		};
 	};
-
-	/********************
-	PRIVATE - Activation function
-	********************/
-
-	double HiddenUnit::_sigma(double x) const {
-		// Sigmoid
-		return 1.0 / (1.0 + exp(-x));
-	};	
 };

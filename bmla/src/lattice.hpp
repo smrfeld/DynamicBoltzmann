@@ -80,8 +80,10 @@ namespace DynamicBoltzmann {
 		// Hidden unit
 		HiddenUnit *_hidden_unit;
 
-		// Ixn params
-		std::map<Species*,std::vector<IxnParam*> > _ips;
+		// Ixn param W associated with this connection
+		// Stored both directions
+		std::map<Species*, std::map<HiddenSpecies*, std::vector<IxnParam*> > > _ips_visible_hidden;
+		std::map<HiddenSpecies*, std::map<Species*, std::vector<IxnParam*> > > _ips_hidden_visible;
 
 		// Constructor helpers
 		void _clean_up();
@@ -104,8 +106,8 @@ namespace DynamicBoltzmann {
 		// Get for a species on the visible unit
 		double get_act_visible(Species* sp_visible);
 
-		// Get activation for a hidden (no species dependence yet)
-		double get_act_hidden();
+		// Get activation for a hidden
+		double get_act_hidden(HiddenSpecies* sp_hidden);
 	};
 
 	/****************************************

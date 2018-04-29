@@ -265,13 +265,6 @@ namespace DynamicBoltzmann {
 		std::map<std::string,Species*> _sp_map;
 		std::vector<Species*> _sp_vec;
 
-		// Flag - are hidden units present? (needed for annealing)
-		// Note: only those needed for annealing
-		bool _sampling_exists_w;
-		bool _sampling_exists_h;
-		bool _sampling_exists_j;
-		bool _sampling_exists_k;
-
 		// Does the lattice have the following structure... ?
 		bool _latt_has_nn_structure;
 		bool _latt_has_triplet_structure;
@@ -307,16 +300,6 @@ namespace DynamicBoltzmann {
 		********************/
 
 		void add_species_possibility(Species *sp);
-
-		/********************
-		Indicate that the hidden unit exists
-		********************/
-
-		void set_sampling_flag_exists_w(bool flag=true);
-		void set_sampling_flag_exists_h(bool flag=true);
-		void set_sampling_flag_exists_j(bool flag=true);
-		void set_sampling_flag_exists_k(bool flag=true);
-		// No need for b, since it only affects hidden units
 
 		/********************
 		Initialize lattice structure of NNs, triplets, etc

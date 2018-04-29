@@ -637,26 +637,11 @@ namespace DynamicBoltzmann {
 		// No hidden layers yet
 		_hidden_layer_exists = false;
 
-		// Tell the lattice about what dims exist for sampling
+		// Check if hidden layer exists
 		for (auto d=dims.begin(); d!=dims.end(); d++) {
-			if (d->type()==H) { 
-				_latt.set_sampling_flag_exists_h(true);
-			} else if (d->type()==J) {
-				_latt.set_sampling_flag_exists_j(true);
-				// setup lattice for NNs
-				_latt.init_nn_structure();
-			} else if (d->type()==K) {
-				_latt.set_sampling_flag_exists_k(true);
-				// set up lattice for triplets
-				_latt.init_triplet_structure();
-			} else if (d->type()==W) {
-				_latt.set_sampling_flag_exists_w(true);
-				// Mark that it exists
+			if (d->type()==B || d->type()==W) {
 				_hidden_layer_exists = true;
-			} else if (d->type()==B) {
-				// No need to tell lattice, since it only affects hidden unit activation and not sampling
-				// Mark that hidden layer exists
-				_hidden_layer_exists = true;
+				break;
 			};
 		};
 

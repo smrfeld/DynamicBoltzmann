@@ -511,12 +511,6 @@ namespace DynamicBoltzmann {
 		_dim = dim;
 		_box_length = box_length;
 
-		// What ixns exist? for sampling
-		_sampling_exists_w = false;
-		_sampling_exists_h = false;
-		_sampling_exists_j = false;
-		_sampling_exists_k = false;
-
 		// Does the lattice have the following structure?
 		_latt_has_nn_structure = false;
 		_latt_has_triplet_structure = false;
@@ -577,10 +571,6 @@ namespace DynamicBoltzmann {
 		_box_length = other._box_length;
 		_sp_map = other._sp_map;
 		_sp_vec = other._sp_vec;
-		_sampling_exists_w = other._sampling_exists_w;
-		_sampling_exists_h = other._sampling_exists_h;
-		_sampling_exists_j = other._sampling_exists_j;
-		_sampling_exists_k = other._sampling_exists_k;
 		_latt_has_nn_structure = other._latt_has_nn_structure;
 		_latt_has_triplet_structure = other._latt_has_triplet_structure;
 		_latt_has_quartic_structure = other._latt_has_quartic_structure;
@@ -590,10 +580,6 @@ namespace DynamicBoltzmann {
 		_sp_map.clear();
 		_sp_vec.clear();
 		_latt.clear();
-		_sampling_exists_w = false;
-		_sampling_exists_h = false;
-		_sampling_exists_j = false;
-		_sampling_exists_k = false;
 		_latt_has_nn_structure = false;
 		_latt_has_triplet_structure = false;
 		_latt_has_quartic_structure = false;
@@ -625,27 +611,6 @@ namespace DynamicBoltzmann {
 				lit->add_species_possibility(sp);
 			};
 		};
-	};
-
-	/********************
-	Indicate that the hidden unit exists
-	********************/
-
-	void Lattice::set_sampling_flag_exists_w(bool flag) {
-		_sampling_exists_w = flag;
-	};
-	void Lattice::set_sampling_flag_exists_h(bool flag) {
-		_sampling_exists_h = flag;
-	};
-	void Lattice::set_sampling_flag_exists_j(bool flag) {
-		_sampling_exists_j = flag;
-	};
-	void Lattice::set_sampling_flag_exists_k(bool flag) {
-		if (_dim != 1) {
-			std::cerr << "ERROR: triplets are only supported for d=1 currently" << std::endl;
-			exit(EXIT_FAILURE);
-		};
-		_sampling_exists_k = flag;
 	};
 
 	/********************

@@ -135,6 +135,7 @@ namespace DynamicBoltzmann {
 		int _z;
 
 		// Probs of species/empty
+		std::vector<Species*> _sp_possible;
 		std::map<Species*, double> _probs;
 		double _prob_empty;
 
@@ -218,10 +219,10 @@ namespace DynamicBoltzmann {
 		void set_site_binary(Species *sp);
 
 		/********************
-		Get activations for a given species
+		Sample
 		********************/
 
-		double get_activation(Species *sp) const;
+		void sample(bool binary);
 
 		/********************
 		Check if site is empty

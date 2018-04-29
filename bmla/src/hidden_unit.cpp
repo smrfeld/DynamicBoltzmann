@@ -155,10 +155,12 @@ namespace DynamicBoltzmann {
 	void HiddenUnit::activate(bool binary) {
 
 		// Propensity vector
+		std::vector<double> probs;
 		std::vector<double> props;
 		props.push_back(0.0);
 
 		// Prop of empty
+		probs.push_back(1.0);
 		props.push_back(1.0);
 
 		// Go through all possible species
@@ -180,21 +182,20 @@ namespace DynamicBoltzmann {
 			};
 
 			// Store prop
-			props.push_back(props.back()+exp(energy));
+			energy = exp(energy);
+			props.push_back(props.back()+energy);
+			probs.push_back(energy);
 		};
 
-		/*
-		std::cout << "props: ";
-		for (auto x: props) {
-			std::cout << x << " ";
+		// Clear current
+		for (auto hsp: _sp_possible) {
+			_probs[hsp] = 0.0;
 		};
-		std::cout << std::endl;
-		*/
-		
+		_prob_empty = 0.0;
+
 		// Store/sample
 		int i_chosen;
 		if (binary) {
-			// Binary
 
 			// Sample RV
 			i_chosen = sample_prop_vec(props);
@@ -202,27 +203,29 @@ namespace DynamicBoltzmann {
 			if (i_chosen==0) {
 
 				// Empty!
-				for (auto hsp: _sp_possible) {
-					_probs[hsp] = 0.0;
-				};
 				_prob_empty = 1.0;
 
 			} else {
 
 				// Make species
-				for (auto hsp: _sp_possible) {
-					_probs[hsp] = 0.0;
-				};
 				_probs[_sp_possible[i_chosen-1]] = 1.0;
-				_prob_empty = 0.0;
 
 			};
 
 		} else {
-			// Probabilsitic
 
-			std::cerr << "Error! only binary hidden currently supported" << std::endl;
-			exit(EXIT_FAILURE);
+			// Normalize probs
+			double tot=0.0;
+			for (auto pr: probs) {
+				tot += pr;
+			};
+
+			// Write into species
+			_prob_empty = probs[0]/tot;
+			for (int i=0; i<_sp_possible.size(); i++) {
+				_probs[_sp_possible[i]] = probs[i+1]/tot;
+			};
+
 		};
 	};
 

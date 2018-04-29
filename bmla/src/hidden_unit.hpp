@@ -17,9 +17,6 @@ namespace DynamicBoltzmann {
 	{
 	private:
 
-		// Species possible
-		std::vector<HiddenSpecies*> _sp_possible;
-
 		// Connections
 		std::vector<ConnectionVH*> _conn;
 
@@ -27,6 +24,7 @@ namespace DynamicBoltzmann {
 		std::map<HiddenSpecies*, std::vector<IxnParam*> > _bias;
 
 		// Probs
+		std::vector<HiddenSpecies*> _sp_possible;
 		std::map<HiddenSpecies*, double> _probs;
 		double _prob_empty;
 

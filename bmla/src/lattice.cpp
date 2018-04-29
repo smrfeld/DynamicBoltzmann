@@ -170,6 +170,7 @@ namespace DynamicBoltzmann {
 		_hidden_conns.clear();
 		_prob_empty = 0.0;
 		_probs.clear();
+		_sp_possible.clear();
 	};
 	void Site::_copy(const Site& other) {
 		_dim = other._dim;
@@ -182,6 +183,7 @@ namespace DynamicBoltzmann {
 		_hidden_conns = other._hidden_conns;
 		_prob_empty = other._prob_empty;
 		_probs = other._probs;
+		_sp_possible = other._sp_possible;
 	};
 
 	/********************
@@ -244,6 +246,7 @@ namespace DynamicBoltzmann {
 	********************/
 
 	void Site::add_species_possibility(Species* sp) {
+		_sp_possible.push_back(sp);
 		_probs[sp] = 0.0;
 	};
 
@@ -318,46 +321,90 @@ namespace DynamicBoltzmann {
 	};
 
 	/********************
-	Get activations for a given species
+	Sample
 	********************/
 
-	double Site::get_activation(Species *sp) const {
+	void Site::sample(bool binary) {
 		double energy;
 
-		// Bias
-		energy = sp->h();
+		std::vector<double> props,probs;
+		props.push_back(0.0);
 
-		// NNs - go through neihbors
-		for (auto lit: _nbrs) {
-			// Get all probs
-			const std::map<Species*, double> prs = lit->get_probs();
-			// Go through all probs
-			for (auto pr: prs) {
-				// J * prob
-				energy += sp->j(pr.first) * pr.second;
-			};
-		};
+		// Empty = 1
+		props.push_back(1.0);
+		probs.push_back(1.0);
 
-		// Triplets - go through all pairs to consider
-		for (auto trip: _nbrs_triplets) {
-			// Get all probs
-			const std::map<Species*, double> prs1 = trip.s1->get_probs();
-			const std::map<Species*, double> prs2 = trip.s2->get_probs();
-			// Go through all probs
-			for (auto pr1: prs1) {
-				for (auto pr2: prs2) {
-					// K * prob * prob
-					energy += sp->k(pr1.first,pr2.first) * pr1.second * pr2.second;
+		// Go through all possible species this could be, calculate propensities
+		for (auto sp: _sp_possible) {
+			
+			// Bias
+			energy = sp->h();
+
+			// NNs - go through neihbors
+			for (auto lit: _nbrs) {
+				// Get all probs
+				const std::map<Species*, double> prs = lit->get_probs();
+				// Go through all probs
+				for (auto pr: prs) {
+					// J * prob
+					energy += sp->j(pr.first) * pr.second;
 				};
 			};
+
+			// Triplets - go through all pairs to consider
+			for (auto trip: _nbrs_triplets) {
+				// Get all probs
+				const std::map<Species*, double> prs1 = trip.s1->get_probs();
+				const std::map<Species*, double> prs2 = trip.s2->get_probs();
+				// Go through all probs
+				for (auto pr1: prs1) {
+					for (auto pr2: prs2) {
+						// K * prob * prob
+						energy += sp->k(pr1.first,pr2.first) * pr1.second * pr2.second;
+					};
+				};
+			};
+
+			// Conn to hidden layer - go through conns
+			for (auto connvh: _hidden_conns) {
+				energy += connvh->get_act_visible(sp);
+			};
+
+			// Append prop
+			energy = exp(energy);
+			props.push_back(props.back()+energy);
+			probs.push_back(energy);
 		};
 
-		// Conn to hidden layer - go through conns
-		for (auto connvh: _hidden_conns) {
-			energy += connvh->get_act_visible(sp);
+		// Commit probs
+		if (binary) {
+
+			// Sample RV
+			int i_chosen = sample_prop_vec(props);
+
+			if (i_chosen==0) {
+				// Flip down (new spin = 0)
+				set_site_empty();
+			} else {
+				// Make the appropriate species at this site (guaranteed empty)
+				set_site_binary(_sp_possible[i_chosen-1]);
+			};
+
+		} else {
+
+			// Normalize probs
+			double tot=0.0;
+			for (auto pr: probs) {
+				tot += pr;
+			};
+
+			// Write into species
+			set_prob(nullptr,probs[0]/tot);
+			for (int i=0; i<_sp_possible.size(); i++) {
+				set_prob(_sp_possible[i],probs[i+1]/tot);
+			};
 		};
 
-		return energy;
 	};
 
 	/********************
@@ -915,81 +962,10 @@ namespace DynamicBoltzmann {
 
 	void Lattice::sample(bool binary) {
 
-		// Declarations
-		latt_it it;
-		double energy;
-		std::map<Species*, std::vector< std::pair< HiddenUnit*, std::vector<IxnParam*> > > >::iterator it_hups;
-		int i_chosen;
-		std::vector<double> props,probs;
-		latt_it lit;
-		double tot;
+		for (auto it = _latt.begin(); it != _latt.end(); it++) {
 
-		// Go through all lattice sites
-		for (it = _latt.begin(); it != _latt.end(); it++) {
+			it->sample(binary);
 
-			// Clear props, probs
-			props.clear();
-			probs.clear();
-			props.push_back(0.0);
-
-			// Empty = 1
-			props.push_back(1.0);
-			probs.push_back(1.0);
-
-			// Go through all possible species this could be, calculate propensities
-			for (auto sp_new: _sp_vec) {
-				
-				// Get energy
-				energy = it->get_activation(sp_new);
-
-				// Append prop
-				props.push_back(props.back()+exp(energy));
-				probs.push_back(exp(energy));
-			};
-
-			/*
-			for (auto pr: props) {
-				std::cout << pr << " ";
-			};
-			std::cout << std::endl;
-			*/
-
-			// Commit probs
-			if (binary) {
-
-				// Sample RV
-				// i_chosen = _sample_prob_vec(probs);
-				i_chosen = sample_prop_vec(props);
-
-				if (i_chosen==0) {
-					// Flip down (new spin = 0)
-					it->set_site_empty();
-				} else {
-					// Make the appropriate species at this site (guaranteed empty)
-					it->set_site_binary(_sp_vec[i_chosen-1]);
-				};
-
-			} else {
-
-				// Normalize probs
-				tot=0.0;
-				for (auto pr: probs) {
-					tot += pr;
-				};
-
-				// Write into species
-				it->set_prob(nullptr,probs[0]/tot);
-				for (int i=0; i<_sp_vec.size(); i++) {
-					it->set_prob(_sp_vec[i],probs[i+1]/tot);
-				};
-
-				/*
-				for (auto pr: probs) {
-					std::cout << pr/tot << " ";
-				};
-				std::cout << std::endl;
-				*/
-			};
 		};
 	};
 

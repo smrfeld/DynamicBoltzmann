@@ -164,9 +164,9 @@ namespace DynamicBoltzmann {
 		_x = 0;
 		_y = 0;
 		_z = 0;
-		nbrs.clear();
-		nbrs_triplets.clear();
-		nbrs_quartics.clear();
+		_nbrs.clear();
+		_nbrs_triplets.clear();
+		_nbrs_quartics.clear();
 		_hidden_conns.clear();
 		_prob_empty = 0.0;
 		_probs.clear();
@@ -176,9 +176,9 @@ namespace DynamicBoltzmann {
 		_x = other._x;
 		_y = other._y;
 		_z = other._z;
-		nbrs = other.nbrs;
-		nbrs_triplets = other.nbrs_triplets;
-		nbrs_quartics = other.nbrs_quartics;
+		_nbrs = other._nbrs;
+		_nbrs_triplets = other._nbrs_triplets;
+		_nbrs_quartics = other._nbrs_quartics;
 		_hidden_conns = other._hidden_conns;
 		_prob_empty = other._prob_empty;
 		_probs = other._probs;
@@ -207,6 +207,20 @@ namespace DynamicBoltzmann {
 	    } else {
 	    	return false;
 	    };	
+	};
+
+	/********************
+	Add neighbors
+	********************/
+
+	void Site::add_nbr(Site *s) {
+		_nbrs.push_back(s);
+	};
+	void Site::add_nbr_triplet(Site *s1, Site *s2) {
+		_nbrs_triplets.push_back(Site2(s1,s2));
+	};
+	void Site::add_nbr_quartic(Site *s1, Site *s2, Site *s3) {
+		_nbrs_quartics.push_back(Site3(s1,s2,s3));
 	};
 
 	/********************
@@ -314,7 +328,7 @@ namespace DynamicBoltzmann {
 		energy = sp->h();
 
 		// NNs - go through neihbors
-		for (auto lit: nbrs) {
+		for (auto lit: _nbrs) {
 			// Get all probs
 			const std::map<Species*, double> prs = lit->get_probs();
 			// Go through all probs
@@ -325,10 +339,10 @@ namespace DynamicBoltzmann {
 		};
 
 		// Triplets - go through all pairs to consider
-		for (auto trip: nbrs_triplets) {
+		for (auto trip: _nbrs_triplets) {
 			// Get all probs
-			const std::map<Species*, double> prs1 = trip.lit1->get_probs();
-			const std::map<Species*, double> prs2 = trip.lit2->get_probs();
+			const std::map<Species*, double> prs1 = trip.s1->get_probs();
+			const std::map<Species*, double> prs2 = trip.s2->get_probs();
 			// Go through all probs
 			for (auto pr1: prs1) {
 				for (auto pr2: prs2) {
@@ -394,7 +408,7 @@ namespace DynamicBoltzmann {
 		sp->count_increment(prob);
 
 		// NNs, if needed
-		for (auto nbr_it: nbrs) {
+		for (auto nbr_it: _nbrs) {
 			// Get all the probs
 			const std::map<Species*, double> prs = nbr_it->get_probs();
 			for (auto pr: prs) {
@@ -404,10 +418,10 @@ namespace DynamicBoltzmann {
 		};
 
 		// Triplets, if needed
-		for (auto trip: nbrs_triplets) {
+		for (auto trip: _nbrs_triplets) {
 			// Get all the probs
-			const std::map<Species*, double> prs1 = trip.lit1->get_probs();
-			const std::map<Species*, double> prs2 = trip.lit2->get_probs();
+			const std::map<Species*, double> prs1 = trip.s1->get_probs();
+			const std::map<Species*, double> prs2 = trip.s2->get_probs();
 			for (auto pr1: prs1) {
 				for (auto pr2: prs2) {
 					// Increment
@@ -417,11 +431,11 @@ namespace DynamicBoltzmann {
 		};
 
 		// Quartics, if needed
-		for (auto quart: nbrs_quartics) {
+		for (auto quart: _nbrs_quartics) {
 			// Get all the probs
-			const std::map<Species*, double> prs1 = quart.lit1->get_probs();
-			const std::map<Species*, double> prs2 = quart.lit2->get_probs();
-			const std::map<Species*, double> prs3 = quart.lit3->get_probs();
+			const std::map<Species*, double> prs1 = quart.s1->get_probs();
+			const std::map<Species*, double> prs2 = quart.s2->get_probs();
+			const std::map<Species*, double> prs3 = quart.s3->get_probs();
 			for (auto pr1: prs1) {
 				for (auto pr2: prs2) {
 					for (auto pr3: prs3) {
@@ -628,11 +642,11 @@ namespace DynamicBoltzmann {
 				for (auto nbr: nbrs) {
 					// Add as nbr
 					if (_dim == 1) {
-						lit->nbrs.push_back(_look_up(nbr.x()));
+						lit->add_nbr(_look_up(nbr.x()));
 					} else if (_dim == 2) {
-						lit->nbrs.push_back(_look_up(nbr.x(),nbr.y()));
+						lit->add_nbr(_look_up(nbr.x(),nbr.y()));
 					} else if (_dim == 3) {
-						lit->nbrs.push_back(_look_up(nbr.x(),nbr.y(),nbr.z()));
+						lit->add_nbr(_look_up(nbr.x(),nbr.y(),nbr.z()));
 					};
 				};
 
@@ -649,25 +663,25 @@ namespace DynamicBoltzmann {
 		// Check: only do this once!
 		if (!_latt_has_triplet_structure) {
 
-			latt_it lit1,lit2;
+			Site *s1,*s2;
 			for (latt_it lit = _latt.begin(); lit != _latt.end(); lit++) {
 				if (lit->x() != 1 && lit->x() != 2) {
 					// Both to the left
-					lit1 = _look_up(lit->x()-2);
-					lit2 = _look_up(lit->x()-1);
-					lit->nbrs_triplets.push_back(LattIt2(lit1,lit2));
+					s1 = _look_up(lit->x()-2);
+					s2 = _look_up(lit->x()-1);
+					lit->add_nbr_triplet(s1,s2);
 				};
 				if (lit->x() != 1 && lit->x() != _box_length) {
 					// One left, one right
-					lit1 = _look_up(lit->x()-1);
-					lit2 = _look_up(lit->x()+1);
-					lit->nbrs_triplets.push_back(LattIt2(lit1,lit2));
+					s1 = _look_up(lit->x()-1);
+					s2 = _look_up(lit->x()+1);
+					lit->add_nbr_triplet(s1,s2);
 				};
 				if (lit->x() != _box_length-1 && lit->x() != _box_length) {
 					// Both to the right
-					lit1 = _look_up(lit->x()+1);
-					lit2 = _look_up(lit->x()+2);
-					lit->nbrs_triplets.push_back(LattIt2(lit1,lit2));
+					s1 = _look_up(lit->x()+1);
+					s2 = _look_up(lit->x()+2);
+					lit->add_nbr_triplet(s1,s2);
 				};
 			};
 
@@ -680,35 +694,35 @@ namespace DynamicBoltzmann {
 		// Check: only do this once!
 		if (!_latt_has_quartic_structure) {
 
-			latt_it lit1,lit2,lit3;
+			Site *s1,*s2,*s3;
 			for (latt_it lit = _latt.begin(); lit != _latt.end(); lit++) {
 				if (lit->x() != 1 && lit->x() != 2 && lit->x() != 3) {
 					// Three to the left
-					lit1 = _look_up(lit->x()-3);
-					lit2 = _look_up(lit->x()-2);
-					lit3 = _look_up(lit->x()-1);
-					lit->nbrs_quartics.push_back(LattIt3(lit1,lit2,lit3));
+					s1 = _look_up(lit->x()-3);
+					s2 = _look_up(lit->x()-2);
+					s3 = _look_up(lit->x()-1);
+					lit->add_nbr_quartic(s1,s2,s3);
 				};
 				if (lit->x() != 1 && lit->x() != 2 && lit->x() != _box_length) {
 					// Two to the left, one to the right
-					lit1 = _look_up(lit->x()-2);
-					lit2 = _look_up(lit->x()-1);
-					lit3 = _look_up(lit->x()+1);
-					lit->nbrs_quartics.push_back(LattIt3(lit1,lit2,lit3));
+					s1 = _look_up(lit->x()-2);
+					s2 = _look_up(lit->x()-1);
+					s3 = _look_up(lit->x()+1);
+					lit->add_nbr_quartic(s1,s2,s3);
 				};
 				if (lit->x() != 1 && lit->x() != _box_length-1 && lit->x() != _box_length) {
 					// One left, two to the right
-					lit1 = _look_up(lit->x()-1);
-					lit2 = _look_up(lit->x()+1);
-					lit3 = _look_up(lit->x()+2);
-					lit->nbrs_quartics.push_back(LattIt3(lit1,lit2,lit3));
+					s1 = _look_up(lit->x()-1);
+					s2 = _look_up(lit->x()+1);
+					s3 = _look_up(lit->x()+2);
+					lit->add_nbr_quartic(s1,s2,s3);
 				};
 				if (lit->x() != _box_length-2 && lit->x() != _box_length-1 && lit->x() != _box_length) {
 					// Three to the right
-					lit1 = _look_up(lit->x()+1);
-					lit2 = _look_up(lit->x()+2);
-					lit3 = _look_up(lit->x()+3);
-					lit->nbrs_quartics.push_back(LattIt3(lit1,lit2,lit3));
+					s1 = _look_up(lit->x()+1);
+					s2 = _look_up(lit->x()+2);
+					s3 = _look_up(lit->x()+3);
+					lit->add_nbr_quartic(s1,s2,s3);
 				};
 			};
 
@@ -726,21 +740,21 @@ namespace DynamicBoltzmann {
 			std::cerr << "ERROR: dim wrong in get_site" << std::endl;
 			exit(EXIT_FAILURE);
 		};
-		return &(*(_look_up(x)));
+		return _look_up(x);
 	};
 	Site* Lattice::get_site(int x, int y) {
 		if (_dim != 2) {
 			std::cerr << "ERROR: dim wrong in get_site" << std::endl;
 			exit(EXIT_FAILURE);
 		};
-		return &(*(_look_up(x,y)));
+		return _look_up(x,y);
 	};
 	Site* Lattice::get_site(int x, int y, int z) {
 		if (_dim != 3) {
 			std::cerr << "ERROR: dim wrong in get_site" << std::endl;
 			exit(EXIT_FAILURE);
 		};
-		return &(*(_look_up(x,y,z)));
+		return _look_up(x,y,z);
 	};
 
 	/********************
@@ -805,7 +819,7 @@ namespace DynamicBoltzmann {
 		std::string sp="";
 		std::string line;
 		std::istringstream iss;
-		latt_it lit;
+		Site* s;
 		std::string prob="";
 		double prob_val;
 		if (f.is_open()) { // make sure we found it
@@ -826,18 +840,18 @@ namespace DynamicBoltzmann {
 			    };
 		    	// Add to lattice
 		    	if (_dim == 1) {
-		    		lit = _look_up(atoi(x.c_str()));
+		    		s = _look_up(atoi(x.c_str()));
 			    } else if (_dim == 2) {
-		    		lit = _look_up(atoi(x.c_str()),atoi(y.c_str()));
+		    		s = _look_up(atoi(x.c_str()),atoi(y.c_str()));
 			    } else if (_dim == 3) {
-			    	lit = _look_up(atoi(x.c_str()),atoi(y.c_str()),atoi(z.c_str()));
+			    	s = _look_up(atoi(x.c_str()),atoi(y.c_str()),atoi(z.c_str()));
 			    };
 			    if (binary) {
-		    		lit->set_prob(_sp_map[sp],1.0);
+		    		s->set_prob(_sp_map[sp],1.0);
 		    	} else {
 		    		prob_val = atof(prob.c_str());
-		    		lit->set_prob(_sp_map[sp],prob_val);
-		    		lit->set_prob(nullptr,1.0-prob_val);
+		    		s->set_prob(_sp_map[sp],prob_val);
+		    		s->set_prob(nullptr,1.0-prob_val);
 		    	};
 	    		// Reset
 		    	sp=""; x=""; y=""; z=""; prob="";
@@ -858,7 +872,7 @@ namespace DynamicBoltzmann {
 
 		bool did_place;
 		int ctr_tries;
-		latt_it lit;
+		Site *s;
 
 		// Go through the species
 		for (auto pr: counts) {
@@ -869,17 +883,17 @@ namespace DynamicBoltzmann {
 				ctr_tries = 0;
 				while (did_place == false && ctr_tries < 1000) { // Try 1000 different places
 			    	if (_dim == 1) {
-			    		lit = _look_up(randI(1,_box_length));
+			    		s = _look_up(randI(1,_box_length));
 				    } else if (_dim == 2) {
-			    		lit = _look_up(randI(1,_box_length),randI(1,_box_length));
+			    		s = _look_up(randI(1,_box_length),randI(1,_box_length));
 				    } else if (_dim == 3) {
-			    		lit = _look_up(randI(1,_box_length),randI(1,_box_length),randI(1,_box_length));
+			    		s = _look_up(randI(1,_box_length),randI(1,_box_length),randI(1,_box_length));
 				    };
 				    // Check if empty
-				    if (lit->empty()) {
+				    if (s->empty()) {
 				    	// Yes, it's empty - place!
 				    	did_place = true;
-				    	lit->set_prob(pr.first,1.0);
+				    	s->set_prob(pr.first,1.0);
 				    } else {
 				    	// Try again!
 				    	ctr_tries++;
@@ -987,31 +1001,31 @@ namespace DynamicBoltzmann {
 	Lookup a site iterator from x,y,z
 	********************/
 
-	latt_it Lattice::_look_up(int x) {
+	Site* Lattice::_look_up(int x) {
 		// Figure out index in list
 		int n = x-1;
 
 		// Grab
 		latt_it it = _latt.begin();
 		std::advance(it,n);
-		return it;
+		return &*it;
 	};
-	latt_it Lattice::_look_up(int x, int y) {
+	Site* Lattice::_look_up(int x, int y) {
 		// Figure out index in list
 		int n = (x-1)*_box_length + y-1;
 
 		// Grab
 		latt_it it = _latt.begin();
 		std::advance(it,n);
-		return it;
+		return &*it;
 	};
-	latt_it Lattice::_look_up(int x, int y, int z) {
+	Site* Lattice::_look_up(int x, int y, int z) {
 		// Figure out index in list
 		int n = (x-1)*_box_length*_box_length + (y-1)*_box_length + z-1;
 
 		// Grab
 		latt_it it = _latt.begin();
 		std::advance(it,n);
-		return it;
+		return &*it;
 	};
 };

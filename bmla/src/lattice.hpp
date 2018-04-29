@@ -43,23 +43,23 @@ namespace DynamicBoltzmann {
 	typedef std::list<Site>::iterator latt_it;
 
 	/****************************************
-	Structure to hold iterators to neighbors
+	Structure to hold pairs and triplets of sites
 	****************************************/
 
-	struct LattIt2 {
-		latt_it lit1,lit2;
-		LattIt2(latt_it l1, latt_it l2) {
-			lit1 = l1;
-			lit2 = l2;
+	struct Site2 {
+		Site *s1,*s2;
+		Site2(Site* s1, Site *s2) {
+			this->s1 = s1;
+			this->s2 = s2;
 		};
 	};
 
-	struct LattIt3 {
-		latt_it lit1,lit2,lit3;
-		LattIt3(latt_it l1, latt_it l2, latt_it l3) {
-			lit1 = l1;
-			lit2 = l2;
-			lit3 = l3;
+	struct Site3 {
+		Site *s1,*s2,*s3;
+		Site3(Site* s1, Site *s2, Site *s3) {
+			this->s1 = s1;
+			this->s2 = s2;
+			this->s3 = s3;
 		};
 	};
 
@@ -111,8 +111,19 @@ namespace DynamicBoltzmann {
 	};
 
 	/****************************************
-	Class to hold a lattice site
+	Struct to hold an xyz point
 	****************************************/
+
+	/*
+	struct XYZ
+	{
+		int x,y,z;
+	};
+	*/
+
+	/****************************************
+	Class to hold a lattice site
+	***************************************/
 
 	class Site {
 	private:
@@ -131,6 +142,11 @@ namespace DynamicBoltzmann {
 		// A species-dependent graph :)
 		std::vector<ConnectionVH*> _hidden_conns;
 
+		// Neighbors
+		std::vector<Site*> _nbrs;
+		std::vector<Site2> _nbrs_triplets;
+		std::vector<Site3> _nbrs_quartics;
+
 		// Add/Remove counts on a given species (not _sp_binary, unless it is passed)
 		void _remove_counts_on_species(Species *sp, double prob);
 		void _add_counts_on_species(Species *sp, double prob);
@@ -141,10 +157,6 @@ namespace DynamicBoltzmann {
 		void _copy(const Site& other);
 
 	public:
-
-		std::vector<latt_it> nbrs;
-		std::vector<LattIt2> nbrs_triplets;
-		std::vector<LattIt3> nbrs_quartics;
 
 		/********************
 		Constructor
@@ -167,6 +179,14 @@ namespace DynamicBoltzmann {
 		int y() const;
 		int z() const;
 		bool less_than(const Site &other) const;
+
+		/********************
+		Add neighbors
+		********************/
+
+		void add_nbr(Site *s);
+		void add_nbr_triplet(Site *s1, Site *s2);
+		void add_nbr_quartic(Site *s1, Site *s2, Site *s3);
 
 		/********************
 		Add a hidden conn
@@ -236,9 +256,9 @@ namespace DynamicBoltzmann {
 		lattice _latt;
 
 		// Lookup a site iterator from x,y,z
-		latt_it _look_up(int x);
-		latt_it _look_up(int x, int y);
-		latt_it _look_up(int x, int y, int z);
+		Site* _look_up(int x);
+		Site* _look_up(int x, int y);
+		Site* _look_up(int x, int y, int z);
 
 		// Pointers to species present
 		std::map<std::string,Species*> _sp_map;

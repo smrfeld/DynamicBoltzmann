@@ -17,8 +17,6 @@ namespace DynamicBoltzmann {
 
 		// Ptrs
 		_t_opt_ptr = nullptr;
-		_h_ptr = nullptr;
-		_w_ptr = nullptr;
 	};
 	Species::Species(const Species& other) {
 		_copy(other);
@@ -55,9 +53,8 @@ namespace DynamicBoltzmann {
 		_triplet_count.clear();
 		_count = 0;
 		_t_opt_ptr = nullptr;
-		_h_ptr = nullptr;
-		_j_ptr.clear();
-		_w_ptr = nullptr;
+		_h_ptrs.clear();
+		_j_ptrs.clear();
 	};
 	void Species::_copy(const Species& other) {
 		_name = other._name;
@@ -65,9 +62,8 @@ namespace DynamicBoltzmann {
 		_triplet_count = other._triplet_count;
 		_count = other._count;
 		_t_opt_ptr = other._t_opt_ptr;
-		_h_ptr = other._h_ptr;
-		_j_ptr = other._j_ptr;
-		_w_ptr = other._w_ptr;
+		_h_ptrs = other._h_ptrs;
+		_j_ptrs = other._j_ptrs;
 	};
 
 	/********************
@@ -83,14 +79,11 @@ namespace DynamicBoltzmann {
 	Set h, j ptr
 	********************/
 
-	void Species::set_h_ptr(IxnParamTraj *h_ptr) {
-		_h_ptr = h_ptr;
+	void Species::add_h_ptr(IxnParamTraj *h_ptr) {
+		_h_ptrs.push_back(h_ptr);
 	};
 	void Species::add_j_ptr(Species* sp, IxnParamTraj *j_ptr) {
-		_j_ptr[sp] = j_ptr;
-	};
-	void Species::set_w_ptr(IxnParamTraj *w_ptr) {
-		_w_ptr = w_ptr;
+		_j_ptrs[sp].push_back(j_ptr);
 	};
 
 	/********************
@@ -126,12 +119,6 @@ namespace DynamicBoltzmann {
 		} else {
 			std::cout << "   Time ptr is set" << std::endl;
 		};
-		if (!_h_ptr) {
-			std::cerr << "ERROR: no h ptr set" << std::endl;
-			exit(EXIT_FAILURE);
-		} else {
-			std::cout << "   h ptr is set" << std::endl;
-		};
 	};
 
 	/********************
@@ -139,17 +126,21 @@ namespace DynamicBoltzmann {
 	********************/
 
 	double Species::h() const {
-		return _h_ptr->get_at_time(*_t_opt_ptr);
+		double act=0.;
+		for (auto const& ipt: _h_ptrs) {
+			act += ipt->get_at_time(*_t_opt_ptr);
+		};
+		return act;
 	};
 	double Species::j(Species *other) const {
-		if (_j_ptr.at(other)) {
-			return _j_ptr.at(other)->get_at_time(*_t_opt_ptr);
-		} else {
-			return 0.;
-		};
-	};
-	double Species::w() const {
-		return _w_ptr->get_at_time(*_t_opt_ptr);
+		double act=0.;
+		auto it = _j_ptrs.find(other);
+		if (it != _j_ptrs.end()) {
+			for (auto const &ipt: it->second) {
+				act += ipt->get_at_time(*_t_opt_ptr);
+			};
+		};	
+		return act;
 	};
 	int Species::count() const {
 		return _count;

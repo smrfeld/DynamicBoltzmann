@@ -49,9 +49,8 @@ namespace DynamicBoltzmann {
 		int *_t_opt_ptr;
 
 		// Pointers to the interaction params
-		IxnParamTraj *_h_ptr;
-		std::map<Species*,IxnParamTraj*> _j_ptr;
-		IxnParamTraj* _w_ptr;
+		std::vector<IxnParamTraj*> _h_ptrs;
+		std::map<Species*,std::vector<IxnParamTraj*> > _j_ptrs;
 
 		// Constructor helpers
 		void _clean_up();
@@ -81,9 +80,8 @@ namespace DynamicBoltzmann {
 		Set h, J, W ptr
 		********************/
 
-		void set_h_ptr(IxnParamTraj *h_ptr);
+		void add_h_ptr(IxnParamTraj *h_ptr);
 		void add_j_ptr(Species* sp, IxnParamTraj *j_ptr);
-		void set_w_ptr(IxnParamTraj *w_ptr);
 
 		/********************
 		Initialize counts for a given other species
@@ -104,7 +102,6 @@ namespace DynamicBoltzmann {
 
 		double h() const;
 		double j(Species* other) const;
-		double w() const;
 		int count() const;
 		int nn_count(Species* other) const;
 		int triplet_count(Species* other1, Species* other2) const;

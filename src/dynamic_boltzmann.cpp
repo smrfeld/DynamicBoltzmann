@@ -811,19 +811,15 @@ namespace DynamicBoltzmann {
 			if (d.type()==H) {
 				s_names = d.get_species_h();
 				sp = _find_species(s_names[0]);
-				sp->set_h_ptr(ip_ptr);
+				sp->add_h_ptr(ip_ptr);
 			} else if (d.type()==J) {
 				ss_names = d.get_species_J();
 				sp1 = _find_species(ss_names[0][0]);
 				sp2 = _find_species(ss_names[0][1]);
 				sp1->add_j_ptr(sp2,ip_ptr);
 				sp2->add_j_ptr(sp1,ip_ptr);
-			} else if (d.type()==W) {
-				ss_names = d.get_species_W();
-				sp = _find_species(ss_names[0][0]);
-				sp->set_w_ptr(ip_ptr);		
 			};
-			// No need to tell species about biases
+			// No need to tell species about W or b
 		};
 		if (DIAG_SETUP) { std::cout << "ok." << std::endl; };
 

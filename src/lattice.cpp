@@ -564,7 +564,7 @@ namespace DynamicBoltzmann {
 						// Yes it does - sum them up! Go over hidden units
 						for (auto hup: it_hups->second) {
 							// Weight * value of spin (0 or 1 if binary, else a prob)
-							energy += sp_new->w() * hup->get();
+							// energy += sp_new->w() * hup->get();
 						};
 					};
 				};

@@ -39,6 +39,7 @@ namespace DynamicBoltzmann {
 		void _clean_up();
 		void _copy(const Impl& other);
 		void _reset();
+		void _shared_constructor(std::string name, DimType type, double guess);
 
 	public:
 
@@ -93,16 +94,12 @@ namespace DynamicBoltzmann {
 	********************/
 
 	Dim::Impl::Impl(std::string name, DimType type, double guess) {
-		_name = name;
-		_type = type;
-		_guess = guess;
+		_shared_constructor(name,type,guess);
 		// Yes any species
 		_any_species = true;
 	};
 	Dim::Impl::Impl(std::string name, DimType type, std::string species, double guess) {
-		_name = name;
-		_type = type;
-		_guess = guess;
+		_shared_constructor(name,type,guess);
 		// Not any species
 		_any_species = false;
 		// Add
@@ -113,9 +110,7 @@ namespace DynamicBoltzmann {
 		};
 	};
 	Dim::Impl::Impl(std::string name, DimType type, std::vector<std::string> species, double guess) {
-		_name = name;
-		_type = type;
-		_guess = guess;
+		_shared_constructor(name,type,guess);
 		// Not any species
 		_any_species = false;
 		// Add
@@ -153,9 +148,7 @@ namespace DynamicBoltzmann {
 			std::cerr << "Error! Only for J or K or W." << std::endl;
 			exit(EXIT_FAILURE);
 		};
-		_name = name;
-		_type = type;
-		_guess = guess;
+		_shared_constructor(name,type,guess);
 		// Not any species
 		_any_species = false;
 		// Add
@@ -228,6 +221,11 @@ namespace DynamicBoltzmann {
 		_species.clear();
 		_species_multiple.clear();
 		_guess = 0.;
+	};
+	void Dim::Impl::_shared_constructor(std::string name, DimType type, double guess) {
+		_name = name;
+		_type = type;
+		_guess = guess;
 	};
 
 	/********************
@@ -865,16 +863,9 @@ namespace DynamicBoltzmann {
 	};
 
 	void BMLA::Impl::_print_moments(bool new_line) const {
-		std::cout << "   Moments Initial: ";
+		std::cout << "   Moments: ";
 		for (auto it=_ixn_params.begin(); it!=_ixn_params.end(); it++) {
-			std::cout << it->get_moment(IxnParam::AWAKE) << " ";
-		};
-		if (new_line) {
-			std::cout << std::endl;
-		};
-		std::cout << "   Moments Final: ";
-		for (auto it=_ixn_params.begin(); it!=_ixn_params.end(); it++) {
-			std::cout << it->get_moment(IxnParam::ASLEEP) << " ";
+			std::cout << it->get_moment(IxnParam::ASLEEP) << " (" << it->get_moment(IxnParam::AWAKE) << "), ";
 		};
 		if (new_line) {
 			std::cout << std::endl;

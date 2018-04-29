@@ -18,34 +18,521 @@
 namespace DynamicBoltzmann {
 
 	/****************************************
-	Struct for specifying a dimension
+	Dim - IMPLEMENTATION
 	****************************************/
 
-	Dim::Dim(std::string name, DimType type, std::string species, std::vector<std::string> basis_func_dims, double min, double max, int n, double init) : Dim(name,type,species, "", basis_func_dims, min, max, n, init) {};
-	Dim::Dim(std::string name, DimType type, std::string species1, std::string species2, std::vector<std::string> basis_func_dims, double min, double max, int n, double init)
-	{
-		if (type == B || type == H || type == W) {
-			if (species1 == "" || species2 != "") {
-				std::cerr << "ERROR! Dim specification is incorrect for H, B or W." << std::endl;
-				exit(EXIT_FAILURE);
+	class Dim::Impl {
+	private:
+
+		// Name
+		std::string _name;
+
+		// Type
+		DimType _type;
+
+		// Name of associated species
+		bool _any_species;
+		std::vector<std::string> _species;
+		std::vector<std::vector<std::string> > _species_multiple;
+
+		// Min/max/npts/initial value
+		double _min,_max;
+		int _n;
+		double _init;
+
+		// Basis function dimension names
+		std::vector<std::string> _basis_func_dims;
+
+		// Constructor helpers
+		void _clean_up();
+		void _copy(const Impl& other);
+		void _reset();
+		void _shared_constructor(std::string name, DimType type, std::vector<std::string> basis_func_dims, double min, double max, int n, double init);
+
+	public:
+
+		// Constructor
+		Impl(std::string name, DimType type, std::vector<std::string> basis_func_dims, double min, double max, int n, double init);
+		Impl(std::string name, DimType type, std::string species, std::vector<std::string> basis_func_dims, double min, double max, int n, double init);
+		Impl(std::string name, DimType type, std::vector<std::string> species, std::vector<std::string> basis_func_dims, double min, double max, int n, double init);
+		Impl(std::string name, DimType type, std::vector<std::vector<std::string>> species, std::vector<std::string> basis_func_dims, double min, double max, int n, double init);
+		Impl(const Impl& other);
+		Impl(Impl&& other);
+	    Impl& operator=(const Impl& other);
+	    Impl& operator=(Impl&& other);
+		~Impl();
+
+		/********************
+		Getters
+		********************/
+
+		// Name
+		std::string name() const;
+
+		// Type
+		DimType type() const;
+
+		// Does it apply to all species?
+		bool any_species() const;
+
+		// Basis func dims
+		std::vector<std::string> basis_func_dims() const;
+
+		// Min/max/n/init
+		double min() const;
+		double max() const;
+		double n() const;
+		double init() const;
+
+		// Get species
+		std::vector<std::string> get_species_h() const;
+		std::vector<std::string> get_species_b() const;
+		std::vector<std::vector<std::string>> get_species_J() const;
+		std::vector<std::vector<std::string>> get_species_K() const;
+		std::vector<std::vector<std::string>> get_species_W() const;
+
+		/********************
+		Setters
+		********************/
+
+		// Add basis func dimension
+		void add_basis_func_dim(std::string basis_func);
+
+		// Add species
+		void add_species_h(std::string species);
+		void add_species_b(std::string species);
+		void add_species_J(std::string species1, std::string species2);
+		void add_species_K(std::string species1, std::string species2, std::string species3);
+		void add_species_W(std::string species_visible, std::string species_hidden);
+	};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	/****************************************
+	Dim - IMPLEMENTATION DEFINITIONS
+	****************************************/
+
+	/********************
+	Constructor
+	********************/
+
+	Dim::Impl::Impl(std::string name, DimType type, std::vector<std::string> basis_func_dims, double min, double max, int n, double init) {
+		_shared_constructor(name, type, basis_func_dims, min, max, n, init);
+		// Yes any species
+		_any_species = true;
+	};
+	Dim::Impl::Impl(std::string name, DimType type, std::string species, std::vector<std::string> basis_func_dims, double min, double max, int n, double init) {
+		_shared_constructor(name, type, basis_func_dims, min, max, n, init);
+		// Not any species
+		_any_species = false;
+		// Add
+		if (_type == H) {
+			add_species_h(species);
+		} else if (_type == B) {
+			add_species_b(species);
+		};
+	};
+	Dim::Impl::Impl(std::string name, DimType type, std::vector<std::string> species, std::vector<std::string> basis_func_dims, double min, double max, int n, double init) {
+		_shared_constructor(name, type, basis_func_dims, min, max, n, init);
+		// Not any species
+		_any_species = false;
+		// Add
+		if (_type == H) {
+			for (auto s: species) {
+				add_species_h(s);
+			};
+		} else if (_type == B) {
+			for (auto s: species) {
+				add_species_b(s);
 			};
 		} else if (type == J) {
-			if (species1 == "" || species2 == "") {
-				std::cerr << "ERROR! Dim specification is incorrect for J." << std::endl;
+			if (species.size() != 2) {
+				std::cerr << "Error! must be 2 species for J" << std::endl;
 				exit(EXIT_FAILURE);
 			};
+			add_species_J(species[0],species[1]);
+		} else if (type == W) {
+			if (species.size() != 2) {
+				std::cerr << "Error! must be 2 species for W" << std::endl;
+				exit(EXIT_FAILURE);
+			};
+			add_species_W(species[0],species[1]);
 		};
-
-		this->name = name;
-		this->type = type;
-		this->species1 = species1;
-		this->species2 = species2;
-		this->min = min;
-		this->max = max;
-		this->n = n;
-		this->init = init;
-		this->basis_func_dims = basis_func_dims;
 	};
+	Dim::Impl::Impl(std::string name, DimType type, std::vector<std::vector<std::string>> species, std::vector<std::string> basis_func_dims, double min, double max, int n, double init) {
+		// Check type
+		if (type == B || type != H) {
+			std::cerr << "Error! Only for J or W." << std::endl;
+			exit(EXIT_FAILURE);
+		};
+		_shared_constructor(name, type, basis_func_dims, min, max, n, init);
+		// Not any species
+		_any_species = false;
+		// Add
+		if (type == J) {
+			for (auto s_pair: species) {
+				if (s_pair.size() != 2) {
+					std::cerr << "Error! must be 2 species for J" << std::endl;
+					exit(EXIT_FAILURE);
+				};
+				add_species_J(s_pair[0],s_pair[1]);
+			};
+		} else if (type == W) {
+			for (auto s_pair: species) {
+				if (s_pair.size() != 2) {
+					std::cerr << "Error! must be 2 species for W" << std::endl;
+					exit(EXIT_FAILURE);
+				};
+				add_species_W(s_pair[0],s_pair[1]);
+			};
+		};
+	};
+	Dim::Impl::Impl(const Impl& other) {
+		_copy(other);
+	};
+	Dim::Impl::Impl(Impl&& other) {
+		_copy(other);
+		other._reset();
+	};
+    Dim::Impl& Dim::Impl::operator=(const Impl& other) {
+		if (this != &other) {
+			_clean_up();
+			_copy(other);
+		};
+		return *this;
+    };
+    Dim::Impl& Dim::Impl::operator=(Impl&& other) {
+		if (this != &other) {
+			_clean_up();
+			_copy(other);
+			other._reset();
+		};
+		return *this;
+    };
+	Dim::Impl::~Impl()
+	{
+		_clean_up();
+	};
+	void Dim::Impl::_clean_up() {
+		// Nothing...
+	};
+	void Dim::Impl::_copy(const Impl& other) {
+		_shared_constructor(other._name, other._type,other._basis_func_dims, other._min, other._max, other._n, other._init);
+		_any_species = other._any_species;
+		_species = other._species;
+		_species_multiple = other._species_multiple;
+	};
+	void Dim::Impl::_reset() {
+		_name = "";
+		_basis_func_dims.clear();
+		_any_species = false;
+		_species.clear();
+		_species_multiple.clear();
+		_min = 0.;
+		_max = 0.;
+		_n = 0;
+		_init = 0.;
+	};
+	void Dim::Impl::_shared_constructor(std::string name, DimType type, std::vector<std::string> basis_func_dims, double min, double max, int n, double init) {
+		_name = name;
+		_type = type;
+		_basis_func_dims = basis_func_dims;
+		_min = min;
+		_max = max;
+		_n = n;
+		_init = init;
+	};
+
+	/********************
+	Getters
+	********************/
+
+	// Name
+	std::string Dim::Impl::name() const {
+		return _name;
+	};
+
+	// Type
+	DimType Dim::Impl::type() const {
+		return _type;
+	};
+
+	// Does it apply to all species?
+	bool Dim::Impl::any_species() const {
+		return _any_species;
+	};
+
+	// Basis func dims
+	std::vector<std::string> Dim::Impl::basis_func_dims() const {
+		return _basis_func_dims;
+	};
+
+	// Min/max/n/init
+	double Dim::Impl::min() const {
+		return _min;
+	};
+	double Dim::Impl::max() const {
+		return _max;
+	};
+	double Dim::Impl::n() const {
+		return _n;
+	};
+	double Dim::Impl::init() const {
+		return _init;
+	};
+
+	// Get species
+	std::vector<std::string> Dim::Impl::get_species_h() const {
+		if (_type != H) {
+			std::cerr << "Error! Requested species but not of type H." << std::endl;
+			exit(EXIT_FAILURE);
+		};
+		return _species;
+	};
+	std::vector<std::string> Dim::Impl::get_species_b() const {
+		if (_type != B) {
+			std::cerr << "Error! Requested species but not of type B." << std::endl;
+			exit(EXIT_FAILURE);
+		};
+		return _species;
+	};
+	std::vector<std::vector<std::string>> Dim::Impl::get_species_J() const {
+		if (_type != J) {
+			std::cerr << "Error! Requested species but not of type J." << std::endl;
+			exit(EXIT_FAILURE);
+		};
+		return _species_multiple;
+	};
+	std::vector<std::vector<std::string>> Dim::Impl::get_species_W() const {
+		if (_type != W) {
+			std::cerr << "Error! Requested species but not of type W." << std::endl;
+			exit(EXIT_FAILURE);
+		};
+		return _species_multiple;
+	};
+
+	/********************
+	Setters
+	********************/
+
+	// Add basis func dimension
+	void Dim::Impl::add_basis_func_dim(std::string dim) {
+		_basis_func_dims.push_back(dim);
+	};
+
+	// Add species
+	void Dim::Impl::add_species_h(std::string species) {
+		// Check type
+		if (_type != H) {
+			std::cerr << "Error! Not H." << std::endl;
+			exit(EXIT_FAILURE);
+		};
+		_any_species = false;
+		_species.push_back(species);
+	};
+	void Dim::Impl::add_species_b(std::string species) {
+		// Check type
+		if (_type != B) {
+			std::cerr << "Error! Not B." << std::endl;
+			exit(EXIT_FAILURE);
+		};
+		_any_species = false;
+		_species.push_back(species);
+	};
+	void Dim::Impl::add_species_J(std::string species1, std::string species2) {
+		// Check type
+		if (_type != J) {
+			std::cerr << "Error! Not J." << std::endl;
+			exit(EXIT_FAILURE);
+		};
+		_any_species = false;
+		_species_multiple.push_back(std::vector<std::string>({species1,species2}));
+	};
+	void Dim::Impl::add_species_W(std::string species_visible, std::string species_hidden) {
+		// Check type
+		if (_type != W) {
+			std::cerr << "Error! Not W." << std::endl;
+			exit(EXIT_FAILURE);
+		};
+		_any_species = false;
+		_species_multiple.push_back(std::vector<std::string>({species_visible,species_hidden}));
+	};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	/****************************************
+	Dim - Impl forwards
+	****************************************/
+
+	Dim::Dim(std::string name, DimType type, std::vector<std::string> basis_func_dims, double min, double max, int n, double init) : _impl(new Impl(name,type,basis_func_dims,min,max,n,init)) {};
+	Dim::Dim(std::string name, DimType type, std::string species, std::vector<std::string> basis_func_dims, double min, double max, int n, double init) : _impl(new Impl(name,type,species,basis_func_dims,min,max,n,init)) {};
+	Dim::Dim(std::string name, DimType type, std::vector<std::string> species, std::vector<std::string> basis_func_dims, double min, double max, int n, double init) : _impl(new Impl(name,type,species,basis_func_dims,min,max,n,init)) {};
+	Dim::Dim(std::string name, DimType type, std::vector<std::vector<std::string>> species, std::vector<std::string> basis_func_dims, double min, double max, int n, double init) : _impl(new Impl(name,type,species,basis_func_dims,min,max,n,init)) {};
+	Dim::Dim(const Dim& other) : _impl(new Impl(*other._impl)) {};
+	Dim::Dim(Dim&& other) = default;
+	Dim& Dim::operator=(Dim other) {
+        _impl = std::move(other._impl);
+        return *this; 
+	};
+	Dim::~Dim() = default;
+
+	// Name
+	std::string Dim::name() const {
+		return _impl->name();
+	};
+
+	// Type
+	DimType Dim::type() const {
+		return _impl->type();
+	};
+
+	// Does it apply to all species?
+	bool Dim::any_species() const {
+		return _impl->any_species();
+	};
+
+	// Basis func dims
+	std::vector<std::string> Dim::basis_func_dims() const {
+		return _impl->basis_func_dims();
+	};
+
+	// Min/max/n/init
+	double Dim::min() const {
+		return _impl->min();
+	};
+	double Dim::max() const {
+		return _impl->max();
+	};
+	double Dim::n() const {
+		return _impl->n();
+	};
+	double Dim::init() const {
+		return _impl->init();
+	};
+
+	// Get species
+	std::vector<std::string> Dim::get_species_h() const {
+		return _impl->get_species_h();
+	};
+	std::vector<std::string> Dim::get_species_b() const {
+		return _impl->get_species_b();
+	};
+	std::vector<std::vector<std::string>> Dim::get_species_J() const {
+		return _impl->get_species_J();
+	};
+	std::vector<std::vector<std::string>> Dim::get_species_W() const {
+		return _impl->get_species_W();
+	};
+
+	/********************
+	Setters
+	********************/
+
+	// Add basis func dimension
+	void Dim::add_basis_func_dim(std::string dim) {
+		_impl->add_basis_func_dim(dim);
+	};
+
+	// Add species
+	void Dim::add_species_h(std::string species) {
+		_impl->add_species_h(species);
+	};
+	void Dim::add_species_b(std::string species) {
+		_impl->add_species_b(species);
+	};
+	void Dim::add_species_J(std::string species1, std::string species2) {
+		_impl->add_species_J(species1,species2);
+	};
+	void Dim::add_species_W(std::string species_visible, std::string species_hidden) {
+		_impl->add_species_W(species_visible,species_hidden);
+	};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 	/****************************************
 	OptProblem - IMPLEMENTATION
@@ -87,9 +574,6 @@ namespace DynamicBoltzmann {
 		// The current time in the optimization step
 		int _t_opt;
 
-		// Lattice size
-		int _box_length;
-
 		// Lattice to hold the current sample of the batch
 		Lattice _latt;
 
@@ -116,7 +600,7 @@ namespace DynamicBoltzmann {
 		Constructor
 		********************/
 
-		Impl(std::vector<Dim> dims, double t_max, int n_t, int box_length, int lattice_dim);
+		Impl(std::vector<Dim> dims, std::vector<std::string> species_visible, std::vector<std::string> species_hidden, double t_max, int n_t, int box_length, int lattice_dim);
 		Impl(Impl&& other);
 	    Impl& operator=(Impl&& other);
 		~Impl();
@@ -187,6 +671,38 @@ namespace DynamicBoltzmann {
 		void write_moments(std::string dir, int idx_opt_step, std::vector<int> idxs) const;
 	};
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 	/****************************************
 	OptProblem - IMPLEMENTATION DEFINITIONS
 	****************************************/
@@ -195,94 +711,126 @@ namespace DynamicBoltzmann {
 	Constructor
 	********************/
 
-	OptProblem::Impl::Impl(std::vector<Dim> dims, double t_max, int n_t, int box_length, int lattice_dim) : _latt(lattice_dim,box_length), _time("time",0.0,t_max,n_t)
+	OptProblem::Impl::Impl(std::vector<Dim> dims, std::vector<std::string> species_visible, std::vector<std::string> species_hidden, double t_max, int n_t, int box_length, int lattice_dim) : _latt(lattice_dim,box_length), _time("time",0.0,t_max,n_t)
 	{
 		// Set parameters
 		if (DIAG_SETUP) { std::cout << "Copying params..." << std::flush; };
 		_n_param = dims.size();
-		_box_length = box_length;
 		_t_opt = 0;
 		_n_t_soln = 0;
 		_hidden_layer_exists = false;
 		if (DIAG_SETUP) { std::cout << "ok." << std::endl; };
 
-		// Set of species that exist
-		if (DIAG_SETUP) { std::cout << "Creating set of species..." << std::flush; };
-		std::set<std::string> species;
-		for (auto d: dims) {
-			if (d.species1 != "") { species.insert(d.species1); };
-			if (d.species2 != "") { species.insert(d.species2); };
+		// Fix dims that have any species specification
+		if (DIAG_SETUP) { std::cout << "Fixing incomplete dim specifications (for any species)..." << std::flush; };
+		for (auto &d: dims) {
+			if (d.any_species()) {
+				if (d.type()==H) {
+					for (auto s: species_visible) {
+						d.add_species_h(s);
+					};
+				} else if (d.type()==B) {
+					for (auto s: species_hidden) {
+						d.add_species_b(s);
+					};
+				} else if (d.type()==J) {
+					for (auto s1: species_visible) {
+						for (auto s2: species_visible) {
+							d.add_species_J(s1,s2);
+						};
+					};
+				} else if (d.type()==W) {
+					for (auto sv: species_visible) {
+						for (auto sh: species_hidden) {
+							d.add_species_W(sv,sh);
+						};
+					};
+				};
+			};
 		};
 		if (DIAG_SETUP) { std::cout << "ok." << std::endl; };
 
 		// Tell the lattice about what dims exist
 		if (DIAG_SETUP) { std::cout << "Telling lattice what dims exist..." << std::flush; };
-		for (auto d: dims) {
-			if (d.type==H) {
+		for (auto const &d: dims) {
+			if (d.type()==H) {
 				_latt.set_exists_h(true);
-			} else if (d.type==J) {
+			} else if (d.type()==J) {
 				_latt.set_exists_j(true);
-			} else if (d.type==W) {
+			} else if (d.type()==W) {
 				_hidden_layer_exists = true;
 				_latt.set_exists_w(true);
-			} else if (d.type==B) {
+			} else if (d.type()==B) {
 				_hidden_layer_exists = true;
 				// No need to tell lattice, since it only affects hidden unit activation and not sampling
 			};
 		};
 		if (DIAG_SETUP) { std::cout << "ok." << std::endl; };
 
-		// Create the species and add to the lattice
+		// Create the visible species
 		if (DIAG_SETUP) { std::cout << "Create species..." << std::flush; };
-		for (auto s: species) {
+		for (auto const &s: species_visible) {
 			_species.push_back(Species(s));
 
 			// Add to the lattice
 			_latt.add_species(&(_species.back()));
+
+			// Add the optimization time
+			_species.back().set_opt_time_ptr(&_t_opt);
 		};
 		if (DIAG_SETUP) { std::cout << "ok." << std::endl; };
 
 		// Create the interaction params
 		if (DIAG_SETUP) { std::cout << "Create ixn params..." << std::flush; };
-		for (auto d: dims) 
+		std::vector<std::string> s_names;
+		std::vector<std::vector<std::string>> ss_names;
+		for (auto const &d: dims) 
 		{
-			if (d.type==H) { 
-				_ixn_params.push_back(IxnParamTraj(d.name,Hp,_find_species(d.species1),d.min,d.max,d.n,d.init,n_t));
-			} else if (d.type==J) { 
-				_ixn_params.push_back(IxnParamTraj(d.name,Jp,_find_species(d.species1),_find_species(d.species2),d.min,d.max,d.n,d.init,n_t));
-			} else if (d.type==W) { 
-				_ixn_params.push_back(IxnParamTraj(d.name,Wp,_find_species(d.species1),d.min,d.max,d.n,d.init,n_t));
-			} else if (d.type==B) {
-				_ixn_params.push_back(IxnParamTraj(d.name,Bp,_find_species(d.species1),d.min,d.max,d.n,d.init,n_t));
+			if (d.type()==H) {
+				s_names = d.get_species_h();
+				_ixn_params.push_back(IxnParamTraj(d.name(),Hp,_find_species(s_names[0]),d.min(),d.max(),d.n(),d.init(),n_t));
+			} else if (d.type()==J) { 
+				ss_names = d.get_species_J();
+				_ixn_params.push_back(IxnParamTraj(d.name(),Jp,_find_species(ss_names[0][0]),_find_species(ss_names[0][1]),d.min(),d.max(),d.n(),d.init(),n_t));
+			} else if (d.type()==W) { 
+				ss_names = d.get_species_W();
+				_ixn_params.push_back(IxnParamTraj(d.name(),Wp,_find_species(ss_names[0][0]),d.min(),d.max(),d.n(),d.init(),n_t));
+			} else if (d.type()==B) {
+				s_names = d.get_species_b();
+				_ixn_params.push_back(IxnParamTraj(d.name(),Bp,_find_species(s_names[0]),d.min(),d.max(),d.n(),d.init(),n_t));
 			};
 		};
 		if (DIAG_SETUP) { std::cout << "ok." << std::endl; };
 
-		// Add the interaction params and time ptr to the species
+		// Add the interaction params to the species
 		if (DIAG_SETUP) { std::cout << "Add ixn params to species..." << std::flush; };
-		Species *sp1=nullptr, *sp2=nullptr;
+		Species *sp=nullptr, *sp1=nullptr, *sp2=nullptr;
 		IxnParamTraj *ip_ptr=nullptr;
-		for (auto d: dims) {
-			ip_ptr = _find_ixn_param_by_name(d.name);
-			if (d.type==H) {
-				sp1 = _find_species(d.species1);
-				sp1->set_h_ptr(ip_ptr);
-			} else if (d.type==J) {
-				sp1 = _find_species(d.species1);
-				sp2 = _find_species(d.species2);
+		for (auto const &d: dims) {
+			ip_ptr = _find_ixn_param_by_name(d.name());
+			if (d.type()==H) {
+				s_names = d.get_species_h();
+				sp = _find_species(s_names[0]);
+				sp->set_h_ptr(ip_ptr);
+			} else if (d.type()==J) {
+				ss_names = d.get_species_J();
+				sp1 = _find_species(ss_names[0][0]);
+				sp2 = _find_species(ss_names[0][1]);
 				sp1->add_j_ptr(sp2,ip_ptr);
 				sp2->add_j_ptr(sp1,ip_ptr);
-			} else if (d.type==W) {
-				sp1 = _find_species(d.species1);
-				sp1->set_w_ptr(ip_ptr);		
+			} else if (d.type()==W) {
+				ss_names = d.get_species_W();
+				sp = _find_species(ss_names[0][0]);
+				sp->set_w_ptr(ip_ptr);		
 			};
 			// No need to tell species about biases
 		};
-		for (auto itsp = _species.begin(); itsp!=_species.end(); itsp++) {
-			itsp->set_opt_time_ptr(&_t_opt);
-		};	
+		if (DIAG_SETUP) { std::cout << "ok." << std::endl; };
+
+
 		// Ensure the J of the species are complete - if there is no ixn param that descripes the coupling, add a nullptr entry in the dictionary - later check if nullptr, then return 0
 		// I think this is faster - otherwise there would be no reason to do it
+		if (DIAG_SETUP) { std::cout << "Ensuring J are complete..." << std::flush; };
 		for (auto itsp1 = _species.begin(); itsp1!=_species.end(); itsp1++) {
 			for (auto itsp2 = _species.begin(); itsp2!=_species.end(); itsp2++) {
 				ip_ptr = _find_ixn_param_j_by_species(itsp1->name(), itsp2->name(), false);
@@ -309,14 +857,14 @@ namespace DynamicBoltzmann {
 		// Create the basis functions
 		if (DIAG_SETUP) { std::cout << "Create basis funcs..." << std::flush; };
 		std::vector<IxnParamTraj*> bf_ips;
-		for (auto d: dims) {
+		for (auto const &d: dims) {
 			// Find the basis func dimensions
 			bf_ips.clear();
-			for (auto bfd: d.basis_func_dims) {
+			for (auto bfd: d.basis_func_dims()) {
 				bf_ips.push_back(_find_ixn_param_by_name(bfd));
 			};
 			// Make the basis function
-			_bfs.push_back(BasisFunc("F_"+d.name,bf_ips));
+			_bfs.push_back(BasisFunc("F_"+d.name(),bf_ips));
 		};
 		if (DIAG_SETUP) { std::cout << "ok." << std::endl; };
 
@@ -336,22 +884,22 @@ namespace DynamicBoltzmann {
 		BasisFunc *num_bf_ptr = nullptr;
 		IxnParamTraj *ixn_param_ptr = nullptr;
 		// Go through numerators
-		for (auto num: dims) {
+		for (auto const &num: dims) {
 			// Go through denominators
-			for (auto denom: dims) {
+			for (auto const &denom: dims) {
 				// Find the basis func dimensions
 				bf_ips.clear();
-				for (auto bfd: denom.basis_func_dims) {
+				for (auto bfd: denom.basis_func_dims()) {
 					bf_ips.push_back(_find_ixn_param_by_name(bfd));
 				};
 				// Find the basis func
-				bf_ptr = _find_basis_func("F_"+denom.name);
+				bf_ptr = _find_basis_func("F_"+denom.name());
 				// Find the interaction param
-				ixn_param_ptr = _find_ixn_param_by_name(num.name);
+				ixn_param_ptr = _find_ixn_param_by_name(num.name());
 				// Find the basis func corresponding to the numerator
-				num_bf_ptr = _find_basis_func("F_"+num.name);
+				num_bf_ptr = _find_basis_func("F_"+num.name());
 				// Create the var term
-				_var_terms.push_back(VarTermTraj("var_"+num.name+"_wrt_F_"+denom.name, ixn_param_ptr, bf_ptr, bf_ips, num_bf_ptr, num.basis_func_dims.size(), n_t));
+				_var_terms.push_back(VarTermTraj("var_"+num.name()+"_wrt_F_"+denom.name(), ixn_param_ptr, bf_ptr, bf_ips, num_bf_ptr, num.basis_func_dims().size(), n_t));
 			};
 		};
 		if (DIAG_SETUP) { std::cout << "ok." << std::endl; };
@@ -360,16 +908,16 @@ namespace DynamicBoltzmann {
 		if (DIAG_SETUP) { std::cout << "Add ptrs to var term..." << std::flush; };
 		VarTermTraj* vt_ptr=nullptr;
 		// Go through numerators
-		for (auto num: dims) {
+		for (auto const &num: dims) {
 			// Go through denoms
 			for (auto denom=_bfs.begin(); denom!=_bfs.end(); denom++) {
 				// Find the ixn params that are arguments to the num's basis func
 				bf_ips.clear();
-				for (auto bfd: num.basis_func_dims) {
+				for (auto bfd: num.basis_func_dims()) {
 					bf_ips.push_back(_find_ixn_param_by_name(bfd));
 				};
 				// Find the variational term
-				vt_ptr = _find_var_term("var_"+num.name+"_wrt_"+denom->name());
+				vt_ptr = _find_var_term("var_"+num.name()+"_wrt_"+denom->name());
 				// Find the variational terms needed to update this one
 				for (auto ip_ptr: bf_ips) {
 					vt_ptr->add_update_ptr(_find_var_term("var_"+ip_ptr->name()+"_wrt_"+denom->name()));
@@ -433,7 +981,6 @@ namespace DynamicBoltzmann {
 		_species.clear();
 		_n_t_soln = 0;
 		_t_opt = 0;
-		_box_length = 0;
 	};
 
 	void OptProblem::Impl::_copy(const Impl& other)
@@ -448,7 +995,6 @@ namespace DynamicBoltzmann {
 		_species = other._species;
 		_n_t_soln = other._n_t_soln;
 		_t_opt = other._t_opt;
-		_box_length = other._box_length;
 		_latt = other._latt;
 	};
 
@@ -1429,12 +1975,50 @@ namespace DynamicBoltzmann {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 	/****************************************
 	OptProblem IMPL forwards
 	****************************************/
 
 	// Constructor
-	OptProblem::OptProblem(std::vector<Dim> dims, double t_max, int n_t, int box_length, int lattice_dim) : _impl(new Impl(dims,t_max,n_t,box_length,lattice_dim)) {};
+	OptProblem::OptProblem(std::vector<Dim> dims, std::vector<std::string> species_visible, std::vector<std::string> species_hidden, double t_max, int n_t, int box_length, int lattice_dim) : _impl(new Impl(dims,species_visible,species_hidden,t_max,n_t,box_length,lattice_dim)) {};
 	OptProblem::OptProblem(OptProblem&& other) = default; // movable but no copies
     OptProblem& OptProblem::operator=(OptProblem&& other) = default; // movable but no copies
 	OptProblem::~OptProblem() = default;

@@ -31,30 +31,68 @@ namespace DynamicBoltzmann {
 	// Type of dimension
 	enum DimType { H, J, W, B };
 
-	struct Dim {
+	class Dim {
+
+	private:
+
+		class Impl;
+		std::unique_ptr<Impl> _impl;
+
+	public:
+
+		/********************
+		Constructor
+		********************/
+
+		Dim(std::string name, DimType type, std::vector<std::string> basis_func_dims, double min, double max, int n, double init);
+		Dim(std::string name, DimType type, std::string species, std::vector<std::string> basis_func_dims, double min, double max, int n, double init);
+		Dim(std::string name, DimType type, std::vector<std::string> species, std::vector<std::string> basis_func_dims, double min, double max, int n, double init);
+		Dim(std::string name, DimType type, std::vector<std::vector<std::string>> species, std::vector<std::string> basis_func_dims, double min, double max, int n, double init);
+		Dim(const Dim& other);
+		Dim(Dim&& other);
+		Dim& operator=(Dim other);
+		~Dim();
+
+		/********************
+		Getters
+		********************/
+
 		// Name
-		std::string name;
+		std::string name() const;
 
 		// Type
-		DimType type;
+		DimType type() const;
 
-		// Name of associated species
-		std::string species1;
-		std::string species2;
+		// Does it apply to any species?
+		bool any_species() const;
 
-		// Min/max/npts
-		double min,max;
-		int n;
+		// Basis func dims
+		std::vector<std::string> basis_func_dims() const;
 
-		// Initial value
-		double init;
+		// Min/max/n/init
+		double min() const;
+		double max() const;
+		double n() const;
+		double init() const;
 
-		// Basis function dimension names
-		std::vector<std::string> basis_func_dims;
+		// Get species
+		std::vector<std::string> get_species_h() const;
+		std::vector<std::string> get_species_b() const;
+		std::vector<std::vector<std::string>> get_species_J() const;
+		std::vector<std::vector<std::string>> get_species_W() const;
 
-		// Constructor
-		Dim(std::string name, DimType type, std::string species, std::vector<std::string> basis_func_dims, double min, double max, int n, double init);
-		Dim(std::string name, DimType type, std::string species1, std::string species2, std::vector<std::string> basis_func_dims, double min, double max, int n, double init);
+		/********************
+		Setters
+		********************/
+
+		// Add basis func dimension
+		void add_basis_func_dim(std::string dim);
+
+		// Add species
+		void add_species_h(std::string species);
+		void add_species_b(std::string species);
+		void add_species_J(std::string species1, std::string species2);
+		void add_species_W(std::string species_visible, std::string species_hidden);
 	};
 
 	/****************************************
@@ -75,6 +113,7 @@ namespace DynamicBoltzmann {
 		// Whether to write this idx
 		bool write;
 
+		// Constructor
 		FName(std::string fname, int idx, std::string fname_ic, bool write=true) : FName(fname,std::vector<int>({idx}),fname_ic,write) {};
 		FName(std::string fname, std::vector<int> idxs, std::string fname_ic, bool write=true) {
 			this->fname=fname;
@@ -185,7 +224,7 @@ namespace DynamicBoltzmann {
 		 * @param[in]  n_opt        No. optimization steps
 		 * @param[in]  lattice_dim  The lattice dimension
 		 */
-		OptProblem(std::vector<Dim> dims, double t_max, int n_t, int box_length, int lattice_dim=3);
+		OptProblem(std::vector<Dim> dims, std::vector<std::string> species_visible, std::vector<std::string> species_hidden, double t_max, int n_t, int box_length, int lattice_dim=3);
 
 		/**
 		 * @brief      Move constructor (movable but no copies)

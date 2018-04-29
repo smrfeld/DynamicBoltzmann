@@ -83,7 +83,7 @@ namespace DynamicBoltzmann {
 	Add a connection
 	********************/
 
-	void HiddenUnit::add_connection(ConnectionVH* conn) {
+	void HiddenUnit::add_visible_hidden_conn(ConnectionVH* conn) {
 		_conn.push_back(conn);
 	};
 

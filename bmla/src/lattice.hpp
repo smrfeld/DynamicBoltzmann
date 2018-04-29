@@ -121,6 +121,10 @@ namespace DynamicBoltzmann {
 		std::map<Species*, double> _probs;
 		double _prob_empty;
 
+		// Connectivity to any hidden units
+		// A species-dependent graph :)
+		std::vector<ConnectionVH*> _hidden_conns;
+
 		// Add/Remove counts on a given species (not _sp_binary, unless it is passed)
 		void _remove_counts_on_species(Species *sp, double prob);
 		void _add_counts_on_species(Species *sp, double prob);
@@ -140,11 +144,10 @@ namespace DynamicBoltzmann {
 		std::vector<LattIt2> nbrs_triplets;
 		std::vector<LattIt3> nbrs_quartics;
 
-		// Connectivity to any hidden units
-		// A species-dependent graph :)
-		std::vector<ConnectionVH*> hidden_conns;
+		/********************
+		Constructor
+		********************/
 
-		// Constructor
 		Site(int xIn);
 		Site(int xIn, int yIn);
 		Site(int xIn, int yIn, int zIn);
@@ -154,10 +157,22 @@ namespace DynamicBoltzmann {
 		Site& operator=(Site&& other);
 		~Site();
 
-		// Add a species possibility
+		/********************
+		Add a hidden conn
+		********************/
+
+		void add_visible_hidden_conn(ConnectionVH* connvh);
+
+		/********************
+		Add a species possibility
+		********************/
+
 		void add_species_possibility(Species* sp);
 
-		// Get a probability
+		/********************
+		Get probability
+		********************/
+
 		// If binary, returns 1.0 for a certain species
 		// Pass nullptr to get prob of empty
 		double get_prob(Species *sp) const;
@@ -171,15 +186,22 @@ namespace DynamicBoltzmann {
 		// Set site to have binary probs
 		void set_site_binary(Species *sp);
 
-		// Get J and K activations
-		// Go through all possible species: (probabilities) times (J of the coupling for the given species)
-		double get_act_j(Species *sp) const;
-		double get_act_k(Species *sp) const;
+		/********************
+		Get activations for a given species
+		********************/
 
-		// Check if site is empty
+		double get_activation(Species *sp) const;
+
+		/********************
+		Check if site is empty
+		********************/
+
 		bool empty() const;
 
-		// Binarize the site
+		/********************
+		Binarize the set
+		********************/
+
 		void binarize();
 	};
 	// Comparator

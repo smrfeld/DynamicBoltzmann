@@ -58,7 +58,7 @@ namespace DynamicBoltzmann {
 		Add a connection
 		********************/
 
-		void add_connection(ConnectionVH* conn);
+		void add_visible_hidden_conn(ConnectionVH* conn);
 
 		/********************
 		Print connections

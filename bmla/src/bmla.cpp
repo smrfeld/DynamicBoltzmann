@@ -1102,10 +1102,10 @@ namespace DynamicBoltzmann {
 			cvh = &_conn_vh.back();
 
 			// Add the connection to the hidden unit
-			hup->add_connection(cvh);
+			hup->add_visible_hidden_conn(cvh);
 
 			// Add the connection to the lattice site
-			s->hidden_conns.push_back(cvh);
+			s->add_visible_hidden_conn(cvh);
 
 			// Add to ixn params
 			for (auto w: ip_w) {

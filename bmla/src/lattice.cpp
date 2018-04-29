@@ -118,7 +118,10 @@ namespace DynamicBoltzmann {
 	Struct to hold a lattice Site
 	****************************************/
 
-	// Constructor
+	/********************
+	Constructor
+	********************/
+
 	Site::Site(int xIn) : Site(xIn,0,0) { dim=1; };
 	Site::Site(int xIn, int yIn) : Site(xIn,yIn,0) { dim=2; };
 	Site::Site(int xIn, int yIn, int zIn) {
@@ -164,7 +167,7 @@ namespace DynamicBoltzmann {
 		nbrs.clear();
 		nbrs_triplets.clear();
 		nbrs_quartics.clear();
-		hidden_conns.clear();
+		_hidden_conns.clear();
 		_prob_empty = 0.0;
 		_probs.clear();
 	};
@@ -176,12 +179,15 @@ namespace DynamicBoltzmann {
 		nbrs = other.nbrs;
 		nbrs_triplets = other.nbrs_triplets;
 		nbrs_quartics = other.nbrs_quartics;
-		hidden_conns = other.hidden_conns;
+		_hidden_conns = other._hidden_conns;
 		_prob_empty = other._prob_empty;
 		_probs = other._probs;
 	};
 
-	// Comparator
+	/********************
+	Comparator
+	********************/
+
 	bool operator <(const Site& a, const Site& b) {
 		if (a.dim == 1) {
 	    	return a.x < b.x;
@@ -231,12 +237,26 @@ namespace DynamicBoltzmann {
 	    return os;
     };
 
-	// Add a species possibility
+	/********************
+	Add a hidden conn
+	********************/
+
+	void Site::add_visible_hidden_conn(ConnectionVH* connvh) {
+		_hidden_conns.push_back(connvh);
+	};
+
+	/********************
+	Add a species possibility
+	********************/
+
 	void Site::add_species_possibility(Species* sp) {
 		_probs[sp] = 0.0;
 	};
 
-	// Get a probability
+	/********************
+	Get probability
+	********************/
+
 	// nullptr for empty
 	double Site::get_prob(Species *sp) const {
 		// nullptr for prob of empty
@@ -303,25 +323,28 @@ namespace DynamicBoltzmann {
 		set_prob(sp,1.0);
 	};
 
-	// Get J and K activations
-	// Go through all possible species probabilities x J of the coupling for the given species
-	double Site::get_act_j(Species *sp) const {
-		double act=0.0;
-		// Go through all nbrs
+	/********************
+	Get activations for a given species
+	********************/
+
+	double Site::get_activation(Species *sp) const {
+		double energy;
+
+		// Bias
+		energy = sp->h();
+
+		// NNs - go through neihbors
 		for (auto lit: nbrs) {
 			// Get all probs
 			const std::map<Species*, double> prs = lit->get_probs();
 			// Go through all probs
 			for (auto pr: prs) {
 				// J * prob
-				act += sp->j(pr.first) * pr.second;
+				energy += sp->j(pr.first) * pr.second;
 			};
 		};
-		return act;
-	};
-	double Site::get_act_k(Species *sp) const {
-		double act=0.0;
-		// Go through all pairs to consider
+
+		// Triplets - go through all pairs to consider
 		for (auto trip: nbrs_triplets) {
 			// Get all probs
 			const std::map<Species*, double> prs1 = trip.lit1->get_probs();
@@ -330,14 +353,23 @@ namespace DynamicBoltzmann {
 			for (auto pr1: prs1) {
 				for (auto pr2: prs2) {
 					// K * prob * prob
-					act += sp->k(pr1.first,pr2.first) * pr1.second * pr2.second;
+					energy += sp->k(pr1.first,pr2.first) * pr1.second * pr2.second;
 				};
 			};
 		};
-		return act;
+
+		// Conn to hidden layer - go through conns
+		for (auto connvh: _hidden_conns) {
+			energy += connvh->get_act_visible(sp);
+		};
+
+		return energy;
 	};
 
-	// Is site empty
+	/********************
+	Check if site is empty
+	********************/
+
 	bool Site::empty() const {
 		if (_prob_empty == 1.0) {
 			return true;
@@ -346,7 +378,10 @@ namespace DynamicBoltzmann {
 		};
 	};
 
-	// Binarize the site
+	/********************
+	Binarize the set
+	********************/
+
 	void Site::binarize() {
 		// Propensity vector
 		std::vector<double> props;
@@ -903,31 +938,9 @@ namespace DynamicBoltzmann {
 
 			// Go through all possible species this could be, calculate propensities
 			for (auto sp_new: _sp_vec) {
-				//std::cout << "Doing: " << it->x << " for sp " << sp_new->name() << std::endl;
-
-				// Bias
-				if (_sampling_exists_h) {
-					energy = sp_new->h();
-				};
-
-				// NNs for J
-				if (_sampling_exists_j) {
-					energy += it->get_act_j(sp_new);
-				};
-
-				// Triplets for K
-				if (_sampling_exists_k && _dim == 1) { // Only dim 1 currently supported
-					energy += it->get_act_k(sp_new);	
-				};
-
-				// Hidden layer weights exist?
-				if (_sampling_exists_w) {
-
-					// Go through connections
-					for (auto connvh: it->hidden_conns) {
-						energy += connvh->get_act_visible(sp_new);
-					};
-				};
+				
+				// Get energy
+				energy = it->get_activation(sp_new);
 
 				// Append prop
 				props.push_back(props.back()+exp(energy));

@@ -35,16 +35,10 @@
 namespace DynamicBoltzmann {
 
 	/****************************************
-	General functions
+	Structure to hold pairs and triplets of sites
 	****************************************/
 
 	class Site;
-	typedef std::list<Site> lattice;
-	typedef std::list<Site>::iterator latt_it;
-
-	/****************************************
-	Structure to hold pairs and triplets of sites
-	****************************************/
 
 	struct Site2 {
 		Site *s1,*s2;
@@ -67,7 +61,6 @@ namespace DynamicBoltzmann {
 	Class to hold a connection from visible to hidden
 	****************************************/
 
-	// Declare lattice, hiddens
 	class Lattice;
 	class HiddenUnit;
 
@@ -92,7 +85,10 @@ namespace DynamicBoltzmann {
 
 	public:
 
-		// Constructor
+		/********************
+		Constructor
+		********************/
+
 		ConnectionVH(Site *site, HiddenUnit *hidden_unit, std::vector<IxnParam*> ips);
 		ConnectionVH(const ConnectionVH& other);
 		ConnectionVH(ConnectionVH&& other);
@@ -100,26 +96,24 @@ namespace DynamicBoltzmann {
 		ConnectionVH& operator=(ConnectionVH&& other);
 		~ConnectionVH();
 
-		// Add ixn param
+		/********************
+		Add ixn param
+		********************/
+
 		void add_ixn_param(IxnParam* ip);
 
-		// Get for a species on the visible unit
+		/********************
+		Get activation for a species on the visible unit
+		********************/
+
 		double get_act_visible(Species* sp_visible);
 
-		// Get activation for a hidden
+		/********************
+		Get activation for a species on the hidden unit
+		********************/
+
 		double get_act_hidden(HiddenSpecies* sp_hidden);
 	};
-
-	/****************************************
-	Struct to hold an xyz point
-	****************************************/
-
-	/*
-	struct XYZ
-	{
-		int x,y,z;
-	};
-	*/
 
 	/****************************************
 	Class to hold a lattice site
@@ -242,6 +236,9 @@ namespace DynamicBoltzmann {
 	/****************************************
 	Lattice
 	****************************************/
+
+	typedef std::list<Site> lattice;
+	typedef std::list<Site>::iterator latt_it;
 
 	class Lattice
 	{

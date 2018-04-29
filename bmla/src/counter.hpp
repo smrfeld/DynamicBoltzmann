@@ -54,7 +54,10 @@ namespace DynamicBoltzmann {
 
 	public:
 
-		// Constructor
+		/********************
+		Constructor
+		********************/
+
 		Counter(Species *sp1, bool binary=true);
 		Counter(Species *sp1, Species *sp2, bool binary=true);
 		Counter(Species *sp1, Species *sp2, Species *sp3, bool binary=true);
@@ -65,39 +68,69 @@ namespace DynamicBoltzmann {
 		Counter& operator=(Counter&& other);
 		~Counter();
 
-		// Switch binary/prob
+		/********************
+		Switch binary/prob
+		********************/
+
 		void set_binary(bool flag);
 
-		// Check binary
+		/********************
+		Check binary
+		********************/
+
 		bool is_binary() const;
 
-		// Check type
+		/********************
+		Check type
+		********************/
+
 		bool is_type(CounterType counter_type) const;
 
-		// Check species
+		/********************
+		Check species
+		********************/
+
 		bool is_counting_species(std::string s) const;
 		bool is_counting_species(std::string s1, std::string s2) const;
 		bool is_counting_species(std::string s1, std::string s2, std::string s3) const;
 		bool is_counting_species(std::string s1, std::string s2, std::string s3, std::string s4) const;
 
-		// Get count
+		/********************
+		Get count
+		********************/
+
 		double get_count() const;
 
-		// Increment count
+		/********************
+		Increment count
+		********************/
+
 		void increment(double inc);
 
-		// Reset current count
+		/********************
+		Reset current count
+		********************/
+
 		void reset_count();
 
-		// Whether to report this moment during sampling
+		/********************
+		Whether to report this moment during sampling
+		********************/
+
 		void set_report_during_sampling(bool flag);
 		bool report_during_sampling() const;
 
-		// Committ current count to storage
+		/********************
+		Committ current count to storage
+		********************/
+
 		void storage_clear();
 		void storage_committ_current_count();
 
-		// Average the storage
+		/********************
+		Average the storage
+		********************/
+
 		void storage_averaged_committ_current_traj(int average_size);
 		double storage_averaged_get_ave_count() const;
 		void storage_averaged_clear();

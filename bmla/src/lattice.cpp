@@ -877,7 +877,6 @@ namespace DynamicBoltzmann {
 	Populate randomly according to some counts
 	********************/
 
-
 	void Lattice::populate_randomly() {
 		// Random number of initial particles (min is 1, max is box vol)
 		int n = randI(1, pow(_box_length,_dim));
@@ -896,6 +895,7 @@ namespace DynamicBoltzmann {
 		// Populate at random positions
 		populate_randomly(counts);
 	};
+
 	void Lattice::populate_randomly(std::map<Species*, int> counts) {
 		// Clear the current lattice
 		clear();

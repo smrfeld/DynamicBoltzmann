@@ -94,7 +94,10 @@ namespace DynamicBoltzmann {
 
 	public:
 
-		// Constructor
+		/********************
+		Constructor
+		********************/
+
 		Species(std::string name);
 		Species(const Species& other);
 		Species(Species&& other);
@@ -102,38 +105,59 @@ namespace DynamicBoltzmann {
 		Species& operator=(Species&& other);
 		~Species();
 
-		// Set counters
+		/********************
+		Set counters
+		********************/
+
 		void set_counter(Counter *ctr);
 		void add_nn_counter(Species *sp, Counter *ctr);
 		void add_triplet_counter(Species *sp1, Species *sp2, Counter *ctr);
 		void add_quartic_counter(Species *sp1, Species *sp2, Species *sp3, Counter *ctr);
 
-		// Set h, j ptr
+		/********************
+		Set ptr for h,J,K
+		********************/
+
 		void add_h_ptr(IxnParam *h_ptr);
 		void add_j_ptr(Species* sp, IxnParam *j_ptr);
 		void add_k_ptr(Species* sp1, Species* sp2, IxnParam *k_ptr);
 
-		// Ixn params
+		/********************
+		Ixn params
+		********************/
+
 		double h() const;
 		double j(Species* other) const;
 		double k(Species* other1, Species *other2) const;
 
-		// Counts
+		/********************
+		Counts
+		********************/
+
 		double count() const;
 		double nn_count(Species* other) const;
 		double triplet_count(Species* other1, Species *other2) const;
 		double quartic_count(Species* other1, Species *other2, Species *other3) const;
 
-		// Name
+		/********************
+		Name
+		********************/
+
 		std::string name() const;
 
-		// Increment counts
+		/********************
+		Increment counts
+		********************/
+
 		void count_increment(double inc);
 		void nn_count_increment(Species* other, double inc);
 		void triplet_count_increment(Species* other1, Species* other2, double inc);
 		void quartic_count_increment(Species* other1, Species* other2, Species *other3, double inc);
 
-		// Reset counts
+		/********************
+		Reset counts
+		********************/
+
 		void reset_counts();
 	};
 	// Comparator
@@ -157,7 +181,10 @@ namespace DynamicBoltzmann {
 
 	public:
 
-		// Constructor
+		/********************
+		Constructor
+		********************/
+
 		HiddenSpecies(std::string name);
 		HiddenSpecies(const HiddenSpecies& other);
 		HiddenSpecies(HiddenSpecies&& other);
@@ -165,7 +192,10 @@ namespace DynamicBoltzmann {
 		HiddenSpecies& operator=(HiddenSpecies&& other);
 		~HiddenSpecies();
 
-		// Name
+		/********************
+		Name
+		********************/
+
 		std::string name() const;
 	};
 	// Comparator

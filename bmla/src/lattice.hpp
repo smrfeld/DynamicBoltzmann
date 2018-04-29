@@ -117,6 +117,12 @@ namespace DynamicBoltzmann {
 	class Site {
 	private:
 
+		// Dimensionality and location
+		int _dim;
+		int _x;
+		int _y;
+		int _z;
+
 		// Probs of species/empty
 		std::map<Species*, double> _probs;
 		double _prob_empty;
@@ -136,10 +142,6 @@ namespace DynamicBoltzmann {
 
 	public:
 
-		int dim;
-		int x;
-		int y;
-		int z;
 		std::vector<latt_it> nbrs;
 		std::vector<LattIt2> nbrs_triplets;
 		std::vector<LattIt3> nbrs_quartics;
@@ -148,14 +150,23 @@ namespace DynamicBoltzmann {
 		Constructor
 		********************/
 
-		Site(int xIn);
-		Site(int xIn, int yIn);
-		Site(int xIn, int yIn, int zIn);
+		Site(int x);
+		Site(int x, int y);
+		Site(int x, int y, int z);
 		Site(const Site& other);
 		Site(Site&& other);
 		Site& operator=(const Site& other);
 		Site& operator=(Site&& other);
 		~Site();
+
+		/********************
+		Check location
+		********************/
+
+		int x() const;
+		int y() const;
+		int z() const;
+		bool less_than(const Site &other) const;
 
 		/********************
 		Add a hidden conn
@@ -206,8 +217,6 @@ namespace DynamicBoltzmann {
 	};
 	// Comparator
 	bool operator <(const Site& a, const Site& b);
-	bool operator==(const Site& a, const Site& b);
-	std::ostream& operator<<(std::ostream& os, const Site& s);
 
 	/****************************************
 	Lattice

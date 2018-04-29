@@ -122,13 +122,13 @@ namespace DynamicBoltzmann {
 	Constructor
 	********************/
 
-	Site::Site(int xIn) : Site(xIn,0,0) { dim=1; };
-	Site::Site(int xIn, int yIn) : Site(xIn,yIn,0) { dim=2; };
-	Site::Site(int xIn, int yIn, int zIn) {
-		dim=3;
-		x = xIn;
-		y = yIn;
-		z = zIn;
+	Site::Site(int x) : Site(x,0,0) { _dim=1; };
+	Site::Site(int x, int y) : Site(x,y,0) { _dim=2; };
+	Site::Site(int x, int y, int z) {
+		_dim=3;
+		_x = x;
+		_y = y;
+		_z = z;
 		_prob_empty = 1.0; // default = empty
 	};	
 	Site::Site(const Site& other) {
@@ -160,10 +160,10 @@ namespace DynamicBoltzmann {
 		// Nothing....
 	};
 	void Site::_reset() {
-		dim = 0;
-		x = 0;
-		y = 0;
-		z = 0;
+		_dim = 0;
+		_x = 0;
+		_y = 0;
+		_z = 0;
 		nbrs.clear();
 		nbrs_triplets.clear();
 		nbrs_quartics.clear();
@@ -172,10 +172,10 @@ namespace DynamicBoltzmann {
 		_probs.clear();
 	};
 	void Site::_copy(const Site& other) {
-		dim = other.dim;
-		x = other.x;
-		y = other.y;
-		z = other.z;
+		_dim = other._dim;
+		_x = other._x;
+		_y = other._y;
+		_z = other._z;
 		nbrs = other.nbrs;
 		nbrs_triplets = other.nbrs_triplets;
 		nbrs_quartics = other.nbrs_quartics;
@@ -185,57 +185,37 @@ namespace DynamicBoltzmann {
 	};
 
 	/********************
+	Check location
+	********************/
+
+	int Site::x() const {
+		return _x;
+	};
+	int Site::y() const {
+		return _y;
+	};
+	int Site::z() const {
+		return _z;
+	};
+	bool Site::less_than(const Site &other) const {
+		if (_dim == 1) {
+			return _x < other._x;
+		} else if (_dim == 2) {
+			return std::tie(_x, _y) < std::tie(other._x, other._y);
+ 		} else if (_dim == 3) {
+			return std::tie(_x, _y, _z) < std::tie(other._x, other._y, other._z);
+	    } else {
+	    	return false;
+	    };	
+	};
+
+	/********************
 	Comparator
 	********************/
 
 	bool operator <(const Site& a, const Site& b) {
-		if (a.dim == 1) {
-	    	return a.x < b.x;
-	    } else if (a.dim == 2) {
-	    	return std::tie(a.x, a.y) < std::tie(b.x, b.y);
-	    } else if (a.dim == 3) {
-	    	return std::tie(a.x, a.y, a.z) < std::tie(b.x, b.y, b.z);
-	    } else {
-	    	return false;
-	    };
+		return a.less_than(b);
 	};
-	bool operator==(const Site& a, const Site& b) {
-		if (a.dim == 1) {
-	    	return a.x == b.x;
-	    } else if (a.dim == 2) {
-	    	return std::tie(a.x, a.y) == std::tie(b.x, b.y);
-	    } else if (a.dim == 3) {
-	    	return std::tie(a.x, a.y, a.z) == std::tie(b.x, b.y, b.z);
-	    } else {
-	    	return false;
-	    };
-	}; 
-	std::ostream& operator<<(std::ostream& os, const Site& s)
-	{
-		if (s.empty()) {
-			return os;
-		};
-
-		if (s.dim == 1) {
-		    os << s.x << " ";
-		} else if (s.dim == 2) {
-		    os << s.x << " " << s.y << " ";
-		} else if (s.dim == 3) {
-		    os << s.x << " " << s.y << " " << s.z << " ";
-		};
-
-		// Get probs
-		const std::map<Species*, double> prs = s.get_probs();
-
-		// All probs
-		for (auto pr: prs) {
-			if (pr.second > 0.0) {
-				os << pr.first->name() << " " << pr.second << " ";	
-			};
-		};
-
-	    return os;
-    };
 
 	/********************
 	Add a hidden conn
@@ -621,26 +601,26 @@ namespace DynamicBoltzmann {
 			while (lit != _latt.end()) {
 				// Neighbors
 				nbrs.clear();
-				if (lit->x-1 >= 1) {
-					nbrs.push_back(Site(lit->x-1,lit->y,lit->z));
+				if (lit->x()-1 >= 1) {
+					nbrs.push_back(Site(lit->x()-1,lit->y(),lit->z()));
 				};
-				if (lit->x+1 <= _box_length) {
-					nbrs.push_back(Site(lit->x+1,lit->y,lit->z));
+				if (lit->x()+1 <= _box_length) {
+					nbrs.push_back(Site(lit->x()+1,lit->y(),lit->z()));
 				};
 				if (_dim == 2 || _dim == 3) {
-					if (lit->y-1 >= 1) {
-						nbrs.push_back(Site(lit->x,lit->y-1,lit->z));
+					if (lit->y()-1 >= 1) {
+						nbrs.push_back(Site(lit->x(),lit->y()-1,lit->z()));
 					};
-					if (lit->y+1 <= _box_length) {
-						nbrs.push_back(Site(lit->x,lit->y+1,lit->z));
+					if (lit->y()+1 <= _box_length) {
+						nbrs.push_back(Site(lit->x(),lit->y()+1,lit->z()));
 					};
 				};
 				if (_dim == 3) {
-					if (lit->z-1 >= 1) {
-						nbrs.push_back(Site(lit->x,lit->y,lit->z-1));
+					if (lit->z()-1 >= 1) {
+						nbrs.push_back(Site(lit->x(),lit->y(),lit->z()-1));
 					};
-					if (lit->z+1 <= _box_length) {
-						nbrs.push_back(Site(lit->x,lit->y,lit->z+1));
+					if (lit->z()+1 <= _box_length) {
+						nbrs.push_back(Site(lit->x(),lit->y(),lit->z()+1));
 					};
 				};
 
@@ -648,11 +628,11 @@ namespace DynamicBoltzmann {
 				for (auto nbr: nbrs) {
 					// Add as nbr
 					if (_dim == 1) {
-						lit->nbrs.push_back(_look_up(nbr.x));
+						lit->nbrs.push_back(_look_up(nbr.x()));
 					} else if (_dim == 2) {
-						lit->nbrs.push_back(_look_up(nbr.x,nbr.y));
+						lit->nbrs.push_back(_look_up(nbr.x(),nbr.y()));
 					} else if (_dim == 3) {
-						lit->nbrs.push_back(_look_up(nbr.x,nbr.y,nbr.z));
+						lit->nbrs.push_back(_look_up(nbr.x(),nbr.y(),nbr.z()));
 					};
 				};
 
@@ -671,22 +651,22 @@ namespace DynamicBoltzmann {
 
 			latt_it lit1,lit2;
 			for (latt_it lit = _latt.begin(); lit != _latt.end(); lit++) {
-				if (lit->x != 1 && lit->x != 2) {
+				if (lit->x() != 1 && lit->x() != 2) {
 					// Both to the left
-					lit1 = _look_up(lit->x-2);
-					lit2 = _look_up(lit->x-1);
+					lit1 = _look_up(lit->x()-2);
+					lit2 = _look_up(lit->x()-1);
 					lit->nbrs_triplets.push_back(LattIt2(lit1,lit2));
 				};
-				if (lit->x != 1 && lit->x != _box_length) {
+				if (lit->x() != 1 && lit->x() != _box_length) {
 					// One left, one right
-					lit1 = _look_up(lit->x-1);
-					lit2 = _look_up(lit->x+1);
+					lit1 = _look_up(lit->x()-1);
+					lit2 = _look_up(lit->x()+1);
 					lit->nbrs_triplets.push_back(LattIt2(lit1,lit2));
 				};
-				if (lit->x != _box_length-1 && lit->x != _box_length) {
+				if (lit->x() != _box_length-1 && lit->x() != _box_length) {
 					// Both to the right
-					lit1 = _look_up(lit->x+1);
-					lit2 = _look_up(lit->x+2);
+					lit1 = _look_up(lit->x()+1);
+					lit2 = _look_up(lit->x()+2);
 					lit->nbrs_triplets.push_back(LattIt2(lit1,lit2));
 				};
 			};
@@ -702,32 +682,32 @@ namespace DynamicBoltzmann {
 
 			latt_it lit1,lit2,lit3;
 			for (latt_it lit = _latt.begin(); lit != _latt.end(); lit++) {
-				if (lit->x != 1 && lit->x != 2 && lit->x != 3) {
+				if (lit->x() != 1 && lit->x() != 2 && lit->x() != 3) {
 					// Three to the left
-					lit1 = _look_up(lit->x-3);
-					lit2 = _look_up(lit->x-2);
-					lit3 = _look_up(lit->x-1);
+					lit1 = _look_up(lit->x()-3);
+					lit2 = _look_up(lit->x()-2);
+					lit3 = _look_up(lit->x()-1);
 					lit->nbrs_quartics.push_back(LattIt3(lit1,lit2,lit3));
 				};
-				if (lit->x != 1 && lit->x != 2 && lit->x != _box_length) {
+				if (lit->x() != 1 && lit->x() != 2 && lit->x() != _box_length) {
 					// Two to the left, one to the right
-					lit1 = _look_up(lit->x-2);
-					lit2 = _look_up(lit->x-1);
-					lit3 = _look_up(lit->x+1);
+					lit1 = _look_up(lit->x()-2);
+					lit2 = _look_up(lit->x()-1);
+					lit3 = _look_up(lit->x()+1);
 					lit->nbrs_quartics.push_back(LattIt3(lit1,lit2,lit3));
 				};
-				if (lit->x != 1 && lit->x != _box_length-1 && lit->x != _box_length) {
+				if (lit->x() != 1 && lit->x() != _box_length-1 && lit->x() != _box_length) {
 					// One left, two to the right
-					lit1 = _look_up(lit->x-1);
-					lit2 = _look_up(lit->x+1);
-					lit3 = _look_up(lit->x+2);
+					lit1 = _look_up(lit->x()-1);
+					lit2 = _look_up(lit->x()+1);
+					lit3 = _look_up(lit->x()+2);
 					lit->nbrs_quartics.push_back(LattIt3(lit1,lit2,lit3));
 				};
-				if (lit->x != _box_length-2 && lit->x != _box_length-1 && lit->x != _box_length) {
+				if (lit->x() != _box_length-2 && lit->x() != _box_length-1 && lit->x() != _box_length) {
 					// Three to the right
-					lit1 = _look_up(lit->x+1);
-					lit2 = _look_up(lit->x+2);
-					lit3 = _look_up(lit->x+3);
+					lit1 = _look_up(lit->x()+1);
+					lit2 = _look_up(lit->x()+2);
+					lit3 = _look_up(lit->x()+3);
 					lit->nbrs_quartics.push_back(LattIt3(lit1,lit2,lit3));
 				};
 			};
@@ -799,7 +779,13 @@ namespace DynamicBoltzmann {
 		std::ofstream f;
 		f.open (fname);
 		for (auto l: _latt) {
-			f << l << "\n";
+			if (_dim == 1) {
+				f << l.x() << "\n";
+			} else if (_dim == 2) {
+				f << l.x() << " " << l.y() << "\n";
+			} else if (_dim == 3) {
+				f << l.x() << " " << l.y() << " " << l.z() << "\n";
+			};
 		};
 		f.close();
 	};

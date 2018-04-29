@@ -60,7 +60,10 @@ namespace DynamicBoltzmann {
 
 	public:
 
-		// Constructor
+		/********************
+		Constructor
+		********************/
+
 		Species(std::string name);
 		Species(const Species& other);
 		Species(Species&& other);
@@ -68,22 +71,37 @@ namespace DynamicBoltzmann {
 		Species& operator=(Species&& other);
 		~Species();
 
-		// Set pointer to the opt time variable
+		/********************
+		Set optimization time pointer
+		********************/
+
 		void set_opt_time_ptr(int *t_opt_ptr);
 
-		// Set h, j ptr
+		/********************
+		Set h, J, W ptr
+		********************/
+
 		void set_h_ptr(IxnParamTraj *h_ptr);
 		void add_j_ptr(Species* sp, IxnParamTraj *j_ptr);
 		void set_w_ptr(IxnParamTraj *w_ptr);
 
-		// Initialize counts for given other species
+		/********************
+		Initialize counts for a given other species
+		********************/
+
 		void count_nn_for_species(std::vector<Species*> sp_vec);
 		void count_triplets_for_species(std::vector<std::pair<Species*,Species*>> sp_vec);
 
-		// Validate setup
+		/********************
+		Validate setup
+		********************/
+
 		void validate_setup() const;
 
-		// Setters/getters
+		/********************
+		Getters
+		********************/
+
 		double h() const;
 		double j(Species* other) const;
 		double w() const;
@@ -92,7 +110,10 @@ namespace DynamicBoltzmann {
 		int triplet_count(Species* other1, Species* other2) const;
 		std::string name() const;
 
-		// Increment counts
+		/********************
+		Increment counts
+		********************/
+
 		void count_plus();
 		void count_minus();
 		void nn_count_plus(Species* other);
@@ -100,10 +121,54 @@ namespace DynamicBoltzmann {
 		void triplet_count_plus(Species* other1, Species* other2);
 		void triplet_count_minus(Species* other1, Species* other2);
 
-		// Reset counts
+		/********************
+		Reset counts
+		********************/
+
 		void reset_counts();
 	};
 	// Comparator
 	bool operator <(const Species& a, const Species& b);
+
+
+	/****************************************
+	HiddenSpecies
+	****************************************/
+
+	class HiddenSpecies {
+
+	private:
+
+		// Name
+		std::string _name;
+
+		// Constructor helpers
+		void _clean_up();
+		void _reset();
+		void _copy(const HiddenSpecies& other);
+
+	public:
+
+		/********************
+		Constructor
+		********************/
+
+		HiddenSpecies(std::string name);
+		HiddenSpecies(const HiddenSpecies& other);
+		HiddenSpecies(HiddenSpecies&& other);
+		HiddenSpecies& operator=(const HiddenSpecies& other);
+		HiddenSpecies& operator=(HiddenSpecies&& other);
+		~HiddenSpecies();
+
+		/********************
+		Getters
+		********************/
+
+		std::string name() const;
+	};
+
 };
+
+
+
 

@@ -346,6 +346,7 @@ namespace DynamicBoltzmann {
 		Populate randomly according to some counts
 		********************/
 
+		void populate_randomly();
 		void populate_randomly(std::map<Species*, int> counts);
 
 		/********************

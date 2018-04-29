@@ -1288,26 +1288,8 @@ namespace DynamicBoltzmann {
 			};
 		};
 
-		std::list<Species>::iterator sp_it1,sp_it2,sp_it3;
-
 		// Start by populating lattice randomly
-
-		// Random number of initial particles (min is 1, max is box vol)
-		int n = randI(1, pow(_latt.box_length(),_latt.dim()));
-
-		// Random initial counts
-		// Don't populate too much, else this is hard to find empty sites to place mols!
-		// At most half the lattice is filled
-		int n_possible = pow(_latt.box_length(),_latt.dim()) / 2;
-		std::map<Species*,int> counts;
-		for (std::list<Species>::iterator sp=_species.begin(); sp != _species.end(); sp++) {
-			counts[&(*sp)] = randI(0,n_possible);
-			n_possible -= counts[&(*sp)];
-			if (n_possible < 0) { n_possible = 0; };
-		};
-
-		// Populate at random positions
-		_latt.populate_randomly(counts);
+		_latt.populate_randomly();
 
 		// Activate hidden
 		if (_hidden_layer_exists) {

@@ -592,7 +592,6 @@ namespace DynamicBoltzmann {
 	int Lattice::dim() const {
 		return _dim;
 	};
-
 	int Lattice::box_length() const {
 		return _box_length;
 	};
@@ -878,6 +877,25 @@ namespace DynamicBoltzmann {
 	Populate randomly according to some counts
 	********************/
 
+
+	void Lattice::populate_randomly() {
+		// Random number of initial particles (min is 1, max is box vol)
+		int n = randI(1, pow(_box_length,_dim));
+
+		// Random initial counts
+		// Don't populate too much, else this is hard to find empty sites to place mols!
+		// At most half the lattice is filled
+		int n_possible = pow(_box_length,_dim) / 2;
+		std::map<Species*,int> counts;
+		for (auto sp: _sp_vec) {
+			counts[sp] = randI(0,n_possible);
+			n_possible -= counts[sp];
+			if (n_possible < 0) { n_possible = 0; };
+		};
+
+		// Populate at random positions
+		populate_randomly(counts);
+	};
 	void Lattice::populate_randomly(std::map<Species*, int> counts) {
 		// Clear the current lattice
 		clear();

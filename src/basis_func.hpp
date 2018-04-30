@@ -154,8 +154,8 @@ namespace DynamicBoltzmann {
 		std::string name() const;
 
 		// Calculate the new basis function
-		void update(int n_t, double dt, double dopt, bool local_decay=false, double local_decay_factor=0.);		
-		void update_gather(int n_t, double dt, double dopt, bool local_decay=false, double local_decay_factor=0.);
+		void update(int n_t, double dt, double dopt, bool exp_decay=false, double exp_decay_t0=0., double exp_decay_lambda=0.); 
+		void update_gather(int n_t, double dt, double dopt, bool exp_decay=false, double exp_decay_t0=0., double exp_decay_lambda=0.);
 		void update_committ_gathered();
 
 		// Test fill in various dimensions

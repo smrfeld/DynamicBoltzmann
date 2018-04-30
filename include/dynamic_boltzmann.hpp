@@ -167,9 +167,12 @@ namespace DynamicBoltzmann {
 		bool asleep_final_visible_are_binary;
 		bool asleep_final_hidden_are_binary;
 
-		// Locality factor for variational term
-		bool local_decay;
-		double local_decay_factor;
+		// Exponential decay for the time
+		// exp( - lamdbda * ( t - t0 ) )
+		// where t=0....# timesteps (not real time!)
+		bool exp_decay;
+		std::vector<double> exp_decay_t0_values;
+		std::vector<double> exp_decay_lambda_values;
 
 		/********************
 		Constructor
@@ -192,8 +195,7 @@ namespace DynamicBoltzmann {
 			asleep_hidden_are_binary = true;
 			asleep_final_visible_are_binary = true;
 			asleep_final_hidden_are_binary = true;
-			local_decay = false;
-			local_decay_factor = 0.;
+			exp_decay = false;
 		};
 	};
 

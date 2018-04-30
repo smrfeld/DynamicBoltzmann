@@ -1377,6 +1377,16 @@ namespace DynamicBoltzmann {
 		// Opt step with offset
 		int i_opt;
 
+		// Exp decay
+		double exp_decay_t0=0., exp_decay_lambda=0.;
+		if (options.exp_decay) {
+			// Check
+			if (options.exp_decay_t0_values.size() != n_opt || options.exp_decay_lambda_values.size() != n_opt) {
+				std::cerr << "Error! In exp decay mode, must provide t0 and lambda values for all optimization timesteps." << std::endl;
+				exit(EXIT_FAILURE);
+			};
+		};
+
 		// Iterate over optimization steps
 		for (int i_opt_from_zero=0; i_opt_from_zero<n_opt; i_opt_from_zero++)
 		{
@@ -1384,6 +1394,12 @@ namespace DynamicBoltzmann {
 
 			// Offset
 			i_opt = i_opt_from_zero + options.opt_idx_start_writing;
+
+			// Exp decay
+			if (options.exp_decay) {
+				exp_decay_t0 = options.exp_decay_t0_values[i_opt_from_zero];
+				exp_decay_lambda = options.exp_decay_lambda_values[i_opt_from_zero];
+			};
 
 			/*****
 			Step 0 - Check nesterov
@@ -1585,7 +1601,7 @@ namespace DynamicBoltzmann {
 			*****/
 
 			for (auto itbf=_bfs.begin(); itbf!=_bfs.end(); itbf++) {
-				itbf->update(_n_t_soln, _time.delta(), dopt, options.local_decay, options.local_decay_factor);
+				itbf->update(_n_t_soln, _time.delta(), dopt, options.exp_decay, exp_decay_t0, exp_decay_lambda);
 			};
 		};
 
@@ -1688,6 +1704,9 @@ namespace DynamicBoltzmann {
 		// Optimization step translated by the offset
 		int i_opt_translated;
 
+		// Exp decay terms
+		double exp_decay_t0=0., exp_decay_lambda=0.;
+
 		// Iterate over optimization steps
 		for (int i_opt=0; i_opt<n_opt; i_opt++)
 		{
@@ -1695,6 +1714,12 @@ namespace DynamicBoltzmann {
 
 			// Offset 
 			i_opt_translated = i_opt + options.opt_idx_start_writing;
+
+			// Exp decay
+			if (options.exp_decay) {
+				exp_decay_t0 = options.exp_decay_t0_values[i_opt];
+				exp_decay_lambda = options.exp_decay_lambda_values[i_opt];
+			};
 
 			/*****
 			Step 0 - Check nesterov
@@ -1900,7 +1925,7 @@ namespace DynamicBoltzmann {
 				*****/
 
 				for (auto itbf=_bfs.begin(); itbf!=_bfs.end(); itbf++) {
-					itbf->update_gather(_n_t_soln, _time.delta(), dopt, options.local_decay, options.local_decay_factor);
+					itbf->update_gather(_n_t_soln, _time.delta(), dopt, options.exp_decay, exp_decay_t0, exp_decay_lambda);
 				};
 
 			};

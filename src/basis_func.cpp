@@ -529,36 +529,21 @@ namespace DynamicBoltzmann {
 	Calculate the new basis function
 	********************/
 
-	void BasisFunc::update(int n_t, double dt, double dopt, bool local_decay, double local_decay_factor) 
+	void BasisFunc::update(int n_t, double dt, double dopt, bool exp_decay, double exp_decay_t0, double exp_decay_lambda) 
 	{
 		int *idxs;
 		double *nu_vals;
 		double decay = 1.0;
-		if (local_decay) {
-			idxs = new int[_n_params];
-			nu_vals = new double[_n_params];
-		};
 
 		// Go through all idxs
 		for (int i=0; i<_val_len; i++) {
 
-			// Get the idxs of this i, and the values
-			if (local_decay) {
-				get_idxs(i,idxs);
-				for (int j=0; j<_n_params; j++) {
-					nu_vals[j] = _ixn_params[j]->get_by_idx(idxs[j]);
-				};
-			};
-
 			// Go through all times
 			for (int t=0; t<n_t; t++) {
 
-				if (local_decay) {
-					decay = 1.0;
-					for (int j=0; j<_n_params; j++) {
-						// Current nu - grid point we are updating
-						decay *= exp(-pow(_ixn_params[j]->get_at_time(t) - nu_vals[j],2) / local_decay_factor);
-					};
+				// Exp decay
+				if (exp_decay) {
+					decay = exp(-exp_decay_lambda*abs(t - exp_decay_t0));
 				};
 
 				// Go through all updating terms
@@ -567,14 +552,9 @@ namespace DynamicBoltzmann {
 				};
 			};
 		};
-
-		if (local_decay) {
-			safeDelArr(idxs);
-			safeDelArr(nu_vals);
-		};
 	};
 
-	void BasisFunc::update_gather(int n_t, double dt, double dopt, bool local_decay, double local_decay_factor) 
+	void BasisFunc::update_gather(int n_t, double dt, double dopt, bool exp_decay, double exp_decay_t0, double exp_decay_lambda) 
 	{
 		if (!_update_gathered) {
 			// alloc
@@ -585,31 +565,16 @@ namespace DynamicBoltzmann {
 		int *idxs;
 		double *nu_vals;
 		double decay = 1.0;
-		if (local_decay) {
-			idxs = new int[_n_params];
-			nu_vals = new double[_n_params];
-		};
 
 		// Go through all idxs
 		for (int i=0; i<_val_len; i++) {
 
-			// Get the idxs of this i, and the values
-			if (local_decay) {
-				get_idxs(i,idxs);
-				for (int j=0; j<_n_params; j++) {
-					nu_vals[j] = _ixn_params[j]->get_by_idx(idxs[j]);
-				};
-			};
-
 			// Go through all times
 			for (int t=0; t<n_t; t++) {
 
-				if (local_decay) {
-					decay = 1.0;
-					for (int j=0; j<_n_params; j++) {
-						// Current nu - grid point we are updating
-						decay *= exp(-pow(_ixn_params[j]->get_at_time(t) - nu_vals[j],2) / local_decay_factor);
-					};
+				// Exp decay
+				if (exp_decay) {
+					decay = exp(-exp_decay_lambda*abs(t - exp_decay_t0));
 				};
 
 				// Go through all updating terms

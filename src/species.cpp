@@ -8,15 +8,70 @@
 namespace DynamicBoltzmann {
 
 	/****************************************
+	Doublets, Triplets of Species ptrs
+	****************************************/
+
+	Species2::Species2(Species* sp1, Species* sp2) {
+		if (sp1>=sp2) {
+			this->sp1 = sp1;
+			this->sp2 = sp2;
+		} else {
+			this->sp1 = sp2;
+			this->sp2 = sp1;
+		};
+	};
+	bool operator <(const Species2& a, const Species2& b) {
+    	return std::tie(a.sp1, a.sp2) < std::tie(b.sp1, b.sp2);
+	};
+
+	Species3::Species3(Species* sp1, Species* sp2, Species *sp3) {
+		if (sp1>=sp2 && sp2 >= sp3) {
+			this->sp1 = sp1;
+			this->sp2 = sp2;
+			this->sp3 = sp3;
+		} else if (sp1>=sp3 && sp3 >= sp2) {
+			this->sp1 = sp1;
+			this->sp2 = sp3;
+			this->sp3 = sp2;
+		} else if (sp2>=sp1 && sp1 >= sp3) {
+			this->sp1 = sp2;
+			this->sp2 = sp1;
+			this->sp3 = sp3;
+		} else if (sp2>=sp3 && sp3 >= sp1) {
+			this->sp1 = sp2;
+			this->sp2 = sp3;
+			this->sp3 = sp1;
+		} else if (sp3>=sp1 && sp1 >= sp2) {
+			this->sp1 = sp3;
+			this->sp2 = sp1;
+			this->sp3 = sp2;
+		} else if (sp3>=sp2 && sp2 >= sp1) {
+			this->sp1 = sp3;
+			this->sp2 = sp2;
+			this->sp3 = sp1;
+		};
+	};
+	bool operator <(const Species3& a, const Species3& b) {
+    	return std::tie(a.sp1, a.sp2, a.sp3) < std::tie(b.sp1, b.sp2, b.sp3);
+	};
+
+	SpeciesVH::SpeciesVH(Species* sp_visible, HiddenSpecies *sp_hidden) {
+		this->sp_visible = sp_visible;
+		this->sp_hidden = sp_hidden;
+	};
+	bool operator <(const SpeciesVH& a, const SpeciesVH& b) {
+    	return std::tie(a.sp_visible, a.sp_hidden) < std::tie(b.sp_visible, b.sp_hidden);
+	};
+
+	/****************************************
 	Species
 	****************************************/
-	
+
 	Species::Species(std::string name) {
 		_name = name;
-		_count = 0;
 
-		// Ptrs
-		_t_opt_ptr = nullptr;
+		// Counters
+		_count = nullptr;
 	};
 	Species::Species(const Species& other) {
 		_copy(other);
@@ -48,31 +103,41 @@ namespace DynamicBoltzmann {
 		// Nothing...
 	};
 	void Species::_reset() {
-		_name = "";
+		_name = "";	
+		_count = nullptr;
 		_nn_count.clear();
 		_triplet_count.clear();
-		_count = 0;
-		_t_opt_ptr = nullptr;
+		_quartic_count.clear();
 		_h_ptrs.clear();
 		_j_ptrs.clear();
+		_k_ptrs.clear();
 	};
 	void Species::_copy(const Species& other) {
 		_name = other._name;
+		_count = other._count;
 		_nn_count = other._nn_count;
 		_triplet_count = other._triplet_count;
-		_count = other._count;
-		_t_opt_ptr = other._t_opt_ptr;
+		_quartic_count = other._quartic_count;
 		_h_ptrs = other._h_ptrs;
 		_j_ptrs = other._j_ptrs;
+		_k_ptrs = other._k_ptrs;
 	};
 
 	/********************
-	Set pointer to the opt time variable
+	Set counters
 	********************/
 
-	void Species::set_opt_time_ptr(int *t_opt_ptr)
-	{
-		_t_opt_ptr = t_opt_ptr;
+	void Species::set_counter(Counter *ctr) {
+		_count = ctr;
+	};
+	void Species::add_nn_counter(Species *sp, Counter *ctr) {
+		_nn_count[sp] = ctr;
+	};
+	void Species::add_triplet_counter(Species *sp1, Species *sp2, Counter *ctr) {
+		_triplet_count[Species2(sp1,sp2)] = ctr;
+	};
+	void Species::add_quartic_counter(Species *sp1, Species *sp2, Species *sp3, Counter *ctr) {
+		_quartic_count[Species3(sp1,sp2,sp3)] = ctr;
 	};
 
 	/********************
@@ -85,72 +150,62 @@ namespace DynamicBoltzmann {
 	void Species::add_j_ptr(Species* sp, IxnParamTraj *j_ptr) {
 		_j_ptrs[sp].push_back(j_ptr);
 	};
-
-	/********************
-	Initialize counts for given other species
-	********************/
-
-	void Species::count_nn_for_species(std::vector<Species*> sp_vec) {
-		for (auto sp: sp_vec) {
-			_nn_count[sp] = 0;
-		};
-	};
-	void Species::count_triplets_for_species(std::vector<std::pair<Species*,Species*>> sp_vec) {
-		for (auto sp_pair: sp_vec) {
-			_triplet_count[sp_pair.first][sp_pair.second] = 0;
-			_triplet_count[sp_pair.second][sp_pair.first] = 0;
-		};
+	void Species::add_k_ptr(Species* sp1, Species* sp2, IxnParamTraj *k_ptr) {
+		_k_ptrs[Species2(sp1,sp2)].push_back(k_ptr);
 	};
 
 	/********************
-	Validate setup
-	********************/
-
-	void Species::validate_setup() const {
-		std::cout << "--- Validate species: " << _name << " ---" << std::endl;
-		std::cout << "   NNs: " << std::flush;
-		for (auto p: _nn_count) {
-			std::cout << p.first->name() << " " << std::flush;
-		};
-		std::cout << std::endl;
-		if (!_t_opt_ptr) {
-			std::cerr << "ERROR: no time ptr set" << std::endl;
-			exit(EXIT_FAILURE);
-		} else {
-			std::cout << "   Time ptr is set" << std::endl;
-		};
-	};
-
-	/********************
-	Setters/getters
+	Get ixn params
 	********************/
 
 	double Species::h() const {
-		double act=0.;
-		for (auto const& ipt: _h_ptrs) {
-			act += ipt->get_at_time(*_t_opt_ptr);
+		double act=0.0;
+		for (auto h: _h_ptrs) {
+			act += h->get();
 		};
 		return act;
 	};
 	double Species::j(Species *other) const {
-		double act=0.;
+		double act=0.0;
 		auto it = _j_ptrs.find(other);
 		if (it != _j_ptrs.end()) {
-			for (auto const &ipt: it->second) {
-				act += ipt->get_at_time(*_t_opt_ptr);
+			for (auto j: it->second) {
+				act += j->get();
 			};
-		};	
+		};
 		return act;
 	};
-	int Species::count() const {
-		return _count;
+	double Species::k(Species* other1, Species *other2) const {
+		double act=0.0;
+		auto it = _k_ptrs.find(Species2(other1,other2));
+		if (it != _k_ptrs.end()) {
+			for (auto k: it->second) {
+				act += k->get();
+			};
+		};
+		return act;
 	};
-	int Species::nn_count(Species *other) const {
-		return _nn_count.at(other);
+
+	/********************
+	Get counts
+	********************/
+
+	double Species::count() const {
+		return _count->get_count();
 	};
-	int Species::triplet_count(Species* other1, Species* other2) const {
-		return _triplet_count.at(other1).at(other2);
+	double Species::nn_count(Species *other) const {
+		return _nn_count.at(other)->get_count();
 	};
+	double Species::triplet_count(Species* other1, Species *other2) const {
+		return _triplet_count.at(Species2(other1,other2))->get_count();
+	};
+	double Species::quartic_count(Species* other1, Species *other2, Species *other3) const {
+		return _quartic_count.at(Species3(other1,other2,other3))->get_count();
+	};
+
+	/********************
+	Name
+	********************/
 
 	std::string Species::name() const { return _name; };
 
@@ -158,17 +213,17 @@ namespace DynamicBoltzmann {
 	Increment counts
 	********************/
 
-	void Species::count_plus() { _count++; };
-	void Species::count_minus() { _count--; };
-	void Species::nn_count_plus(Species* other) { _nn_count[other]++; };
-	void Species::nn_count_minus(Species* other) { _nn_count[other]--; };
-	void Species::triplet_count_plus(Species* other1, Species* other2) { 
-		_triplet_count[other1][other2]++;
-		_triplet_count[other2][other1]++;
+	void Species::count_increment(double inc) {
+		_count->increment(inc);
 	};
-	void Species::triplet_count_minus(Species* other1, Species* other2) { 
-		_triplet_count[other1][other2]--;
-		_triplet_count[other2][other1]--;
+	void Species::nn_count_increment(Species* other, double inc) {
+		_nn_count.at(other)->increment(inc);
+	};
+	void Species::triplet_count_increment(Species* other1, Species* other2, double inc) {
+		_triplet_count.at(Species2(other1,other2))->increment(inc);
+	};
+	void Species::quartic_count_increment(Species* other1, Species* other2, Species *other3, double inc) {
+		_quartic_count.at(Species3(other1,other2,other3))->increment(inc);
 	};
 
 	/********************
@@ -176,14 +231,15 @@ namespace DynamicBoltzmann {
 	********************/
 
 	void Species::reset_counts() {
-		_count = 0;
+		_count->reset_count();
 		for (auto it=_nn_count.begin(); it!=_nn_count.end(); it++) {
-			it->second = 0;
+			it->second->reset_count();
 		};
 		for (auto it1=_triplet_count.begin(); it1!=_triplet_count.end(); it1++) {
-			for (auto it2 = it1->second.begin(); it2 != it1->second.end(); it2++) {
-				it2->second = 0;
-			};
+			it1->second->reset_count();
+		};
+		for (auto it1=_quartic_count.begin(); it1!=_quartic_count.end(); it1++) {
+			it1->second->reset_count();
 		};
 	};
 
@@ -199,10 +255,6 @@ namespace DynamicBoltzmann {
 	/****************************************
 	HiddenSpecies
 	****************************************/
-
-	/********************
-	Constructor
-	********************/
 
 	HiddenSpecies::HiddenSpecies(std::string name) {
 		_name = name;
@@ -237,19 +289,24 @@ namespace DynamicBoltzmann {
 		// Nothing...
 	};
 	void HiddenSpecies::_reset() {
-		_name = "";
+		_name = "";	
 	};
 	void HiddenSpecies::_copy(const HiddenSpecies& other) {
 		_name = other._name;
 	};
 
-
 	/********************
-	Getters
+	Name
 	********************/
 
-	std::string HiddenSpecies::name() const {
-		return _name;
+	std::string HiddenSpecies::name() const { return _name; };
+
+	/********************
+	Comparator
+	********************/
+
+	bool operator <(const HiddenSpecies& a, const HiddenSpecies& b) {
+		return a.name() < b.name();
 	};
 
 };

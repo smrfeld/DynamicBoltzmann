@@ -32,4 +32,21 @@ namespace DynamicBoltzmann {
 		return iMin + rand() % (iMax - iMin + 1);
 	};
 
+	/********************
+	Sample a vector of propensities (cumulative probabilities)		
+	********************/
+
+	int sample_prop_vec(std::vector<double> &props) {
+		// Sample RV
+		double r = randD(0.0,props.back());
+
+		// Find interval
+		for (int i=0; i<props.size()-1; i++) {
+			if (props[i] <= r && r <= props[i+1]) {
+				return i;
+			};
+		};
+		return 0; // never get here
+	};
+
 };

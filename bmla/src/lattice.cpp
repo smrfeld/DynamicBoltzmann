@@ -115,7 +115,7 @@ namespace DynamicBoltzmann {
 	};
 
 	/****************************************
-	Struct to hold a lattice Site
+	Class to hold a lattice Site
 	****************************************/
 
 	/********************

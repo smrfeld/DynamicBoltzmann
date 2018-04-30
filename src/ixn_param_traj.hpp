@@ -35,7 +35,7 @@ namespace DynamicBoltzmann {
 	****************************************/
 
 	// Enumeration of type of dimension
-	enum IxnParamType { Hp, Jp, Wp, Bp };
+	enum IxnParamType { Hp, Jp, Kp, Wp, Bp };
 
 	class IxnParamTraj : public Grid {
 
@@ -45,10 +45,17 @@ namespace DynamicBoltzmann {
 		IxnParamType _type;
 
 		// Species
-		// If Hp or Wp: only sp1
-		Species *_sp1;
-		// If Jp: also sp2
-		Species *_sp2;
+		
+		// For a visible bias
+		std::vector<Species*> _sp_bias_visible;
+		// For a hidden bias
+		std::vector<HiddenSpecies*> _sp_bias_hidden;
+		// For a visible J
+		std::vector<Species2> _sp_doublet;
+		// For a visible K
+		std::vector<Species3> _sp_triplet;
+		// For a visible to hidden weight W
+		std::vector<SpeciesVH> _sp_conn;
 
 		// If Wp:
 		// Connects sites (visible) to hidden units
@@ -74,6 +81,9 @@ namespace DynamicBoltzmann {
 		// Pointer to the basis function
 		BasisFunc *_bf;
 
+		// Pointer to the optimization time
+		int *_t_opt_ptr;
+
 		// Copy, clean up
 		void _clean_up();
 		void _reset();
@@ -81,47 +91,94 @@ namespace DynamicBoltzmann {
 
 	public:
 
-		// Constructor
-		IxnParamTraj(std::string name, IxnParamType type, Species *sp, double min, double max, int n, double val0, int n_t);
-		IxnParamTraj(std::string name, IxnParamType type, Species *sp1, Species *sp2, double min, double max, int n, double val0, int n_t);
+		/********************
+		Constructor
+		********************/
+
+		IxnParamTraj(std::string name, IxnParamType type, double min, double max, int n, double val0, int n_t);
 		IxnParamTraj(const IxnParamTraj& other);
 		IxnParamTraj(IxnParamTraj&& other);
 		IxnParamTraj& operator=(const IxnParamTraj& other);
 		IxnParamTraj& operator=(IxnParamTraj&& other);
 		~IxnParamTraj();
 
-		// Check if this ixn param is...
-		bool is_h_with_species(std::string species_name) const;
-		bool is_w_with_species(std::string species_name) const;
-		bool is_j_with_species(std::string species_name_1, std::string species_name_2) const;
-		bool is_b_with_species(std::string species_name) const;
+		/********************
+		Add a species
+		********************/
 
-		// If Wp
-		// Add a visible->hidden unit connection
+		void add_species(Species *sp);
+		void add_species(HiddenSpecies *hsp);
+		void add_species(Species *sp1, Species *sp2);
+		void add_species(Species *sp1, Species *sp2, Species *sp3);
+		void add_species(Species *sp, HiddenSpecies *hsp);
+
+		/********************
+		If W: Add a visible->hidden unit connection
+		********************/
+
 		void add_visible_hidden_connection(Site *sptr, HiddenUnit *hup);
 
-		// If Bp
-		// Add a hidden unit to monitor
+		/********************
+		If B: Add a hidden unit to monitor
+		********************/
+
 		void add_hidden_unit(HiddenUnit *hup);
 
-		// Set/check basis func pointer
+		/********************
+		Set/check basis func pointer
+		********************/
+
 		void set_basis_func_ptr(BasisFunc* bf);
 		bool is_bf(BasisFunc *bf);
 
-		// Set IC
+		/********************
+		Set IC
+		********************/
+
 		void set_init_cond(double val);
 
-		// Validate setup
+		/********************
+		Set the pointer to the optimization time
+		********************/
+
+		void set_t_opt_ptr(int *t_opt_ptr);
+
+		/********************
+		Validate setup
+		********************/
+
 		void validate_setup() const;
 
-		// Getters/setters
+		/********************
+		Getters
+		********************/
+
+		// At the current time in the optimization
+		double get() const;
+		// At a specific time
 		double get_at_time(int it) const;
 
-		// Calculate the next step
+		/********************
+		Get species involved
+		********************/
+
+		std::vector<Species*> get_species_bias() const;
+		std::vector<HiddenSpecies*> get_species_hidden_bias() const;
+		std::vector<Species2> get_species_doublet() const;
+		std::vector<Species3> get_species_triplet() const;
+		std::vector<SpeciesVH> get_species_conn() const;
+
+		/********************
+		Calculate the next step
+		********************/
+
 		// Returns false if new point is out of grid
 		bool calculate_at_time(int it_next, double dt);
 
-		// Moments from lattice
+		/********************
+		Moments from lattice
+		********************/
+
 		enum MomentType {AWAKE, ASLEEP};
 		void moments_reset();
 		void moments_retrieve_at_time(MomentType moment_type, int it);
@@ -129,7 +186,10 @@ namespace DynamicBoltzmann {
 		double moments_diff_at_time(int it);
 		double moments_get_at_time(MomentType moment_type, int it) const;
 
-		// Write into an ofstream
+		/********************
+		Write into an ofstream
+		********************/
+
 		void write_vals(std::string dir, int idx_opt_step, std::vector<int> idxs, int n_t_traj) const;
 		void write_moments(std::string dir, int idx_opt_step, std::vector<int> idxs, int n_t_traj) const;
 	};

@@ -29,15 +29,10 @@
 namespace DynamicBoltzmann {
 
 	/****************************************
-	Forward declare
-	****************************************/
-
-	class IxnParam;
-	class HiddenSpecies;
-
-	/****************************************
 	Doublets, Triplets of Species ptrs
 	****************************************/
+
+	class HiddenSpecies;
 
 	struct Species2 {
 		Species *sp1;
@@ -69,6 +64,8 @@ namespace DynamicBoltzmann {
 	Species
 	****************************************/
 	
+	class IxnParam;
+
 	class Species {
 
 	private:

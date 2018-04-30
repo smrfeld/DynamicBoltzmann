@@ -13,33 +13,20 @@ namespace DynamicBoltzmann {
 	Hidden unit
 	************************************/
 
-	// Forward declare a site
-	class Site;
-
 	class HiddenUnit
 	{
 	private:
 
-		// Number of sites I am connected to
-		int _n_conn;
+		// Connections
+		std::vector<ConnectionVH*> _conn;
 
-		// Sites I am connected to
-		std::vector<Site*> _conn;
+		// Biases
+		std::map<HiddenSpecies*, std::vector<IxnParamTraj*> > _bias;
 
-		// Species that I love
-		Species *_sp;
-
-		// Value
-		double _val;
-
-		// Bias interaction parameter
-		IxnParamTraj *_bias;
-
-		// Pointer to the current time in the optimization
-		int *_t_opt_ptr;
-
-		// Activation function
-		double _sigma(double x) const;
+		// Probs
+		std::vector<HiddenSpecies*> _sp_possible;
+		std::map<HiddenSpecies*, double> _probs;
+		double _prob_empty;
 
 		// Constructor helpers
 		void _clean_up();
@@ -52,7 +39,7 @@ namespace DynamicBoltzmann {
 		Constructor
 		********************/
 
-		HiddenUnit(std::vector<Site*> conn, Species *sp);
+		HiddenUnit();
 		HiddenUnit(const HiddenUnit& other);
 		HiddenUnit(HiddenUnit&& other);
 		HiddenUnit& operator=(const HiddenUnit& other);
@@ -60,28 +47,47 @@ namespace DynamicBoltzmann {
 		~HiddenUnit();	
 
 		/********************
+		Add possible species
+		********************/
+
+		void add_hidden_species_possibility(HiddenSpecies* sp);
+
+		/********************
+		Add a connection
+		********************/
+
+		void add_visible_hidden_conn(ConnectionVH* conn);
+
+		/********************
+		Print connections
+		********************/
+
+		void print_conns(bool newline) const;
+
+		/********************
 		Getters
 		********************/
 
-		double get() const;
+		// Nullptr for prob of empty
+		double get_prob(HiddenSpecies *hsp) const;
 
 		/********************
-		Set the time ptr
+		Add a bias
 		********************/
 
-		void set_t_opt_ptr(int *t_opt_ptr);
-
-		/********************
-		Set the bias
-		********************/
-
-		void set_bias(IxnParamTraj *ip);
+		void add_bias(IxnParamTraj *ip);
 
 		/********************
 		Activate
 		********************/
 
 		void activate(bool binary); 
+
+		/********************
+		Binarize
+		********************/
+
+		void binarize();
 
 	};
 };

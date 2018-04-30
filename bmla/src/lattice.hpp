@@ -61,7 +61,6 @@ namespace DynamicBoltzmann {
 	Class to hold a connection from visible to hidden
 	****************************************/
 
-	class Lattice;
 	class HiddenUnit;
 
 	class ConnectionVH {

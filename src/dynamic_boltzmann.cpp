@@ -185,6 +185,12 @@ namespace DynamicBoltzmann {
 				exit(EXIT_FAILURE);
 			};
 			add_species_J(species[0],species[1]);
+		} else if (type == K) {
+			if (species.size() != 3) {
+				std::cerr << "Error! must be 3 species for K" << std::endl;
+				exit(EXIT_FAILURE);
+			};
+			add_species_K(species[0],species[1],species[2]);
 		} else if (type == W) {
 			if (species.size() != 2) {
 				std::cerr << "Error! must be 2 species for W" << std::endl;
@@ -196,7 +202,7 @@ namespace DynamicBoltzmann {
 	Dim::Impl::Impl(std::string name, DimType type, std::vector<std::vector<std::string>> species, std::vector<std::string> basis_func_dims, double min, double max, int n, double init) {
 		// Check type
 		if (type == B || type != H) {
-			std::cerr << "Error! Only for J or W." << std::endl;
+			std::cerr << "Error! Only for J or K or W." << std::endl;
 			exit(EXIT_FAILURE);
 		};
 		_shared_constructor(name, type, basis_func_dims, min, max, n, init);
@@ -210,6 +216,14 @@ namespace DynamicBoltzmann {
 					exit(EXIT_FAILURE);
 				};
 				add_species_J(s_pair[0],s_pair[1]);
+			};
+		} else if (type == K) {
+			for (auto s_triplet: species) {
+				if (s_triplet.size() != 3) {
+					std::cerr << "Error! must be 3 species for K" << std::endl;
+					exit(EXIT_FAILURE);
+				};
+				add_species_K(s_triplet[0],s_triplet[1],s_triplet[2]);
 			};
 		} else if (type == W) {
 			for (auto s_pair: species) {
@@ -337,6 +351,13 @@ namespace DynamicBoltzmann {
 		};
 		return _species_multiple;
 	};
+	std::vector<std::vector<std::string>> Dim::Impl::get_species_K() const {
+		if (_type != K) {
+			std::cerr << "Error! Requested species but not of type K." << std::endl;
+			exit(EXIT_FAILURE);
+		};
+		return _species_multiple;
+	};
 	std::vector<std::vector<std::string>> Dim::Impl::get_species_W() const {
 		if (_type != W) {
 			std::cerr << "Error! Requested species but not of type W." << std::endl;
@@ -381,6 +402,15 @@ namespace DynamicBoltzmann {
 		};
 		_any_species = false;
 		_species_multiple.push_back(std::vector<std::string>({species1,species2}));
+	};
+	void Dim::Impl::add_species_K(std::string species1, std::string species2, std::string species3) {
+		// Check type
+		if (_type != J) {
+			std::cerr << "Error! Not K." << std::endl;
+			exit(EXIT_FAILURE);
+		};
+		_any_species = false;
+		_species_multiple.push_back(std::vector<std::string>({species1,species2,species3}));
 	};
 	void Dim::Impl::add_species_W(std::string species_visible, std::string species_hidden) {
 		// Check type
@@ -483,6 +513,9 @@ namespace DynamicBoltzmann {
 	std::vector<std::vector<std::string>> Dim::get_species_J() const {
 		return _impl->get_species_J();
 	};
+	std::vector<std::vector<std::string>> Dim::get_species_K() const {
+		return _impl->get_species_K();
+	};
 	std::vector<std::vector<std::string>> Dim::get_species_W() const {
 		return _impl->get_species_W();
 	};
@@ -505,6 +538,9 @@ namespace DynamicBoltzmann {
 	};
 	void Dim::add_species_J(std::string species1, std::string species2) {
 		_impl->add_species_J(species1,species2);
+	};
+	void Dim::add_species_K(std::string species1, std::string species2, std::string species3) {
+		_impl->add_species_K(species1,species2,species3);
 	};
 	void Dim::add_species_W(std::string species_visible, std::string species_hidden) {
 		_impl->add_species_W(species_visible,species_hidden);
@@ -561,12 +597,17 @@ namespace DynamicBoltzmann {
 		// List of hidden units, and flag if they exist
 		bool _hidden_layer_exists;
 		std::list<HiddenUnit> _hidden_units;
+		std::list<ConnectionVH> _conn_vh;
+
+		// Counters
+		std::list<Counter> _counters;
 
 		// Time dimension
 		Grid _time;
 
 		// Species present
 		std::list<Species> _species;
+		std::list<HiddenSpecies> _hidden_species;
 
 		// Number of steps in this nu solution
 		int _n_t_soln;
@@ -578,16 +619,38 @@ namespace DynamicBoltzmann {
 		Lattice _latt;
 
 		// Add a hidden unit
-		void _add_hidden_unit(std::vector<Site*> conns, std::string species);
+		void _add_hidden_unit(std::vector<std::string> species_possible, std::vector<Site*> conn_sites, std::vector<std::string> w_params, std::vector<std::string> b_params);
+		std::vector<Site*> _get_sites(std::vector<int> &lattice_idxs);
+		std::vector<Site*> _get_sites(std::vector<std::vector<int>> &lattice_idxs);
 
 		// Search functions
-		Species* _find_species(std::string name, bool enforce_success=true);
-		IxnParamTraj* _find_ixn_param_by_name(std::string name, bool enforce_success=true);
-		IxnParamTraj* _find_ixn_param_b_by_species(std::string species_name, bool enforce_success=true);
-		IxnParamTraj* _find_ixn_param_j_by_species(std::string species_name_1, std::string species_name_2, bool enforce_success=true);
-		IxnParamTraj* _find_ixn_param_w_by_species(std::string species_name, bool enforce_success=true);
-		BasisFunc* _find_basis_func(std::string name, bool enforce_success=true);
-		VarTermTraj* _find_var_term(std::string name, bool enforce_success=true);
+		Species* _not_nullptr(Species* ptr);
+		HiddenSpecies* _not_nullptr(HiddenSpecies *ptr);
+		IxnParamTraj* _not_nullptr(IxnParamTraj* ptr);
+		BasisFunc* _not_nullptr(BasisFunc* ptr);
+		VarTermTraj* _not_nullptr(VarTermTraj* ptr);
+		Counter* _not_nullptr(Counter* ptr);
+		// Find species
+		Species* _find_species(std::string name);
+		// Find hidden species
+		HiddenSpecies* _find_hidden_species(std::string name);
+		// Find ixn param
+		IxnParamTraj* _find_ixn_param(std::string name);
+		// Find basis function
+		BasisFunc* _find_basis_func(std::string name);
+		// Find var term traj
+		VarTermTraj* _find_var_term(std::string name);
+		// Find counter
+		Counter* _find_ctr_by_species(std::string s);
+		Counter* _find_ctr_by_species(std::string s1, std::string s2);
+		Counter* _find_ctr_by_species(std::string s1, std::string s2, std::string s3);
+		Counter* _find_ctr_by_species(std::string s1, std::string s2, std::string s3, std::string s4);
+
+		// Add a counter for some species or nns
+		void _add_counter(std::string s);
+		void _add_counter(std::string s1, std::string s2);
+		void _add_counter(std::string s1, std::string s2, std::string s3);
+		void _add_counter(std::string s1, std::string s2, std::string s3, std::string s4);
 
 		// Constructor helpers
 		void _clean_up();
@@ -601,7 +664,9 @@ namespace DynamicBoltzmann {
 		********************/
 
 		Impl(std::vector<Dim> dims, std::vector<std::string> species_visible, std::vector<std::string> species_hidden, double t_max, int n_t, int box_length, int lattice_dim);
+		Impl(const Impl& other);
 		Impl(Impl&& other);
+	    Impl& operator=(const Impl& other);
 	    Impl& operator=(Impl&& other);
 		~Impl();
 
@@ -610,9 +675,9 @@ namespace DynamicBoltzmann {
 		********************/
 
 		// Any dim
-		void add_hidden_unit(std::vector<std::vector<int>> lattice_idxs, std::string species);
+		void add_hidden_unit(std::vector<std::string> species_possible, std::vector<std::vector<int>> lattice_idxs, std::vector<std::string> w_params, std::vector<std::string> b_params);
 		// 1D specific
-		void add_hidden_unit(std::vector<int> lattice_idxs, std::string species);
+		void add_hidden_unit(std::vector<std::string> species_possible, std::vector<int> lattice_idxs, std::vector<std::string> w_params, std::vector<std::string> b_params);
 
 		/********************
 		Validate setup by printing
@@ -703,6 +768,13 @@ namespace DynamicBoltzmann {
 
 
 
+
+
+
+
+
+
+
 	/****************************************
 	OptProblem - IMPLEMENTATION DEFINITIONS
 	****************************************/
@@ -750,105 +822,121 @@ namespace DynamicBoltzmann {
 		};
 		if (DIAG_SETUP) { std::cout << "ok." << std::endl; };
 
-		// Tell the lattice about what dims exist
-		if (DIAG_SETUP) { std::cout << "Telling lattice what dims exist..." << std::flush; };
+		// Check if a hidden layer exists
+		if (DIAG_SETUP) { std::cout << "Checking if hidden layer exists..." << std::flush; };
 		for (auto const &d: dims) {
-			if (d.type()==H) {
-				_latt.set_exists_h(true);
-			} else if (d.type()==J) {
-				_latt.set_exists_j(true);
-			} else if (d.type()==W) {
+			if (d.type()==W || d.type()==B) {
 				_hidden_layer_exists = true;
-				_latt.set_exists_w(true);
-			} else if (d.type()==B) {
-				_hidden_layer_exists = true;
-				// No need to tell lattice, since it only affects hidden unit activation and not sampling
+				break;
 			};
 		};
 		if (DIAG_SETUP) { std::cout << "ok." << std::endl; };
 
-		// Create the visible species
+		// Create the visible and hidden species
 		if (DIAG_SETUP) { std::cout << "Create species..." << std::flush; };
 		for (auto const &s: species_visible) {
 			_species.push_back(Species(s));
 
 			// Add to the lattice
-			_latt.add_species(&(_species.back()));
-
-			// Add the optimization time
-			_species.back().set_opt_time_ptr(&_t_opt);
+			_latt.add_species_possibility(&(_species.back()));
 		};
+		for (auto const &s: species_hidden) {
+			_hidden_species.push_back(HiddenSpecies(s));
+		};		
 		if (DIAG_SETUP) { std::cout << "ok." << std::endl; };
 
 		// Create the interaction params
 		if (DIAG_SETUP) { std::cout << "Create ixn params..." << std::flush; };
-		std::vector<std::string> s_names;
-		std::vector<std::vector<std::string>> ss_names;
-		for (auto const &d: dims) 
-		{
-			if (d.type()==H) {
-				s_names = d.get_species_h();
-				_ixn_params.push_back(IxnParamTraj(d.name(),Hp,_find_species(s_names[0]),d.min(),d.max(),d.n(),d.init(),n_t));
-			} else if (d.type()==J) { 
-				ss_names = d.get_species_J();
-				_ixn_params.push_back(IxnParamTraj(d.name(),Jp,_find_species(ss_names[0][0]),_find_species(ss_names[0][1]),d.min(),d.max(),d.n(),d.init(),n_t));
-			} else if (d.type()==W) { 
-				ss_names = d.get_species_W();
-				_ixn_params.push_back(IxnParamTraj(d.name(),Wp,_find_species(ss_names[0][0]),d.min(),d.max(),d.n(),d.init(),n_t));
-			} else if (d.type()==B) {
-				s_names = d.get_species_b();
-				_ixn_params.push_back(IxnParamTraj(d.name(),Bp,_find_species(s_names[0]),d.min(),d.max(),d.n(),d.init(),n_t));
-			};
-		};
-		if (DIAG_SETUP) { std::cout << "ok." << std::endl; };
+		Species *sp,*sp1,*sp2,*sp3;
+		HiddenSpecies *sph;
+		for (auto d=dims.begin(); d!=dims.end(); d++) {
 
-		// Add the interaction params to the species
-		if (DIAG_SETUP) { std::cout << "Add ixn params to species..." << std::flush; };
-		Species *sp=nullptr, *sp1=nullptr, *sp2=nullptr;
-		IxnParamTraj *ip_ptr=nullptr;
-		for (auto const &d: dims) {
-			ip_ptr = _find_ixn_param_by_name(d.name());
-			if (d.type()==H) {
-				s_names = d.get_species_h();
-				sp = _find_species(s_names[0]);
-				sp->add_h_ptr(ip_ptr);
-			} else if (d.type()==J) {
-				ss_names = d.get_species_J();
-				sp1 = _find_species(ss_names[0][0]);
-				sp2 = _find_species(ss_names[0][1]);
-				sp1->add_j_ptr(sp2,ip_ptr);
-				sp2->add_j_ptr(sp1,ip_ptr);
-			};
-			// No need to tell species about W or b
-		};
-		if (DIAG_SETUP) { std::cout << "ok." << std::endl; };
+			if (d->type()==H) {
 
+				// Create
+				_ixn_params.push_back(IxnParamTraj(d->name(),Hp,d->min(),d->max(),d->n(),d->init(),n_t));
 
-		// Ensure the J of the species are complete - if there is no ixn param that descripes the coupling, add a nullptr entry in the dictionary - later check if nullptr, then return 0
-		// I think this is faster - otherwise there would be no reason to do it
-		if (DIAG_SETUP) { std::cout << "Ensuring J are complete..." << std::flush; };
-		for (auto itsp1 = _species.begin(); itsp1!=_species.end(); itsp1++) {
-			for (auto itsp2 = _species.begin(); itsp2!=_species.end(); itsp2++) {
-				ip_ptr = _find_ixn_param_j_by_species(itsp1->name(), itsp2->name(), false);
-				if (!ip_ptr) {
-					// It's null; add to both
-					itsp1->add_j_ptr(&(*itsp2),nullptr);
-					itsp2->add_j_ptr(&(*itsp1),nullptr);
+				for (auto s: d->get_species_h()) {
+					// Find and add the species
+					sp = _not_nullptr(_find_species(s));
+					_ixn_params.back().add_species(sp);
+					// Add ixn to the species
+					sp->add_h_ptr(&_ixn_params.back());
+					// Make sure we have a counter
+					_add_counter(s);					
 				};
+
+			} else if (d->type()==J) { 
+
+				// Create
+				_ixn_params.push_back(IxnParamTraj(d->name(),Jp,d->min(),d->max(),d->n(),d->init(),n_t));
+
+				for (auto s: d->get_species_J()) {
+					// Find and add the species
+					sp1 = _not_nullptr(_find_species(s[0]));
+					sp2 = _not_nullptr(_find_species(s[1]));
+					_ixn_params.back().add_species(sp1,sp2);
+					// Add ixn to the species
+					sp1->add_j_ptr(sp2,&_ixn_params.back());
+					sp2->add_j_ptr(sp1,&_ixn_params.back());
+					// Make sure we have a counter
+					_add_counter(s[0],s[1]);					
+				};
+
+			} else if (d->type()==K) {
+
+				// Check that Lattice dim is 1 - only 1 is allowed!
+				if (lattice_dim != 1) {
+					std::cerr << "Error: triplets are currently only supported for lattice of dim 1" << std::endl;
+					exit(EXIT_FAILURE);
+				};
+
+				// Create
+				_ixn_params.push_back(IxnParamTraj(d->name(),Kp,d->min(),d->max(),d->n(),d->init(),n_t));
+
+				for (auto s: d->get_species_K()) {
+					// Find and add the species
+					sp1 = _not_nullptr(_find_species(s[0]));
+					sp2 = _not_nullptr(_find_species(s[1]));
+					sp3 = _not_nullptr(_find_species(s[2]));
+					_ixn_params.back().add_species(sp1,sp2,sp3);
+					// Add ixn to the species
+					sp1->add_k_ptr(sp2,sp3,&_ixn_params.back());
+					sp2->add_k_ptr(sp1,sp3,&_ixn_params.back());
+					sp3->add_k_ptr(sp1,sp2,&_ixn_params.back());
+					// Make sure we have a counter
+					_add_counter(s[0],s[1],s[2]);			
+				};
+
+			} else if (d->type()==W) { 
+
+				// Create
+				_ixn_params.push_back(IxnParamTraj(d->name(),Wp,d->min(),d->max(),d->n(),d->init(),n_t));
+
+				for (auto s: d->get_species_W()) {
+					// Find and add the species
+					sp = _not_nullptr(_find_species(s[0]));
+					sph = _not_nullptr(_find_hidden_species(s[1]));
+					_ixn_params.back().add_species(sp,sph);
+
+					// No need to add to species - handled by ConnectionVH class
+				};
+
+			} else if (d->type()==B) {
+
+				// Create
+				_ixn_params.push_back(IxnParamTraj(d->name(),Bp,d->min(),d->max(),d->n(),d->init(),n_t));
+
+				for (auto s: d->get_species_b()) {
+					// Find and add the species
+					sph = _not_nullptr(_find_hidden_species(s));
+					_ixn_params.back().add_species(sph);
+
+					// No need to add to species - handled by ConnectionVH class
+				};
+
 			};
 		};
-		if (DIAG_SETUP) { std::cout << "ok." << std::endl; };
-
-		// Initialize counting structures on species
-		if (DIAG_SETUP) { std::cout << "Init counting on species..." << std::flush; };
-		std::vector<Species*> sp_vec;
-		for (auto it = _species.begin(); it != _species.end(); it++) {
-			sp_vec.push_back(&(*it));
-		};
-		for (auto it = _species.begin(); it != _species.end(); it++) {
-			it->count_nn_for_species(sp_vec);
-		};
-		if (DIAG_SETUP) { std::cout << "ok." << std::endl; };
 
 		// Create the basis functions
 		if (DIAG_SETUP) { std::cout << "Create basis funcs..." << std::flush; };
@@ -857,7 +945,7 @@ namespace DynamicBoltzmann {
 			// Find the basis func dimensions
 			bf_ips.clear();
 			for (auto bfd: d.basis_func_dims()) {
-				bf_ips.push_back(_find_ixn_param_by_name(bfd));
+				bf_ips.push_back(_find_ixn_param(bfd));
 			};
 			// Make the basis function
 			_bfs.push_back(BasisFunc("F_"+d.name(),bf_ips));
@@ -886,12 +974,12 @@ namespace DynamicBoltzmann {
 				// Find the basis func dimensions
 				bf_ips.clear();
 				for (auto bfd: denom.basis_func_dims()) {
-					bf_ips.push_back(_find_ixn_param_by_name(bfd));
+					bf_ips.push_back(_find_ixn_param(bfd));
 				};
 				// Find the basis func
 				bf_ptr = _find_basis_func("F_"+denom.name());
 				// Find the interaction param
-				ixn_param_ptr = _find_ixn_param_by_name(num.name());
+				ixn_param_ptr = _find_ixn_param(num.name());
 				// Find the basis func corresponding to the numerator
 				num_bf_ptr = _find_basis_func("F_"+num.name());
 				// Create the var term
@@ -910,7 +998,7 @@ namespace DynamicBoltzmann {
 				// Find the ixn params that are arguments to the num's basis func
 				bf_ips.clear();
 				for (auto bfd: num.basis_func_dims()) {
-					bf_ips.push_back(_find_ixn_param_by_name(bfd));
+					bf_ips.push_back(_find_ixn_param(bfd));
 				};
 				// Find the variational term
 				vt_ptr = _find_var_term("var_"+num.name()+"_wrt_"+denom->name());
@@ -934,15 +1022,23 @@ namespace DynamicBoltzmann {
 		};
 		if (DIAG_SETUP) { std::cout << "ok." << std::endl; };
 
-
 	};
-
-	OptProblem::Impl::Impl(Impl&& other) : _time(other._time)
+	OptProblem::Impl::Impl(const Impl& other) : _time(other._time), _latt(other._latt)
+	{
+		_copy(other);
+	};
+	OptProblem::Impl::Impl(Impl&& other) : _time(other._time), _latt(other._latt)
 	{
 		_copy(other);
 		other._reset();
 	};
-
+    OptProblem::Impl& OptProblem::Impl::Impl::operator=(const Impl& other) {
+		if (this != &other) {
+			_clean_up();
+			_copy(other);
+		};
+		return *this;
+    };
 	OptProblem::Impl& OptProblem::Impl::Impl::operator=(Impl&& other)
 	{
 		if (this != &other)
@@ -974,7 +1070,9 @@ namespace DynamicBoltzmann {
 		_var_terms.clear();
 		_hidden_layer_exists = false;
 		_hidden_units.clear();
+		_conn_vh.clear();
 		_species.clear();
+		_hidden_species.clear();
 		_n_t_soln = 0;
 		_t_opt = 0;
 	};
@@ -987,20 +1085,21 @@ namespace DynamicBoltzmann {
 		_var_terms = other._var_terms;
 		_hidden_layer_exists = other._hidden_layer_exists;
 		_hidden_units = other._hidden_units;
+		_conn_vh = other._conn_vh;
 		_time = other._time;
 		_species = other._species;
+		_hidden_species = other._hidden_species;
 		_n_t_soln = other._n_t_soln;
 		_t_opt = other._t_opt;
 		_latt = other._latt;
 	};
 
 	/********************
-	Set properties
+	Find hidden unit connections
 	********************/
 
-	void OptProblem::Impl::add_hidden_unit(std::vector<std::vector<int>> lattice_idxs, std::string species) 
-	{
-		// Find sites indicated by connections
+	// Any dim
+	std::vector<Site*> OptProblem::Impl::_get_sites(std::vector<std::vector<int>> &lattice_idxs) {
 		std::vector<Site*> conns;
 		for (auto c: lattice_idxs) {
 			if (c.size() != _latt.dim()) {
@@ -1015,21 +1114,98 @@ namespace DynamicBoltzmann {
 				conns.push_back(_latt.get_site(c[0],c[1],c[2]));
 			};
 		};
-
-		// Add
-		_add_hidden_unit(conns,species);
+		return conns;
 	};
-	void OptProblem::Impl::add_hidden_unit(std::vector<int> lattice_idxs, std::string species) 
-	{
-		// Find sites indicated by connections
+
+	// 1D specific
+	std::vector<Site*> OptProblem::Impl::_get_sites(std::vector<int> &lattice_idxs) {
 		std::vector<Site*> conns;
 		for (auto c: lattice_idxs) {
 			conns.push_back(_latt.get_site(c));
 		};
-
-		// Add
-		_add_hidden_unit(conns,species);
+		return conns;
 	};
+
+	/********************
+	Add hidden units
+	********************/
+
+	/********************
+	Add hidden unit
+	********************/
+
+	void OptProblem::Impl::add_hidden_unit(std::vector<std::string> species_possible, std::vector<std::vector<int>> lattice_idxs, std::vector<std::string> w_params, std::vector<std::string> b_params) {
+		// Find sites indicated by connections
+		std::vector<Site*> conns = _get_sites(lattice_idxs);
+		// Make
+		_add_hidden_unit(species_possible, conns, w_params, b_params);
+	};
+	void OptProblem::Impl::add_hidden_unit(std::vector<std::string> species_possible, std::vector<int> lattice_idxs, std::vector<std::string> w_params, std::vector<std::string> b_params) {
+		// Find sites indicated by connections
+		std::vector<Site*> conns = _get_sites(lattice_idxs);
+		// Make
+		_add_hidden_unit(species_possible, conns, w_params, b_params);
+	};
+
+	/********************
+	Add hidden unit internal
+	********************/
+
+	void OptProblem::Impl::_add_hidden_unit(std::vector<std::string> species_possible, std::vector<Site*> conn_sites, std::vector<std::string> w_params, std::vector<std::string> b_params) {
+
+		// Find the ixn params listed
+		std::vector<IxnParamTraj*> ip_w;
+		std::vector<IxnParamTraj*> ip_b;
+		IxnParamTraj *ip;
+		for (auto w: w_params) {
+			ip = _not_nullptr(_find_ixn_param(w));
+			ip_w.push_back(ip);
+		};
+		for (auto b: b_params) {
+			ip = _not_nullptr(_find_ixn_param(b));
+			ip_b.push_back(ip);
+		};
+
+		// Make hidden unit
+		_hidden_units.push_back(HiddenUnit());
+		HiddenUnit* hup = &_hidden_units.back();
+
+		// Add all allowed hidden species to this hidden unit
+		HiddenSpecies *hsp;
+		for (auto hsp_name: species_possible) {
+			hsp = _not_nullptr(_find_hidden_species(hsp_name));
+			hup->add_hidden_species_possibility(hsp);
+		};
+
+		// Add the biases to the hidden units and vice versa
+		for (auto b: ip_b) {
+			// bias to hidden unit
+			hup->add_bias(b);
+			// hidden unit to bias
+			b->add_hidden_unit(hup);
+		};
+
+		// Make the connections
+		ConnectionVH *cvh;
+		for (auto s: conn_sites) {
+			// Make the connection
+			_conn_vh.push_back(ConnectionVH(s,hup,ip_w));
+			cvh = &_conn_vh.back();
+
+			// Add the connection to the hidden unit
+			hup->add_visible_hidden_conn(cvh);
+
+			// Add the connection to the lattice site
+			s->add_visible_hidden_conn(cvh);
+
+			// Add to ixn params
+			for (auto w: ip_w) {
+				w->add_visible_hidden_connection(s,hup);
+			};
+		};
+	};
+
+	/*
 	void OptProblem::Impl::_add_hidden_unit(std::vector<Site*> conns, std::string species)
 	{
 		// Find the species
@@ -1063,6 +1239,7 @@ namespace DynamicBoltzmann {
 			_hidden_units.back().set_t_opt_ptr(&_t_opt);
 		};
 	};
+	*/
 
 	/********************
 	Validate setup
@@ -1071,7 +1248,7 @@ namespace DynamicBoltzmann {
 	void OptProblem::Impl::validate_setup() const {
 		std::cout << "------------------------" << std::endl;
 		for (auto it: _species) {
-			it.validate_setup();
+			//it.validate_setup();
 		};
 		for (auto it: _ixn_params) {
 			it.validate_setup();
@@ -1375,14 +1552,14 @@ namespace DynamicBoltzmann {
 
 						if (cd_step != n_cd_steps-1) {
 							if (options.asleep_visible_are_binary) {
-								_latt.sample();
+								_latt.sample(_t_opt);
 							} else {
 								std::cerr << "Error! Probabilistic asleep visible units not supported yet!" << std::endl;
 								exit(EXIT_FAILURE);
 							};
 						} else {
 							if (options.asleep_final_visible_are_binary) {
-								_latt.sample();
+								_latt.sample(_t_opt);
 							} else {
 								std::cerr << "Error! Probabilistic asleep visible units not supported yet!" << std::endl;
 								exit(EXIT_FAILURE);
@@ -1690,14 +1867,14 @@ namespace DynamicBoltzmann {
 
 						if (cd_step != n_cd_steps-1) {
 							if (options.asleep_visible_are_binary) {
-								_latt.sample();
+								_latt.sample(_t_opt);
 							} else {
 								std::cerr << "Error! Probabilistic asleep visible units not supported yet!" << std::endl;
 								exit(EXIT_FAILURE);
 							};
 						} else {
 							if (options.asleep_final_visible_are_binary) {
-								_latt.sample();
+								_latt.sample(_t_opt);
 							} else {
 								std::cerr << "Error! Probabilistic asleep visible units not supported yet!" << std::endl;
 								exit(EXIT_FAILURE);
@@ -1793,7 +1970,7 @@ namespace DynamicBoltzmann {
 					sval += frag;
 
 					// Find the ixn param with this name
-					ip = _find_ixn_param_by_name(sname);
+					ip = _find_ixn_param(sname);
 					ip->set_init_cond(std::stod(sval));
 
 					// Reset
@@ -1872,101 +2049,194 @@ namespace DynamicBoltzmann {
 	Search functions
 	********************/
 
-	Species* OptProblem::Impl::_find_species(std::string name, bool enforce_success) {
+	Species* OptProblem::Impl::_not_nullptr(Species* ptr) {
+		if (!ptr) {
+			std::cerr << "ERROR: could not find species!" << std::endl;
+			exit(EXIT_FAILURE);
+		};
+		return ptr;
+	};
+	HiddenSpecies* OptProblem::Impl::_not_nullptr(HiddenSpecies* ptr) {
+		if (!ptr) {
+			std::cerr << "ERROR: could not find hidden species!" << std::endl;
+			exit(EXIT_FAILURE);
+		};
+		return ptr;
+	};
+	IxnParamTraj* OptProblem::Impl::_not_nullptr(IxnParamTraj* ptr) {
+		if (!ptr) {
+			std::cerr << "ERROR: could not find IxnParamTraj!" << std::endl;
+			exit(EXIT_FAILURE);
+		};
+		return ptr;
+	};
+	BasisFunc* OptProblem::Impl::_not_nullptr(BasisFunc* ptr) {
+		if (!ptr) {
+			std::cerr << "ERROR: could not find BasisFunc!" << std::endl;
+			exit(EXIT_FAILURE);
+		};
+		return ptr;
+	};
+	VarTermTraj* OptProblem::Impl::_not_nullptr(VarTermTraj* ptr) {
+		if (!ptr) {
+			std::cerr << "ERROR: could not find VarTermTraj!" << std::endl;
+			exit(EXIT_FAILURE);
+		};
+		return ptr;
+	};
+	HiddenSpecies* OptProblem::Impl::_find_hidden_species(std::string name) {
+		for (auto it=_hidden_species.begin(); it!=_hidden_species.end(); it++) {
+			if (it->name() == name) {
+				return &*it;
+			};
+		};
+		return nullptr;
+	};
+	Species* OptProblem::Impl::_find_species(std::string name) {
 		for (auto it=_species.begin(); it!=_species.end(); it++) {
 			if (it->name() == name) {
 				return &*it;
 			};
 		};
-		if (enforce_success) {
-			std::cerr << "ERROR: could not find species: " << name << std::endl;
-			exit(EXIT_FAILURE);
-		} else {
-			return nullptr;
-		};
+		return nullptr;
 	};
-	IxnParamTraj* OptProblem::Impl::_find_ixn_param_by_name(std::string name, bool enforce_success) {
+	IxnParamTraj* OptProblem::Impl::_find_ixn_param(std::string name) {
 		for (auto it=_ixn_params.begin(); it!=_ixn_params.end(); it++) {
 			if (it->name() == name) {
 				return &*it;
 			};
 		};
-		if (enforce_success) {
-			std::cerr << "ERROR: could not find ixn param: " << name << std::endl;
-			exit(EXIT_FAILURE);
-		} else {
-			return nullptr;
-		};
+		return nullptr;
 	};
-
-	IxnParamTraj* OptProblem::Impl::_find_ixn_param_b_by_species(std::string species_name, bool enforce_success) {
-		for (auto it=_ixn_params.begin(); it!=_ixn_params.end(); it++) {
-			if (it->is_b_with_species(species_name)) {
-				return &*it;
-			};
-		};
-		if (enforce_success) {
-			std::cerr << "ERROR: could not find visible-to-hidden ixn param for species: " << species_name << std::endl;
-			exit(EXIT_FAILURE);
-		} else {
-			return nullptr;
-		};
-	};
-	IxnParamTraj* OptProblem::Impl::_find_ixn_param_j_by_species(std::string species_name_1, std::string species_name_2, bool enforce_success) {
-		for (auto it=_ixn_params.begin(); it!=_ixn_params.end(); it++) {
-			if (it->is_j_with_species(species_name_1,species_name_2)) {
-				return &*it;
-			};
-		};
-		if (enforce_success) {
-			std::cerr << "ERROR: could not find J ixn param for species: " << species_name_1 << " " << species_name_2 << std::endl;
-			exit(EXIT_FAILURE);
-		} else {
-			return nullptr;
-		};
-	};
-	IxnParamTraj* OptProblem::Impl::_find_ixn_param_w_by_species(std::string species_name, bool enforce_success) {
-		for (auto it=_ixn_params.begin(); it!=_ixn_params.end(); it++) {
-			if (it->is_w_with_species(species_name)) {
-				return &*it;
-			};
-		};
-		if (enforce_success) {
-			std::cerr << "ERROR: could not find visible-to-hidden ixn param for species: " << species_name << std::endl;
-			exit(EXIT_FAILURE);
-		} else {
-			return nullptr;
-		};
-	};
-	BasisFunc* OptProblem::Impl::_find_basis_func(std::string name, bool enforce_success) {
+	BasisFunc* OptProblem::Impl::_find_basis_func(std::string name) {
 		for (auto it=_bfs.begin(); it!=_bfs.end(); it++) {
 			if (it->name() == name) {
 				return &*it;
 			};
 		};
-		if (enforce_success) {
-			std::cerr << "ERROR: could not find basis func: " << name << std::endl;
-			exit(EXIT_FAILURE);
-		} else {
-			return nullptr;
-		};
+		return nullptr;
 	};
-	VarTermTraj* OptProblem::Impl::_find_var_term(std::string name, bool enforce_success) {
+	VarTermTraj* OptProblem::Impl::_find_var_term(std::string name) {
 		for (auto it=_var_terms.begin(); it!=_var_terms.end(); it++) {
 			if (it->name() == name) {
 				return &*it;
 			};
 		};
-		if (enforce_success) {
-			std::cerr << "ERROR: could not find var term: " << name << std::endl;
-			exit(EXIT_FAILURE);
-		} else {
-			return nullptr;
+		return nullptr;
+	};
+	Counter* OptProblem::Impl::_find_ctr_by_species(std::string s) {
+		for (auto it=_counters.begin(); it!=_counters.end(); it++) {
+			if (it->is_counting_species(s)) {
+				return &*it;
+			};
 		};
+		return nullptr;
+	};
+	Counter* OptProblem::Impl::_find_ctr_by_species(std::string s1, std::string s2) {
+		for (auto it=_counters.begin(); it!=_counters.end(); it++) {
+			if (it->is_counting_species(s1,s2)) {
+				return &*it;
+			};
+		};
+		return nullptr;
+	};
+	Counter* OptProblem::Impl::_find_ctr_by_species(std::string s1, std::string s2, std::string s3) {
+		for (auto it=_counters.begin(); it!=_counters.end(); it++) {
+			if (it->is_counting_species(s1,s2,s3)) {
+				return &*it;
+			};
+		};
+		return nullptr;
+	};
+	Counter* OptProblem::Impl::_find_ctr_by_species(std::string s1, std::string s2, std::string s3, std::string s4) {
+		for (auto it=_counters.begin(); it!=_counters.end(); it++) {
+			if (it->is_counting_species(s1,s2,s3,s4)) {
+				return &*it;
+			};
+		};
+		return nullptr;
 	};
 
+	/********************
+	Add counter
+	********************/
 
+	void OptProblem::Impl::_add_counter(std::string s) {
+		// Check it does not exist
+		Counter *ctr = _find_ctr_by_species(s);
+		if (ctr) {
+			return;
+		};
 
+		// Find species
+		Species* sp = _not_nullptr(_find_species(s));
+
+		// Make counter
+		_counters.push_back(Counter(sp));
+		
+		// Add this counter to the species
+		sp->set_counter(&_counters.back());
+	};
+	void OptProblem::Impl::_add_counter(std::string s1, std::string s2) {
+		// Check it does not exist
+		Counter *ctr = _find_ctr_by_species(s1,s2);
+		if (ctr) {
+			return;
+		};
+
+		// Find species
+		Species* sp1 = _not_nullptr(_find_species(s1));
+		Species* sp2 = _not_nullptr(_find_species(s2));
+
+		// Make counter
+		_counters.push_back(Counter(sp1,sp2));
+		
+		// Add this counter to the species
+		sp1->add_nn_counter(sp2,&_counters.back());
+		sp2->add_nn_counter(sp1,&_counters.back());
+	};
+	void OptProblem::Impl::_add_counter(std::string s1, std::string s2, std::string s3) {
+		// Check it does not exist
+		Counter *ctr = _find_ctr_by_species(s1,s2,s3);
+		if (ctr) {
+			return;
+		};
+
+		// Find species
+		Species* sp1 = _not_nullptr(_find_species(s1));
+		Species* sp2 = _not_nullptr(_find_species(s2));
+		Species* sp3 = _not_nullptr(_find_species(s3));
+
+		// Make counter
+		_counters.push_back(Counter(sp1,sp2,sp3));
+		
+		// Add this counter to the species
+		sp1->add_triplet_counter(sp2,sp3,&_counters.back());
+		sp2->add_triplet_counter(sp1,sp3,&_counters.back());
+		sp3->add_triplet_counter(sp1,sp2,&_counters.back());
+	};
+	void OptProblem::Impl::_add_counter(std::string s1, std::string s2, std::string s3, std::string s4) {
+		// Check it does not exist
+		Counter *ctr = _find_ctr_by_species(s1,s2,s3,s4);
+		if (ctr) {
+			return;
+		};
+
+		// Find species
+		Species* sp1 = _not_nullptr(_find_species(s1));
+		Species* sp2 = _not_nullptr(_find_species(s2));
+		Species* sp3 = _not_nullptr(_find_species(s3));
+		Species* sp4 = _not_nullptr(_find_species(s4));
+
+		// Make counter
+		_counters.push_back(Counter(sp1,sp2,sp3,sp4));
+		
+		// Add this counter to the species
+		sp1->add_quartic_counter(sp2,sp3,sp4,&_counters.back());
+		sp2->add_quartic_counter(sp1,sp3,sp4,&_counters.back());
+		sp3->add_quartic_counter(sp1,sp2,sp4,&_counters.back());
+		sp4->add_quartic_counter(sp1,sp2,sp3,&_counters.back());
+	};
 
 
 
@@ -2015,15 +2285,19 @@ namespace DynamicBoltzmann {
 
 	// Constructor
 	OptProblem::OptProblem(std::vector<Dim> dims, std::vector<std::string> species_visible, std::vector<std::string> species_hidden, double t_max, int n_t, int box_length, int lattice_dim) : _impl(new Impl(dims,species_visible,species_hidden,t_max,n_t,box_length,lattice_dim)) {};
-	OptProblem::OptProblem(OptProblem&& other) = default; // movable but no copies
-    OptProblem& OptProblem::operator=(OptProblem&& other) = default; // movable but no copies
+	OptProblem::OptProblem(const OptProblem& other) : _impl(new Impl(*other._impl)) {};
+	OptProblem::OptProblem(OptProblem&& other) = default;
+	OptProblem& OptProblem::operator=(OptProblem other) {
+        _impl = std::move(other._impl);
+        return *this; 
+	};
 	OptProblem::~OptProblem() = default;
 
-	void OptProblem::add_hidden_unit(std::vector<std::vector<int>> lattice_idxs, std::string species) {
-		_impl->add_hidden_unit(lattice_idxs,species);
+	void OptProblem::add_hidden_unit(std::vector<std::string> species_possible, std::vector<std::vector<int>> lattice_idxs, std::vector<std::string> w_params, std::vector<std::string> b_params) {
+		_impl->add_hidden_unit(species_possible,lattice_idxs,w_params,b_params);
 	};
-	void OptProblem::add_hidden_unit(std::vector<int> lattice_idxs, std::string species) {
-		_impl->add_hidden_unit(lattice_idxs,species);
+	void OptProblem::add_hidden_unit(std::vector<std::string> species_possible, std::vector<int> lattice_idxs, std::vector<std::string> w_params, std::vector<std::string> b_params) {
+		_impl->add_hidden_unit(species_possible,lattice_idxs,w_params,b_params);
 	};
 
 	void OptProblem::validate_setup() const {

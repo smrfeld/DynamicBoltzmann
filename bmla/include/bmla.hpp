@@ -262,14 +262,6 @@ namespace DynamicBoltzmann {
 		void write_ave(std::string fname, int last_n_steps, bool append=false);
 		void write_ave(std::string fname, int last_n_steps, int idx, bool append=false);
 
-		/********************
-		Add counter
-		********************/
-
-		void add_counter(std::string s);
-		void add_counter(std::string s1, std::string s2);
-		void add_counter(std::string s1, std::string s2, std::string s3);
-		void add_counter(std::string s1, std::string s2, std::string s3, std::string s4);
 	};
 };
 

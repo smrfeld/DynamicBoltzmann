@@ -17,7 +17,7 @@ INSTALL_LIB_DIR = /usr/local/lib
 INSTALL_INCLUDE_DIR = /usr/local/include/dynamicboltz
 
 # source files
-SRC_NAMES = basis_func.cpp dynamic_boltzmann.cpp general.cpp grid.cpp hidden_unit.cpp ixn_param_traj.cpp lattice.cpp species.cpp var_term_traj.cpp
+SRC_NAMES = basis_func.cpp dynamic_boltzmann.cpp general.cpp grid.cpp hidden_unit.cpp ixn_param_traj.cpp lattice.cpp species.cpp var_term_traj.cpp counter.cpp
 SRCS = $(addprefix $(SOURCE_DIR)/, $(SRC_NAMES))
 OBJS = $(addprefix $(BUILD_DIR)/, $(SRC_NAMES:.cpp=.o))
 DEPS = $(OBJS:.o=.d)

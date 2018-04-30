@@ -29,7 +29,7 @@ namespace DynamicBoltzmann {
 	****************************************/
 
 	// Type of dimension
-	enum DimType { H, J, W, B };
+	enum DimType { H, J, K, W, B };
 
 	class Dim {
 
@@ -79,6 +79,7 @@ namespace DynamicBoltzmann {
 		std::vector<std::string> get_species_h() const;
 		std::vector<std::string> get_species_b() const;
 		std::vector<std::vector<std::string>> get_species_J() const;
+		std::vector<std::vector<std::string>> get_species_K() const;
 		std::vector<std::vector<std::string>> get_species_W() const;
 
 		/********************
@@ -92,6 +93,7 @@ namespace DynamicBoltzmann {
 		void add_species_h(std::string species);
 		void add_species_b(std::string species);
 		void add_species_J(std::string species1, std::string species2);
+		void add_species_K(std::string species1, std::string species2, std::string species3);
 		void add_species_W(std::string species_visible, std::string species_hidden);
 	};
 
@@ -225,23 +227,9 @@ namespace DynamicBoltzmann {
 		 * @param[in]  lattice_dim  The lattice dimension
 		 */
 		OptProblem(std::vector<Dim> dims, std::vector<std::string> species_visible, std::vector<std::string> species_hidden, double t_max, int n_t, int box_length, int lattice_dim=3);
-
-		/**
-		 * @brief      Move constructor (movable but no copies)
-		 * @param[in]  other  The other
-		 */
+		OptProblem(const OptProblem& other);
 		OptProblem(OptProblem&& other);
-
-	    /**
-	     * @brief      Move assignment (movable but no copies)
-	     * @param[in]  other  The other
-	     * @return     Moved
-	     */
-	    OptProblem& operator=(OptProblem&& other);
-
-	    /**
-	     * @brief      Destructor
-	     */
+	    OptProblem& operator=(OptProblem other);
 		~OptProblem();
 
 		/********************
@@ -249,9 +237,9 @@ namespace DynamicBoltzmann {
 		********************/
 
 		// Any dim
-		void add_hidden_unit(std::vector<std::vector<int>> lattice_idxs, std::string species);
+		void add_hidden_unit(std::vector<std::string> species_possible, std::vector<std::vector<int>> lattice_idxs, std::vector<std::string> w_params, std::vector<std::string> b_params);
 		// 1D specific
-		void add_hidden_unit(std::vector<int> lattice_idxs, std::string species);
+		void add_hidden_unit(std::vector<std::string> species_possible, std::vector<int> lattice_idxs, std::vector<std::string> w_params, std::vector<std::string> b_params);
 		
 		/********************
 		Validate setup

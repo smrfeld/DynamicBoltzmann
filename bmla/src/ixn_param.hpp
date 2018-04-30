@@ -57,9 +57,6 @@ namespace DynamicBoltzmann {
 		// List of hidden units
 		std::vector<HiddenUnit*> _hidden_units;
 
-		// Number of time points in these trajs
-		int _n_t;
-
 		// Value
 		double _val;
 

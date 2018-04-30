@@ -572,6 +572,12 @@ namespace DynamicBoltzmann {
 		Counter* _find_ctr_by_species(std::string s1, std::string s2, std::string s3);
 		Counter* _find_ctr_by_species(std::string s1, std::string s2, std::string s3, std::string s4);
 
+		// Add a counter for some species or nns
+		void _add_counter(std::string s);
+		void _add_counter(std::string s1, std::string s2);
+		void _add_counter(std::string s1, std::string s2, std::string s3);
+		void _add_counter(std::string s1, std::string s2, std::string s3, std::string s4);
+
 		// Constructor helpers
 		void _clean_up();
 		void _copy(const Impl& other);
@@ -612,13 +618,39 @@ namespace DynamicBoltzmann {
 		void write(std::string fname, bool write_idx_opt_step, int idx_opt_step, bool append);
 		void write_ave(std::string fname, int last_n_steps, bool write_idx_opt_step, int idx_opt_step, bool append);
 		void write_moments(std::string fname, int idx_opt_step, bool append);
-
-		// Add a counter for some species or nns
-		void add_counter(std::string s);
-		void add_counter(std::string s1, std::string s2);
-		void add_counter(std::string s1, std::string s2, std::string s3);
-		void add_counter(std::string s1, std::string s2, std::string s3, std::string s4);
 	};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 	/****************************************
 	BMLA - IMPLEMENTATION DEFINITIONS
@@ -634,29 +666,6 @@ namespace DynamicBoltzmann {
 		_n_param = dims.size();
 		// No hidden layers yet
 		_hidden_layer_exists = false;
-
-		// Check if hidden layer exists
-		for (auto d=dims.begin(); d!=dims.end(); d++) {
-			if (d->type()==B || d->type()==W) {
-				_hidden_layer_exists = true;
-				break;
-			};
-		};
-
-		// Create the visible species and add to the lattice
-		for (auto s: species_visible) {
-			// Make species
-			_species.push_back(Species(s));
-
-			// Add to the lattice
-			_latt.add_species_possibility(&(_species.back()));
-		};
-
-		// Create the hidden species
-		for (auto s: species_hidden) {
-			// Make species
-			_hidden_species.push_back(HiddenSpecies(s));
-		};
 
 		// Fix dims that have any species specification
 		for (auto d=dims.begin(); d!=dims.end(); d++) {
@@ -691,6 +700,29 @@ namespace DynamicBoltzmann {
 					};
 				};
 			};
+		};
+
+		// Check if hidden layer exists
+		for (auto d=dims.begin(); d!=dims.end(); d++) {
+			if (d->type()==B || d->type()==W) {
+				_hidden_layer_exists = true;
+				break;
+			};
+		};
+
+		// Create the visible species and add to the lattice
+		for (auto s: species_visible) {
+			// Make species
+			_species.push_back(Species(s));
+
+			// Add to the lattice
+			_latt.add_species_possibility(&(_species.back()));
+		};
+
+		// Create the hidden species
+		for (auto s: species_hidden) {
+			// Make species
+			_hidden_species.push_back(HiddenSpecies(s));
 		};
 
 		// Create the interaction params
@@ -784,15 +816,17 @@ namespace DynamicBoltzmann {
 		for (auto d=dims.begin(); d!=dims.end(); d++) {
 			if (d->type()==H) {
 				for (auto s: d->get_species_h()) {
-					add_counter(s);
+					_add_counter(s);
 				};
 			} else if (d->type()==J) {
 				for (auto s: d->get_species_J()) {
-					add_counter(s[0],s[1]);
+					_latt.init_nn_structure();
+					_add_counter(s[0],s[1]);
 				};
 			} else if (d->type()==K) {
 				for (auto s: d->get_species_K()) {
-					add_counter(s[0],s[1],s[2]);
+					_latt.init_triplet_structure();
+					_add_counter(s[0],s[1],s[2]);
 				};
 			};
 		};
@@ -894,7 +928,7 @@ namespace DynamicBoltzmann {
 	Add counter for some species or nns
 	********************/
 
-	void BMLA::Impl::add_counter(std::string s) {
+	void BMLA::Impl::_add_counter(std::string s) {
 		// Check it does not exist
 		Counter *ctr = _find_ctr_by_species(s);
 		if (ctr) {
@@ -910,7 +944,7 @@ namespace DynamicBoltzmann {
 		// Add this counter to the species
 		sp->set_counter(&_counters.back());
 	};
-	void BMLA::Impl::add_counter(std::string s1, std::string s2) {
+	void BMLA::Impl::_add_counter(std::string s1, std::string s2) {
 		// Check it does not exist
 		Counter *ctr = _find_ctr_by_species(s1,s2);
 		if (ctr) {
@@ -928,7 +962,7 @@ namespace DynamicBoltzmann {
 		sp1->add_nn_counter(sp2,&_counters.back());
 		sp2->add_nn_counter(sp1,&_counters.back());
 	};
-	void BMLA::Impl::add_counter(std::string s1, std::string s2, std::string s3) {
+	void BMLA::Impl::_add_counter(std::string s1, std::string s2, std::string s3) {
 		// Check it does not exist
 		Counter *ctr = _find_ctr_by_species(s1,s2,s3);
 		if (ctr) {
@@ -948,7 +982,7 @@ namespace DynamicBoltzmann {
 		sp2->add_triplet_counter(sp1,sp3,&_counters.back());
 		sp3->add_triplet_counter(sp1,sp2,&_counters.back());
 	};
-	void BMLA::Impl::add_counter(std::string s1, std::string s2, std::string s3, std::string s4) {
+	void BMLA::Impl::_add_counter(std::string s1, std::string s2, std::string s3, std::string s4) {
 		// Check it does not exist
 		Counter *ctr = _find_ctr_by_species(s1,s2,s3,s4);
 		if (ctr) {
@@ -1341,25 +1375,25 @@ namespace DynamicBoltzmann {
 		// Create any counters, as needed
 		Counter *ctr;
 		for (auto sp: options.report_counts) {
-			add_counter(sp);
+			_add_counter(sp);
 			ctr = _not_nullptr(_find_ctr_by_species(sp));
 			ctr->set_report_during_sampling(true);
 		};
 		for (auto sp_nbrs: options.report_nns) {
 			_latt.init_nn_structure();
-			add_counter(sp_nbrs.first,sp_nbrs.second);
+			_add_counter(sp_nbrs.first,sp_nbrs.second);
 			ctr = _not_nullptr(_find_ctr_by_species(sp_nbrs.first,sp_nbrs.second));
 			ctr->set_report_during_sampling(true);
 		};
 		for (auto sp_triplets: options.report_triplets) {
 			_latt.init_triplet_structure();
-			add_counter(sp_triplets[0],sp_triplets[1],sp_triplets[2]);
+			_add_counter(sp_triplets[0],sp_triplets[1],sp_triplets[2]);
 			ctr = _not_nullptr(_find_ctr_by_species(sp_triplets[0],sp_triplets[1],sp_triplets[2]));
 			ctr->set_report_during_sampling(true);
 		};
 		for (auto sp_quartics: options.report_quartics) {
 			_latt.init_quartic_structure();
-			add_counter(sp_quartics[0],sp_quartics[1],sp_quartics[2],sp_quartics[3]);
+			_add_counter(sp_quartics[0],sp_quartics[1],sp_quartics[2],sp_quartics[3]);
 			ctr = _not_nullptr(_find_ctr_by_species(sp_quartics[0],sp_quartics[1],sp_quartics[2],sp_quartics[3]));
 			ctr->set_report_during_sampling(true);
 		};
@@ -1684,20 +1718,6 @@ namespace DynamicBoltzmann {
 	};
 	void BMLA::write_ave(std::string fname, int last_n_steps, int idx, bool append) {
 		_impl->write_ave(fname,last_n_steps,true,idx,append);
-	};
-
-	// Add a counter for some species or nns
-	void BMLA::add_counter(std::string s) {
-		_impl->add_counter(s);
-	};
-	void BMLA::add_counter(std::string s1, std::string s2) {
-		_impl->add_counter(s1,s2);
-	};
-	void BMLA::add_counter(std::string s1, std::string s2, std::string s3) {
-		_impl->add_counter(s1,s2,s3);
-	};
-	void BMLA::add_counter(std::string s1, std::string s2, std::string s3, std::string s4) {
-		_impl->add_counter(s1,s2,s3,s4);
 	};
 };
 

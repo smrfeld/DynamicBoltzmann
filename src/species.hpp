@@ -16,6 +16,12 @@
 #include <map>
 #endif
 
+// Counter
+#ifndef COUNTER_h
+#define COUNTER_h
+#include "counter.hpp"
+#endif
+
 /************************************
 * Namespace for Gillespie3D
 ************************************/
@@ -23,16 +29,43 @@
 namespace DynamicBoltzmann {
 
 	/****************************************
-	Forward declare
+	Doublets, Triplets of Species ptrs
 	****************************************/
 
-	class IxnParamTraj;
-	class HiddenUnit;
+	class HiddenSpecies;
+
+	struct Species2 {
+		Species *sp1;
+		Species *sp2;
+		Species2(Species* sp1, Species* sp2);
+	};
+	// Comparator
+	bool operator <(const Species2& a, const Species2& b);
+
+	struct Species3 {
+		Species *sp1;
+		Species *sp2;
+		Species *sp3;
+		Species3(Species* sp1, Species* sp2, Species *sp3);
+	};
+	// Comparator
+	bool operator <(const Species3& a, const Species3& b);
+
+	struct SpeciesVH {
+		Species *sp_visible;
+		HiddenSpecies *sp_hidden;
+
+		SpeciesVH(Species* sp_visible, HiddenSpecies *sp_hidden);
+	};
+	// Comparator
+	bool operator <(const SpeciesVH& a, const SpeciesVH& b);
 
 	/****************************************
 	Species
 	****************************************/
 	
+	class IxnParamTraj;
+
 	class Species {
 
 	private:
@@ -40,17 +73,16 @@ namespace DynamicBoltzmann {
 		// Name
 		std::string _name;
 
-		// Counts
-		std::map<Species*,std::map<Species*,int>> _triplet_count;
-		std::map<Species*,int> _nn_count;
-		int _count;
-
-		// Current time in the optimization
-		int *_t_opt_ptr;
+		// Counters involved
+		Counter* _count;
+		std::map<Species*, Counter*> _nn_count;
+		std::map<Species2, Counter*> _triplet_count;
+		std::map<Species3, Counter*> _quartic_count;
 
 		// Pointers to the interaction params
 		std::vector<IxnParamTraj*> _h_ptrs;
 		std::map<Species*,std::vector<IxnParamTraj*> > _j_ptrs;
+		std::map<Species2,std::vector<IxnParamTraj*>> _k_ptrs;
 
 		// Constructor helpers
 		void _clean_up();
@@ -71,52 +103,53 @@ namespace DynamicBoltzmann {
 		~Species();
 
 		/********************
-		Set optimization time pointer
+		Set counters
 		********************/
 
-		void set_opt_time_ptr(int *t_opt_ptr);
+		void set_counter(Counter *ctr);
+		void add_nn_counter(Species *sp, Counter *ctr);
+		void add_triplet_counter(Species *sp1, Species *sp2, Counter *ctr);
+		void add_quartic_counter(Species *sp1, Species *sp2, Species *sp3, Counter *ctr);
 
 		/********************
-		Set h, J, W ptr
+		Set ptr for h,J,K
 		********************/
 
 		void add_h_ptr(IxnParamTraj *h_ptr);
 		void add_j_ptr(Species* sp, IxnParamTraj *j_ptr);
+		void add_k_ptr(Species* sp1, Species* sp2, IxnParamTraj *k_ptr);
 
 		/********************
-		Initialize counts for a given other species
-		********************/
-
-		void count_nn_for_species(std::vector<Species*> sp_vec);
-		void count_triplets_for_species(std::vector<std::pair<Species*,Species*>> sp_vec);
-
-		/********************
-		Validate setup
-		********************/
-
-		void validate_setup() const;
-
-		/********************
-		Getters
+		Ixn params
 		********************/
 
 		double h() const;
 		double j(Species* other) const;
-		int count() const;
-		int nn_count(Species* other) const;
-		int triplet_count(Species* other1, Species* other2) const;
+		double k(Species* other1, Species *other2) const;
+
+		/********************
+		Counts
+		********************/
+
+		double count() const;
+		double nn_count(Species* other) const;
+		double triplet_count(Species* other1, Species *other2) const;
+		double quartic_count(Species* other1, Species *other2, Species *other3) const;
+
+		/********************
+		Name
+		********************/
+
 		std::string name() const;
 
 		/********************
 		Increment counts
 		********************/
 
-		void count_plus();
-		void count_minus();
-		void nn_count_plus(Species* other);
-		void nn_count_minus(Species* other);
-		void triplet_count_plus(Species* other1, Species* other2);
-		void triplet_count_minus(Species* other1, Species* other2);
+		void count_increment(double inc);
+		void nn_count_increment(Species* other, double inc);
+		void triplet_count_increment(Species* other1, Species* other2, double inc);
+		void quartic_count_increment(Species* other1, Species* other2, Species *other3, double inc);
 
 		/********************
 		Reset counts
@@ -127,11 +160,10 @@ namespace DynamicBoltzmann {
 	// Comparator
 	bool operator <(const Species& a, const Species& b);
 
-
 	/****************************************
 	HiddenSpecies
 	****************************************/
-
+	
 	class HiddenSpecies {
 
 	private:
@@ -158,14 +190,13 @@ namespace DynamicBoltzmann {
 		~HiddenSpecies();
 
 		/********************
-		Getters
+		Name
 		********************/
 
 		std::string name() const;
 	};
+	// Comparator
+	bool operator <(const HiddenSpecies& a, const HiddenSpecies& b);
 
 };
-
-
-
 

@@ -17,22 +17,9 @@ namespace DynamicBoltzmann {
 	Constructor
 	********************/
 
-	IxnParamTraj::IxnParamTraj(std::string name, IxnParamType type, Species *sp, double min, double max, int n, double val0, int n_t) : IxnParamTraj(name,type,sp,nullptr,min,max,n,val0,n_t) {
-		if (type != Wp && type != Hp && type != Bp) {
-			std::cerr << "ERROR: wrong IxnParamTraj constructor?" << std::endl;
-			exit(EXIT_FAILURE);
-		};
-	};
-	IxnParamTraj::IxnParamTraj(std::string name, IxnParamType type, Species *sp1, Species *sp2, double min, double max, int n, double val0, int n_t) : Grid(name,min,max,n)
+	IxnParamTraj::IxnParamTraj(std::string name, IxnParamType type, double min, double max, int n, double val0, int n_t) : Grid(name,min,max,n)
 	{
-		if (type == Jp && (sp1 == nullptr || sp2==nullptr)) {
-			std::cerr << "ERROR: wrong IxnParamTraj constructor?" << std::endl;
-			exit(EXIT_FAILURE);
-		};
-
 		_type = type;
-		_sp1 = sp1;
-		_sp2 = sp2;
 		_val0 = val0;
 		_n_t = n_t;
 
@@ -46,6 +33,8 @@ namespace DynamicBoltzmann {
 		std::fill_n(_awake,_n_t,0.0);
 
 		_bf = nullptr;
+
+		_t_opt_ptr = nullptr;
 	};
 
 	IxnParamTraj::IxnParamTraj(const IxnParamTraj& other) : Grid(other) {
@@ -82,10 +71,16 @@ namespace DynamicBoltzmann {
 	void IxnParamTraj::_copy(const IxnParamTraj& other)
 	{
 		_type = other._type;
-		_sp1 = other._sp1;
-		_sp2 = other._sp2;
+
+		_sp_bias_visible = other._sp_bias_visible;
+		_sp_bias_hidden = other._sp_bias_hidden;
+		_sp_doublet = other._sp_doublet;
+		_sp_triplet = other._sp_triplet;
+		_sp_conn = other._sp_conn;
+
 		_conns = other._conns;
 		_hidden_units = other._hidden_units;
+
 		_n_t = other._n_t;
 		_vals = new double[_n_t];
 		std::copy( other._vals, other._vals + _n_t, _vals );
@@ -95,19 +90,26 @@ namespace DynamicBoltzmann {
 		_awake = new double[_n_t];
 		std::copy( other._awake, other._awake + _n_t, _awake );
 		_bf = other._bf;
+		_t_opt_ptr = other._t_opt_ptr;
 	};
 	void IxnParamTraj::_reset()
 	{
-		_sp1 = nullptr;
-		_sp2 = nullptr;
+		_sp_bias_visible.clear();
+		_sp_bias_hidden.clear();
+		_sp_doublet.clear();
+		_sp_triplet.clear();
+		_sp_conn.clear();
+
 		_conns.clear();
 		_hidden_units.clear();
+
 		_n_t = 0;
 		safeDelArr(_vals);
 		_val0 = 0.;
 		safeDelArr(_asleep);
 		safeDelArr(_awake);
 		_bf = nullptr;
+		_t_opt_ptr = nullptr;
 	};
 	void IxnParamTraj::_clean_up() {
 		safeDelArr(_vals);
@@ -116,40 +118,23 @@ namespace DynamicBoltzmann {
 	};
 
 	/********************
-	Check if this ixn param is...
+	Add species
 	********************/
 
-	bool IxnParamTraj::is_h_with_species(std::string species_name) const {
-		if (_type == Hp && _sp1->name() == species_name) {
-			return true;
-		} else {
-			return false;
-		};
+	void IxnParamTraj::add_species(Species *sp) {
+		_sp_bias_visible.push_back(sp);
 	};
-
-	bool IxnParamTraj::is_w_with_species(std::string species_name) const {
-		if (_type == Wp && _sp1->name() == species_name) {
-			return true;
-		} else {
-			return false;
-		};
+	void IxnParamTraj::add_species(HiddenSpecies *hsp) {
+		_sp_bias_hidden.push_back(hsp);
 	};
-
-	bool IxnParamTraj::is_j_with_species(std::string species_name_1, std::string species_name_2) const {
-		if (_type == Jp) {
-			if ((_sp1->name() == species_name_1 && _sp2->name() == species_name_2) || (_sp1->name() == species_name_2 && _sp2->name() == species_name_1)) {
-				return true;
-			};
-		};
-		return false;
+	void IxnParamTraj::add_species(Species *sp1, Species *sp2) {
+		_sp_doublet.push_back(Species2(sp1,sp2));
 	};
-
-	bool IxnParamTraj::is_b_with_species(std::string species_name) const {
-		if (_type == Bp && _sp1->name() == species_name) {
-			return true;
-		} else {
-			return false;
-		};
+	void IxnParamTraj::add_species(Species *sp1, Species *sp2, Species *sp3) {
+		_sp_triplet.push_back(Species3(sp1,sp2,sp3));
+	};
+	void IxnParamTraj::add_species(Species *sp, HiddenSpecies *hsp) {
+		_sp_conn.push_back(SpeciesVH(sp,hsp));
 	};
 
 	/********************
@@ -203,6 +188,14 @@ namespace DynamicBoltzmann {
 	};
 
 	/********************
+	Set the pointer to the optimization time
+	********************/
+
+	void IxnParamTraj::set_t_opt_ptr(int *t_opt_ptr) {
+		_t_opt_ptr = t_opt_ptr;
+	};
+
+	/********************
 	Validation
 	********************/
 
@@ -217,12 +210,58 @@ namespace DynamicBoltzmann {
 	};
 
 	/********************
-	Getters/setters
+	Getters
 	********************/
 
+	// At the current time in the optimization
+	double IxnParamTraj::get() const {
+		return _vals[*_t_opt_ptr];
+	};
+
+	// At a specific time
 	double IxnParamTraj::get_at_time(int it) const
 	{
 		return _vals[it];
+	};
+
+	/********************
+	Get species involved
+	********************/
+
+	std::vector<Species*> IxnParamTraj::get_species_bias() const {
+		if (_type != Hp) {
+			std::cerr << "Error! Not a visible bias." << std::endl;
+			exit(EXIT_FAILURE);
+		};
+		return _sp_bias_visible;
+	};
+	std::vector<HiddenSpecies*> IxnParamTraj::get_species_hidden_bias() const {
+		if (_type != Bp) {
+			std::cerr << "Error! Not a hidden bias." << std::endl;
+			exit(EXIT_FAILURE);
+		};
+		return _sp_bias_hidden;
+	};
+	std::vector<Species2> IxnParamTraj::get_species_doublet() const {
+		if (_type != Jp) {
+			std::cerr << "Error! Not a J." << std::endl;
+			exit(EXIT_FAILURE);
+		};
+		return _sp_doublet;
+	};
+	std::vector<Species3> IxnParamTraj::get_species_triplet() const {
+		if (_type != Kp) {
+			std::cerr << "Error! Not a K." << std::endl;
+			exit(EXIT_FAILURE);
+		};
+		return _sp_triplet;
+	};
+	std::vector<SpeciesVH> IxnParamTraj::get_species_conn() const {
+		if (_type != Wp) {
+			std::cerr << "Error! Not a conn W." << std::endl;
+			exit(EXIT_FAILURE);
+		};
+		return _sp_conn;
 	};
 
 	/********************
@@ -252,35 +291,51 @@ namespace DynamicBoltzmann {
 	void IxnParamTraj::moments_retrieve_at_time(MomentType moment_type, int it, int batch_size)
 	{
 		if (_type == Hp) {
-			if (moment_type==AWAKE) {
-				_awake[it] += 1. * _sp1->count() / batch_size;
-			} else if (moment_type==ASLEEP) {
-				_asleep[it] += 1. * _sp1->count() / batch_size;
+			for (auto sp: _sp_bias_visible) {
+				if (moment_type==AWAKE) {
+					_awake[it] += 1. * sp->count() / batch_size;
+				} else if (moment_type==ASLEEP) {
+					_asleep[it] += 1. * sp->count() / batch_size;
+				};
 			};
 		} else if (_type == Jp) {
-			if (moment_type==AWAKE) {
-				_awake[it] += 1. * _sp1->nn_count(_sp2) / batch_size;
-			} else if (moment_type==ASLEEP) {
-				_asleep[it] += 1. * _sp1->nn_count(_sp2) / batch_size;
+			for (auto spd: _sp_doublet) {
+				if (moment_type==AWAKE) {
+					_awake[it] += 1. * spd.sp1->nn_count(spd.sp2) / batch_size;
+				} else if (moment_type==ASLEEP) {
+					_asleep[it] += 1. * spd.sp1->nn_count(spd.sp2) / batch_size;
+				};
+			};
+		} else if (_type == Kp) {
+			for (auto spt: _sp_triplet) {
+				if (moment_type==AWAKE) {
+					_awake[it] += 1. * spt.sp1->triplet_count(spt.sp2,spt.sp3) / batch_size;
+				} else if (moment_type==ASLEEP) {
+					_asleep[it] += 1. * spt.sp1->triplet_count(spt.sp2,spt.sp3) / batch_size;
+				};
 			};
 		} else if (_type == Wp) {
-			double inc = 0.0;
 			// Run through all connections
+			double inc = 0.0;
 			for (auto c: _conns) {
-				if (c.first->sp == _sp1) { // site occupied with the correct species
-					inc += c.second->get(); // v * h
+				for (auto spvh: _sp_conn) {
+					// v * h
+					inc += c.first->get_prob(spvh.sp_visible) * c.second->get_prob(spvh.sp_hidden);
 				};
 			};
 			if (moment_type==AWAKE) {
-				_awake[it] += inc / batch_size;
+				_awake[it] += 1. * inc / batch_size;
 			} else if (moment_type==ASLEEP) {
-				_asleep[it] += inc / batch_size;
+				_asleep[it] += 1. * inc / batch_size;
 			};
 		} else if (_type == Bp) {
 			// Run through all hidden units that are monitored
 			double inc = 0.0;
 			for (auto hup: _hidden_units) {
-				inc += hup->get();
+				for (auto sph: _sp_bias_hidden) {
+					// h
+					inc += hup->get_prob(sph);
+				};
 			};
 			if (moment_type==AWAKE) {
 				_awake[it] += 1. * inc / batch_size;

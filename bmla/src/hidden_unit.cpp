@@ -92,23 +92,14 @@ namespace DynamicBoltzmann {
 	********************/
 
 	void HiddenUnit::print_conns(bool newline) const {
-		/*
-		std::cout << "Hidden unit connected to: ";
-		for (auto c: _conn) {
-			c->print();
-			std::cout << "(" << c.first->x << "," << c.first->y << "," << c.first->z << ") with params: ";
-			for (auto ip: c.second) {
-				std::cout << ip->name() << " ";
-			};
-		};
-		std::cout << " and biases: ";
-		for (auto ip: _bias) {
-			std::cout << ip->name() << " ";
+		Site *s;
+		for (auto const &c: _conn) {
+			s = c->site();
+			std::cout << "(" << s->x() << " " << s->y() << " " << s->z() << ") ";
 		};
 		if (newline) {
 			std::cout << std::endl;
 		};
-		*/
 	};
 
 	/********************

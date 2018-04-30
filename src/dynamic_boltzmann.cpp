@@ -684,6 +684,7 @@ namespace DynamicBoltzmann {
 		********************/
 
 		void validate_setup() const;
+		void validate_graph() const;
 
 		/********************
 		Solve interaction parameter traj
@@ -1230,6 +1231,9 @@ namespace DynamicBoltzmann {
 			it.validate_setup();
 		};
 		std::cout << "------------------------" << std::endl;
+	};
+	void OptProblem::Impl::validate_graph() const {
+		_latt.validate_graph();
 	};
 
 	/********************
@@ -2272,6 +2276,9 @@ namespace DynamicBoltzmann {
 
 	void OptProblem::validate_setup() const {
 		_impl->validate_setup();
+	};
+	void OptProblem::validate_graph() const {
+		_impl->validate_graph();
 	};
 
 	void OptProblem::solve_ixn_param_traj() {

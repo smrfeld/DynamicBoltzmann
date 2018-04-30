@@ -67,6 +67,14 @@ namespace DynamicBoltzmann {
 		_ips_hidden_visible = other._ips_hidden_visible;
 	};
 
+	// TMP
+	HiddenUnit* ConnectionVH::hidden_unit() const {
+		return _hidden_unit;
+	};
+	Site* ConnectionVH::site() const {
+		return _site;
+	};
+
 	// Add ixn param
 	void ConnectionVH::add_ixn_param(IxnParam* ip) {
 		// Get the species associated with this ixn param
@@ -184,6 +192,19 @@ namespace DynamicBoltzmann {
 		_prob_empty = other._prob_empty;
 		_probs = other._probs;
 		_sp_possible = other._sp_possible;
+	};
+
+	/********************
+	Validate
+	********************/
+
+	void Site::validate() const {
+		std::cout << _x << " " << _y << " " << _z << " hidden nbrs: (" << _hidden_conns.size() << ")" << std::endl;
+		HiddenUnit *hu;
+		for (auto const &c: _hidden_conns) {
+			hu = c->hidden_unit();
+			hu->print_conns(true);
+		};
 	};
 
 	/********************
@@ -583,6 +604,16 @@ namespace DynamicBoltzmann {
 		_latt_has_nn_structure = false;
 		_latt_has_triplet_structure = false;
 		_latt_has_quartic_structure = false;
+	};
+
+	/********************
+	Validate
+	********************/
+
+	void Lattice::validate_graph() const {
+		for (auto const &s: _latt) {
+			s.validate();
+		};
 	};
 
 	/********************

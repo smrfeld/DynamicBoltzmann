@@ -26,6 +26,7 @@ namespace DynamicBoltzmann {
 
 		_val_guess = val_guess;
 		_val = val_guess;
+		_val_nesterov = val_guess;
 
 		_track_soln_traj = false;
 
@@ -75,6 +76,7 @@ namespace DynamicBoltzmann {
 
 		_val = other._val;
 		_val_guess = other._val_guess;
+		_val_nesterov = other._val_nesterov;
 		_track_soln_traj = other._track_soln_traj;
 		_soln_traj = other._soln_traj;
 		_asleep = other._asleep;
@@ -95,12 +97,33 @@ namespace DynamicBoltzmann {
 
 		_val = 0.;
 		_val_guess = 0.;
+		_val_nesterov = 0.;
 		_track_soln_traj = false;
 		_soln_traj.clear();
 		_asleep = 0.;
 		_awake = 0.;
 	};
 	void IxnParam::_clean_up() {};
+
+	/********************
+	Nesterov
+	********************/
+
+	// Move to the nesterov intermediate point
+	void IxnParam::nesterov_move_to_intermediate_pt(int opt_step) {
+		// Store the curren
+		double curr = _val;
+		// Move to the intermediate
+		_val += (opt_step - 1.0) / (opt_step + 2.0) * (curr - _val_nesterov);
+		// The current point will be the next old
+		_val_nesterov = curr;
+	};
+
+	// Set prev nesterov
+	void IxnParam::nesterov_set_prev_equal_curr() {
+		_val_nesterov = _val;
+	};
+
 
 	/********************
 	Add species

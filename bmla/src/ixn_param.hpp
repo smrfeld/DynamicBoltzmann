@@ -60,6 +60,9 @@ namespace DynamicBoltzmann {
 		// Value
 		double _val;
 
+		// Nesterov: previous value
+		double _val_nesterov;
+
 		// Solution traj
 		bool _track_soln_traj;
 		std::vector<double> _soln_traj;
@@ -88,6 +91,16 @@ namespace DynamicBoltzmann {
 		IxnParam & operator=(const IxnParam& other);
 		IxnParam & operator=(IxnParam&& other);
 		~IxnParam();
+
+		/********************
+		Nesterov
+		********************/
+
+		// Move to the nesterov intermediate point
+		void nesterov_move_to_intermediate_pt(int opt_step);
+
+		// Set prev nesterov
+		void nesterov_set_prev_equal_curr();
 
 		/********************
 		Add a species

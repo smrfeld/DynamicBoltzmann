@@ -249,6 +249,7 @@ namespace DynamicBoltzmann {
 		 * @brief      Validate the setup by printing.
 		 */
 		void validate_setup() const;
+		void validate_graph() const;
 
 		/********************
 		Solve interaction parameter traj

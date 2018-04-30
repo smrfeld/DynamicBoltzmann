@@ -95,6 +95,10 @@ namespace DynamicBoltzmann {
 		ConnectionVH& operator=(ConnectionVH&& other);
 		~ConnectionVH();
 
+		// TMP
+		HiddenUnit* hidden_unit() const;
+		Site* site() const;
+
 		/********************
 		Add ixn param
 		********************/
@@ -164,6 +168,12 @@ namespace DynamicBoltzmann {
 		Site& operator=(const Site& other);
 		Site& operator=(Site&& other);
 		~Site();
+
+		/********************
+		Validate
+		********************/
+
+		void validate() const;
 
 		/********************
 		Check location
@@ -283,6 +293,12 @@ namespace DynamicBoltzmann {
 		Lattice& operator=(const Lattice& other);
 		Lattice& operator=(Lattice&& other);
 		~Lattice();
+
+		/********************
+		Validate
+		********************/
+
+		void validate_graph() const;
 
 		/********************
 		Getters

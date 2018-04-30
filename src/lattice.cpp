@@ -187,6 +187,14 @@ namespace DynamicBoltzmann {
 	};
 
 	/********************
+	Print the location and connectivity
+	********************/
+
+	void Site::validate() const {
+		std::cout << _x << " " << _y << " " << _z << " hidden nbrs: (" << _hidden_conns.size() << ") visible nbrs: (" << _nbrs.size() << ")" << std::endl;
+	};
+
+	/********************
 	Check location
 	********************/
 
@@ -583,6 +591,17 @@ namespace DynamicBoltzmann {
 		_latt_has_nn_structure = false;
 		_latt_has_triplet_structure = false;
 		_latt_has_quartic_structure = false;
+	};
+
+	/********************
+	Validate graph
+	********************/
+
+	void Lattice::validate_graph() const {
+		// Go through all sites
+		for (auto const &s: _latt) {
+			s.validate();
+		};
 	};
 
 	/********************

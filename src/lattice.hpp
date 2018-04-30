@@ -166,6 +166,12 @@ namespace DynamicBoltzmann {
 		~Site();
 
 		/********************
+		Print the location and connectivity
+		********************/
+
+		void validate() const;
+
+		/********************
 		Check location
 		********************/
 
@@ -283,6 +289,12 @@ namespace DynamicBoltzmann {
 		Lattice& operator=(const Lattice& other);
 		Lattice& operator=(Lattice&& other);
 		~Lattice();
+
+		/********************
+		Validate graph
+		********************/
+
+		void validate_graph() const;
 
 		/********************
 		Getters

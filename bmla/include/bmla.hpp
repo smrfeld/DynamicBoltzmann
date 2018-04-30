@@ -122,6 +122,15 @@ namespace DynamicBoltzmann {
 		// Track the solution traj
 		bool track_soln_traj;
 
+		// Nesterov mode
+		bool nesterov;
+
+		// Writing index
+		int opt_idx_start_writing;
+
+		// Whether to append to existing files
+		bool append;
+
 		/********************
 		Constructor
 		********************/
@@ -144,6 +153,9 @@ namespace DynamicBoltzmann {
 			write_moment_traj = false;
 			fname_write_moment_traj = "";
 			track_soln_traj = false;
+			nesterov = true;
+			opt_idx_start_writing = 0;
+			append = false;
 		};
 	};
 

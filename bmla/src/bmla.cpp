@@ -1121,9 +1121,7 @@ namespace DynamicBoltzmann {
 	********************/
 
 	void BMLA::Impl::validate_hidden() const {
-		for (auto it=_hidden_units.begin(); it != _hidden_units.end(); it++) {
-			it->print_conns(true);
-		};
+		_latt.validate_graph();
 	};
 
 	/********************
@@ -1151,17 +1149,23 @@ namespace DynamicBoltzmann {
 			};
 		};
 
+		// Opt step with offset
+		int i_opt = options.opt_idx_start_writing;
+
 		// Write the initial point for the solution
 		if (options.write_soln_traj) {
-			write(options.fname_write_soln_traj,true,0,false);
+			write(options.fname_write_soln_traj,true,i_opt,options.append);
 		};
 
 		// Iterate over optimization steps
-		for (int i_opt=0; i_opt<n_opt; i_opt++)
+		for (int i_opt_from_zero=0; i_opt_from_zero<n_opt; i_opt_from_zero++)
 		{
 			if (options.verbose) {
-				std::cout << "Opt step: " << i_opt << " / " << n_opt << std::endl;
+				std::cout << "Opt step: " << i_opt_from_zero << " / " << n_opt << std::endl;
 			};
+
+			// Offset
+			i_opt = i_opt_from_zero + options.opt_idx_start_writing;
 
 			// Check MSE to see if quit
 			if (options.mse_quit_mode) {
@@ -1169,6 +1173,20 @@ namespace DynamicBoltzmann {
 					// Quit!
 					std::cout << "--- MSE is low enough: " << _get_mse() << " < " << options.mse_quit << " quitting! ---" << std::endl;
 					break;
+				};
+			};
+
+			if (options.nesterov) {
+				// If first opt step, do nothing, but set the "prev" point to the current to initialize
+				if (i_opt_from_zero == 0) {
+					for (auto it=_ixn_params.begin(); it!=_ixn_params.end(); it++) {
+						it->nesterov_set_prev_equal_curr();
+					};
+				} else {
+					// Move to the intermediate point
+					for (auto it=_ixn_params.begin(); it!=_ixn_params.end(); it++) {
+						it->nesterov_move_to_intermediate_pt(i_opt);
+					};
 				};
 			};
 
@@ -1264,9 +1282,9 @@ namespace DynamicBoltzmann {
 
 			// Write the moments if needed
 			if (options.write_moment_traj) {
-				if (i_opt==0) {
-					// Make new
-					write_moments(options.fname_write_moment_traj,i_opt+1,false);
+				if (i_opt_from_zero==0) {
+					// Possibly make new depending on append flag
+					write_moments(options.fname_write_moment_traj,i_opt+1,options.append);
 				} else {
 					// Append
 					write_moments(options.fname_write_moment_traj,i_opt+1,true);

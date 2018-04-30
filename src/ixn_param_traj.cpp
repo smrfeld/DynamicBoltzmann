@@ -17,7 +17,7 @@ namespace DynamicBoltzmann {
 	Constructor
 	********************/
 
-	IxnParamTraj::IxnParamTraj(std::string name, IxnParamType type, double min, double max, int n, double val0, int n_t) : Grid(name,min,max,n)
+	IxnParamTraj::IxnParamTraj(std::string name, IxnParamType type, double min, double max, int n, double val0, int n_t, int *t_opt_ptr) : Grid(name,min,max,n)
 	{
 		_type = type;
 		_val0 = val0;
@@ -34,7 +34,7 @@ namespace DynamicBoltzmann {
 
 		_bf = nullptr;
 
-		_t_opt_ptr = nullptr;
+		_t_opt_ptr = t_opt_ptr;
 	};
 
 	IxnParamTraj::IxnParamTraj(const IxnParamTraj& other) : Grid(other) {
@@ -185,14 +185,6 @@ namespace DynamicBoltzmann {
 	void IxnParamTraj::set_init_cond(double val) {
 		_val0 = val;
 		_vals[0] = _val0;
-	};
-
-	/********************
-	Set the pointer to the optimization time
-	********************/
-
-	void IxnParamTraj::set_t_opt_ptr(int *t_opt_ptr) {
-		_t_opt_ptr = t_opt_ptr;
 	};
 
 	/********************

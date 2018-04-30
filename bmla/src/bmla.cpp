@@ -741,6 +741,8 @@ namespace DynamicBoltzmann {
 					_ixn_params.back().add_species(sp);
 					// Add ixn to the species
 					sp->add_h_ptr(&_ixn_params.back());
+					// Make sure we have a counter
+					_add_counter(s);	
 				};
 
 			} else if (d->type()==J) { 
@@ -756,7 +758,12 @@ namespace DynamicBoltzmann {
 					// Add ixn to the species
 					sp1->add_j_ptr(sp2,&_ixn_params.back());
 					sp2->add_j_ptr(sp1,&_ixn_params.back());
+					// Make sure we have a counter
+					_add_counter(s[0],s[1]);
 				};
+
+				// Init structure for lattice
+				_latt.init_nn_structure();
 
 			} else if (d->type()==K) {
 
@@ -779,7 +786,12 @@ namespace DynamicBoltzmann {
 					sp1->add_k_ptr(sp2,sp3,&_ixn_params.back());
 					sp2->add_k_ptr(sp1,sp3,&_ixn_params.back());
 					sp3->add_k_ptr(sp1,sp2,&_ixn_params.back());
+					// Make sure we have a counter
+					_add_counter(s[0],s[1],s[2]);			
 				};
+
+				// Init structure for lattice
+				_latt.init_triplet_structure();
 
 			} else if (d->type()==W) { 
 
@@ -808,26 +820,6 @@ namespace DynamicBoltzmann {
 					// No need to add to species - handled by ConnectionVH class
 				};
 
-			};
-		};
-
-		// Add a new counter for the dimensions
-		IxnParam *ip;
-		for (auto d=dims.begin(); d!=dims.end(); d++) {
-			if (d->type()==H) {
-				for (auto s: d->get_species_h()) {
-					_add_counter(s);
-				};
-			} else if (d->type()==J) {
-				for (auto s: d->get_species_J()) {
-					_latt.init_nn_structure();
-					_add_counter(s[0],s[1]);
-				};
-			} else if (d->type()==K) {
-				for (auto s: d->get_species_K()) {
-					_latt.init_triplet_structure();
-					_add_counter(s[0],s[1],s[2]);
-				};
 			};
 		};
 	};

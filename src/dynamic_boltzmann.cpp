@@ -849,14 +849,14 @@ namespace DynamicBoltzmann {
 		if (DIAG_SETUP) { std::cout << "Create ixn params..." << std::flush; };
 		Species *sp,*sp1,*sp2,*sp3;
 		HiddenSpecies *sph;
-		for (auto d=dims.begin(); d!=dims.end(); d++) {
+		for (auto const &d: dims) {
 
-			if (d->type()==H) {
+			if (d.type()==H) {
 
 				// Create
-				_ixn_params.push_back(IxnParamTraj(d->name(),Hp,d->min(),d->max(),d->n(),d->init(),n_t));
+				_ixn_params.push_back(IxnParamTraj(d.name(),Hp,d.min(),d.max(),d.n(),d.init(),n_t,&_t_opt));
 
-				for (auto s: d->get_species_h()) {
+				for (auto s: d.get_species_h()) {
 					// Find and add the species
 					sp = _not_nullptr(_find_species(s));
 					_ixn_params.back().add_species(sp);
@@ -866,12 +866,12 @@ namespace DynamicBoltzmann {
 					_add_counter(s);					
 				};
 
-			} else if (d->type()==J) { 
+			} else if (d.type()==J) { 
 
 				// Create
-				_ixn_params.push_back(IxnParamTraj(d->name(),Jp,d->min(),d->max(),d->n(),d->init(),n_t));
+				_ixn_params.push_back(IxnParamTraj(d.name(),Jp,d.min(),d.max(),d.n(),d.init(),n_t,&_t_opt));
 
-				for (auto s: d->get_species_J()) {
+				for (auto s: d.get_species_J()) {
 					// Find and add the species
 					sp1 = _not_nullptr(_find_species(s[0]));
 					sp2 = _not_nullptr(_find_species(s[1]));
@@ -883,7 +883,10 @@ namespace DynamicBoltzmann {
 					_add_counter(s[0],s[1]);					
 				};
 
-			} else if (d->type()==K) {
+				// Init structure for lattice
+				_latt.init_nn_structure();
+
+			} else if (d.type()==K) {
 
 				// Check that Lattice dim is 1 - only 1 is allowed!
 				if (lattice_dim != 1) {
@@ -892,9 +895,9 @@ namespace DynamicBoltzmann {
 				};
 
 				// Create
-				_ixn_params.push_back(IxnParamTraj(d->name(),Kp,d->min(),d->max(),d->n(),d->init(),n_t));
+				_ixn_params.push_back(IxnParamTraj(d.name(),Kp,d.min(),d.max(),d.n(),d.init(),n_t,&_t_opt));
 
-				for (auto s: d->get_species_K()) {
+				for (auto s: d.get_species_K()) {
 					// Find and add the species
 					sp1 = _not_nullptr(_find_species(s[0]));
 					sp2 = _not_nullptr(_find_species(s[1]));
@@ -908,12 +911,15 @@ namespace DynamicBoltzmann {
 					_add_counter(s[0],s[1],s[2]);			
 				};
 
-			} else if (d->type()==W) { 
+				// Init structure for lattice
+				_latt.init_triplet_structure();
+
+			} else if (d.type()==W) { 
 
 				// Create
-				_ixn_params.push_back(IxnParamTraj(d->name(),Wp,d->min(),d->max(),d->n(),d->init(),n_t));
+				_ixn_params.push_back(IxnParamTraj(d.name(),Wp,d.min(),d.max(),d.n(),d.init(),n_t,&_t_opt));
 
-				for (auto s: d->get_species_W()) {
+				for (auto s: d.get_species_W()) {
 					// Find and add the species
 					sp = _not_nullptr(_find_species(s[0]));
 					sph = _not_nullptr(_find_hidden_species(s[1]));
@@ -922,12 +928,12 @@ namespace DynamicBoltzmann {
 					// No need to add to species - handled by ConnectionVH class
 				};
 
-			} else if (d->type()==B) {
+			} else if (d.type()==B) {
 
 				// Create
-				_ixn_params.push_back(IxnParamTraj(d->name(),Bp,d->min(),d->max(),d->n(),d->init(),n_t));
+				_ixn_params.push_back(IxnParamTraj(d.name(),Bp,d.min(),d.max(),d.n(),d.init(),n_t,&_t_opt));
 
-				for (auto s: d->get_species_b()) {
+				for (auto s: d.get_species_b()) {
 					// Find and add the species
 					sph = _not_nullptr(_find_hidden_species(s));
 					_ixn_params.back().add_species(sph);
@@ -945,7 +951,7 @@ namespace DynamicBoltzmann {
 			// Find the basis func dimensions
 			bf_ips.clear();
 			for (auto bfd: d.basis_func_dims()) {
-				bf_ips.push_back(_find_ixn_param(bfd));
+				bf_ips.push_back(_not_nullptr(_find_ixn_param(bfd)));
 			};
 			// Make the basis function
 			_bfs.push_back(BasisFunc("F_"+d.name(),bf_ips));
@@ -957,7 +963,7 @@ namespace DynamicBoltzmann {
 		BasisFunc* bf_ptr=nullptr;
 		for (auto itp=_ixn_params.begin(); itp!=_ixn_params.end(); itp++) {
 			// Find the basis func
-			bf_ptr = _find_basis_func("F_"+itp->name());
+			bf_ptr = _not_nullptr(_find_basis_func("F_"+itp->name()));
 			// Set
 			itp->set_basis_func_ptr(bf_ptr);
 		};
@@ -974,14 +980,14 @@ namespace DynamicBoltzmann {
 				// Find the basis func dimensions
 				bf_ips.clear();
 				for (auto bfd: denom.basis_func_dims()) {
-					bf_ips.push_back(_find_ixn_param(bfd));
+					bf_ips.push_back(_not_nullptr(_find_ixn_param(bfd)));
 				};
 				// Find the basis func
-				bf_ptr = _find_basis_func("F_"+denom.name());
+				bf_ptr = _not_nullptr(_find_basis_func("F_"+denom.name()));
 				// Find the interaction param
-				ixn_param_ptr = _find_ixn_param(num.name());
+				ixn_param_ptr = _not_nullptr(_find_ixn_param(num.name()));
 				// Find the basis func corresponding to the numerator
-				num_bf_ptr = _find_basis_func("F_"+num.name());
+				num_bf_ptr = _not_nullptr(_find_basis_func("F_"+num.name()));
 				// Create the var term
 				_var_terms.push_back(VarTermTraj("var_"+num.name()+"_wrt_F_"+denom.name(), ixn_param_ptr, bf_ptr, bf_ips, num_bf_ptr, num.basis_func_dims().size(), n_t));
 			};
@@ -998,13 +1004,13 @@ namespace DynamicBoltzmann {
 				// Find the ixn params that are arguments to the num's basis func
 				bf_ips.clear();
 				for (auto bfd: num.basis_func_dims()) {
-					bf_ips.push_back(_find_ixn_param(bfd));
+					bf_ips.push_back(_not_nullptr(_find_ixn_param(bfd)));
 				};
 				// Find the variational term
-				vt_ptr = _find_var_term("var_"+num.name()+"_wrt_"+denom->name());
+				vt_ptr = _not_nullptr(_find_var_term("var_"+num.name()+"_wrt_"+denom->name()));
 				// Find the variational terms needed to update this one
 				for (auto ip_ptr: bf_ips) {
-					vt_ptr->add_update_ptr(_find_var_term("var_"+ip_ptr->name()+"_wrt_"+denom->name()));
+					vt_ptr->add_update_ptr(_not_nullptr(_find_var_term("var_"+ip_ptr->name()+"_wrt_"+denom->name())));
 				};
 			};
 		};
@@ -1015,7 +1021,7 @@ namespace DynamicBoltzmann {
 		for (auto itbf=_bfs.begin(); itbf!=_bfs.end(); itbf++) {
 			for (auto itp=_ixn_params.begin(); itp!=_ixn_params.end(); itp++) {
 				// Find the variational term
-				vt_ptr = _find_var_term("var_"+itp->name()+"_wrt_"+itbf->name());
+				vt_ptr = _not_nullptr(_find_var_term("var_"+itp->name()+"_wrt_"+itbf->name()));
 				// Add
 				itbf->add_update_ptrs(&*itp,vt_ptr);
 			};
@@ -1204,42 +1210,6 @@ namespace DynamicBoltzmann {
 			};
 		};
 	};
-
-	/*
-	void OptProblem::Impl::_add_hidden_unit(std::vector<Site*> conns, std::string species)
-	{
-		// Find the species
-		Species *sp = _find_species(species);
-
-		// Make hidden unit
-		_hidden_units.push_back(HiddenUnit(conns,sp));
-
-		// Go through lattice sites in this connection
-		// Indicate that for this species, they are linked to this hidden unit
-		for (auto s: conns) {
-			s->hidden_conns[sp].push_back(&_hidden_units.back());
-		};
-
-		// Tell the appropriate interaction parameter that these these sites are connected to this hidden unit
-		IxnParamTraj *ip = _find_ixn_param_w_by_species(species);
-		for (auto sptr: conns) {
-			ip->add_visible_hidden_connection(sptr,&_hidden_units.back());
-		};
-
-		// See if a bias exists for hidden units with this species
-		ip = _find_ixn_param_b_by_species(species,false); // can fail
-		if (ip) {
-			// Tell the bias that this hidden unit exists
-			ip->add_hidden_unit(&_hidden_units.back());
-
-			// Tell the hidden unit that this is it's bias
-			_hidden_units.back().set_bias(ip);
-
-			// Tell the hidden unit what time it is
-			_hidden_units.back().set_t_opt_ptr(&_t_opt);
-		};
-	};
-	*/
 
 	/********************
 	Validate setup

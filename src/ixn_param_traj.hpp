@@ -95,7 +95,7 @@ namespace DynamicBoltzmann {
 		Constructor
 		********************/
 
-		IxnParamTraj(std::string name, IxnParamType type, double min, double max, int n, double val0, int n_t);
+		IxnParamTraj(std::string name, IxnParamType type, double min, double max, int n, double val0, int n_t, int *t_opt_ptr);
 		IxnParamTraj(const IxnParamTraj& other);
 		IxnParamTraj(IxnParamTraj&& other);
 		IxnParamTraj& operator=(const IxnParamTraj& other);
@@ -136,12 +136,6 @@ namespace DynamicBoltzmann {
 		********************/
 
 		void set_init_cond(double val);
-
-		/********************
-		Set the pointer to the optimization time
-		********************/
-
-		void set_t_opt_ptr(int *t_opt_ptr);
 
 		/********************
 		Validate setup

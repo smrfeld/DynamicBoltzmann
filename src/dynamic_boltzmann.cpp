@@ -1324,6 +1324,13 @@ namespace DynamicBoltzmann {
 				};
 			};
 
+			/*
+			for (auto s: fnames_batch) {
+				std::cout << s << " ";
+			};
+			std::cout << "" << std::endl;
+			*/
+			
 			// Add the batch
 			fnames_to_use.push_back(fnames_batch);
 		};
@@ -1487,7 +1494,7 @@ namespace DynamicBoltzmann {
 
 				if (DIAG_SOLVE) { std::cout << "   Looping over batch" << std::endl; };
 
-				for (int i_batch=0; i_batch<fnames_to_use[_t_opt].size(); i_batch++) 
+				for (int i_batch=0; i_batch<fnames_to_use[i_opt_from_zero].size(); i_batch++) 
 				{
 					if (options.verbose) {
 						std::cout << "." << std::flush;
@@ -1501,7 +1508,7 @@ namespace DynamicBoltzmann {
 
 					if (options.awake_visible_are_binary) {
 						// Binary
-						_latt.read_from_file(fnames_to_use[_t_opt][i_batch] + pad_str(options.time_idx_start_reading+_t_opt,4) + ".txt");
+						_latt.read_from_file(fnames_to_use[i_opt_from_zero][i_batch] + pad_str(options.time_idx_start_reading+_t_opt,4) + ".txt");
 					} else {
 						// Probabilistic
 						std::cerr << "Error! Probabilistic awake visible units not supported yet!" << std::endl;
@@ -1527,7 +1534,7 @@ namespace DynamicBoltzmann {
 					if (DIAG_SOLVE) { std::cout << "      Record awake moments" << std::endl; };
 
 					for (auto itp = _ixn_params.begin(); itp != _ixn_params.end(); itp++) {
-						itp->moments_retrieve_at_time(IxnParamTraj::AWAKE,_t_opt,fnames_to_use[_t_opt].size());
+						itp->moments_retrieve_at_time(IxnParamTraj::AWAKE,_t_opt,fnames_to_use[i_opt_from_zero].size());
 					};
 
 					/*****
@@ -1578,7 +1585,7 @@ namespace DynamicBoltzmann {
 					if (DIAG_SOLVE) { std::cout << "      Record asleep moments" << std::endl; };
 
 					for (auto itp = _ixn_params.begin(); itp != _ixn_params.end(); itp++) {
-						itp->moments_retrieve_at_time(IxnParamTraj::ASLEEP,_t_opt,fnames_to_use[_t_opt].size());
+						itp->moments_retrieve_at_time(IxnParamTraj::ASLEEP,_t_opt,fnames_to_use[i_opt_from_zero].size());
 					};
 				};
 

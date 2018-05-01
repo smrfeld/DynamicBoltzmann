@@ -193,6 +193,13 @@ namespace DynamicBoltzmann {
 		};
 		_prob_empty = 0.0;
 
+		/*
+		for (auto x: props) {
+			std::cout << x << " ";
+		};
+		std::cout << "" << std::endl;
+		*/
+		
 		// Store/sample
 		int i_chosen;
 		if (binary) {

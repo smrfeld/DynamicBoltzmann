@@ -10,6 +10,7 @@
 
 #define DIAG_SETUP 0
 #define DIAG_SOLVE 0
+#define DIAG_TIME_SOLVE 0
 
 /************************************
 * Namespace for DynamicBoltzmann
@@ -1274,9 +1275,7 @@ namespace DynamicBoltzmann {
 		for (int it=1; it<_n_t_soln; it++) {
 			// Go through all var terms
 			for (auto itv=_var_terms.begin(); itv!=_var_terms.end(); itv++) {
-				//std::cout << "calc " << itv->name() << " at time " << it << std::endl;
 				itv->calculate_at_time(it,_time.delta());
-				//std::cout << "ok" << std::endl;
 			};
 		};
 	};
@@ -1394,10 +1393,15 @@ namespace DynamicBoltzmann {
 			};
 		};
 
+		// Times possibly
+		clock_t t0,t1,t2,t3,t4,t5,t6,t7,t8,t9,t10;
+
 		// Iterate over optimization steps
 		for (int i_opt_from_zero=0; i_opt_from_zero<n_opt; i_opt_from_zero++)
 		{
 			std::cout << "Opt step " << i_opt_from_zero << " / " << n_opt-1 << std::endl;
+
+			if (DIAG_TIME_SOLVE) { t0 = clock(); };
 
 			// Offset
 			i_opt = i_opt_from_zero + options.opt_idx_start_writing;
@@ -1433,6 +1437,11 @@ namespace DynamicBoltzmann {
 				write_bfs(options.dir_write+"F/",i_opt);
 			};
 
+			if (DIAG_TIME_SOLVE) {
+				t1 = clock();
+				std::cout << "	nesterov: " << double(t1 - t0) / CLOCKS_PER_SEC << std::endl;
+			};
+
 			/*****
 			Step 1 - Solve the current trajectory
 			*****/
@@ -1447,6 +1456,11 @@ namespace DynamicBoltzmann {
 			};
 
 			if (DIAG_SOLVE) { std::cout << "OK" << std::endl; };
+
+			if (DIAG_TIME_SOLVE) {
+				t2 = clock();
+				std::cout << "	traj: " << double(t2 - t1) / CLOCKS_PER_SEC << std::endl;
+			};
 
 			/*****
 			Step 2 - Solve the variational problem traj
@@ -1463,6 +1477,11 @@ namespace DynamicBoltzmann {
 			
 			if (DIAG_SOLVE) { std::cout << "OK" << std::endl; };
 
+			if (DIAG_TIME_SOLVE) {
+				t3 = clock();
+				std::cout << "	var: " << double(t3 - t2) / CLOCKS_PER_SEC << std::endl;
+			};
+
 			/*****
 			Step 4 - reset the moments at all times
 			*****/
@@ -1474,6 +1493,11 @@ namespace DynamicBoltzmann {
 			};
 
 			if (DIAG_SOLVE) { std::cout << "OK" << std::endl; };
+
+			if (DIAG_TIME_SOLVE) {
+				t4 = clock();
+				std::cout << "	reset: " << double(t4 - t3) / CLOCKS_PER_SEC << std::endl;
+			};
 
 			/*****
 			Step 5 - Go through all times
@@ -1500,6 +1524,9 @@ namespace DynamicBoltzmann {
 						std::cout << "." << std::flush;
 					};
 
+
+					if (DIAG_TIME_SOLVE) { t5 = clock(); };
+
 					/*****
 					Step 5.1.1 - Read in sample at this timestep
 					*****/
@@ -1514,6 +1541,11 @@ namespace DynamicBoltzmann {
 						std::cerr << "Error! Probabilistic awake visible units not supported yet!" << std::endl;
 						exit(EXIT_FAILURE);
 					};
+ 	
+ 					if (DIAG_TIME_SOLVE) {
+						t6 = clock();
+						std::cout << "	read: " << double(t6 - t5) / CLOCKS_PER_SEC << std::endl;
+					};
 
 					/*****
 					Step 5.1.2 - Activate the hidden units if needed
@@ -1527,6 +1559,11 @@ namespace DynamicBoltzmann {
 						};
 					};
 
+					if (DIAG_TIME_SOLVE) {
+						t7 = clock();
+						std::cout << "	activated: " << double(t7 - t6) / CLOCKS_PER_SEC << std::endl;
+					};
+
 					/*****
 					Step 5.1.3 - Record the awake moments
 					*****/
@@ -1535,6 +1572,11 @@ namespace DynamicBoltzmann {
 
 					for (auto itp = _ixn_params.begin(); itp != _ixn_params.end(); itp++) {
 						itp->moments_retrieve_at_time(IxnParamTraj::AWAKE,_t_opt,fnames_to_use[i_opt_from_zero].size());
+					};
+
+					if (DIAG_TIME_SOLVE) {
+						t8 = clock();
+						std::cout << "	recorded: " << double(t8 - t7) / CLOCKS_PER_SEC << std::endl;
 					};
 
 					/*****
@@ -1578,6 +1620,11 @@ namespace DynamicBoltzmann {
 						};
 					};
 
+					if (DIAG_TIME_SOLVE) {
+						t9 = clock();
+						std::cout << "	CD: " << double(t9 - t8) / CLOCKS_PER_SEC << std::endl;
+					};
+
 					/*****
 					Step 5.1.5 - Record the asleep moments
 					*****/
@@ -1586,6 +1633,11 @@ namespace DynamicBoltzmann {
 
 					for (auto itp = _ixn_params.begin(); itp != _ixn_params.end(); itp++) {
 						itp->moments_retrieve_at_time(IxnParamTraj::ASLEEP,_t_opt,fnames_to_use[i_opt_from_zero].size());
+					};
+
+					if (DIAG_TIME_SOLVE) {
+						t10 = clock();
+						std::cout << "	recorded: " << double(t10 - t9) / CLOCKS_PER_SEC << std::endl;
 					};
 				};
 

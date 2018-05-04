@@ -114,7 +114,9 @@ namespace DynamicBoltzmann {
 		// Stored update for nesterov
 		Array *_nesterov_prev_pt;
 
-		// Derivatives
+		// Store derivatives in each direction
+
+		// Specify in which dimension to take a derivative
 		bool *_derivs;
 
 		// Internal copy/clean up function

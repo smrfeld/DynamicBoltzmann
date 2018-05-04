@@ -406,7 +406,7 @@ namespace DynamicBoltzmann {
 	};
 	void Dim::Impl::add_species_K(std::string species1, std::string species2, std::string species3) {
 		// Check type
-		if (_type != J) {
+		if (_type != K) {
 			std::cerr << "Error! Not K." << std::endl;
 			exit(EXIT_FAILURE);
 		};
@@ -670,6 +670,12 @@ namespace DynamicBoltzmann {
 	    Impl& operator=(const Impl& other);
 	    Impl& operator=(Impl&& other);
 		~Impl();
+
+		/********************
+		Set IC for ixn param
+		********************/
+
+		void set_ic_for_ixn_param(std::string param_name, double val);
 
 		/********************
 		Set properties	
@@ -1103,6 +1109,17 @@ namespace DynamicBoltzmann {
 	};
 
 	/********************
+	Set IC for ixn param
+	********************/
+
+	void OptProblem::Impl::set_ic_for_ixn_param(std::string param_name, double val) {
+		// Find
+		IxnParamTraj *ip = _not_nullptr(_find_ixn_param(param_name));
+		// Set
+		ip->set_init_cond(val);
+	};
+
+	/********************
 	Find hidden unit connections
 	********************/
 
@@ -1133,10 +1150,6 @@ namespace DynamicBoltzmann {
 		};
 		return conns;
 	};
-
-	/********************
-	Add hidden units
-	********************/
 
 	/********************
 	Add hidden unit
@@ -2350,6 +2363,10 @@ namespace DynamicBoltzmann {
         return *this; 
 	};
 	OptProblem::~OptProblem() = default;
+
+	void OptProblem::set_ic_for_ixn_param(std::string param_name, double val) {
+		_impl->set_ic_for_ixn_param(param_name,val);
+	};
 
 	void OptProblem::add_hidden_unit(std::vector<std::string> species_possible, std::vector<std::vector<int>> lattice_idxs, std::vector<std::string> w_params, std::vector<std::string> b_params) {
 		_impl->add_hidden_unit(species_possible,lattice_idxs,w_params,b_params);

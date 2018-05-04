@@ -235,6 +235,12 @@ namespace DynamicBoltzmann {
 		~OptProblem();
 
 		/********************
+		Set IC for ixn param
+		********************/
+
+		void set_ic_for_ixn_param(std::string param_name, double val);
+
+		/********************
 		Set hidden layer	
 		********************/
 

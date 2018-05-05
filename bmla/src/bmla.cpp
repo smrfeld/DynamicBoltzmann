@@ -76,6 +76,7 @@ namespace DynamicBoltzmann {
 		std::vector<std::vector<std::string>> get_species_J() const;
 		std::vector<std::vector<std::string>> get_species_K() const;
 		std::vector<std::vector<std::string>> get_species_W() const;
+		std::vector<std::vector<std::string>> get_species_Q() const;
 
 		/********************
 		Setters
@@ -87,6 +88,7 @@ namespace DynamicBoltzmann {
 		void add_species_J(std::string species1, std::string species2);
 		void add_species_K(std::string species1, std::string species2, std::string species3);
 		void add_species_W(std::string species_visible, std::string species_hidden);
+		void add_species_Q(std::string species1, std::string species2, std::string species3, std::string species4);
 	};
 
 	/********************
@@ -140,12 +142,18 @@ namespace DynamicBoltzmann {
 				exit(EXIT_FAILURE);
 			};
 			add_species_W(species[0],species[1]);
+ 		} else if (type == Q) {
+			if (species.size() != 4) {
+				std::cerr << "Error! must be 4 species for Q" << std::endl;
+				exit(EXIT_FAILURE);
+			};
+			add_species_Q(species[0],species[1],species[2],species[3]);
 		};
 	};
 	Dim::Impl::Impl(std::string name, DimType type, std::vector<std::vector<std::string>> species, double guess) {
 		// Check type
 		if (type == B || type != H) {
-			std::cerr << "Error! Only for J or K or W." << std::endl;
+			std::cerr << "Error! Only for J or K or W or Q." << std::endl;
 			exit(EXIT_FAILURE);
 		};
 		_shared_constructor(name,type,guess);
@@ -175,6 +183,14 @@ namespace DynamicBoltzmann {
 					exit(EXIT_FAILURE);
 				};
 				add_species_W(s_pair[0],s_pair[1]);
+			};
+		} else if (type == Q) {
+			for (auto s_quartic: species) {
+				if (s_quartic.size() != 4) {
+					std::cerr << "Error! must be 4 species for Q" << std::endl;
+					exit(EXIT_FAILURE);
+				};
+				add_species_Q(s_quartic[0],s_quartic[1],s_quartic[2],s_quartic[3]);
 			};
 		};
 	};
@@ -288,6 +304,13 @@ namespace DynamicBoltzmann {
 		};
 		return _species_multiple;
 	};
+	std::vector<std::vector<std::string>> Dim::Impl::get_species_Q() const {
+		if (_type != Q) {
+			std::cerr << "Error! Requested species but not of type Q." << std::endl;
+			exit(EXIT_FAILURE);
+		};
+		return _species_multiple;
+	};
 
 	/********************
 	Setters
@@ -339,7 +362,15 @@ namespace DynamicBoltzmann {
 		_any_species = false;
 		_species_multiple.push_back(std::vector<std::string>({species_visible,species_hidden}));
 	};
-
+	void Dim::Impl::add_species_Q(std::string species1, std::string species2, std::string species3, std::string species4) {
+		// Check type
+		if (_type != Q) {
+			std::cerr << "Error! Not Q." << std::endl;
+			exit(EXIT_FAILURE);
+		};
+		_any_species = false;
+		_species_multiple.push_back(std::vector<std::string>({species1,species2,species3,species4}));
+	};
 
 
 
@@ -445,6 +476,9 @@ namespace DynamicBoltzmann {
 	std::vector<std::vector<std::string>> Dim::get_species_W() const {
 		return _impl->get_species_W();
 	};
+	std::vector<std::vector<std::string>> Dim::get_species_Q() const {
+		return _impl->get_species_Q();
+	};
 
 	/********************
 	Setters
@@ -466,7 +500,9 @@ namespace DynamicBoltzmann {
 	void Dim::add_species_W(std::string species_visible, std::string species_hidden) {
 		_impl->add_species_W(species_visible,species_hidden);
 	};
-
+	void Dim::add_species_Q(std::string species1, std::string species2, std::string species3, std::string species4) {
+		_impl->add_species_Q(species1,species2,species3,species4);
+	};
 
 
 
@@ -698,6 +734,16 @@ namespace DynamicBoltzmann {
 							d->add_species_W(sv,sh);
 						};
 					};
+				} else if (d->type()==Q) {
+					for (auto s1: species_visible) {
+						for (auto s2: species_visible) {
+							for (auto s3: species_visible) {
+								for (auto s4: species_visible) {
+									d->add_species_Q(s1,s2,s3,s4);
+								};
+							};
+						};
+					};
 				};
 			};
 		};
@@ -726,7 +772,7 @@ namespace DynamicBoltzmann {
 		};
 
 		// Create the interaction params
-		Species *sp,*sp1,*sp2,*sp3;
+		Species *sp,*sp1,*sp2,*sp3,*sp4;
 		HiddenSpecies *sph;
 		for (auto d=dims.begin(); d!=dims.end(); d++) {
 
@@ -792,6 +838,36 @@ namespace DynamicBoltzmann {
 
 				// Init structure for lattice
 				_latt.init_triplet_structure();
+
+			} else if (d->type()==Q) {
+
+				// Check that Lattice dim is 1 - only 1 is allowed!
+				if (lattice_dim != 1) {
+					std::cerr << "Error: quartics are currently only supported for lattice of dim 1" << std::endl;
+					exit(EXIT_FAILURE);
+				};
+
+				// Create
+				_ixn_params.push_back(IxnParam(d->name(),Qp,d->guess()));
+
+				for (auto s: d->get_species_Q()) {
+					// Find and add the species
+					sp1 = _not_nullptr(_find_species(s[0]));
+					sp2 = _not_nullptr(_find_species(s[1]));
+					sp3 = _not_nullptr(_find_species(s[2]));
+					sp4 = _not_nullptr(_find_species(s[3]));
+					_ixn_params.back().add_species(sp1,sp2,sp3,sp4);
+					// Add ixn to the species
+					sp1->add_q_ptr(sp2,sp3,sp4,&_ixn_params.back());
+					sp2->add_q_ptr(sp1,sp3,sp4,&_ixn_params.back());
+					sp3->add_q_ptr(sp1,sp2,sp4,&_ixn_params.back());
+					sp4->add_q_ptr(sp1,sp2,sp3,&_ixn_params.back());
+					// Make sure we have a counter
+					_add_counter(s[0],s[1],s[2],s[3]);			
+				};
+
+				// Init structure for lattice
+				_latt.init_quartic_structure();
 
 			} else if (d->type()==W) { 
 

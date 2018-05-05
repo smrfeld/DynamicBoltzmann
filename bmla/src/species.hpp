@@ -51,6 +51,17 @@ namespace DynamicBoltzmann {
 	// Comparator
 	bool operator <(const Species3& a, const Species3& b);
 
+	struct Species4 {
+		Species *sp1;
+		Species *sp2;
+		Species *sp3;
+		Species *sp4;
+		Species4(Species* sp1, Species* sp2, Species *sp3, Species *sp4);
+	};
+	// Comparator
+	bool operator <(const Species4& a, const Species4& b);
+
+
 	struct SpeciesVH {
 		Species *sp_visible;
 		HiddenSpecies *sp_hidden;
@@ -83,6 +94,7 @@ namespace DynamicBoltzmann {
 		std::vector<IxnParam*> _h_ptrs;
 		std::map<Species*,std::vector<IxnParam*> > _j_ptrs;
 		std::map<Species2,std::vector<IxnParam*>> _k_ptrs;
+		std::map<Species3,std::vector<IxnParam*>> _q_ptrs;
 
 		// Constructor helpers
 		void _clean_up();
@@ -118,6 +130,7 @@ namespace DynamicBoltzmann {
 		void add_h_ptr(IxnParam *h_ptr);
 		void add_j_ptr(Species* sp, IxnParam *j_ptr);
 		void add_k_ptr(Species* sp1, Species* sp2, IxnParam *k_ptr);
+		void add_q_ptr(Species* sp1, Species* sp2, Species *sp3, IxnParam *q_ptr);
 
 		/********************
 		Ixn params
@@ -126,6 +139,7 @@ namespace DynamicBoltzmann {
 		double h() const;
 		double j(Species* other) const;
 		double k(Species* other1, Species *other2) const;
+		double q(Species* other1, Species *other2, Species *other3) const;
 
 		/********************
 		Counts

@@ -55,6 +55,19 @@ namespace DynamicBoltzmann {
     	return std::tie(a.sp1, a.sp2, a.sp3) < std::tie(b.sp1, b.sp2, b.sp3);
 	};
 
+	Species4::Species4(Species* sp1, Species* sp2, Species *sp3, Species *sp4) {
+		// Sort
+		std::vector<Species*> sp = {sp1,sp2,sp3,sp4};
+		std::sort (sp.begin(), sp.end());
+		this->sp1 = sp[0];
+		this->sp2 = sp[1];
+		this->sp3 = sp[2];
+		this->sp4 = sp[3];
+	};
+	bool operator <(const Species4& a, const Species4& b) {
+    	return std::tie(a.sp1, a.sp2, a.sp3, a.sp4) < std::tie(b.sp1, b.sp2, b.sp3, b.sp4);
+	};
+
 	SpeciesVH::SpeciesVH(Species* sp_visible, HiddenSpecies *sp_hidden) {
 		this->sp_visible = sp_visible;
 		this->sp_hidden = sp_hidden;
@@ -111,6 +124,7 @@ namespace DynamicBoltzmann {
 		_h_ptrs.clear();
 		_j_ptrs.clear();
 		_k_ptrs.clear();
+		_q_ptrs.clear();
 	};
 	void Species::_copy(const Species& other) {
 		_name = other._name;
@@ -121,6 +135,7 @@ namespace DynamicBoltzmann {
 		_h_ptrs = other._h_ptrs;
 		_j_ptrs = other._j_ptrs;
 		_k_ptrs = other._k_ptrs;
+		_q_ptrs = other._q_ptrs;
 	};
 
 	/********************
@@ -176,6 +191,19 @@ namespace DynamicBoltzmann {
 			};
 		};
 	};
+	void Species::add_q_ptr(Species* sp1, Species* sp2, Species* sp3, IxnParam *q_ptr) {
+		Species3 sp = Species3(sp1,sp2,sp3);
+		// Check not already entered
+		auto it1 = _q_ptrs.find(sp);
+		if (it1 == _q_ptrs.end()) {
+			_q_ptrs[sp].push_back(q_ptr);
+		} else {
+			auto it2 = std::find(_q_ptrs[sp].begin(),_q_ptrs[sp].end(), q_ptr);
+			if (it2 == _q_ptrs[sp].end()) {
+				_q_ptrs[sp].push_back(q_ptr);
+			};
+		};
+	};
 
 	/********************
 	Get ixn params
@@ -204,6 +232,16 @@ namespace DynamicBoltzmann {
 		if (it != _k_ptrs.end()) {
 			for (auto k: it->second) {
 				act += k->get();
+			};
+		};
+		return act;
+	};
+	double Species::q(Species* other1, Species *other2, Species *other3) const {
+		double act=0.0;
+		auto it = _q_ptrs.find(Species3(other1,other2,other3));
+		if (it != _q_ptrs.end()) {
+			for (auto q: it->second) {
+				act += q->get();
 			};
 		};
 		return act;

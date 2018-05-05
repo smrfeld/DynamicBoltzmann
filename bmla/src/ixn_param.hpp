@@ -24,7 +24,7 @@ namespace DynamicBoltzmann {
 	****************************************/
 
 	// Enumeration of type of dimension
-	enum IxnParamType { Hp, Jp, Wp, Kp, Bp };
+	enum IxnParamType { Hp, Jp, Wp, Kp, Bp, Qp };
 
 	class IxnParam {
 
@@ -46,6 +46,8 @@ namespace DynamicBoltzmann {
 		std::vector<Species2> _sp_doublet;
 		// For a visible K
 		std::vector<Species3> _sp_triplet;
+		// For a visible Q
+		std::vector<Species4> _sp_quartic;
 		// For a visible to hidden weight W
 		std::vector<SpeciesVH> _sp_conn;
 
@@ -110,6 +112,7 @@ namespace DynamicBoltzmann {
 		void add_species(HiddenSpecies *hsp);
 		void add_species(Species *sp1, Species *sp2);
 		void add_species(Species *sp1, Species *sp2, Species *sp3);
+		void add_species(Species *sp1, Species *sp2, Species *sp3, Species *sp4);
 		void add_species(Species *sp, HiddenSpecies *hsp);
 
 		/********************
@@ -148,6 +151,7 @@ namespace DynamicBoltzmann {
 		std::vector<HiddenSpecies*> get_species_hidden_bias() const;
 		std::vector<Species2> get_species_doublet() const;
 		std::vector<Species3> get_species_triplet() const;
+		std::vector<Species4> get_species_quartic() const;
 		std::vector<SpeciesVH> get_species_conn() const;
 
 		/********************

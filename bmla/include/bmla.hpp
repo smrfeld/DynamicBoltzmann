@@ -24,7 +24,7 @@ namespace DynamicBoltzmann {
 	****************************************/
 
 	// Type of dimension
-	enum DimType { H, J, K, W, B };
+	enum DimType { H, J, K, W, B, Q };
 
 	class Dim {
 
@@ -70,6 +70,7 @@ namespace DynamicBoltzmann {
 		std::vector<std::vector<std::string>> get_species_J() const;
 		std::vector<std::vector<std::string>> get_species_K() const;
 		std::vector<std::vector<std::string>> get_species_W() const;
+		std::vector<std::vector<std::string>> get_species_Q() const;
 
 		/********************
 		Setters
@@ -81,6 +82,7 @@ namespace DynamicBoltzmann {
 		void add_species_J(std::string species1, std::string species2);
 		void add_species_K(std::string species1, std::string species2, std::string species3);
 		void add_species_W(std::string species_visible, std::string species_hidden);
+		void add_species_Q(std::string species1, std::string species2, std::string species3, std::string species4);
 	};
 
 	/****************************************

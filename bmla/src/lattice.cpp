@@ -392,6 +392,23 @@ namespace DynamicBoltzmann {
 				};
 			};
 
+			// Quartics - go through all pairs to consider
+			for (auto trip: _nbrs_quartics) {
+				// Get all probs
+				const std::map<Species*, double> prs1 = trip.s1->get_probs();
+				const std::map<Species*, double> prs2 = trip.s2->get_probs();
+				const std::map<Species*, double> prs3 = trip.s3->get_probs();
+				// Go through all probs
+				for (auto const &pr1: prs1) {
+					for (auto const &pr2: prs2) {
+						for (auto const &pr3: prs3) {
+							// Q * prob * prob * prob
+							energy += sp->q(pr1.first,pr2.first,pr3.first) * pr1.second * pr2.second * pr3.second;
+						};
+					};
+				};
+			};
+
 			// Conn to hidden layer - go through conns
 			for (auto connvh: _hidden_conns) {
 				energy += connvh->get_act_visible(sp);

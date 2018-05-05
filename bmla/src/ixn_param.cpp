@@ -69,6 +69,7 @@ namespace DynamicBoltzmann {
 		_sp_bias_hidden = other._sp_bias_hidden;
 		_sp_doublet = other._sp_doublet;
 		_sp_triplet = other._sp_triplet;
+		_sp_quartic = other._sp_quartic;
 		_sp_conn = other._sp_conn;
 
 		_conns = other._conns;
@@ -90,6 +91,7 @@ namespace DynamicBoltzmann {
 		_sp_bias_hidden.clear();
 		_sp_doublet.clear();
 		_sp_triplet.clear();
+		_sp_quartic.clear();
 		_sp_conn.clear();
 
 		_conns.clear();
@@ -140,6 +142,9 @@ namespace DynamicBoltzmann {
 	};
 	void IxnParam::add_species(Species *sp1, Species *sp2, Species *sp3) {
 		_sp_triplet.push_back(Species3(sp1,sp2,sp3));
+	};
+	void IxnParam::add_species(Species *sp1, Species *sp2, Species *sp3, Species *sp4) {
+		_sp_quartic.push_back(Species4(sp1,sp2,sp3,sp4));
 	};
 	void IxnParam::add_species(Species *sp, HiddenSpecies *hsp) {
 		_sp_conn.push_back(SpeciesVH(sp,hsp));
@@ -247,6 +252,13 @@ namespace DynamicBoltzmann {
 		};
 		return _sp_triplet;
 	};
+	std::vector<Species4> IxnParam::get_species_quartic() const {
+		if (_type != Qp) {
+			std::cerr << "Error! Not a Q." << std::endl;
+			exit(EXIT_FAILURE);
+		};
+		return _sp_quartic;
+	};
 	std::vector<SpeciesVH> IxnParam::get_species_conn() const {
 		if (_type != Wp) {
 			std::cerr << "Error! Not a conn W." << std::endl;
@@ -302,6 +314,14 @@ namespace DynamicBoltzmann {
 					_awake += 1. * spt.sp1->triplet_count(spt.sp2,spt.sp3) / batch_size;
 				} else if (moment_type==ASLEEP) {
 					_asleep += 1. * spt.sp1->triplet_count(spt.sp2,spt.sp3) / batch_size;
+				};
+			};
+		} else if (_type == Qp) {
+			for (auto spt: _sp_quartic) {
+				if (moment_type==AWAKE) {
+					_awake += 1. * spt.sp1->quartic_count(spt.sp2,spt.sp3,spt.sp4) / batch_size;
+				} else if (moment_type==ASLEEP) {
+					_asleep += 1. * spt.sp1->quartic_count(spt.sp2,spt.sp3,spt.sp4) / batch_size;
 				};
 			};
 		} else if (_type == Wp) {

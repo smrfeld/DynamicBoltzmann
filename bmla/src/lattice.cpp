@@ -199,11 +199,17 @@ namespace DynamicBoltzmann {
 	********************/
 
 	void Site::validate() const {
+		/*
 		std::cout << _x << " " << _y << " " << _z << " hidden nbrs: (" << _hidden_conns.size() << ")" << std::endl;
 		HiddenUnit *hu;
 		for (auto const &c: _hidden_conns) {
 			hu = c->hidden_unit();
 			hu->print_conns(true);
+		};
+		*/
+		std::cout << _x << " " << _y << " " << _z << " triplets: ( " << _nbrs_triplets.size() << ")" << std::endl;
+		for (auto const &s2: _nbrs_triplets) {
+			std::cout << s2.s1->x() << " " << s2.s2->x() << std::endl;
 		};
 	};
 
@@ -378,8 +384,8 @@ namespace DynamicBoltzmann {
 				const std::map<Species*, double> prs1 = trip.s1->get_probs();
 				const std::map<Species*, double> prs2 = trip.s2->get_probs();
 				// Go through all probs
-				for (auto pr1: prs1) {
-					for (auto pr2: prs2) {
+				for (auto const &pr1: prs1) {
+					for (auto const &pr2: prs2) {
 						// K * prob * prob
 						energy += sp->k(pr1.first,pr2.first) * pr1.second * pr2.second;
 					};

@@ -145,13 +145,36 @@ namespace DynamicBoltzmann {
 	********************/
 
 	void Species::add_h_ptr(IxnParamTraj *h_ptr) {
-		_h_ptrs.push_back(h_ptr);
+		// Check not already entered
+		auto it = std::find(_h_ptrs.begin(),_h_ptrs.end(), h_ptr);
+		if (it == _h_ptrs.end()) {
+			_h_ptrs.push_back(h_ptr);
+		};
 	};
 	void Species::add_j_ptr(Species* sp, IxnParamTraj *j_ptr) {
-		_j_ptrs[sp].push_back(j_ptr);
+		// Check not already entered
+		auto it1 = _j_ptrs.find(sp);
+		if (it1 == _j_ptrs.end()) {
+			_j_ptrs[sp].push_back(j_ptr);
+		} else {
+			auto it2 = std::find(_j_ptrs[sp].begin(),_j_ptrs[sp].end(), j_ptr);
+			if (it2 == _j_ptrs[sp].end()) {
+				_j_ptrs[sp].push_back(j_ptr);
+			};
+		};
 	};
 	void Species::add_k_ptr(Species* sp1, Species* sp2, IxnParamTraj *k_ptr) {
-		_k_ptrs[Species2(sp1,sp2)].push_back(k_ptr);
+		Species2 sp = Species2(sp1,sp2);
+		// Check not already entered
+		auto it1 = _k_ptrs.find(sp);
+		if (it1 == _k_ptrs.end()) {
+			_k_ptrs[sp].push_back(k_ptr);
+		} else {
+			auto it2 = std::find(_k_ptrs[sp].begin(),_k_ptrs[sp].end(), k_ptr);
+			if (it2 == _k_ptrs[sp].end()) {
+				_k_ptrs[sp].push_back(k_ptr);
+			};
+		};
 	};
 
 	/********************

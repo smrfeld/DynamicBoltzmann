@@ -304,7 +304,7 @@ namespace DynamicBoltzmann {
 	};
 	void IxnParam::moments_retrieve(MomentType moment_type, int batch_size)
 	{
-		if (_is_awake_fixed) {
+		if (moment_type==AWAKE && _is_awake_fixed) {
 			_awake = _awake_fixed;
 			return;
 		};

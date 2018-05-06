@@ -32,6 +32,9 @@ namespace DynamicBoltzmann {
 
 		_asleep = 0.0;
 		_awake = 0.0;
+
+		_is_awake_fixed = false;
+		_awake_fixed = 0.0;
 	};
 	IxnParam::IxnParam(const IxnParam& other) {
 		_copy(other);
@@ -82,6 +85,8 @@ namespace DynamicBoltzmann {
 		_soln_traj = other._soln_traj;
 		_asleep = other._asleep;
 		_awake = other._awake;
+		_is_awake_fixed = other._is_awake_fixed;
+		_awake_fixed = other._awake_fixed;
 	};
 	void IxnParam::_reset()
 	{
@@ -104,6 +109,9 @@ namespace DynamicBoltzmann {
 		_soln_traj.clear();
 		_asleep = 0.;
 		_awake = 0.;
+
+		_is_awake_fixed = false;
+		_awake_fixed = 0.0;
 	};
 	void IxnParam::_clean_up() {};
 
@@ -215,6 +223,10 @@ namespace DynamicBoltzmann {
 	void IxnParam::set_guess(double guess) {
 		_val_guess = guess;
 	};
+	void IxnParam::set_fixed_awake_moment(double val) {
+		_is_awake_fixed = true;
+		_awake_fixed = val;
+	};
 
 	void IxnParam::reset_to_guess() {
 		_val = _val_guess;
@@ -292,6 +304,10 @@ namespace DynamicBoltzmann {
 	};
 	void IxnParam::moments_retrieve(MomentType moment_type, int batch_size)
 	{
+		if (_is_awake_fixed) {
+			_awake = _awake_fixed;
+			return;
+		};
 		if (_type == Hp) {
 			for (auto sp: _sp_bias_visible) {
 				if (moment_type==AWAKE) {

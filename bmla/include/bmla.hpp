@@ -133,6 +133,9 @@ namespace DynamicBoltzmann {
 		// Whether to append to existing files
 		bool append;
 
+		// Whether to initialize from a filename, or from an empty lattice
+		bool start_CD_with_empty_latt;
+
 		/********************
 		Constructor
 		********************/
@@ -158,6 +161,7 @@ namespace DynamicBoltzmann {
 			nesterov = true;
 			opt_idx_start_writing = 0;
 			append = false;
+			start_CD_with_empty_latt = false;
 		};
 	};
 
@@ -235,6 +239,12 @@ namespace DynamicBoltzmann {
 		********************/
 
 		void set_param_for_dim(std::string dim_name, double val);
+
+		/********************
+		Set a fixed awake moment
+		********************/
+
+		void set_fixed_awake_moment_for_dim(std::string dim_name, double val);
 
 		/********************
 		Add a hidden unit

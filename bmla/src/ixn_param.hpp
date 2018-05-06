@@ -76,6 +76,10 @@ namespace DynamicBoltzmann {
 		double _asleep;
 		double _awake;
 
+		// Fixed value for the awake moment
+		bool _is_awake_fixed;
+		double _awake_fixed;
+
 		// Copy, clean up
 		void _copy(const IxnParam& other);
 		void _reset();
@@ -141,6 +145,7 @@ namespace DynamicBoltzmann {
 		double get() const;
 		void set_val(double val);
 		void set_guess(double guess);
+		void set_fixed_awake_moment(double val);
 		void reset_to_guess();
 
 		/********************

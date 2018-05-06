@@ -632,6 +632,9 @@ namespace DynamicBoltzmann {
 		// Set a parameter for dim
 		void set_param_for_dim(std::string dim_name, double val);
 
+		// Set a fixed moment
+		void set_fixed_awake_moment_for_dim(std::string dim_name, double val);
+
 		// Any dim
 		void add_hidden_unit(std::vector<std::string> species_possible, std::vector<std::vector<int>> lattice_idxs, std::vector<std::string> w_params, std::vector<std::string> b_params);
 		// 1D specific
@@ -1086,6 +1089,18 @@ namespace DynamicBoltzmann {
 	};
 
 	/********************
+	Set a fixed value for a moment to learn
+	********************/
+
+	void BMLA::Impl::set_fixed_awake_moment_for_dim(std::string dim_name, double val) {
+		// Find
+		IxnParam *ip = _not_nullptr(_find_ixn_param_by_name(dim_name));
+
+		// Guaranteed not to be null
+		ip->set_fixed_awake_moment(val);
+	};
+
+	/********************
 	Find hidden unit connections
 	********************/
 
@@ -1281,14 +1296,12 @@ namespace DynamicBoltzmann {
 				};
 
 				// Reset the lattice by reading in a random
-				if (options.awake_visible_are_binary) {
-					// Binary
-					_latt.read_from_file(fnames[randI(0,fnames.size()-1)],true);
+				if (!options.start_CD_with_empty_latt)
+				{	
+					_latt.read_from_file(fnames[randI(0,fnames.size()-1)],options.awake_visible_are_binary);
 				} else {
-					// Probabilistic
-					_latt.read_from_file(fnames[randI(0,fnames.size()-1)],false);
-					// Sample -> binary
-					// _latt.binarize();
+					// Don't read in, just start from empty
+					_latt.clear();
 				};
 
 				// Activate hidden
@@ -1755,6 +1768,11 @@ namespace DynamicBoltzmann {
 	// Set a parameter for dim
 	void BMLA::set_param_for_dim(std::string dim_name, double val) {
 		_impl->set_param_for_dim(dim_name,val);
+	};
+
+	// Set a fixed value for a moment
+	void BMLA::set_fixed_awake_moment_for_dim(std::string dim_name, double val) {
+		_impl->set_fixed_awake_moment_for_dim(dim_name,val);
 	};
 
 	// Add hidden unit for any dim

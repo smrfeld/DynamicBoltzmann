@@ -133,8 +133,8 @@ namespace DynamicBoltzmann {
 		// Whether to append to existing files
 		bool append;
 
-		// Whether to initialize from a filename, or from an empty lattice
-		bool start_CD_with_empty_latt;
+		// Whether to initialize from a filename, or from a random lattice
+		bool start_CD_with_random_latt;
 
 		/********************
 		Constructor
@@ -161,7 +161,7 @@ namespace DynamicBoltzmann {
 			nesterov = true;
 			opt_idx_start_writing = 0;
 			append = false;
-			start_CD_with_empty_latt = false;
+			start_CD_with_random_latt = false;
 		};
 	};
 

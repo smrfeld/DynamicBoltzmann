@@ -1296,12 +1296,12 @@ namespace DynamicBoltzmann {
 				};
 
 				// Reset the lattice by reading in a random
-				if (!options.start_CD_with_empty_latt)
+				if (!options.start_CD_with_random_latt)
 				{	
 					_latt.read_from_file(fnames[randI(0,fnames.size()-1)],options.awake_visible_are_binary);
 				} else {
-					// Don't read in, just start from empty
-					_latt.clear();
+					// Don't read in, just start from random lattice
+					_latt.populate_randomly();
 				};
 
 				// Activate hidden

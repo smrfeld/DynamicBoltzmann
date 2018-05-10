@@ -857,20 +857,19 @@ namespace DynamicBoltzmann {
 	{
 		std::ofstream f;
 		f.open (fname);
-		for (auto l: _latt) {
-			if (!l.empty()) {
-				const std::map<Species*, double> probs = l.get_probs();
-				for (auto sp: probs) {
-					if (sp.second==1.0) {
-						if (_dim == 1) {
-							f << l.x() << " " << sp.first->name() << "\n";
-						} else if (_dim == 2) {
-							f << l.x() << " " << l.y() << " " << sp.first->name() << "\n";
-						} else if (_dim == 3) {
-							f << l.x() << " " << l.y() << " " << l.z() << " " << sp.first->name() << "\n";
-						};
-						break;
+		for (auto l = _latt.begin(); l != _latt.end(); l++) {
+			const std::map<Species*, double> probs = l->get_probs();
+			for (auto sp: probs) {
+				//std::cout << "Checkinng " << sp.second << std::endl;
+				if (sp.second>0.99) {
+					if (_dim == 1) {
+						f << l->x() << " " << sp.first->name() << "\n";
+					} else if (_dim == 2) {
+						f << l->x() << " " << l->y() << " " << sp.first->name() << "\n";
+					} else if (_dim == 3) {
+						f << l->x() << " " << l->y() << " " << l->z() << " " << sp.first->name() << "\n";
 					};
+					break;
 				};
 			};
 		};

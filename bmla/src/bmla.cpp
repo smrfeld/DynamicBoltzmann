@@ -657,6 +657,9 @@ namespace DynamicBoltzmann {
 		void write(std::string fname, bool write_idx_opt_step, int idx_opt_step, bool append);
 		void write_ave(std::string fname, int last_n_steps, bool write_idx_opt_step, int idx_opt_step, bool append);
 		void write_moments(std::string fname, int idx_opt_step, bool append);
+
+		// Write the lattice
+		void write_lattice(std::string fname);
 	};
 
 
@@ -1625,6 +1628,15 @@ namespace DynamicBoltzmann {
 	};
 
 	/********************
+	Write the lattice
+	********************/
+
+	void BMLA::Impl::write_lattice(std::string fname) {
+		_latt.write_to_file(fname);
+	};
+
+
+	/********************
 	Search functions
 	********************/
 
@@ -1823,6 +1835,12 @@ namespace DynamicBoltzmann {
 	void BMLA::write_ave(std::string fname, int last_n_steps, int idx, bool append) {
 		_impl->write_ave(fname,last_n_steps,true,idx,append);
 	};
+
+	// Write the lattice
+	void BMLA::write_lattice(std::string fname) {
+		_impl->write_lattice(fname);
+	};
+
 };
 
 

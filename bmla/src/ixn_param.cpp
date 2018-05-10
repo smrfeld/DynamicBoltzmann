@@ -195,7 +195,9 @@ namespace DynamicBoltzmann {
 		};
 
 		// Get new
+		//std::cout << "Old val: " << _val << " diff: " << moments_diff();
 		_val += dopt * moments_diff();
+		//std::cout << " new: " << _val << std::endl;
 		if (l2_reg) {
 			if (_val > 0) {
 				_val -= lambda * 2. * abs(_val);

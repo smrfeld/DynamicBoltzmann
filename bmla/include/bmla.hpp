@@ -286,6 +286,12 @@ namespace DynamicBoltzmann {
 		void write_ave(std::string fname, int last_n_steps, bool append=false);
 		void write_ave(std::string fname, int last_n_steps, int idx, bool append=false);
 
+		/********************
+		Write lattice
+		********************/
+
+		void write_lattice(std::string fname);
+
 	};
 };
 

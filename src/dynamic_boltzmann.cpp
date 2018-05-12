@@ -697,7 +697,7 @@ namespace DynamicBoltzmann {
 		Solve interaction parameter traj
 		********************/
 
-		void solve_ixn_param_traj();
+		void solve_ixn_param_traj(int t_end=0);
 
 		/********************
 		Solve for variational trajectory
@@ -1254,15 +1254,21 @@ namespace DynamicBoltzmann {
 	Solve interaction parameter traj
 	********************/
 
-	void OptProblem::Impl::solve_ixn_param_traj() {
+	void OptProblem::Impl::solve_ixn_param_traj(int t_end) {
 		// Number of time points before the solution has gone out of bounds
 		_n_t_soln = 1;
 
 		// Have we gone out of the domain?
 		bool in_domain;
 
+		// Max time
+		int t_end_use = t_end;
+		if (t_end==0) {
+			t_end_use = _time.n();	
+		};
+
 		// Go through all times
-		for (int it=1; it<_time.n(); it++) {
+		for (int it=1; it<t_end_use; it++) {
 			// Go through all ixn params
 			for (auto itp=_ixn_params.begin(); itp!=_ixn_params.end(); itp++) {
 				// Solve
@@ -1409,6 +1415,9 @@ namespace DynamicBoltzmann {
 		// Times possibly
 		clock_t t0,t1,t2,t3,t4,t5,t6,t7,t8,t9,t10;
 
+		// Start/stop time for integration
+		int t_start,t_end;
+
 		// Iterate over optimization steps
 		for (int i_opt_from_zero=0; i_opt_from_zero<n_opt; i_opt_from_zero++)
 		{
@@ -1423,6 +1432,15 @@ namespace DynamicBoltzmann {
 			if (options.exp_decay) {
 				exp_decay_t0 = options.exp_decay_t0_values[i_opt_from_zero];
 				exp_decay_lambda = options.exp_decay_lambda_values[i_opt_from_zero];
+			};
+
+			// Start and stop time
+			if (options.time_cutoff) {
+				t_start = options.time_cutoff_start_values[i_opt_from_zero];
+				t_end = options.time_cutoff_end_values[i_opt_from_zero];
+			} else {
+				t_start = 0;
+				t_end = _time.n();
 			};
 
 			/*****
@@ -1461,7 +1479,7 @@ namespace DynamicBoltzmann {
 
 			if (DIAG_SOLVE) { std::cout << "Solving ixn param" << std::endl; };
 
-			solve_ixn_param_traj();
+			solve_ixn_param_traj(t_end);
 
 			// Write
 			if (options.write) {
@@ -1519,7 +1537,7 @@ namespace DynamicBoltzmann {
 			if (DIAG_SOLVE) { std::cout << "Looping over times" << std::endl; };
 
 			// Use the class variable _t_opt to iterate
-			for (_t_opt=0; _t_opt < _n_t_soln; _t_opt++)
+			for (_t_opt=t_start; _t_opt < _n_t_soln; _t_opt++)
 			{
 				if (options.verbose) {
 					std::cout << "time: " << _t_opt << std::flush;
@@ -1673,7 +1691,7 @@ namespace DynamicBoltzmann {
 			*****/
 
 			for (auto itbf=_bfs.begin(); itbf!=_bfs.end(); itbf++) {
-				itbf->update(_n_t_soln, _time.delta(), dopt, options.exp_decay, exp_decay_t0, exp_decay_lambda);
+				itbf->update(t_start, _n_t_soln, _time.delta(), dopt, options.exp_decay, exp_decay_t0, exp_decay_lambda, options.l2_reg_mode, options.l2_lambda);
 			};
 		};
 

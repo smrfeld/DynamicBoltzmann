@@ -11,6 +11,11 @@
 
 namespace DynamicBoltzmann {
 
+	// Sign function
+	int sgn(double val) {
+		return (0. < val) - (val < 0.);
+	};
+
 	/****************************************
 	Array
 	****************************************/
@@ -529,17 +534,23 @@ namespace DynamicBoltzmann {
 	Calculate the new basis function
 	********************/
 
-	void BasisFunc::update(int n_t, double dt, double dopt, bool exp_decay, double exp_decay_t0, double exp_decay_lambda) 
+	void BasisFunc::update(int t_start, int t_end, double dt, double dopt, bool exp_decay, double exp_decay_t0, double exp_decay_lambda, bool l2_reg_mode, double l2_lambda) 
 	{
 		int *idxs;
 		double *nu_vals;
 		double decay = 1.0;
+		double l2=0.0;
 
 		// Go through all idxs
 		for (int i=0; i<_val_len; i++) {
 
+			// L2
+			if (l2_reg_mode) {
+				l2 = l2_lambda * sgn(_vals[i]) * abs(_vals[i]);
+			};
+
 			// Go through all times
-			for (int t=0; t<n_t; t++) {
+			for (int t=t_start; t<t_end; t++) {
 
 				// Exp decay
 				if (exp_decay) {
@@ -548,8 +559,14 @@ namespace DynamicBoltzmann {
 
 				// Go through all updating terms
 				for (auto p: _update_ptrs) {
+
 					_vals[i] += dopt * dt * p.first->moments_diff_at_time(t) * p.second->get_at_time_by_idx(t, i) * decay;
 				};
+			};
+
+			// L2
+			if (l2_reg_mode) {
+				_vals[i] -= l2;
 			};
 		};
 	};

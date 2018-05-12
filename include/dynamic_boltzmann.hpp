@@ -150,6 +150,10 @@ namespace DynamicBoltzmann {
 		// Write only the final basis function
 		bool write_bf_only_final;
 
+		// L2 Reg
+		bool l2_reg_mode;
+		double l2_lambda;
+
 		// Clear directory
 		bool clear_dir;
 
@@ -174,6 +178,11 @@ namespace DynamicBoltzmann {
 		std::vector<double> exp_decay_t0_values;
 		std::vector<double> exp_decay_lambda_values;
 
+		// Time cutoffs
+		bool time_cutoff;
+		std::vector<int> time_cutoff_start_values;
+		std::vector<int> time_cutoff_end_values;
+
 		/********************
 		Constructor
 		********************/
@@ -186,6 +195,8 @@ namespace DynamicBoltzmann {
 			dir_write = "";
 			write_var_terms = false;
 			write_bf_only_final = false;
+			l2_reg_mode = false;
+			l2_lambda = 0.;
 			clear_dir = true;
 			time_idx_start_reading = 0;
 			opt_idx_start_writing = 0;

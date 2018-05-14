@@ -110,6 +110,9 @@ namespace DynamicBoltzmann {
 		bool l2_reg_mode;
 		double l2_lambda;
 
+		// Limit l2 to certain parms
+		std::vector<std::string> l2_limit_to_params;
+
 		// Use a single lattice, irregardless of batch size
 		bool use_single_lattice;
 

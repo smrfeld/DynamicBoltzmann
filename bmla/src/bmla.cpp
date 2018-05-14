@@ -1385,8 +1385,19 @@ namespace DynamicBoltzmann {
 
 			// Update the params
 			for (auto it=_ixn_params.begin(); it!=_ixn_params.end(); it++) {
-				it->update(dopt,options.l2_reg_mode,options.l2_lambda);
-			};
+				if (!options.l2_reg_mode) {
+					it->update(dopt,false,0.);
+				} else if (options.l2_reg_mode && options.l2_limit_to_params.size() == 0) {
+					it->update(dopt,options.l2_reg_mode,options.l2_lambda);
+				} else if (options.l2_reg_mode && options.l2_limit_to_params.size() != 0) {
+					auto f = std::find(options.l2_limit_to_params.begin(), options.l2_limit_to_params.end(), it->name());
+					if (f != options.l2_limit_to_params.end()) {
+						it->update(dopt,options.l2_reg_mode,options.l2_lambda);
+					} else {
+						it->update(dopt,false,0.);
+					};
+				};
+			};	
 
 			// Write the new solution (append)
 			if (options.write_soln_traj) {

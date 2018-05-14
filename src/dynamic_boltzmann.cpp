@@ -955,14 +955,17 @@ namespace DynamicBoltzmann {
 		// Create the basis functions
 		if (DIAG_SETUP) { std::cout << "Create basis funcs..." << std::flush; };
 		std::vector<IxnParamTraj*> bf_ips;
+		IxnParamTraj *iptr;
 		for (auto const &d: dims) {
 			// Find the basis func dimensions
 			bf_ips.clear();
 			for (auto bfd: d.basis_func_dims()) {
 				bf_ips.push_back(_not_nullptr(_find_ixn_param(bfd)));
 			};
+			// Find the ixn param
+			iptr = _not_nullptr(_find_ixn_param(d.name()));
 			// Make the basis function
-			_bfs.push_back(BasisFunc("F_"+d.name(),bf_ips));
+			_bfs.push_back(BasisFunc("F_"+d.name(),iptr,bf_ips));
 		};
 		if (DIAG_SETUP) { std::cout << "ok." << std::endl; };
 
@@ -1402,8 +1405,7 @@ namespace DynamicBoltzmann {
 		// Opt step with offset
 		int i_opt;
 
-		// Exp decay
-		double exp_decay_t0=0., exp_decay_lambda=0.;
+		// Check exp decay / cutoff times
 		if (options.exp_decay) {
 			// Check
 			if (options.exp_decay_t0_values.size() != n_opt || options.exp_decay_lambda_values.size() != n_opt) {
@@ -1411,9 +1413,27 @@ namespace DynamicBoltzmann {
 				exit(EXIT_FAILURE);
 			};
 		};
+		if (options.time_cutoff) {
+			// Check
+			if (options.time_cutoff_start_values.size() != n_opt || options.time_cutoff_end_values.size() != n_opt) {
+				std::cerr << "Error! In time cutoff mode, must provide values for all optimization timesteps." << std::endl;
+				exit(EXIT_FAILURE);
+			};
+		};
+
+		// Convert l2 reg for params
+		std::map<IxnParamTraj*,double> l2_lambda_params;
+		if (options.l2_reg_params_mode) {
+			for (auto const &pr: options.l2_lambda_params) {
+				l2_lambda_params[_not_nullptr(_find_ixn_param(pr.first))] = pr.second;
+			};
+		};
 
 		// Times possibly
 		clock_t t0,t1,t2,t3,t4,t5,t6,t7,t8,t9,t10;
+
+		// Values for exp decay
+		double exp_decay_t0=0., exp_decay_lambda=0.;
 
 		// Start/stop time for integration
 		int t_start,t_end;
@@ -1482,7 +1502,7 @@ namespace DynamicBoltzmann {
 			solve_ixn_param_traj(t_end);
 
 			// Write
-			if (options.write) {
+			if (options.write && options.write_ixn_params) {
 				write_ixn_params(options.dir_write+"ixn_params/",i_opt);
 			};
 
@@ -1502,7 +1522,7 @@ namespace DynamicBoltzmann {
 			solve_var_traj();
 
 			// Write
-			if (options.write_var_terms) {
+			if (options.write && options.write_var_terms) {
 				write_var_terms(options.dir_write+"var_terms/",i_opt);
 			};
 			
@@ -1682,7 +1702,7 @@ namespace DynamicBoltzmann {
 			if (DIAG_SOLVE) { std::cout << "OK" << std::endl; };
 
 			// Write the moments
-			if (options.write) {
+			if (options.write && options.write_moments) {
 				write_moments(options.dir_write+"moments/",i_opt);
 			};
 
@@ -1691,7 +1711,7 @@ namespace DynamicBoltzmann {
 			*****/
 
 			for (auto itbf=_bfs.begin(); itbf!=_bfs.end(); itbf++) {
-				itbf->update(t_start, _n_t_soln, _time.delta(), dopt, options.exp_decay, exp_decay_t0, exp_decay_lambda, options.l2_reg_mode, options.l2_lambda);
+				itbf->update(t_start, _n_t_soln, _time.delta(), dopt, options.exp_decay, exp_decay_t0, exp_decay_lambda, options.l2_reg_params_mode, l2_lambda_params);
 			};
 		};
 
@@ -1791,11 +1811,22 @@ namespace DynamicBoltzmann {
 			write_t_grid(options.dir_write);
 		};
 
+		// Convert l2 reg for params
+		std::map<IxnParamTraj*,double> l2_lambda_params;
+		if (options.l2_reg_params_mode) {
+			for (auto const &pr: options.l2_lambda_params) {
+				l2_lambda_params[_not_nullptr(_find_ixn_param(pr.first))] = pr.second;
+			};
+		};
+
 		// Optimization step translated by the offset
 		int i_opt_translated;
 
 		// Exp decay terms
 		double exp_decay_t0=0., exp_decay_lambda=0.;
+
+		// Start/stop time
+		int t_start, t_end;
 
 		// Iterate over optimization steps
 		for (int i_opt=0; i_opt<n_opt; i_opt++)
@@ -1809,6 +1840,15 @@ namespace DynamicBoltzmann {
 			if (options.exp_decay) {
 				exp_decay_t0 = options.exp_decay_t0_values[i_opt];
 				exp_decay_lambda = options.exp_decay_lambda_values[i_opt];
+			};
+
+			// Start and stop time
+			if (options.time_cutoff) {
+				t_start = options.time_cutoff_start_values[i_opt];
+				t_end = options.time_cutoff_end_values[i_opt];
+			} else {
+				t_start = 0;
+				t_end = _time.n();
 			};
 
 			/*****
@@ -1858,10 +1898,10 @@ namespace DynamicBoltzmann {
 
 				if (DIAG_SOLVE) { std::cout << "Solving ixn param" << std::endl; };
 
-				solve_ixn_param_traj();
+				solve_ixn_param_traj(t_end);
 
 				// Write
-				if (options.write && fnames_to_use[i_opt][i_batch].write) {
+				if (options.write && fnames_to_use[i_opt][i_batch].write && options.write_ixn_params) {
 					write_ixn_params(options.dir_write+"ixn_params/",i_opt_translated,fnames_to_use[i_opt][i_batch].idxs);
 				};
 
@@ -1876,7 +1916,7 @@ namespace DynamicBoltzmann {
 				solve_var_traj();
 
 				// Write
-				if (options.write_var_terms) {
+				if (options.write && options.write_var_terms && fnames_to_use[i_opt][i_batch].write) {
 					write_var_terms(options.dir_write+"var_terms/",i_opt_translated);
 				};
 				
@@ -1901,7 +1941,7 @@ namespace DynamicBoltzmann {
 				if (DIAG_SOLVE) { std::cout << "Looping over times" << std::endl; };
 
 				// Use the class variable _t_opt to iterate
-				for (_t_opt=0; _t_opt < _n_t_soln; _t_opt++)
+				for (_t_opt=t_start; _t_opt < _n_t_soln; _t_opt++)
 				{
 					if (options.verbose) {
 						std::cout << "." << std::flush;
@@ -2006,7 +2046,7 @@ namespace DynamicBoltzmann {
 				Step 2.6 - Write the moments
 				*****/
 
-				if (options.write && fnames_to_use[i_opt][i_batch].write) {
+				if (options.write && fnames_to_use[i_opt][i_batch].write && options.write_moments) {
 					write_moments(options.dir_write+"moments/",i_opt_translated,fnames_to_use[i_opt][i_batch].idxs);
 				};
 
@@ -2015,7 +2055,7 @@ namespace DynamicBoltzmann {
 				*****/
 
 				for (auto itbf=_bfs.begin(); itbf!=_bfs.end(); itbf++) {
-					itbf->update_gather(_n_t_soln, _time.delta(), dopt, options.exp_decay, exp_decay_t0, exp_decay_lambda);
+					itbf->update_gather(t_start, _n_t_soln, _time.delta(), dopt, options.exp_decay, exp_decay_t0, exp_decay_lambda);
 				};
 
 			};
@@ -2025,7 +2065,7 @@ namespace DynamicBoltzmann {
 			*****/
 
 			for (auto itbf=_bfs.begin(); itbf!=_bfs.end(); itbf++) {
-				itbf->update_committ_gathered();
+				itbf->update_committ_gathered(t_start,_n_t_soln, _time.delta(), dopt, options.l2_reg_params_mode, l2_lambda_params);
 			};
 
 		};

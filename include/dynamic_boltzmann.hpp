@@ -18,6 +18,11 @@
 #include <utility>
 #endif
 
+#ifndef MAP_H
+#define MAP_H
+#include <map>
+#endif
+
 /************************************
 * Namespace for DynamicBoltzmann
 ************************************/
@@ -144,15 +149,21 @@ namespace DynamicBoltzmann {
 		bool write;
 		std::string dir_write;
 
+		// Write ixn params
+		bool write_ixn_params;
+
+		// Write moments
+		bool write_moments;
+
 		// Write the variational terms
 		bool write_var_terms;
 
 		// Write only the final basis function
 		bool write_bf_only_final;
 
-		// L2 Reg
-		bool l2_reg_mode;
-		double l2_lambda;
+		// L2 Reg for parameters
+		bool l2_reg_params_mode;
+		std::map<std::string,double> l2_lambda_params;
 
 		// Clear directory
 		bool clear_dir;
@@ -180,8 +191,8 @@ namespace DynamicBoltzmann {
 
 		// Time cutoffs
 		bool time_cutoff;
-		std::vector<int> time_cutoff_start_values;
-		std::vector<int> time_cutoff_end_values;
+		std::vector<int> time_cutoff_start_values; // inclusive
+		std::vector<int> time_cutoff_end_values; // exclusive
 
 		/********************
 		Constructor
@@ -193,10 +204,11 @@ namespace DynamicBoltzmann {
 			use_same_lattice_in_batch = false;
 			write = false;
 			dir_write = "";
+			write_ixn_params = true;
+			write_moments = true;
 			write_var_terms = false;
 			write_bf_only_final = false;
-			l2_reg_mode = false;
-			l2_lambda = 0.;
+			l2_reg_params_mode = false;
 			clear_dir = true;
 			time_idx_start_reading = 0;
 			opt_idx_start_writing = 0;
@@ -207,6 +219,7 @@ namespace DynamicBoltzmann {
 			asleep_final_visible_are_binary = true;
 			asleep_final_hidden_are_binary = true;
 			exp_decay = false;
+			time_cutoff = false;
 		};
 	};
 

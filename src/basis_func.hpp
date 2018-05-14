@@ -94,6 +94,9 @@ namespace DynamicBoltzmann {
 		// Name
 		std::string _name;
 
+		// The ixn param that I am the basis function for
+		IxnParamTraj* _parent_ixn_param;
+
 		// The variational terms and ixn_params needed to update
 		std::vector<std::pair<IxnParamTraj*,VarTermTraj*>> _update_ptrs;
 
@@ -131,7 +134,7 @@ namespace DynamicBoltzmann {
 	public:
 
 		// Constructor
-		BasisFunc(std::string name, std::vector<IxnParamTraj*> ixn_params);
+		BasisFunc(std::string name, IxnParamTraj* parent_ixn_param, std::vector<IxnParamTraj*> ixn_params);
 		BasisFunc(const BasisFunc& other);
 		BasisFunc& operator=(const BasisFunc& other);
 		~BasisFunc();
@@ -157,9 +160,9 @@ namespace DynamicBoltzmann {
 
 		// Calculate the new basis function
 		// t_start (inclusive) to end (non-inclusive)
-		void update(int t_start, int t_end, double dt, double dopt, bool exp_decay=false, double exp_decay_t0=0., double exp_decay_lambda=0., bool l2_reg_mode=false, double l2_lambda=0.); 
-		void update_gather(int n_t, double dt, double dopt, bool exp_decay=false, double exp_decay_t0=0., double exp_decay_lambda=0.);
-		void update_committ_gathered();
+		void update(int t_start, int t_end, double dt, double dopt, bool exp_decay, double exp_decay_t0, double exp_decay_lambda, bool l2_reg_params_mode, std::map<IxnParamTraj*,double> l2_lambda_params); 
+		void update_gather(int t_start, int t_end, double dt, double dopt, bool exp_decay, double exp_decay_t0, double exp_decay_lambda);
+		void update_committ_gathered(int t_start, int t_end, double dt, double dopt, bool l2_reg_params_mode, std::map<IxnParamTraj*,double> l2_lambda_params);
 
 		// Test fill in various dimensions
 		void test_fill_2d();

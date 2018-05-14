@@ -1798,11 +1798,15 @@ namespace DynamicBoltzmann {
 		if (options.write) {
 			system(("mkdir -p " + options.dir_write).c_str());
 			system(("mkdir -p " + options.dir_write + "F").c_str());
-			system(("mkdir -p " + options.dir_write + "ixn_params").c_str());
-			system(("mkdir -p " + options.dir_write + "moments").c_str());
-		};
-		if (options.write_var_terms) {
-			system(("mkdir -p " + options.dir_write + "var_terms").c_str());
+			if (options.write_ixn_params) {
+				system(("mkdir -p " + options.dir_write + "ixn_params").c_str());
+			};
+			if (options.write_moments) {
+				system(("mkdir -p " + options.dir_write + "moments").c_str());
+			};
+			if (options.write_var_terms) {
+				system(("mkdir -p " + options.dir_write + "var_terms").c_str());
+			};
 		};
 
 		// Write the grids
@@ -1827,6 +1831,9 @@ namespace DynamicBoltzmann {
 
 		// Start/stop time
 		int t_start, t_end;
+
+		// Split idxs already written
+		std::vector<int> var_term_traj_idxs_written;
 
 		// Iterate over optimization steps
 		for (int i_opt=0; i_opt<n_opt; i_opt++)
@@ -1880,6 +1887,9 @@ namespace DynamicBoltzmann {
 
 			if (DIAG_SOLVE) { std::cout << "   Looping over batch" << std::endl; };
 
+			// Reset writing
+			var_term_traj_idxs_written.clear();
+
 			for (int i_batch=0; i_batch<fnames_to_use[i_opt].size(); i_batch++) 
 			{
 				if (options.verbose) {
@@ -1902,7 +1912,11 @@ namespace DynamicBoltzmann {
 
 				// Write
 				if (options.write && fnames_to_use[i_opt][i_batch].write && options.write_ixn_params) {
-					write_ixn_params(options.dir_write+"ixn_params/",i_opt_translated,fnames_to_use[i_opt][i_batch].idxs);
+					auto f = std::find(var_term_traj_idxs_written.begin(),var_term_traj_idxs_written.end(),fnames_to_use[i_opt][i_batch].idx_split);
+					if (f == var_term_traj_idxs_written.end()) {
+						write_ixn_params(options.dir_write+"ixn_params/",i_opt_translated,{fnames_to_use[i_opt][i_batch].idx_split});
+						var_term_traj_idxs_written.push_back(fnames_to_use[i_opt][i_batch].idx_split);
+					};
 				};
 
 				if (DIAG_SOLVE) { std::cout << "OK" << std::endl; };
@@ -2047,7 +2061,7 @@ namespace DynamicBoltzmann {
 				*****/
 
 				if (options.write && fnames_to_use[i_opt][i_batch].write && options.write_moments) {
-					write_moments(options.dir_write+"moments/",i_opt_translated,fnames_to_use[i_opt][i_batch].idxs);
+					write_moments(options.dir_write+"moments/",i_opt_translated,{fnames_to_use[i_opt][i_batch].idx_split,fnames_to_use[i_opt][i_batch].idx_sample});
 				};
 
 				/*****

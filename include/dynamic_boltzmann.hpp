@@ -112,7 +112,8 @@ namespace DynamicBoltzmann {
 		std::string fname;
 
 		// Idxs, possibly more than one
-		std::vector<int> idxs;
+		int idx_split;
+		int idx_sample;
 
 		// Initial condition
 		std::string fname_ic;
@@ -121,10 +122,10 @@ namespace DynamicBoltzmann {
 		bool write;
 
 		// Constructor
-		FName(std::string fname, int idx, std::string fname_ic, bool write=true) : FName(fname,std::vector<int>({idx}),fname_ic,write) {};
-		FName(std::string fname, std::vector<int> idxs, std::string fname_ic, bool write=true) {
+		FName(std::string fname, int idx_split, int idx_sample, std::string fname_ic, bool write=true) {
 			this->fname=fname;
-			this->idxs=idxs;
+			this->idx_split=idx_split;
+			this->idx_sample=idx_sample;
 			this->fname_ic=fname_ic;
 			this->write = write;
 		};

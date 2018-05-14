@@ -537,7 +537,7 @@ namespace DynamicBoltzmann {
 	Calculate the new basis function
 	********************/
 
-	void BasisFunc::update(int t_start, int t_end, double dt, double dopt, bool exp_decay, double exp_decay_t0, double exp_decay_lambda, bool l2_reg_params_mode, std::map<IxnParamTraj*,double> l2_lambda_params) 
+	void BasisFunc::update(int t_start, int t_end, double dt, double dopt, bool exp_decay, double exp_decay_t0, double exp_decay_lambda, bool l2_reg_params_mode, std::map<IxnParamTraj*,double> &l2_lambda_params) 
 	{
 		int *idxs;
 		double *nu_vals;
@@ -612,7 +612,7 @@ namespace DynamicBoltzmann {
 		};
 	};
 
-	void BasisFunc::update_committ_gathered(int t_start, int t_end, double dt, double dopt, bool l2_reg_params_mode, std::map<IxnParamTraj*,double> l2_lambda_params) 
+	void BasisFunc::update_committ_gathered(int t_start, int t_end, double dt, double dopt, bool l2_reg_params_mode, std::map<IxnParamTraj*,double> &l2_lambda_params) 
 	{
 		if (!_update_gathered) {
 			std::cerr << "ERROR! No update allocated." << std::endl;

@@ -78,6 +78,10 @@ namespace DynamicBoltzmann {
 		double *_asleep;
 		double *_awake;
 
+		// Fixed value for the awake moment
+		bool _is_awake_fixed;
+		double *_awake_fixed;
+
 		// Pointer to the basis function
 		BasisFunc *_bf;
 
@@ -136,6 +140,12 @@ namespace DynamicBoltzmann {
 		********************/
 
 		void set_init_cond(double val);
+
+		/********************
+		Set fixed awake
+		********************/
+
+		void set_fixed_awake_moment(std::vector<double> vals);
 
 		/********************
 		Validate setup

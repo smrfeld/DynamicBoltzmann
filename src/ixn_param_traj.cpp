@@ -35,6 +35,9 @@ namespace DynamicBoltzmann {
 		_bf = nullptr;
 
 		_t_opt_ptr = t_opt_ptr;
+
+		_is_awake_fixed = false;
+		_awake_fixed = nullptr;
 	};
 
 	IxnParamTraj::IxnParamTraj(const IxnParamTraj& other) : Grid(other) {
@@ -91,6 +94,13 @@ namespace DynamicBoltzmann {
 		std::copy( other._awake, other._awake + _n_t, _awake );
 		_bf = other._bf;
 		_t_opt_ptr = other._t_opt_ptr;
+		if (other._awake_fixed) {
+			_awake_fixed = new double[_n_t];
+			std::copy( other._awake_fixed, other._awake_fixed + _n_t, _awake_fixed );
+		} else {
+			_awake_fixed = nullptr;
+		};
+		_is_awake_fixed = other._is_awake_fixed;
 	};
 	void IxnParamTraj::_reset()
 	{
@@ -110,11 +120,18 @@ namespace DynamicBoltzmann {
 		safeDelArr(_awake);
 		_bf = nullptr;
 		_t_opt_ptr = nullptr;
+		if (_awake_fixed) {
+			safeDelArr(_awake_fixed);
+		};
+		_is_awake_fixed = false;
 	};
 	void IxnParamTraj::_clean_up() {
 		safeDelArr(_vals);
 		safeDelArr(_asleep);
 		safeDelArr(_awake);
+		if (_awake_fixed) {
+			safeDelArr(_awake_fixed);
+		};
 	};
 
 	/********************
@@ -185,6 +202,27 @@ namespace DynamicBoltzmann {
 	void IxnParamTraj::set_init_cond(double val) {
 		_val0 = val;
 		_vals[0] = _val0;
+	};
+
+	/********************
+	Set fixed awake
+	********************/
+
+	void IxnParamTraj::set_fixed_awake_moment(std::vector<double> vals) {
+		if (vals.size() != _n_t) {
+			std::cerr << "ERROR - incorrect length for fixed awake moments - needs to be " << _n_t << std::endl;
+			exit(EXIT_FAILURE);
+		};
+
+		if (!_awake_fixed) {
+			_awake_fixed = new double[_n_t];
+		};
+
+		for (int i=0; i<vals.size(); i++) {
+			_awake_fixed[i] = vals[i];
+		};
+
+		_is_awake_fixed = true;
 	};
 
 	/********************
@@ -282,6 +320,11 @@ namespace DynamicBoltzmann {
 	};
 	void IxnParamTraj::moments_retrieve_at_time(MomentType moment_type, int it, int batch_size)
 	{
+		if (moment_type==AWAKE && _is_awake_fixed) {
+			_awake[it] = _awake_fixed[it];
+			return;
+		};
+
 		if (_type == Hp) {
 			for (auto sp: _sp_bias_visible) {
 				if (moment_type==AWAKE) {

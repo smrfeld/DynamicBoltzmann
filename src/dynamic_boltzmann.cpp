@@ -678,6 +678,12 @@ namespace DynamicBoltzmann {
 		void set_ic_for_ixn_param(std::string param_name, double val);
 
 		/********************
+		Set a fixed awake moment
+		********************/
+
+		void set_fixed_awake_moment_for_dim(std::string param_name, std::vector<double> vals);
+
+		/********************
 		Set properties	
 		********************/
 
@@ -1120,6 +1126,17 @@ namespace DynamicBoltzmann {
 		IxnParamTraj *ip = _not_nullptr(_find_ixn_param(param_name));
 		// Set
 		ip->set_init_cond(val);
+	};
+
+	/********************
+	Set a fixed awake moment
+	********************/
+
+	void OptProblem::Impl::set_fixed_awake_moment_for_dim(std::string param_name, std::vector<double> vals) {
+		// Find
+		IxnParamTraj *ip = _not_nullptr(_find_ixn_param(param_name));
+		// Set
+		ip->set_fixed_awake_moment(vals);	
 	};
 
 	/********************
@@ -1833,7 +1850,7 @@ namespace DynamicBoltzmann {
 		int t_start, t_end;
 
 		// Split idxs already written
-		std::vector<int> var_term_traj_idxs_written;
+		std::vector<int> split_idxs_written;
 
 		// Iterate over optimization steps
 		for (int i_opt=0; i_opt<n_opt; i_opt++)
@@ -1888,7 +1905,7 @@ namespace DynamicBoltzmann {
 			if (DIAG_SOLVE) { std::cout << "   Looping over batch" << std::endl; };
 
 			// Reset writing
-			var_term_traj_idxs_written.clear();
+			split_idxs_written.clear();
 
 			for (int i_batch=0; i_batch<fnames_to_use[i_opt].size(); i_batch++) 
 			{
@@ -1912,10 +1929,10 @@ namespace DynamicBoltzmann {
 
 				// Write
 				if (options.write && fnames_to_use[i_opt][i_batch].write && options.write_ixn_params) {
-					auto f = std::find(var_term_traj_idxs_written.begin(),var_term_traj_idxs_written.end(),fnames_to_use[i_opt][i_batch].idx_split);
-					if (f == var_term_traj_idxs_written.end()) {
+					auto f = std::find(split_idxs_written.begin(),split_idxs_written.end(),fnames_to_use[i_opt][i_batch].idx_split);
+					if (f == split_idxs_written.end()) {
 						write_ixn_params(options.dir_write+"ixn_params/",i_opt_translated,{fnames_to_use[i_opt][i_batch].idx_split});
-						var_term_traj_idxs_written.push_back(fnames_to_use[i_opt][i_batch].idx_split);
+						split_idxs_written.push_back(fnames_to_use[i_opt][i_batch].idx_split);
 					};
 				};
 
@@ -2438,6 +2455,10 @@ namespace DynamicBoltzmann {
 
 	void OptProblem::set_ic_for_ixn_param(std::string param_name, double val) {
 		_impl->set_ic_for_ixn_param(param_name,val);
+	};
+
+	void OptProblem::set_fixed_awake_moment_for_dim(std::string param_name, std::vector<double> vals) {
+		_impl->set_fixed_awake_moment_for_dim(param_name,vals);
 	};
 
 	void OptProblem::add_hidden_unit(std::vector<std::string> species_possible, std::vector<std::vector<int>> lattice_idxs, std::vector<std::string> w_params, std::vector<std::string> b_params) {

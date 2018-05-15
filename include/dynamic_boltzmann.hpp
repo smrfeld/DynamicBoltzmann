@@ -266,6 +266,12 @@ namespace DynamicBoltzmann {
 		void set_ic_for_ixn_param(std::string param_name, double val);
 
 		/********************
+		Set a fixed awake moment
+		********************/
+
+		void set_fixed_awake_moment_for_dim(std::string param_name, std::vector<double> vals);
+
+		/********************
 		Set hidden layer	
 		********************/
 

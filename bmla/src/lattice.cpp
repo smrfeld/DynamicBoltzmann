@@ -967,6 +967,7 @@ namespace DynamicBoltzmann {
 
 		// Go through the species
 		for (auto pr: counts) {
+
 			// Go through counts
 			for (int i=0; i<pr.second; i++) {
 				// Try to place

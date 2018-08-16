@@ -31,8 +31,8 @@ namespace DynamicBoltzmann {
 	Random numbers
 	********************/
 
-	double randD(double dMin, double dMax);
-	int randI(int iMin, int iMax);
+	double randD(double dMin, double dMax); // inclusive
+	int randI(int iMin, int iMax); // inclusive
 
 	/********************
 	Pointer deletions

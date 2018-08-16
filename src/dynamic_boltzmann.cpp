@@ -7,6 +7,7 @@
 #include <set>
 #include "var_term_traj.hpp"
 #include <stdlib.h>
+#include <sstream>
 
 #define DIAG_SETUP 0
 #define DIAG_SOLVE 0
@@ -728,6 +729,8 @@ namespace DynamicBoltzmann {
 		********************/
 
 		void read_basis_func(std::string bf_name, std::string fname);
+
+		void read_init_cond_for_ixn_param(std::string ixn_func_name, std::string fname);
 
 		/********************
 		Read some initial conditions
@@ -2201,6 +2204,33 @@ namespace DynamicBoltzmann {
 		bf->read_vals(fname);
 	};
 
+	void OptProblem::Impl::read_init_cond_for_ixn_param(std::string ixn_func_name, std::string fname) {
+		// Find the ixn func
+		IxnParamTraj* ixn_func = _find_ixn_param(ixn_func_name);
+		if (!ixn_func) {
+			std::cerr << "ERROR: Could not find ixn func to read init cond into." << std::endl;
+			exit(EXIT_FAILURE);
+		};
+		// Read
+		std::ifstream f;
+		f.open(fname);
+		std::string line;
+		std::string s="";
+		std::istringstream iss;
+		double init_cond;
+		if (f.is_open()) { // make sure we found it
+			while (getline(f,line)) {
+				if (line == "") { continue; };
+				iss = std::istringstream(line);
+				iss >> s;
+				init_cond = atof(s.c_str());
+				s=""; // reset
+			};
+		};
+		// Set latest
+		ixn_func->set_init_cond(init_cond);
+	};
+
 	/****************************************
 	OptProblem - IMPLEMENTATION - PRIVATE
 	****************************************/
@@ -2501,6 +2531,10 @@ namespace DynamicBoltzmann {
 
 	void OptProblem::read_basis_func(std::string bf_name, std::string fname) {
 		_impl->read_basis_func(bf_name,fname);
+	};
+
+	void OptProblem::read_init_cond_for_ixn_param(std::string ixn_func_name, std::string fname) {
+		_impl->read_init_cond_for_ixn_param(ixn_func_name, fname);
 	};
 
 	void OptProblem::write_bf_grids(std::string dir) const {

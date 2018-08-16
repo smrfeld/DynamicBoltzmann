@@ -537,14 +537,15 @@ namespace DynamicBoltzmann {
 	Calculate the new basis function
 	********************/
 
-	void BasisFunc::update(int t_start, int t_end, double dt, double dopt, bool exp_decay, double exp_decay_t0, double exp_decay_lambda, bool l2_reg_params_mode, std::map<IxnParamTraj*,double> &l2_lambda_params) 
+	void BasisFunc::update(int t_start, int t_end, double dt, double dopt, bool exp_decay, double exp_decay_t0, double exp_decay_lambda, bool l2_reg_params_mode, std::map<IxnParamTraj*,double> &l2_lambda_params, std::map<IxnParamTraj*,double> &l2_reg_centers) 
 	{
 		int *idxs;
 		double *nu_vals;
 		double decay = 1.0;
-		double l2_params=0.0;
 
 		// L2 for params
+		/*
+		double l2_params=0.0;
 		if (l2_reg_params_mode) {
 			l2_params = 0.;
 			// Go through all times
@@ -556,8 +557,10 @@ namespace DynamicBoltzmann {
 				};
 			};
 		};
+		*/
 
 		// Go through all idxs
+		double up1, up2, l2_center;
 		for (int i=0; i<_val_len; i++) {
 
 			// Go through all times
@@ -570,14 +573,39 @@ namespace DynamicBoltzmann {
 
 				// Go through all updating terms
 				for (auto p: _update_ptrs) {
-					_vals[i] += dopt * dt * p.first->moments_diff_at_time(t) * p.second->get_at_time_by_idx(t, i) * decay;
+					up1 = dopt * dt * p.first->moments_diff_at_time(t) * p.second->get_at_time_by_idx(t, i) * decay;
+					_vals[i] += up1;
+
+					// L2
+					if (l2_reg_params_mode) {
+						// Get numerator of var term
+						IxnParamTraj* num = p.second->get_numerator_ixn_param_traj();
+
+						// Lookup l2 lambda
+						auto it = l2_lambda_params.find(num);
+						if (it != l2_lambda_params.end()) {
+							// Lookup center if it exists, else 0
+							auto it2 = l2_reg_centers.find(num);
+							if (it2 != l2_reg_centers.end()) {
+								l2_center = it2->second;
+							} else {
+								l2_center = 0.;
+							};
+							up2 = dopt * it->second * dt * sgn(num->get_at_time(t) - l2_center) * abs(num->get_at_time(t) - l2_center) * p.second->get_at_time_by_idx(t, i) * decay;
+
+							_vals[i] -= up2;
+							// std::cout << up1 << " " << up2 << std::endl;
+						};
+					};
 				};
 			};
 
 			// L2 for params
+			/*
 			if (l2_reg_params_mode) {
 				_vals[i] -= l2_params;
 			};
+			*/
 		};
 	};
 
@@ -612,7 +640,7 @@ namespace DynamicBoltzmann {
 		};
 	};
 
-	void BasisFunc::update_committ_gathered(int t_start, int t_end, double dt, double dopt, bool l2_reg_params_mode, std::map<IxnParamTraj*,double> &l2_lambda_params) 
+	void BasisFunc::update_committ_gathered(int t_start, int t_end, double dt, double dopt, bool l2_reg_params_mode, std::map<IxnParamTraj*,double> &l2_lambda_params, std::map<IxnParamTraj*,double> &l2_reg_centers) 
 	{
 		if (!_update_gathered) {
 			std::cerr << "ERROR! No update allocated." << std::endl;
@@ -623,6 +651,8 @@ namespace DynamicBoltzmann {
 
 		// L2 for params
 		if (l2_reg_params_mode) {
+			std::cout << "WARNING: There may be an error here for the L2!" << std::endl;
+
 			l2_params = 0.;
 			// Go through all times
 			for (int t=t_start; t<t_end; t++) {

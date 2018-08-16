@@ -165,6 +165,7 @@ namespace DynamicBoltzmann {
 		// L2 Reg for parameters
 		bool l2_reg_params_mode;
 		std::map<std::string,double> l2_lambda_params;
+		std::map<std::string,double> l2_reg_centers;
 
 		// Clear directory
 		bool clear_dir;
@@ -321,7 +322,7 @@ namespace DynamicBoltzmann {
 
 		void read_basis_func(std::string bf_name, std::string fname);
 
-		void read_init_cond_for_ixn_param(std::string ixn_func_name, std::string fname);
+		void read_init_cond_for_ixn_param(std::string ixn_func_name, std::string fname, int line_idx=-1);
 
 		/********************
 		Write

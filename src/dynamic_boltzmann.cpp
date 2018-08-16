@@ -730,7 +730,7 @@ namespace DynamicBoltzmann {
 
 		void read_basis_func(std::string bf_name, std::string fname);
 
-		void read_init_cond_for_ixn_param(std::string ixn_func_name, std::string fname);
+		void read_init_cond_for_ixn_param(std::string ixn_func_name, std::string fname, int line_idx=-1);
 
 		/********************
 		Read some initial conditions
@@ -1442,10 +1442,13 @@ namespace DynamicBoltzmann {
 		};
 
 		// Convert l2 reg for params
-		std::map<IxnParamTraj*,double> l2_lambda_params;
+		std::map<IxnParamTraj*,double> l2_lambda_params, l2_reg_centers;
 		if (options.l2_reg_params_mode) {
 			for (auto const &pr: options.l2_lambda_params) {
 				l2_lambda_params[_not_nullptr(_find_ixn_param(pr.first))] = pr.second;
+			};
+			for (auto const &pr: options.l2_reg_centers) {
+				l2_reg_centers[_not_nullptr(_find_ixn_param(pr.first))] = pr.second;
 			};
 		};
 
@@ -1731,7 +1734,7 @@ namespace DynamicBoltzmann {
 			*****/
 
 			for (auto itbf=_bfs.begin(); itbf!=_bfs.end(); itbf++) {
-				itbf->update(t_start, _n_t_soln, _time.delta(), dopt, options.exp_decay, exp_decay_t0, exp_decay_lambda, options.l2_reg_params_mode, l2_lambda_params);
+				itbf->update(t_start, _n_t_soln, _time.delta(), dopt, options.exp_decay, exp_decay_t0, exp_decay_lambda, options.l2_reg_params_mode, l2_lambda_params, l2_reg_centers);
 			};
 		};
 
@@ -1836,10 +1839,13 @@ namespace DynamicBoltzmann {
 		};
 
 		// Convert l2 reg for params
-		std::map<IxnParamTraj*,double> l2_lambda_params;
+		std::map<IxnParamTraj*,double> l2_lambda_params, l2_reg_centers;
 		if (options.l2_reg_params_mode) {
 			for (auto const &pr: options.l2_lambda_params) {
 				l2_lambda_params[_not_nullptr(_find_ixn_param(pr.first))] = pr.second;
+			};
+			for (auto const &pr: options.l2_reg_centers) {
+				l2_reg_centers[_not_nullptr(_find_ixn_param(pr.first))] = pr.second;
 			};
 		};
 
@@ -2099,7 +2105,7 @@ namespace DynamicBoltzmann {
 			*****/
 
 			for (auto itbf=_bfs.begin(); itbf!=_bfs.end(); itbf++) {
-				itbf->update_committ_gathered(t_start,_n_t_soln, _time.delta(), dopt, options.l2_reg_params_mode, l2_lambda_params);
+				itbf->update_committ_gathered(t_start,_n_t_soln, _time.delta(), dopt, options.l2_reg_params_mode, l2_lambda_params, l2_reg_centers);
 			};
 
 		};
@@ -2204,7 +2210,7 @@ namespace DynamicBoltzmann {
 		bf->read_vals(fname);
 	};
 
-	void OptProblem::Impl::read_init_cond_for_ixn_param(std::string ixn_func_name, std::string fname) {
+	void OptProblem::Impl::read_init_cond_for_ixn_param(std::string ixn_func_name, std::string fname, int line_idx) {
 		// Find the ixn func
 		IxnParamTraj* ixn_func = _find_ixn_param(ixn_func_name);
 		if (!ixn_func) {
@@ -2218,6 +2224,7 @@ namespace DynamicBoltzmann {
 		std::string s="";
 		std::istringstream iss;
 		double init_cond;
+		int i_line = 0;
 		if (f.is_open()) { // make sure we found it
 			while (getline(f,line)) {
 				if (line == "") { continue; };
@@ -2225,6 +2232,15 @@ namespace DynamicBoltzmann {
 				iss >> s;
 				init_cond = atof(s.c_str());
 				s=""; // reset
+				// Check
+				if (i_line == line_idx) {
+					// Set latest
+					ixn_func->set_init_cond(init_cond);
+					// Fin
+					return;
+				};
+				// Next line
+				i_line++;
 			};
 		};
 		// Set latest
@@ -2533,8 +2549,8 @@ namespace DynamicBoltzmann {
 		_impl->read_basis_func(bf_name,fname);
 	};
 
-	void OptProblem::read_init_cond_for_ixn_param(std::string ixn_func_name, std::string fname) {
-		_impl->read_init_cond_for_ixn_param(ixn_func_name, fname);
+	void OptProblem::read_init_cond_for_ixn_param(std::string ixn_func_name, std::string fname, int line_idx) {
+		_impl->read_init_cond_for_ixn_param(ixn_func_name, fname, line_idx);
 	};
 
 	void OptProblem::write_bf_grids(std::string dir) const {

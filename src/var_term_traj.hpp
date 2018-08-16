@@ -64,6 +64,10 @@ namespace DynamicBoltzmann {
 		// Validate setup
 		void validate_setup() const;
 
+		// Get numerator/denominator
+		IxnParamTraj* get_numerator_ixn_param_traj() const;
+		BasisFunc* get_denominator_basis_func() const;
+
 		// Calculate next timestep
 		void calculate_at_time(int it_next, double dt);
 

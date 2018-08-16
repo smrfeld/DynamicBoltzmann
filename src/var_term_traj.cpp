@@ -121,6 +121,17 @@ namespace DynamicBoltzmann {
 	};
 
 	/********************
+	Get numerator/denominator
+	********************/
+
+	IxnParamTraj* VarTermTraj::get_numerator_ixn_param_traj() const {
+		return _num;
+	};
+	BasisFunc* VarTermTraj::get_denominator_basis_func() const {
+		return _denom;
+	};
+
+	/********************
 	// Calculate next timestep
 	********************/
 

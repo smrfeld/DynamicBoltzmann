@@ -9,11 +9,10 @@
 #endif
 
 /************************************
-* Namespace for DynamicBoltzm
-ann
+* Namespace for dboltz
 ************************************/
 
-namespace DynamicBoltzmann {
+namespace dboltz {
 
 	/****************************************
 	Struct for specifying a dimension

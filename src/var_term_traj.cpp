@@ -9,10 +9,10 @@
 #include <fstream>
 
 /************************************
-* Namespace for DynamicBoltzmann
+* Namespace for dboltz
 ************************************/
 
-namespace DynamicBoltzmann {
+namespace dboltz {
 
 	/****************************************
 	Variational Term Trajectory

@@ -4,10 +4,10 @@
 #include <sstream>
 
 /************************************
-* Namespace for DynamicBoltzmann
+* Namespace for dboltz
 ************************************/
 
-namespace DynamicBoltzmann {
+namespace dboltz {
 
 	/********************
 	Zero pad a string

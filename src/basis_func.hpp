@@ -14,10 +14,10 @@
 #endif
 
 /************************************
-* Namespace for DynamicBoltzmann
+* Namespace for dboltz
 ************************************/
 
-namespace DynamicBoltzmann {	
+namespace dboltz {	
 
 	/****************************************
 	Array

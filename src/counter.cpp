@@ -9,10 +9,10 @@
 #include <fstream>
 
 /************************************
-* Namespace for Gillespie3D
+* Namespace for dboltz
 ************************************/
 
-namespace DynamicBoltzmann {
+namespace dboltz {
 
 	/****************************************
 	Counter

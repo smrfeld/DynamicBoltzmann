@@ -14,10 +14,10 @@
 #endif
 
 /************************************
-* Namespace for DynamicBoltzmann
+* Namespace for dboltz
 ************************************/
 
-namespace DynamicBoltzmann {
+namespace dboltz {
 
 	/****************************************
 	Filename structure - only needed for solve_varying_ic

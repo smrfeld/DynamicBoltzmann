@@ -15,10 +15,10 @@
 #include <random>
 
 /************************************
-* Namespace for DynamicBoltzmann
+* Namespace for dboltz
 ************************************/
 
-namespace DynamicBoltzmann {
+namespace dboltz {
 
 	/****************************************
 	Class to hold a connection from visible to hidden

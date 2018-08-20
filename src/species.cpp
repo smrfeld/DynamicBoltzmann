@@ -7,10 +7,10 @@
 #include <iostream>
 
 /************************************
-* Namespace for Gillespie3D
+* Namespace for dboltz
 ************************************/
 
-namespace DynamicBoltzmann {
+namespace dboltz {
 
 	/****************************************
 	Doublets, Triplets of Species ptrs

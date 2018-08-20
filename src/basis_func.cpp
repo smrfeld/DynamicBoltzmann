@@ -11,10 +11,10 @@
 #include <iomanip>
 
 /************************************
-* Namespace for DynamicBoltzmann
+* Namespace for dboltz
 ************************************/
 
-namespace DynamicBoltzmann {
+namespace dboltz {
 
 	// Sign function
 	int sgn(double val) {

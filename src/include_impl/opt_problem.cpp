@@ -25,10 +25,10 @@
 #define DIAG_TIME_SOLVE 0
 
 /************************************
-* Namespace for DynamicBoltzmann
+* Namespace for dboltz
 ************************************/
 
-namespace DynamicBoltzmann {
+namespace dboltz {
 
 	/****************************************
 	OptProblem - IMPLEMENTATION
@@ -1735,7 +1735,296 @@ namespace DynamicBoltzmann {
 			};
 		};
 
+		// Times possibly
+		clock_t t0,t1,t2,t3,t4,t5,t6,t7,t8,t9,t10;
 
+		// Values for exp decay
+		double exp_decay_t0=0., exp_decay_lambda=0.;
+
+		// Start/stop time for integration
+		int t_start,t_end;
+
+		// Iterate over optimization steps
+		for (int i_opt_from_zero=0; i_opt_from_zero<n_opt; i_opt_from_zero++)
+		{
+			std::cout << "Opt step " << i_opt_from_zero << " / " << n_opt-1 << std::endl;
+
+			if (DIAG_TIME_SOLVE) { t0 = clock(); };
+
+			// Offset
+			i_opt = i_opt_from_zero + options.opt_idx_start_writing;
+
+			// Exp decay
+			if (options.exp_decay) {
+				exp_decay_t0 = options.exp_decay_t0_values[i_opt_from_zero];
+				exp_decay_lambda = options.exp_decay_lambda_values[i_opt_from_zero];
+			};
+
+			// Start and stop time
+			if (options.time_cutoff) {
+				t_start = options.time_cutoff_start_values[i_opt_from_zero];
+				t_end = options.time_cutoff_end_values[i_opt_from_zero];
+			} else {
+				t_start = 0;
+				t_end = _time.n();
+			};
+
+			/*****
+			Step 0 - Check nesterov
+			*****/
+
+			if (DIAG_SOLVE) { std::cout << "Taking Nesterov step" << std::endl; };
+
+			if (options.nesterov) {
+				// If first opt step, do nothing, but set the "prev" point to the current to initialize
+				if (i_opt_from_zero == 0) {
+					for (auto itbf=_bfs.begin(); itbf!=_bfs.end(); itbf++) {
+						itbf->nesterov_set_prev_equal_curr();
+					};
+				} else {
+					// Move to the intermediate point
+					for (auto itbf=_bfs.begin(); itbf!=_bfs.end(); itbf++) {
+						itbf->nesterov_move_to_intermediate_pt(i_opt);
+					};
+				};
+			};
+
+			// Write the basis funcs
+			if (options.write && !options.write_bf_only_final) {
+				write_bfs(options.dir_write+"F/",i_opt);
+			};
+
+			if (DIAG_TIME_SOLVE) {
+				t1 = clock();
+				std::cout << "	nesterov: " << double(t1 - t0) / CLOCKS_PER_SEC << std::endl;
+			};
+
+			/*****
+			Step 1 - Solve the current trajectory
+			*****/
+
+			if (DIAG_SOLVE) { std::cout << "Solving ixn param" << std::endl; };
+
+			solve_ixn_param_traj(t_end);
+
+			// Write
+			if (options.write && options.write_ixn_params) {
+				write_ixn_params(options.dir_write+"ixn_params/",i_opt);
+			};
+
+			if (DIAG_SOLVE) { std::cout << "OK" << std::endl; };
+
+			if (DIAG_TIME_SOLVE) {
+				t2 = clock();
+				std::cout << "	traj: " << double(t2 - t1) / CLOCKS_PER_SEC << std::endl;
+			};
+
+			/*****
+			Step 2 - Solve the variational problem traj
+			*****/
+
+			if (DIAG_SOLVE) { std::cout << "Solving var term" << std::endl; };
+
+			solve_var_traj();
+
+			// Write
+			if (options.write && options.write_var_terms) {
+				write_var_terms(options.dir_write+"var_terms/",i_opt);
+			};
+			
+			if (DIAG_SOLVE) { std::cout << "OK" << std::endl; };
+
+			if (DIAG_TIME_SOLVE) {
+				t3 = clock();
+				std::cout << "	var: " << double(t3 - t2) / CLOCKS_PER_SEC << std::endl;
+			};
+
+			/*****
+			Step 4 - reset the moments at all times
+			*****/
+
+			if (DIAG_SOLVE) { std::cout << "Reset moments" << std::endl; };
+
+			for (auto itp = _ixn_params.begin(); itp != _ixn_params.end(); itp++) {
+				itp->moments_reset();
+			};
+
+			if (DIAG_SOLVE) { std::cout << "OK" << std::endl; };
+
+			if (DIAG_TIME_SOLVE) {
+				t4 = clock();
+				std::cout << "	reset: " << double(t4 - t3) / CLOCKS_PER_SEC << std::endl;
+			};
+
+			/*****
+			Step 5 - Go through all times
+			*****/
+
+			if (DIAG_SOLVE) { std::cout << "Looping over times" << std::endl; };
+
+			// Use the class variable _t_opt to iterate
+			for (_t_opt=t_start; _t_opt < _n_t_soln; _t_opt++)
+			{
+				if (options.verbose) {
+					std::cout << "time: " << _t_opt << std::flush;
+				};
+
+				/*****
+				Step 5.1 - loop over all samples in the batch
+				*****/
+
+				if (DIAG_SOLVE) { std::cout << "   Looping over batch" << std::endl; };
+
+				for (int i_batch=0; i_batch<fnames_to_use[i_opt_from_zero].size(); i_batch++) 
+				{
+					if (options.verbose) {
+						std::cout << "." << std::flush;
+					};
+
+
+					if (DIAG_TIME_SOLVE) { t5 = clock(); };
+
+					/*****
+					Step 5.1.1 - Read in sample at this timestep
+					*****/
+
+					if (DIAG_SOLVE) { std::cout << "      Read in batch" << std::endl; };
+
+					if (options.awake_visible_are_binary) {
+						// Binary
+						_latt.read_from_file(fnames_to_use[i_opt_from_zero][i_batch] + pad_str(options.time_idx_start_reading+_t_opt,4) + ".txt");
+					} else {
+						// Probabilistic
+						std::cerr << "Error! Probabilistic awake visible units not supported yet!" << std::endl;
+						exit(EXIT_FAILURE);
+					};
+ 	
+ 					if (DIAG_TIME_SOLVE) {
+						t6 = clock();
+						std::cout << "	read: " << double(t6 - t5) / CLOCKS_PER_SEC << std::endl;
+					};
+
+					/*****
+					Step 5.1.2 - Activate the hidden units if needed
+					*****/
+
+					if (DIAG_SOLVE) { std::cout << "      Activating hidden units" << std::endl; };
+
+					if (_hidden_layer_exists) {
+						for (auto ithu = _hidden_units.begin(); ithu != _hidden_units.end(); ithu++) {
+							ithu->activate(options.awake_hidden_are_binary);
+						};
+					};
+
+					if (DIAG_TIME_SOLVE) {
+						t7 = clock();
+						std::cout << "	activated: " << double(t7 - t6) / CLOCKS_PER_SEC << std::endl;
+					};
+
+					/*****
+					Step 5.1.3 - Record the awake moments
+					*****/
+
+					if (DIAG_SOLVE) { std::cout << "      Record awake moments" << std::endl; };
+
+					for (auto itp = _ixn_params.begin(); itp != _ixn_params.end(); itp++) {
+						itp->moments_retrieve_at_time(IxnParamTraj::AWAKE,_t_opt,fnames_to_use[i_opt_from_zero].size());
+					};
+
+					if (DIAG_TIME_SOLVE) {
+						t8 = clock();
+						std::cout << "	recorded: " << double(t8 - t7) / CLOCKS_PER_SEC << std::endl;
+					};
+
+					/*****
+					Step 5.1.4 - CD steps
+					*****/
+
+					for (int cd_step=0; cd_step<n_cd_steps; cd_step++)
+					{
+						// Sample
+
+						if (DIAG_SOLVE) { std::cout << "      Sample" << std::endl; };
+
+						if (cd_step != n_cd_steps-1) {
+							if (options.asleep_visible_are_binary) {
+								_latt.sample(_t_opt);
+							} else {
+								std::cerr << "Error! Probabilistic asleep visible units not supported yet!" << std::endl;
+								exit(EXIT_FAILURE);
+							};
+						} else {
+							if (options.asleep_final_visible_are_binary) {
+								_latt.sample(_t_opt);
+							} else {
+								std::cerr << "Error! Probabilistic asleep visible units not supported yet!" << std::endl;
+								exit(EXIT_FAILURE);
+							};
+						};
+
+						// Activate the hidden units if needed
+
+						if (DIAG_SOLVE) { std::cout << "      Activating hidden units" << std::endl; };
+
+						if (_hidden_layer_exists) {
+							for (auto ithu = _hidden_units.begin(); ithu != _hidden_units.end(); ithu++) {
+								if (cd_step != n_cd_steps-1) {
+									ithu->activate(options.asleep_hidden_are_binary);
+								} else {
+									ithu->activate(options.asleep_final_hidden_are_binary);
+								};
+							};
+						};
+					};
+
+					if (DIAG_TIME_SOLVE) {
+						t9 = clock();
+						std::cout << "	CD: " << double(t9 - t8) / CLOCKS_PER_SEC << std::endl;
+					};
+
+					/*****
+					Step 5.1.5 - Record the asleep moments
+					*****/
+
+					if (DIAG_SOLVE) { std::cout << "      Record asleep moments" << std::endl; };
+
+					for (auto itp = _ixn_params.begin(); itp != _ixn_params.end(); itp++) {
+						itp->moments_retrieve_at_time(IxnParamTraj::ASLEEP,_t_opt,fnames_to_use[i_opt_from_zero].size());
+					};
+
+					if (DIAG_TIME_SOLVE) {
+						t10 = clock();
+						std::cout << "	recorded: " << double(t10 - t9) / CLOCKS_PER_SEC << std::endl;
+					};
+				};
+
+				if (options.verbose) {
+					std::cout << std::endl;
+				};
+
+				if (DIAG_SOLVE) { std::cout << "   OK" << std::endl; };
+			};
+
+			if (DIAG_SOLVE) { std::cout << "OK" << std::endl; };
+
+			// Write the moments
+			if (options.write && options.write_moments) {
+				write_moments(options.dir_write+"moments/",i_opt);
+			};
+
+			/*****
+			Step 6 - Update the basis funcs
+			*****/
+
+			for (auto itbf=_bfs.begin(); itbf!=_bfs.end(); itbf++) {
+				itbf->update(t_start, _n_t_soln, _time.delta(), dopt, options.exp_decay, exp_decay_t0, exp_decay_lambda, options.l2_reg_params_mode, l2_lambda_params, l2_reg_centers);
+			};
+		};
+
+		// Write the basis funcs one last time
+		if (options.write) {
+			write_bfs(options.dir_write+"F/",n_opt+options.opt_idx_start_writing);
+		};
 		
 	};
 

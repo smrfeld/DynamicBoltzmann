@@ -174,6 +174,16 @@ namespace dboltz {
 	};
 
 	/********************
+	Set to zero at some timestep
+	********************/
+
+	void VarTermTraj::set_to_zero_at_time(int it) {
+		for (int i=0; i<_val_len; i++) { 
+			_vals[it].set_by_idx(i,0.0);
+		};
+	};
+
+	/********************
 	Getters/setters
 	********************/
 

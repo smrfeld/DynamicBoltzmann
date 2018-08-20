@@ -23,6 +23,7 @@
 #define DIAG_SETUP 0
 #define DIAG_SOLVE 0
 #define DIAG_TIME_SOLVE 0
+#define DIAG_SOLVE_RAND_DIV 1
 
 /************************************
 * Namespace for dboltz
@@ -169,6 +170,7 @@ namespace dboltz {
 		********************/
 
 		void solve_var_traj();
+		void solve_var_traj_from_zero(int it_start, int it_end);
 
 		/********************
 		Solve
@@ -182,9 +184,9 @@ namespace dboltz {
 		void solve_varying_ic(std::vector<std::vector<FName>> fnames, int n_opt, int n_cd_steps, double dopt, OptionsSolve options);
 		void _solve_varying_ic(std::vector<std::vector<FName>> fnames_to_use, int n_opt, int n_cd_steps, double dopt, OptionsSolve options);
 
-		void solve_div_rand(std::vector<std::string> fname_collection, int n_opt, int batch_size, int n_cd_steps, double dopt, int n_divisions, OptionsSolve options);
-		void solve_div_rand(std::vector<std::vector<std::string>> fnames, int n_opt, int n_cd_steps, double dopt, int n_divisions, OptionsSolve options);
-		void _solve_div_rand(std::vector<std::vector<std::string>> fnames_to_use, int n_opt, int n_cd_steps, double dopt, int n_divisions, OptionsSolve options);
+		void solve_rand_div(std::vector<std::string> fname_collection, int n_opt, int batch_size, int n_cd_steps, double dopt, int n_divisions, OptionsSolve options);
+		void solve_rand_div(std::vector<std::vector<std::string>> fnames, int n_opt, int n_cd_steps, double dopt, int n_divisions, OptionsSolve options);
+		void _solve_rand_div(std::vector<std::vector<std::string>> fnames_to_use, int n_opt, int n_cd_steps, double dopt, int n_divisions, OptionsSolve options);
 
 		/********************
 		Read basis func
@@ -784,6 +786,19 @@ namespace dboltz {
 		};
 	};
 
+	void OptProblem::Impl::solve_var_traj_from_zero(int it_start, int it_end) {
+		// Set all to zero at it_start
+		for (auto itv=_var_terms.begin(); itv!=_var_terms.end(); itv++) {
+			itv->set_to_zero_at_time(it_start);
+		};
+		// Go through times and solve
+		for (int it=it_start+1; it<it_end; it++) {
+			// Go through all var terms
+			for (auto itv=_var_terms.begin(); itv!=_var_terms.end(); itv++) {
+				itv->calculate_at_time(it,_time.delta());
+			};
+		};
+	};
 
 
 
@@ -1576,7 +1591,7 @@ namespace dboltz {
 				*****/
 
 				for (auto itbf=_bfs.begin(); itbf!=_bfs.end(); itbf++) {
-					itbf->update_gather(t_start, _n_t_soln, _time.delta(), dopt, options.exp_decay, exp_decay_t0, exp_decay_lambda);
+					itbf->update_gather(t_start, _n_t_soln, _time.delta(), dopt, options.exp_decay, exp_decay_t0, exp_decay_lambda, options.l2_reg_params_mode, l2_lambda_params, l2_reg_centers);
 				};
 
 			};
@@ -1586,7 +1601,7 @@ namespace dboltz {
 			*****/
 
 			for (auto itbf=_bfs.begin(); itbf!=_bfs.end(); itbf++) {
-				itbf->update_committ_gathered(t_start,_n_t_soln, _time.delta(), dopt, options.l2_reg_params_mode, l2_lambda_params, l2_reg_centers);
+				itbf->update_committ_gathered();
 			};
 
 		};
@@ -1610,7 +1625,7 @@ namespace dboltz {
 	Solve single IC, dividing up randomly the traj and restarting the diff eq integration for the var terms
 	****************************************/
 
-	void OptProblem::Impl::solve_div_rand(std::vector<std::string> fnames, int n_opt, int batch_size, int n_cd_steps, double dopt, int n_divisions, OptionsSolve options=OptionsSolve()) {
+	void OptProblem::Impl::solve_rand_div(std::vector<std::string> fnames, int n_opt, int batch_size, int n_cd_steps, double dopt, int n_divisions, OptionsSolve options=OptionsSolve()) {
 
 		// Pick filenames
 		std::vector<std::vector<std::string>> fnames_to_use;
@@ -1661,10 +1676,10 @@ namespace dboltz {
 		};
 
 		// Main solve function
-		_solve_div_rand(fnames_to_use, n_opt, n_cd_steps, dopt, n_divisions, options);
+		_solve_rand_div(fnames_to_use, n_opt, n_cd_steps, dopt, n_divisions, options);
 
 	};
-	void OptProblem::Impl::solve_div_rand(std::vector<std::vector<std::string>> fname_collection, int n_opt, int n_cd_steps, double dopt, int n_divisions, OptionsSolve options=OptionsSolve()) {
+	void OptProblem::Impl::solve_rand_div(std::vector<std::vector<std::string>> fname_collection, int n_opt, int n_cd_steps, double dopt, int n_divisions, OptionsSolve options=OptionsSolve()) {
 
 		// Pick filenames
 		std::vector<std::vector<std::string>> fnames_to_use;
@@ -1680,10 +1695,10 @@ namespace dboltz {
 		};
 
 		// Main solve function
-		_solve_div_rand(fnames_to_use, n_opt, n_cd_steps, dopt, n_divisions, options);
+		_solve_rand_div(fnames_to_use, n_opt, n_cd_steps, dopt, n_divisions, options);
 
 	};
-	void OptProblem::Impl::_solve_div_rand(std::vector<std::vector<std::string>> fnames_to_use, int n_opt, int n_cd_steps, double dopt, int n_divisions, OptionsSolve options=OptionsSolve()) {
+	void OptProblem::Impl::_solve_rand_div(std::vector<std::vector<std::string>> fnames_to_use, int n_opt, int n_cd_steps, double dopt, int n_divisions, OptionsSolve options=OptionsSolve()) {
 
 		// Clear/make directories if needed
 		if (options.clear_dir) {
@@ -1735,21 +1750,29 @@ namespace dboltz {
 			};
 		};
 
-		// Times possibly
-		clock_t t0,t1,t2,t3,t4,t5,t6,t7,t8,t9,t10;
-
 		// Values for exp decay
 		double exp_decay_t0=0., exp_decay_lambda=0.;
 
 		// Start/stop time for integration
 		int t_start,t_end;
 
+		// Check that no divisions specified is acceptable
+		if (n_divisions > _time.n()) {
+			std::cerr << "Error! specified: " << n_divisions << " divisions but there are only: " << _time.n() << " timesteps...." << std::endl;
+			exit(EXIT_FAILURE);
+		};
+
+		// Struct to hold the chosen division timepoints
+		std::vector<int> timepoints_all;
+		for(auto i=0; i<_time.n(); i++) {
+			timepoints_all.push_back(i);	
+		};
+		std::vector<int> division_times;
+
 		// Iterate over optimization steps
 		for (int i_opt_from_zero=0; i_opt_from_zero<n_opt; i_opt_from_zero++)
 		{
 			std::cout << "Opt step " << i_opt_from_zero << " / " << n_opt-1 << std::endl;
-
-			if (DIAG_TIME_SOLVE) { t0 = clock(); };
 
 			// Offset
 			i_opt = i_opt_from_zero + options.opt_idx_start_writing;
@@ -1769,11 +1792,24 @@ namespace dboltz {
 				t_end = _time.n();
 			};
 
+			// Choose divisions
+			std::random_shuffle ( timepoints_all.begin(), timepoints_all.end() );
+			division_times = std::vector<int>(timepoints_all.begin(),timepoints_all.begin()+n_divisions-1);
+			std::sort(division_times.begin(), division_times.end());
+			// Add t_start to the beginning
+			division_times.insert(division_times.begin(),t_start);
+
+			if (DIAG_SOLVE_RAND_DIV) {
+				std::cout << "Division times: " << division_times.size() << std::endl;
+				for (auto i=0; i<n_divisions; i++) {
+					std::cout << division_times[i] << " ";
+				};
+				std::cout << std::endl;
+			};
+
 			/*****
 			Step 0 - Check nesterov
 			*****/
-
-			if (DIAG_SOLVE) { std::cout << "Taking Nesterov step" << std::endl; };
 
 			if (options.nesterov) {
 				// If first opt step, do nothing, but set the "prev" point to the current to initialize
@@ -1794,16 +1830,9 @@ namespace dboltz {
 				write_bfs(options.dir_write+"F/",i_opt);
 			};
 
-			if (DIAG_TIME_SOLVE) {
-				t1 = clock();
-				std::cout << "	nesterov: " << double(t1 - t0) / CLOCKS_PER_SEC << std::endl;
-			};
-
 			/*****
 			Step 1 - Solve the current trajectory
 			*****/
-
-			if (DIAG_SOLVE) { std::cout << "Solving ixn param" << std::endl; };
 
 			solve_ixn_param_traj(t_end);
 
@@ -1812,55 +1841,17 @@ namespace dboltz {
 				write_ixn_params(options.dir_write+"ixn_params/",i_opt);
 			};
 
-			if (DIAG_SOLVE) { std::cout << "OK" << std::endl; };
-
-			if (DIAG_TIME_SOLVE) {
-				t2 = clock();
-				std::cout << "	traj: " << double(t2 - t1) / CLOCKS_PER_SEC << std::endl;
-			};
-
-			/*****
-			Step 2 - Solve the variational problem traj
-			*****/
-
-			if (DIAG_SOLVE) { std::cout << "Solving var term" << std::endl; };
-
-			solve_var_traj();
-
-			// Write
-			if (options.write && options.write_var_terms) {
-				write_var_terms(options.dir_write+"var_terms/",i_opt);
-			};
-			
-			if (DIAG_SOLVE) { std::cout << "OK" << std::endl; };
-
-			if (DIAG_TIME_SOLVE) {
-				t3 = clock();
-				std::cout << "	var: " << double(t3 - t2) / CLOCKS_PER_SEC << std::endl;
-			};
-
 			/*****
 			Step 4 - reset the moments at all times
 			*****/
-
-			if (DIAG_SOLVE) { std::cout << "Reset moments" << std::endl; };
 
 			for (auto itp = _ixn_params.begin(); itp != _ixn_params.end(); itp++) {
 				itp->moments_reset();
 			};
 
-			if (DIAG_SOLVE) { std::cout << "OK" << std::endl; };
-
-			if (DIAG_TIME_SOLVE) {
-				t4 = clock();
-				std::cout << "	reset: " << double(t4 - t3) / CLOCKS_PER_SEC << std::endl;
-			};
-
 			/*****
 			Step 5 - Go through all times
 			*****/
-
-			if (DIAG_SOLVE) { std::cout << "Looping over times" << std::endl; };
 
 			// Use the class variable _t_opt to iterate
 			for (_t_opt=t_start; _t_opt < _n_t_soln; _t_opt++)
@@ -1870,10 +1861,42 @@ namespace dboltz {
 				};
 
 				/*****
-				Step 5.1 - loop over all samples in the batch
+				Step 5.0 - division and var term
 				*****/
 
-				if (DIAG_SOLVE) { std::cout << "   Looping over batch" << std::endl; };
+				// Have we entered a new division?
+				auto it = std::find(division_times.begin(), division_times.end(), _t_opt);
+				if (it != division_times.end()) {
+					// Yes, we have!
+					int t_div_start = _t_opt;
+					int div_idx = it-division_times.begin();
+					int t_div_end;
+					if (div_idx == division_times.size()-1) {
+						// End is _n_t_soln
+						t_div_end = _n_t_soln;
+					} else {
+						// End is start of next division
+						t_div_end = division_times[div_idx+1];
+					};
+
+					// Solve var trajs between these
+					if (DIAG_SOLVE_RAND_DIV) { std::cout << "Solving var term in div idx: " << div_idx << " times: " << t_div_start << " to: " << t_div_end << std::endl; };
+
+					solve_var_traj_from_zero(t_div_start,t_div_end);
+
+					// Write
+					/*
+					if (options.write && options.write_var_terms) {
+						write_var_terms(options.dir_write+"var_terms/",i_opt);
+					};
+					*/
+					
+					if (DIAG_SOLVE_RAND_DIV) { std::cout << "OK" << std::endl; };
+				};
+
+				/*****
+				Step 5.1 - loop over all samples in the batch
+				*****/
 
 				for (int i_batch=0; i_batch<fnames_to_use[i_opt_from_zero].size(); i_batch++) 
 				{
@@ -1881,14 +1904,9 @@ namespace dboltz {
 						std::cout << "." << std::flush;
 					};
 
-
-					if (DIAG_TIME_SOLVE) { t5 = clock(); };
-
 					/*****
 					Step 5.1.1 - Read in sample at this timestep
 					*****/
-
-					if (DIAG_SOLVE) { std::cout << "      Read in batch" << std::endl; };
 
 					if (options.awake_visible_are_binary) {
 						// Binary
@@ -1898,17 +1916,10 @@ namespace dboltz {
 						std::cerr << "Error! Probabilistic awake visible units not supported yet!" << std::endl;
 						exit(EXIT_FAILURE);
 					};
- 	
- 					if (DIAG_TIME_SOLVE) {
-						t6 = clock();
-						std::cout << "	read: " << double(t6 - t5) / CLOCKS_PER_SEC << std::endl;
-					};
-
+ 
 					/*****
 					Step 5.1.2 - Activate the hidden units if needed
 					*****/
-
-					if (DIAG_SOLVE) { std::cout << "      Activating hidden units" << std::endl; };
 
 					if (_hidden_layer_exists) {
 						for (auto ithu = _hidden_units.begin(); ithu != _hidden_units.end(); ithu++) {
@@ -1916,24 +1927,12 @@ namespace dboltz {
 						};
 					};
 
-					if (DIAG_TIME_SOLVE) {
-						t7 = clock();
-						std::cout << "	activated: " << double(t7 - t6) / CLOCKS_PER_SEC << std::endl;
-					};
-
 					/*****
 					Step 5.1.3 - Record the awake moments
 					*****/
 
-					if (DIAG_SOLVE) { std::cout << "      Record awake moments" << std::endl; };
-
 					for (auto itp = _ixn_params.begin(); itp != _ixn_params.end(); itp++) {
 						itp->moments_retrieve_at_time(IxnParamTraj::AWAKE,_t_opt,fnames_to_use[i_opt_from_zero].size());
-					};
-
-					if (DIAG_TIME_SOLVE) {
-						t8 = clock();
-						std::cout << "	recorded: " << double(t8 - t7) / CLOCKS_PER_SEC << std::endl;
 					};
 
 					/*****
@@ -1943,8 +1942,6 @@ namespace dboltz {
 					for (int cd_step=0; cd_step<n_cd_steps; cd_step++)
 					{
 						// Sample
-
-						if (DIAG_SOLVE) { std::cout << "      Sample" << std::endl; };
 
 						if (cd_step != n_cd_steps-1) {
 							if (options.asleep_visible_are_binary) {
@@ -1964,8 +1961,6 @@ namespace dboltz {
 
 						// Activate the hidden units if needed
 
-						if (DIAG_SOLVE) { std::cout << "      Activating hidden units" << std::endl; };
-
 						if (_hidden_layer_exists) {
 							for (auto ithu = _hidden_units.begin(); ithu != _hidden_units.end(); ithu++) {
 								if (cd_step != n_cd_steps-1) {
@@ -1977,35 +1972,28 @@ namespace dboltz {
 						};
 					};
 
-					if (DIAG_TIME_SOLVE) {
-						t9 = clock();
-						std::cout << "	CD: " << double(t9 - t8) / CLOCKS_PER_SEC << std::endl;
-					};
-
 					/*****
 					Step 5.1.5 - Record the asleep moments
 					*****/
-
-					if (DIAG_SOLVE) { std::cout << "      Record asleep moments" << std::endl; };
 
 					for (auto itp = _ixn_params.begin(); itp != _ixn_params.end(); itp++) {
 						itp->moments_retrieve_at_time(IxnParamTraj::ASLEEP,_t_opt,fnames_to_use[i_opt_from_zero].size());
 					};
 
-					if (DIAG_TIME_SOLVE) {
-						t10 = clock();
-						std::cout << "	recorded: " << double(t10 - t9) / CLOCKS_PER_SEC << std::endl;
+					/*****
+					Step 5.1.6 - Gather the update
+					*****/
+
+					for (auto itbf=_bfs.begin(); itbf!=_bfs.end(); itbf++) {
+						itbf->update_gather(_t_opt, _t_opt+1, _time.delta(), dopt, options.exp_decay, exp_decay_t0, exp_decay_lambda, options.l2_reg_params_mode, l2_lambda_params, l2_reg_centers);
 					};
+
 				};
 
 				if (options.verbose) {
 					std::cout << std::endl;
 				};
-
-				if (DIAG_SOLVE) { std::cout << "   OK" << std::endl; };
 			};
-
-			if (DIAG_SOLVE) { std::cout << "OK" << std::endl; };
 
 			// Write the moments
 			if (options.write && options.write_moments) {
@@ -2013,11 +2001,11 @@ namespace dboltz {
 			};
 
 			/*****
-			Step 6 - Update the basis funcs
+			Step 6 - Commit the updates
 			*****/
 
 			for (auto itbf=_bfs.begin(); itbf!=_bfs.end(); itbf++) {
-				itbf->update(t_start, _n_t_soln, _time.delta(), dopt, options.exp_decay, exp_decay_t0, exp_decay_lambda, options.l2_reg_params_mode, l2_lambda_params, l2_reg_centers);
+				itbf->update_committ_gathered();
 			};
 		};
 
@@ -2455,6 +2443,9 @@ namespace dboltz {
 	void OptProblem::solve_var_traj() {
 		_impl->solve_var_traj();
 	};
+	void OptProblem::solve_var_traj_from_zero(int it_start, int it_end) {
+		_impl->solve_var_traj_from_zero(it_start,it_end);
+	};
 
 	void OptProblem::solve(std::vector<std::string> fnames, int n_opt, int batch_size, int n_cd_steps, double dopt, OptionsSolve options) {
 		_impl->solve(fnames,n_opt,batch_size,n_cd_steps,dopt,options);
@@ -2473,11 +2464,11 @@ namespace dboltz {
 		_impl->solve_varying_ic(fname_collection,n_opt,n_cd_steps,dopt,options);
 	};
 
-	void OptProblem::solve_div_rand(std::vector<std::string> fnames, int n_opt, int batch_size, int n_cd_steps, double dopt, int n_divisions, OptionsSolve options) {
-		_impl->solve_div_rand(fnames,n_opt,batch_size,n_cd_steps,dopt,n_divisions,options);
+	void OptProblem::solve_rand_div(std::vector<std::string> fnames, int n_opt, int batch_size, int n_cd_steps, double dopt, int n_divisions, OptionsSolve options) {
+		_impl->solve_rand_div(fnames,n_opt,batch_size,n_cd_steps,dopt,n_divisions,options);
 	};
-	void OptProblem::solve_div_rand(std::vector<std::vector<std::string>> fnames, int n_opt, int n_cd_steps, double dopt, int n_divisions, OptionsSolve options) {
-		_impl->solve_div_rand(fnames,n_opt,n_cd_steps,dopt,n_divisions,options);
+	void OptProblem::solve_rand_div(std::vector<std::vector<std::string>> fnames, int n_opt, int n_cd_steps, double dopt, int n_divisions, OptionsSolve options) {
+		_impl->solve_rand_div(fnames,n_opt,n_cd_steps,dopt,n_divisions,options);
 	};
 
 	void OptProblem::read_basis_func(std::string bf_name, std::string fname) {

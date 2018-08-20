@@ -222,6 +222,7 @@ namespace dboltz {
 		********************/
 
 		void solve_var_traj();
+		void solve_var_traj_from_zero(int it_start, int it_end); // inclusive (it_start = 0) to exclusive (no value at it_end)
 
 		/********************
 		Solve
@@ -237,8 +238,8 @@ namespace dboltz {
 		void solve_varying_ic(std::vector<std::vector<FName>> fname_collection, int n_opt, int n_cd_steps, double dopt, OptionsSolve options=OptionsSolve());
 
 		// Single IC, dividing up randomly the traj and restarting the diff eq integration for the var terms
-		void solve_div_rand(std::vector<std::string> fnames, int n_opt, int batch_size, int n_cd_steps, double dopt, int n_divisions, OptionsSolve options=OptionsSolve());
-		void solve_div_rand(std::vector<std::vector<std::string>> fnames, int n_opt, int n_cd_steps, double dopt, int n_divisions, OptionsSolve options=OptionsSolve());
+		void solve_rand_div(std::vector<std::string> fnames, int n_opt, int batch_size, int n_cd_steps, double dopt, int n_divisions, OptionsSolve options=OptionsSolve());
+		void solve_rand_div(std::vector<std::vector<std::string>> fnames, int n_opt, int n_cd_steps, double dopt, int n_divisions, OptionsSolve options=OptionsSolve());
 
 		/********************
 		Read basis function

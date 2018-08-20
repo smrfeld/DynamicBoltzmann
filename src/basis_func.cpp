@@ -548,22 +548,6 @@ namespace dboltz {
 		double *nu_vals;
 		double decay = 1.0;
 
-		// L2 for params
-		/*
-		double l2_params=0.0;
-		if (l2_reg_params_mode) {
-			l2_params = 0.;
-			// Go through all times
-			for (int t=t_start; t<t_end; t++) {
-				// Get the l2
-				auto f = l2_lambda_params.find(_parent_ixn_param);
-				if (f != l2_lambda_params.end()) {
-					l2_params += dopt * f->second * dt * sgn(_parent_ixn_param->get_at_time(t)) * abs(_parent_ixn_param->get_at_time(t));
-				};
-			};
-		};
-		*/
-
 		// Go through all idxs
 		double up1, up2, l2_center;
 		for (int i=0; i<_val_len; i++) {
@@ -604,17 +588,10 @@ namespace dboltz {
 					};
 				};
 			};
-
-			// L2 for params
-			/*
-			if (l2_reg_params_mode) {
-				_vals[i] -= l2_params;
-			};
-			*/
 		};
 	};
 
-	void BasisFunc::update_gather(int t_start, int t_end, double dt, double dopt, bool exp_decay, double exp_decay_t0, double exp_decay_lambda) 
+	void BasisFunc::update_gather(int t_start, int t_end, double dt, double dopt, bool exp_decay, double exp_decay_t0, double exp_decay_lambda, bool l2_reg_params_mode, std::map<IxnParamTraj*,double> &l2_lambda_params, std::map<IxnParamTraj*,double> &l2_reg_centers) 
 	{
 		if (!_update_gathered) {
 			// alloc
@@ -625,6 +602,7 @@ namespace dboltz {
 		int *idxs;
 		double *nu_vals;
 		double decay = 1.0;
+		double up1,up2,l2_center;
 
 		// Go through all idxs
 		for (int i=0; i<_val_len; i++) {
@@ -639,44 +617,45 @@ namespace dboltz {
 
 				// Go through all updating terms
 				for (auto p: _update_ptrs) {
-					_update_gathered[i] += dopt * dt * p.first->moments_diff_at_time(t) * p.second->get_at_time_by_idx(t, i) * decay;
+					up1 = dopt * dt * p.first->moments_diff_at_time(t) * p.second->get_at_time_by_idx(t, i) * decay;
+					_update_gathered[i] += up1;
+
+					// L2
+					if (l2_reg_params_mode) {
+						// Get numerator of var term
+						IxnParamTraj* num = p.second->get_numerator_ixn_param_traj();
+
+						// Lookup l2 lambda
+						auto it = l2_lambda_params.find(num);
+						if (it != l2_lambda_params.end()) {
+							// Lookup center if it exists, else 0
+							auto it2 = l2_reg_centers.find(num);
+							if (it2 != l2_reg_centers.end()) {
+								l2_center = it2->second;
+							} else {
+								l2_center = 0.;
+							};
+							up2 = dopt * it->second * dt * sgn(num->get_at_time(t) - l2_center) * abs(num->get_at_time(t) - l2_center) * p.second->get_at_time_by_idx(t, i) * decay;
+
+							_update_gathered[i] -= up2;
+							// std::cout << up1 << " " << up2 << std::endl;
+						};
+					};
 				};
 			};
 		};
 	};
 
-	void BasisFunc::update_committ_gathered(int t_start, int t_end, double dt, double dopt, bool l2_reg_params_mode, std::map<IxnParamTraj*,double> &l2_lambda_params, std::map<IxnParamTraj*,double> &l2_reg_centers) 
+	void BasisFunc::update_committ_gathered() 
 	{
 		if (!_update_gathered) {
 			std::cerr << "ERROR! No update allocated." << std::endl;
 			exit(EXIT_FAILURE);
 		};
 
-		double l2_params=0.0;
-
-		// L2 for params
-		if (l2_reg_params_mode) {
-			std::cout << "WARNING: There may be an error here for the L2!" << std::endl;
-
-			l2_params = 0.;
-			// Go through all times
-			for (int t=t_start; t<t_end; t++) {
-				// Get the l2
-				auto f = l2_lambda_params.find(_parent_ixn_param);
-				if (f != l2_lambda_params.end()) {
-					l2_params += dopt * f->second * dt * sgn(_parent_ixn_param->get_at_time(t)) * abs(_parent_ixn_param->get_at_time(t));
-				};
-			};
-		};
-
 		// Go through all idxs
 		for (int i=0; i<_val_len; i++) {
 			_vals[i] += _update_gathered[i];
-
-			// L2 for params
-			if (l2_reg_params_mode) {
-				_vals[i] -= l2_params;
-			};
 		};
 
 		// Reset to 0
@@ -756,7 +735,7 @@ namespace dboltz {
 		int *idxs = new int[_n_params];
 		get_idxs(i, idxs);
 
-		// Go through ixn parmas
+		// Go through ixn params
 		double r=1;
 		for (int ip=0; ip<_n_params; ip++) {
 			r *= exp(-pow(_ixn_params[ip]->get_at_time(it)-_ixn_params[ip]->get_by_idx(idxs[ip]),2)/(2.*1.0*_ixn_params[ip]->delta())) / sqrt(2.*M_PI*1.0*_ixn_params[ip]->delta());

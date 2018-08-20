@@ -81,8 +81,13 @@ namespace dboltz {
 		// Calculate next timestep
 		void calculate_at_time(int it_next, double dt);
 
-		// Getters/setters
+		// Set to zero at some timestep
+		void set_to_zero_at_time(int it);
+
+		// Get value
 		double get_at_time_by_idx(int it, int i);
+
+		// Get name
 		std::string name();
 
 		// Write

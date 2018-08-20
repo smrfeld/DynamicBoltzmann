@@ -1,5 +1,10 @@
+#include "species.hpp"
+
+// Other headers
+#include "counter.hpp"
+#include "ixn_param_traj.hpp"
+
 #include <iostream>
-#include "ixn_param_traj.hpp" // also includes species header
 
 /************************************
 * Namespace for Gillespie3D

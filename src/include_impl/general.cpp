@@ -1,4 +1,5 @@
-#include "../include/general.hpp"
+#include "../../include/dynamicboltz_bits/general.hpp"
+
 #include <iomanip>
 #include <sstream>
 

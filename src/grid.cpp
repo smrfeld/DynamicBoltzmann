@@ -1,7 +1,10 @@
 #include "grid.hpp"
+
+// Other headers
+#include "../include/dynamicboltz_bits/general.hpp"
+
 #include <iostream>
 #include "math.h"
-#include "../include/general.hpp"
 #include <fstream>
 
 /************************************

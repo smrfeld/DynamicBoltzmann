@@ -1,15 +1,12 @@
-// string
 #ifndef STRING_h
 #define STRING_h
 #include <string>
 #endif
 
-// vector
 #ifndef VECTOR_h
 #define VECTOR_h
 #include <vector>
 #endif
-
 
 /************************************
 * Namespace for DynamicBoltzmann

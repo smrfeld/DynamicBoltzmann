@@ -1,16 +1,16 @@
-#ifndef VECTOR_h
-#define VECTOR_h
+#ifndef VECTOR_H
+#define VECTOR_H
 #include <vector>
 #endif
 
-#ifndef STRING_h
-#define STRING_h
+#ifndef STRING_H
+#define STRING_H
 #include <string>
 #endif
 
-#ifndef IXN_PARAM_TRAJ_h
-#define IXN_PARAM_TRAJ_h
-#include "ixn_param_traj.hpp"
+#ifndef MAP_H
+#define MAP_H
+#include <map>
 #endif
 
 /************************************
@@ -22,6 +22,9 @@ namespace DynamicBoltzmann {
 	/****************************************
 	Array
 	****************************************/
+
+	// Forward
+	class IxnParamTraj;
 
 	class Array {
 	private:

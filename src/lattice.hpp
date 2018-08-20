@@ -1,31 +1,21 @@
-// string
-#ifndef STRING_h
-#define STRING_h
+#ifndef STRING_H
+#define STRING_H
 #include <string>
 #endif
 
-// vector
-#ifndef VECTOR_h
-#define VECTOR_h
+#ifndef VECTOR_H
+#define VECTOR_H
 #include <vector>
 #endif
 
-// list
-#ifndef LIST_h
-#define LIST_h
+#ifndef LIST_H
+#define LIST_H
 #include <list>
 #endif
 
-// map
-#ifndef MAP_h
-#define MAP_h
+#ifndef MAP_H
+#define MAP_H
 #include <map>
-#endif
-
-// Species
-#ifndef SPECIES_h
-#define SPECIES_h
-#include "species.hpp"
 #endif
 
 /************************************
@@ -38,6 +28,7 @@ namespace DynamicBoltzmann {
 	Structure to hold pairs and triplets of sites
 	****************************************/
 
+	// Forward
 	class Site;
 
 	struct Site2 {
@@ -61,7 +52,11 @@ namespace DynamicBoltzmann {
 	Class to hold a connection from visible to hidden
 	****************************************/
 
+	// Forward
 	class HiddenUnit;
+	class Species;
+	class HiddenSpecies;
+	class IxnParamTraj;
 
 	class ConnectionVH {
 	private:

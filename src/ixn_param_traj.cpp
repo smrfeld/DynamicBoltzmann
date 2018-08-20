@@ -1,5 +1,12 @@
+#include "ixn_param_traj.hpp"
+
+// Other headers
+#include "../include/dynamicboltz_bits/general.hpp"
+#include "species.hpp"
+#include "lattice.hpp"
+#include "hidden_unit.hpp"
 #include "basis_func.hpp"
-#include "../include/general.hpp"
+
 #include <iostream>
 #include <fstream>
 

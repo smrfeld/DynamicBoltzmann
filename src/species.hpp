@@ -1,25 +1,16 @@
-// string
-#ifndef STRING_h
-#define STRING_h
+#ifndef STRING_H
+#define STRING_H
 #include <string>
 #endif
 
-// utility for pair
-#ifndef PAIR_h
-#define PAIR_h
-#include <utility>
+#ifndef VECTOR_H
+#define VECTOR_H
+#include <vector>
 #endif
 
-// map
-#ifndef MAP_h
-#define MAP_h
+#ifndef MAP_H
+#define MAP_H
 #include <map>
-#endif
-
-// Counter
-#ifndef COUNTER_h
-#define COUNTER_h
-#include "counter.hpp"
 #endif
 
 /************************************
@@ -32,7 +23,9 @@ namespace DynamicBoltzmann {
 	Doublets, Triplets of Species ptrs
 	****************************************/
 
-	class HiddenSpecies;
+	// Forward
+	class HiddenSpecies; 
+	class Species;
 
 	struct Species2 {
 		Species *sp1;
@@ -64,6 +57,8 @@ namespace DynamicBoltzmann {
 	Species
 	****************************************/
 	
+	// Forward
+	class Counter;
 	class IxnParamTraj;
 
 	class Species {

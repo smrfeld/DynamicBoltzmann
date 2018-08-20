@@ -1,7 +1,13 @@
+#include "hidden_unit.hpp"
+
+// Other headers
+#include "../include/dynamicboltz_bits/general.hpp"
+#include "lattice.hpp"
+#include "species.hpp"
+#include "ixn_param_traj.hpp"
+
 #include "math.h"
 #include <iostream>
-#include "../include/general.hpp"
-#include "ixn_param_traj.hpp" // includes hidden units
 
 /************************************
 * Namespace for DynamicBoltzmann

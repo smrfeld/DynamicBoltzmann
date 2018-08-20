@@ -1,5 +1,10 @@
+#include "basis_func.hpp"
+
+// Other headers
+#include "../include/dynamicboltz_bits/general.hpp"
+#include "ixn_param_traj.hpp"
 #include "var_term_traj.hpp"
-#include "../include/general.hpp"
+
 #include <iostream>
 #include "math.h"
 #include <fstream>

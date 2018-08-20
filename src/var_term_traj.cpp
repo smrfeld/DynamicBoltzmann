@@ -1,6 +1,11 @@
 #include "var_term_traj.hpp"
+
+// Other headers
+#include "../include/dynamicboltz_bits/general.hpp"
+#include "ixn_param_traj.hpp"
+#include "basis_func.hpp"
+
 #include <iostream>
-#include "../include/general.hpp"
 #include <fstream>
 
 /************************************

@@ -1,10 +1,10 @@
-#ifndef VECTOR_h
-#define VECTOR_h
+#ifndef VECTOR_H
+#define VECTOR_H
 #include <vector>
 #endif
 
-#ifndef STRING_h
-#define STRING_h
+#ifndef STRING_H
+#define STRING_H
 #include <string>
 #endif
 

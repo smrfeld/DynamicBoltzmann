@@ -1,0 +1,8 @@
+#ifndef DYNAMIC_BOLTZ_H
+#define DYNAMIC_BOLTZ_H
+
+#include "dynamicboltz_bits/dim.hpp"
+#include "dynamicboltz_bits/opt_problem.hpp"
+#include "dynamicboltz_bits/general.hpp"
+
+#endif

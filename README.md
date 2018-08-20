@@ -7,7 +7,7 @@ There now is a convenient makefile:
 make
 make install
 ```
-Headers are installed in `/usr/local/include/dynamicboltz` and libraries in `/usr/local/lib`. To access the headers, make sure to `include "dynamicboltz/....hpp"`. Link using:
+Headers are by default installed in `/usr/local/include/dynamicboltz_bits` with a convenient header `/usr/local/include/dynamicboltz` and libraries in `/usr/local/lib`. To access the headers: `include <dynamicboltz>`. Link using:
 ```
 g++ -std=c++14 -O3 -ldynamicboltz myprogram.cpp -o myprogram.o
 ```

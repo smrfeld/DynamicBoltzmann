@@ -1,8 +1,14 @@
-#include "ixn_param_traj.hpp" // also includes lattice header
+#include "lattice.hpp"
+
+// Other headers
+#include "../include/dynamicboltz_bits/general.hpp"
+#include "hidden_unit.hpp"
+#include "species.hpp"
+#include "ixn_param_traj.hpp"
+
 #include <iostream>
 #include <fstream>
 #include <numeric>
-#include "../include/general.hpp"
 #include "math.h"
 #include <ctime>
 #include <sstream>

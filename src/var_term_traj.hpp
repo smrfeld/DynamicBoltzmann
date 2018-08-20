@@ -1,6 +1,11 @@
-#ifndef BASIS_FUNC_h
-#define BASIS_FUNC_h
-#include "basis_func.hpp"
+#ifndef STRING_H
+#define STRING_H
+#include <string>
+#endif
+
+#ifndef VECTOR_H
+#define VECTOR_H
+#include <vector>
 #endif
 
 /************************************
@@ -12,6 +17,11 @@ namespace DynamicBoltzmann {
 	/****************************************
 	Variational Term Trajectory
 	****************************************/
+
+	// Forward
+	class IxnParamTraj;
+	class BasisFunc;
+	class Array;
 
 	class VarTermTraj {
 	private:

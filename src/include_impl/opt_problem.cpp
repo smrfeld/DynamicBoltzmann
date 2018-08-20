@@ -1,11 +1,22 @@
-#include "../include/dynamic_boltzmann.hpp"
+#include "../../include/dynamicboltz_bits/opt_problem.hpp"
+
+// Other headers
+#include "../../include/dynamicboltz_bits/dim.hpp"
+#include "../../include/dynamicboltz_bits/general.hpp"
+#include "../basis_func.hpp"
+#include "../counter.hpp"
+#include "../hidden_unit.hpp"
+#include "../ixn_param_traj.hpp"
+#include "../lattice.hpp"
+#include "../species.hpp"
+#include "../var_term_traj.hpp"
+
+#include <list>
 #include <iostream>
-#include "../include/general.hpp"
 #include <ctime>
 #include <fstream>
 #include <algorithm>
 #include <set>
-#include "var_term_traj.hpp"
 #include <stdlib.h>
 #include <sstream>
 
@@ -18,559 +29,6 @@
 ************************************/
 
 namespace DynamicBoltzmann {
-
-	/****************************************
-	Dim - IMPLEMENTATION
-	****************************************/
-
-	class Dim::Impl {
-	private:
-
-		// Name
-		std::string _name;
-
-		// Type
-		DimType _type;
-
-		// Name of associated species
-		bool _any_species;
-		std::vector<std::string> _species;
-		std::vector<std::vector<std::string> > _species_multiple;
-
-		// Min/max/npts/initial value
-		double _min,_max;
-		int _n;
-		double _init;
-
-		// Basis function dimension names
-		std::vector<std::string> _basis_func_dims;
-
-		// Constructor helpers
-		void _clean_up();
-		void _copy(const Impl& other);
-		void _reset();
-		void _shared_constructor(std::string name, DimType type, std::vector<std::string> basis_func_dims, double min, double max, int n, double init);
-
-	public:
-
-		// Constructor
-		Impl(std::string name, DimType type, std::vector<std::string> basis_func_dims, double min, double max, int n, double init);
-		Impl(std::string name, DimType type, std::string species, std::vector<std::string> basis_func_dims, double min, double max, int n, double init);
-		Impl(std::string name, DimType type, std::vector<std::string> species, std::vector<std::string> basis_func_dims, double min, double max, int n, double init);
-		Impl(std::string name, DimType type, std::vector<std::vector<std::string>> species, std::vector<std::string> basis_func_dims, double min, double max, int n, double init);
-		Impl(const Impl& other);
-		Impl(Impl&& other);
-	    Impl& operator=(const Impl& other);
-	    Impl& operator=(Impl&& other);
-		~Impl();
-
-		/********************
-		Getters
-		********************/
-
-		// Name
-		std::string name() const;
-
-		// Type
-		DimType type() const;
-
-		// Does it apply to all species?
-		bool any_species() const;
-
-		// Basis func dims
-		std::vector<std::string> basis_func_dims() const;
-
-		// Min/max/n/init
-		double min() const;
-		double max() const;
-		double n() const;
-		double init() const;
-
-		// Get species
-		std::vector<std::string> get_species_h() const;
-		std::vector<std::string> get_species_b() const;
-		std::vector<std::vector<std::string>> get_species_J() const;
-		std::vector<std::vector<std::string>> get_species_K() const;
-		std::vector<std::vector<std::string>> get_species_W() const;
-
-		/********************
-		Setters
-		********************/
-
-		// Add basis func dimension
-		void add_basis_func_dim(std::string basis_func);
-
-		// Add species
-		void add_species_h(std::string species);
-		void add_species_b(std::string species);
-		void add_species_J(std::string species1, std::string species2);
-		void add_species_K(std::string species1, std::string species2, std::string species3);
-		void add_species_W(std::string species_visible, std::string species_hidden);
-	};
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-	/****************************************
-	Dim - IMPLEMENTATION DEFINITIONS
-	****************************************/
-
-	/********************
-	Constructor
-	********************/
-
-	Dim::Impl::Impl(std::string name, DimType type, std::vector<std::string> basis_func_dims, double min, double max, int n, double init) {
-		_shared_constructor(name, type, basis_func_dims, min, max, n, init);
-		// Yes any species
-		_any_species = true;
-	};
-	Dim::Impl::Impl(std::string name, DimType type, std::string species, std::vector<std::string> basis_func_dims, double min, double max, int n, double init) {
-		_shared_constructor(name, type, basis_func_dims, min, max, n, init);
-		// Not any species
-		_any_species = false;
-		// Add
-		if (_type == H) {
-			add_species_h(species);
-		} else if (_type == B) {
-			add_species_b(species);
-		};
-	};
-	Dim::Impl::Impl(std::string name, DimType type, std::vector<std::string> species, std::vector<std::string> basis_func_dims, double min, double max, int n, double init) {
-		_shared_constructor(name, type, basis_func_dims, min, max, n, init);
-		// Not any species
-		_any_species = false;
-		// Add
-		if (_type == H) {
-			for (auto s: species) {
-				add_species_h(s);
-			};
-		} else if (_type == B) {
-			for (auto s: species) {
-				add_species_b(s);
-			};
-		} else if (type == J) {
-			if (species.size() != 2) {
-				std::cerr << "Error! must be 2 species for J" << std::endl;
-				exit(EXIT_FAILURE);
-			};
-			add_species_J(species[0],species[1]);
-		} else if (type == K) {
-			if (species.size() != 3) {
-				std::cerr << "Error! must be 3 species for K" << std::endl;
-				exit(EXIT_FAILURE);
-			};
-			add_species_K(species[0],species[1],species[2]);
-		} else if (type == W) {
-			if (species.size() != 2) {
-				std::cerr << "Error! must be 2 species for W" << std::endl;
-				exit(EXIT_FAILURE);
-			};
-			add_species_W(species[0],species[1]);
-		};
-	};
-	Dim::Impl::Impl(std::string name, DimType type, std::vector<std::vector<std::string>> species, std::vector<std::string> basis_func_dims, double min, double max, int n, double init) {
-		// Check type
-		if (type == B || type != H) {
-			std::cerr << "Error! Only for J or K or W." << std::endl;
-			exit(EXIT_FAILURE);
-		};
-		_shared_constructor(name, type, basis_func_dims, min, max, n, init);
-		// Not any species
-		_any_species = false;
-		// Add
-		if (type == J) {
-			for (auto s_pair: species) {
-				if (s_pair.size() != 2) {
-					std::cerr << "Error! must be 2 species for J" << std::endl;
-					exit(EXIT_FAILURE);
-				};
-				add_species_J(s_pair[0],s_pair[1]);
-			};
-		} else if (type == K) {
-			for (auto s_triplet: species) {
-				if (s_triplet.size() != 3) {
-					std::cerr << "Error! must be 3 species for K" << std::endl;
-					exit(EXIT_FAILURE);
-				};
-				add_species_K(s_triplet[0],s_triplet[1],s_triplet[2]);
-			};
-		} else if (type == W) {
-			for (auto s_pair: species) {
-				if (s_pair.size() != 2) {
-					std::cerr << "Error! must be 2 species for W" << std::endl;
-					exit(EXIT_FAILURE);
-				};
-				add_species_W(s_pair[0],s_pair[1]);
-			};
-		};
-	};
-	Dim::Impl::Impl(const Impl& other) {
-		_copy(other);
-	};
-	Dim::Impl::Impl(Impl&& other) {
-		_copy(other);
-		other._reset();
-	};
-    Dim::Impl& Dim::Impl::operator=(const Impl& other) {
-		if (this != &other) {
-			_clean_up();
-			_copy(other);
-		};
-		return *this;
-    };
-    Dim::Impl& Dim::Impl::operator=(Impl&& other) {
-		if (this != &other) {
-			_clean_up();
-			_copy(other);
-			other._reset();
-		};
-		return *this;
-    };
-	Dim::Impl::~Impl()
-	{
-		_clean_up();
-	};
-	void Dim::Impl::_clean_up() {
-		// Nothing...
-	};
-	void Dim::Impl::_copy(const Impl& other) {
-		_shared_constructor(other._name, other._type,other._basis_func_dims, other._min, other._max, other._n, other._init);
-		_any_species = other._any_species;
-		_species = other._species;
-		_species_multiple = other._species_multiple;
-	};
-	void Dim::Impl::_reset() {
-		_name = "";
-		_basis_func_dims.clear();
-		_any_species = false;
-		_species.clear();
-		_species_multiple.clear();
-		_min = 0.;
-		_max = 0.;
-		_n = 0;
-		_init = 0.;
-	};
-	void Dim::Impl::_shared_constructor(std::string name, DimType type, std::vector<std::string> basis_func_dims, double min, double max, int n, double init) {
-		_name = name;
-		_type = type;
-		_basis_func_dims = basis_func_dims;
-		_min = min;
-		_max = max;
-		_n = n;
-		_init = init;
-	};
-
-	/********************
-	Getters
-	********************/
-
-	// Name
-	std::string Dim::Impl::name() const {
-		return _name;
-	};
-
-	// Type
-	DimType Dim::Impl::type() const {
-		return _type;
-	};
-
-	// Does it apply to all species?
-	bool Dim::Impl::any_species() const {
-		return _any_species;
-	};
-
-	// Basis func dims
-	std::vector<std::string> Dim::Impl::basis_func_dims() const {
-		return _basis_func_dims;
-	};
-
-	// Min/max/n/init
-	double Dim::Impl::min() const {
-		return _min;
-	};
-	double Dim::Impl::max() const {
-		return _max;
-	};
-	double Dim::Impl::n() const {
-		return _n;
-	};
-	double Dim::Impl::init() const {
-		return _init;
-	};
-
-	// Get species
-	std::vector<std::string> Dim::Impl::get_species_h() const {
-		if (_type != H) {
-			std::cerr << "Error! Requested species but not of type H." << std::endl;
-			exit(EXIT_FAILURE);
-		};
-		return _species;
-	};
-	std::vector<std::string> Dim::Impl::get_species_b() const {
-		if (_type != B) {
-			std::cerr << "Error! Requested species but not of type B." << std::endl;
-			exit(EXIT_FAILURE);
-		};
-		return _species;
-	};
-	std::vector<std::vector<std::string>> Dim::Impl::get_species_J() const {
-		if (_type != J) {
-			std::cerr << "Error! Requested species but not of type J." << std::endl;
-			exit(EXIT_FAILURE);
-		};
-		return _species_multiple;
-	};
-	std::vector<std::vector<std::string>> Dim::Impl::get_species_K() const {
-		if (_type != K) {
-			std::cerr << "Error! Requested species but not of type K." << std::endl;
-			exit(EXIT_FAILURE);
-		};
-		return _species_multiple;
-	};
-	std::vector<std::vector<std::string>> Dim::Impl::get_species_W() const {
-		if (_type != W) {
-			std::cerr << "Error! Requested species but not of type W." << std::endl;
-			exit(EXIT_FAILURE);
-		};
-		return _species_multiple;
-	};
-
-	/********************
-	Setters
-	********************/
-
-	// Add basis func dimension
-	void Dim::Impl::add_basis_func_dim(std::string dim) {
-		_basis_func_dims.push_back(dim);
-	};
-
-	// Add species
-	void Dim::Impl::add_species_h(std::string species) {
-		// Check type
-		if (_type != H) {
-			std::cerr << "Error! Not H." << std::endl;
-			exit(EXIT_FAILURE);
-		};
-		_any_species = false;
-		_species.push_back(species);
-	};
-	void Dim::Impl::add_species_b(std::string species) {
-		// Check type
-		if (_type != B) {
-			std::cerr << "Error! Not B." << std::endl;
-			exit(EXIT_FAILURE);
-		};
-		_any_species = false;
-		_species.push_back(species);
-	};
-	void Dim::Impl::add_species_J(std::string species1, std::string species2) {
-		// Check type
-		if (_type != J) {
-			std::cerr << "Error! Not J." << std::endl;
-			exit(EXIT_FAILURE);
-		};
-		_any_species = false;
-		_species_multiple.push_back(std::vector<std::string>({species1,species2}));
-	};
-	void Dim::Impl::add_species_K(std::string species1, std::string species2, std::string species3) {
-		// Check type
-		if (_type != K) {
-			std::cerr << "Error! Not K." << std::endl;
-			exit(EXIT_FAILURE);
-		};
-		_any_species = false;
-		_species_multiple.push_back(std::vector<std::string>({species1,species2,species3}));
-	};
-	void Dim::Impl::add_species_W(std::string species_visible, std::string species_hidden) {
-		// Check type
-		if (_type != W) {
-			std::cerr << "Error! Not W." << std::endl;
-			exit(EXIT_FAILURE);
-		};
-		_any_species = false;
-		_species_multiple.push_back(std::vector<std::string>({species_visible,species_hidden}));
-	};
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-	/****************************************
-	Dim - Impl forwards
-	****************************************/
-
-	Dim::Dim(std::string name, DimType type, std::vector<std::string> basis_func_dims, double min, double max, int n, double init) : _impl(new Impl(name,type,basis_func_dims,min,max,n,init)) {};
-	Dim::Dim(std::string name, DimType type, std::string species, std::vector<std::string> basis_func_dims, double min, double max, int n, double init) : _impl(new Impl(name,type,species,basis_func_dims,min,max,n,init)) {};
-	Dim::Dim(std::string name, DimType type, std::vector<std::string> species, std::vector<std::string> basis_func_dims, double min, double max, int n, double init) : _impl(new Impl(name,type,species,basis_func_dims,min,max,n,init)) {};
-	Dim::Dim(std::string name, DimType type, std::vector<std::vector<std::string>> species, std::vector<std::string> basis_func_dims, double min, double max, int n, double init) : _impl(new Impl(name,type,species,basis_func_dims,min,max,n,init)) {};
-	Dim::Dim(const Dim& other) : _impl(new Impl(*other._impl)) {};
-	Dim::Dim(Dim&& other) = default;
-	Dim& Dim::operator=(Dim other) {
-        _impl = std::move(other._impl);
-        return *this; 
-	};
-	Dim::~Dim() = default;
-
-	// Name
-	std::string Dim::name() const {
-		return _impl->name();
-	};
-
-	// Type
-	DimType Dim::type() const {
-		return _impl->type();
-	};
-
-	// Does it apply to all species?
-	bool Dim::any_species() const {
-		return _impl->any_species();
-	};
-
-	// Basis func dims
-	std::vector<std::string> Dim::basis_func_dims() const {
-		return _impl->basis_func_dims();
-	};
-
-	// Min/max/n/init
-	double Dim::min() const {
-		return _impl->min();
-	};
-	double Dim::max() const {
-		return _impl->max();
-	};
-	double Dim::n() const {
-		return _impl->n();
-	};
-	double Dim::init() const {
-		return _impl->init();
-	};
-
-	// Get species
-	std::vector<std::string> Dim::get_species_h() const {
-		return _impl->get_species_h();
-	};
-	std::vector<std::string> Dim::get_species_b() const {
-		return _impl->get_species_b();
-	};
-	std::vector<std::vector<std::string>> Dim::get_species_J() const {
-		return _impl->get_species_J();
-	};
-	std::vector<std::vector<std::string>> Dim::get_species_K() const {
-		return _impl->get_species_K();
-	};
-	std::vector<std::vector<std::string>> Dim::get_species_W() const {
-		return _impl->get_species_W();
-	};
-
-	/********************
-	Setters
-	********************/
-
-	// Add basis func dimension
-	void Dim::add_basis_func_dim(std::string dim) {
-		_impl->add_basis_func_dim(dim);
-	};
-
-	// Add species
-	void Dim::add_species_h(std::string species) {
-		_impl->add_species_h(species);
-	};
-	void Dim::add_species_b(std::string species) {
-		_impl->add_species_b(species);
-	};
-	void Dim::add_species_J(std::string species1, std::string species2) {
-		_impl->add_species_J(species1,species2);
-	};
-	void Dim::add_species_K(std::string species1, std::string species2, std::string species3) {
-		_impl->add_species_K(species1,species2,species3);
-	};
-	void Dim::add_species_W(std::string species_visible, std::string species_hidden) {
-		_impl->add_species_W(species_visible,species_hidden);
-	};
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 	/****************************************
 	OptProblem - IMPLEMENTATION
@@ -723,6 +181,10 @@ namespace DynamicBoltzmann {
 		void solve_varying_ic(std::vector<FName> fnames, std::vector<FName> fnames_used_in_every_batch, int n_opt, int batch_size, int n_cd_steps, double dopt, OptionsSolve options);
 		void solve_varying_ic(std::vector<std::vector<FName>> fnames, int n_opt, int n_cd_steps, double dopt, OptionsSolve options);
 		void _solve_varying_ic(std::vector<std::vector<FName>> fnames_to_use, int n_opt, int n_cd_steps, double dopt, OptionsSolve options);
+
+		void solve_div_rand(std::vector<std::string> fname_collection, int n_opt, int batch_size, int n_cd_steps, double dopt, int n_divisions, OptionsSolve options);
+		void solve_div_rand(std::vector<std::vector<std::string>> fnames, int n_opt, int n_cd_steps, double dopt, int n_divisions, OptionsSolve options);
+		void _solve_div_rand(std::vector<std::vector<std::string>> fnames_to_use, int n_opt, int n_cd_steps, double dopt, int n_divisions, OptionsSolve options);
 
 		/********************
 		Read basis func
@@ -1322,9 +784,19 @@ namespace DynamicBoltzmann {
 		};
 	};
 
-	/********************
-	Solve --- Main optimization loop
-	********************/
+
+
+
+
+
+
+
+
+
+
+	/****************************************
+	Solve -- Main opt loop
+	****************************************/
 
 	void OptProblem::Impl::solve(std::vector<std::string> fnames, int n_opt, int batch_size, int n_cd_steps, double dopt, OptionsSolve options) {
 
@@ -1746,9 +1218,18 @@ namespace DynamicBoltzmann {
 
 
 
-	/********************
+
+
+
+
+
+
+
+
+
+	/****************************************
 	Solve over varying initial conditions
-	********************/
+	****************************************/
 
 	void OptProblem::Impl::solve_varying_ic(std::vector<FName> fnames, std::vector<FName> fnames_used_in_every_batch, int n_opt, int batch_size, int n_cd_steps, double dopt, OptionsSolve options) {
 
@@ -2115,6 +1596,164 @@ namespace DynamicBoltzmann {
 			write_bfs(options.dir_write+"F/",n_opt+options.opt_idx_start_writing);
 		};
 	};
+
+
+
+
+
+
+
+
+
+
+	/****************************************
+	Solve single IC, dividing up randomly the traj and restarting the diff eq integration for the var terms
+	****************************************/
+
+	void OptProblem::Impl::solve_div_rand(std::vector<std::string> fnames, int n_opt, int batch_size, int n_cd_steps, double dopt, int n_divisions, OptionsSolve options=OptionsSolve()) {
+
+		// Pick filenames
+		std::vector<std::vector<std::string>> fnames_to_use;
+		std::vector<std::string> fnames_batch;
+		std::vector<std::string> fnames_remaining;
+		std::vector<std::string>::iterator itf;
+
+		for (int i_opt=0; i_opt < n_opt; i_opt++) {
+
+			// Clear batch
+			fnames_batch.clear();
+
+			// Reset remaining
+			fnames_remaining=fnames;
+
+			// Choose batch
+			if (options.use_same_lattice_in_batch) {
+				// Use a single lattice - pick a rand
+				itf = fnames_remaining.begin();
+				std::advance(itf,randI(0,fnames_remaining.size()-1));
+				// Add
+				fnames_batch.push_back(*itf);
+				// Only this one
+				for (int i_batch=1; i_batch<batch_size; i_batch++) {
+					fnames_batch.push_back(fnames_batch.back());
+				};
+			} else {
+				while (fnames_batch.size() < batch_size) {
+					// Choose a random one
+					itf = fnames_remaining.begin();
+					std::advance(itf,randI(0,fnames_remaining.size()-1));
+					// Add
+					fnames_batch.push_back(*itf);
+					// Don't choose again
+					fnames_remaining.erase(itf);
+				};
+			};
+
+			/*
+			for (auto s: fnames_batch) {
+				std::cout << s << " ";
+			};
+			std::cout << "" << std::endl;
+			*/
+			
+			// Add the batch
+			fnames_to_use.push_back(fnames_batch);
+		};
+
+		// Main solve function
+		_solve_div_rand(fnames_to_use, n_opt, n_cd_steps, dopt, n_divisions, options);
+
+	};
+	void OptProblem::Impl::solve_div_rand(std::vector<std::vector<std::string>> fname_collection, int n_opt, int n_cd_steps, double dopt, int n_divisions, OptionsSolve options=OptionsSolve()) {
+
+		// Pick filenames
+		std::vector<std::vector<std::string>> fnames_to_use;
+		std::vector<std::string> fnames_batch;
+		std::vector<std::string>::iterator itf;
+
+		for (int i_opt=0; i_opt < n_opt; i_opt++) {
+			// Pick a random one
+			fnames_batch = fname_collection[randI(0,fname_collection.size()-1)];
+
+			// Add
+			fnames_to_use.push_back(fnames_batch);
+		};
+
+		// Main solve function
+		_solve_div_rand(fnames_to_use, n_opt, n_cd_steps, dopt, n_divisions, options);
+
+	};
+	void OptProblem::Impl::_solve_div_rand(std::vector<std::vector<std::string>> fnames_to_use, int n_opt, int n_cd_steps, double dopt, int n_divisions, OptionsSolve options=OptionsSolve()) {
+
+		// Clear/make directories if needed
+		if (options.clear_dir) {
+			system(("rm -rf " + options.dir_write).c_str());
+		};
+		if (options.write) {
+			system(("mkdir -p " + options.dir_write).c_str());
+			system(("mkdir -p " + options.dir_write + "F").c_str());
+			system(("mkdir -p " + options.dir_write + "ixn_params").c_str());
+			system(("mkdir -p " + options.dir_write + "moments").c_str());
+		};
+		if (options.write_var_terms) {
+			system(("mkdir -p " + options.dir_write + "var_terms").c_str());
+		};
+
+		// Write the grids
+		if (options.write) {
+			write_bf_grids(options.dir_write);
+			write_t_grid(options.dir_write);
+		};
+
+		// Opt step with offset
+		int i_opt;
+
+		// Check exp decay / cutoff times
+		if (options.exp_decay) {
+			// Check
+			if (options.exp_decay_t0_values.size() != n_opt || options.exp_decay_lambda_values.size() != n_opt) {
+				std::cerr << "Error! In exp decay mode, must provide t0 and lambda values for all optimization timesteps." << std::endl;
+				exit(EXIT_FAILURE);
+			};
+		};
+		if (options.time_cutoff) {
+			// Check
+			if (options.time_cutoff_start_values.size() != n_opt || options.time_cutoff_end_values.size() != n_opt) {
+				std::cerr << "Error! In time cutoff mode, must provide values for all optimization timesteps." << std::endl;
+				exit(EXIT_FAILURE);
+			};
+		};
+
+		// Convert l2 reg for params
+		std::map<IxnParamTraj*,double> l2_lambda_params, l2_reg_centers;
+		if (options.l2_reg_params_mode) {
+			for (auto const &pr: options.l2_lambda_params) {
+				l2_lambda_params[_not_nullptr(_find_ixn_param(pr.first))] = pr.second;
+			};
+			for (auto const &pr: options.l2_reg_centers) {
+				l2_reg_centers[_not_nullptr(_find_ixn_param(pr.first))] = pr.second;
+			};
+		};
+
+
+		
+	};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 	/********************
@@ -2543,6 +2182,13 @@ namespace DynamicBoltzmann {
 	};
 	void OptProblem::solve_varying_ic(std::vector<std::vector<FName>> fname_collection, int n_opt, int n_cd_steps, double dopt, OptionsSolve options) {
 		_impl->solve_varying_ic(fname_collection,n_opt,n_cd_steps,dopt,options);
+	};
+
+	void OptProblem::solve_div_rand(std::vector<std::string> fnames, int n_opt, int batch_size, int n_cd_steps, double dopt, int n_divisions, OptionsSolve options) {
+		_impl->solve_div_rand(fnames,n_opt,batch_size,n_cd_steps,dopt,n_divisions,options);
+	};
+	void OptProblem::solve_div_rand(std::vector<std::vector<std::string>> fnames, int n_opt, int n_cd_steps, double dopt, int n_divisions, OptionsSolve options) {
+		_impl->solve_div_rand(fnames,n_opt,n_cd_steps,dopt,n_divisions,options);
 	};
 
 	void OptProblem::read_basis_func(std::string bf_name, std::string fname) {

@@ -14,10 +14,20 @@ BUILD_DIR = build
 SOURCE_DIR = src
 # install dir
 INSTALL_LIB_DIR = /usr/local/lib
-INSTALL_INCLUDE_DIR = /usr/local/include/dynamicboltz
+INSTALL_INCLUDE_DIR = /usr/local/include
 
 # source files
-SRC_NAMES = basis_func.cpp dynamic_boltzmann.cpp general.cpp grid.cpp hidden_unit.cpp ixn_param_traj.cpp lattice.cpp species.cpp var_term_traj.cpp counter.cpp
+SRC_NAMES = basis_func.cpp \
+	counter.cpp \
+	grid.cpp \
+	hidden_unit.cpp \
+	include_impl/dim.cpp \
+	include_impl/general.cpp \
+	include_impl/opt_problem.cpp \
+	ixn_param_traj.cpp \
+	lattice.cpp \
+	species.cpp \
+	var_term_traj.cpp
 SRCS = $(addprefix $(SOURCE_DIR)/, $(SRC_NAMES))
 OBJS = $(addprefix $(BUILD_DIR)/, $(SRC_NAMES:.cpp=.o))
 DEPS = $(OBJS:.o=.d)
@@ -27,7 +37,7 @@ DEPS = $(OBJS:.o=.d)
 all: $(BUILD_DIR) $(TARGET_LIB)
 
 $(BUILD_DIR):
-	mkdir -p $(BUILD_DIR)
+	mkdir -p $(BUILD_DIR) $(BUILD_DIR)/include_impl
 
 $(TARGET_LIB): $(OBJS)
 	$(CXX) ${LDFLAGS} $^ -o $@
@@ -47,5 +57,7 @@ clean:
 install:
 	mkdir -p $(INSTALL_LIB_DIR)
 	mkdir -p $(INSTALL_INCLUDE_DIR)
+	mkdir -p $(INSTALL_INCLUDE_DIR)/dynamicboltz_bits
 	cp -p $(TARGET_LIB) $(INSTALL_LIB_DIR)
-	cp -p include/*.hpp $(INSTALL_INCLUDE_DIR)
+	cp -p include/dynamicboltz_bits/*.hpp $(INSTALL_INCLUDE_DIR)/dynamicboltz_bits
+	cp -p include/dynamicboltz $(INSTALL_INCLUDE_DIR)

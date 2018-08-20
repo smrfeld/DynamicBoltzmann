@@ -1,5 +1,9 @@
+#include "counter.hpp"
+
+// Other headers
+#include "species.hpp"
+
 #include <iostream>
-#include "species.hpp" // includes counter.hpp
 #include <algorithm>
 #include <iomanip>
 #include <fstream>

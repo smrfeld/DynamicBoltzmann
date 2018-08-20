@@ -1,21 +1,6 @@
-#ifndef VECTOR_h
-#define VECTOR_h
-#include <vector>
-#endif
-
-#ifndef STRING_h
-#define STRING_h
-#include <string>
-#endif
-
-#ifndef GRID_h
-#define GRID_h
+#ifndef GRID_H
+#define GRID_H
 #include "grid.hpp"
-#endif
-
-#ifndef HIDDEN_UNIT_h
-#define HIDDEN_UNIT_h
-#include "hidden_unit.hpp"
 #endif
 
 /************************************
@@ -25,17 +10,21 @@
 namespace DynamicBoltzmann {
 
 	/****************************************
-	Forward declare
-	****************************************/
-
-	class BasisFunc;
-
-	/****************************************
 	Interaction parameter
 	****************************************/
 
 	// Enumeration of type of dimension
 	enum IxnParamType { Hp, Jp, Kp, Wp, Bp };
+
+	// Forward
+	class Species;
+	struct Species2;
+	struct Species3;
+	struct SpeciesVH;
+	class HiddenSpecies;
+	class Site;
+	class HiddenUnit;
+	class BasisFunc;
 
 	class IxnParamTraj : public Grid {
 

@@ -603,7 +603,8 @@ namespace dboltz {
 		double *nu_vals;
 		double decay = 1.0;
 		double up1,up2,l2_center;
-
+		IxnParamTraj* num;
+		
 		// Go through all idxs
 		for (int i=0; i<_val_len; i++) {
 
@@ -617,13 +618,12 @@ namespace dboltz {
 
 				// Go through all updating terms
 				for (auto p: _update_ptrs) {
-					up1 = dopt * dt * p.first->moments_diff_at_time(t) * p.second->get_at_time_by_idx(t, i) * decay;
-					_update_gathered[i] += up1;
+					up1 = p.first->moments_diff_at_time(t);
 
 					// L2
 					if (l2_reg_params_mode) {
 						// Get numerator of var term
-						IxnParamTraj* num = p.second->get_numerator_ixn_param_traj();
+						num = p.second->get_numerator_ixn_param_traj();
 
 						// Lookup l2 lambda
 						auto it = l2_lambda_params.find(num);
@@ -635,12 +635,14 @@ namespace dboltz {
 							} else {
 								l2_center = 0.;
 							};
-							up2 = dopt * it->second * dt * sgn(num->get_at_time(t) - l2_center) * abs(num->get_at_time(t) - l2_center) * p.second->get_at_time_by_idx(t, i) * decay;
+							up2 = it->second * sgn(num->get_at_time(t) - l2_center) * abs(num->get_at_time(t) - l2_center);
 
-							_update_gathered[i] -= up2;
-							// std::cout << up1 << " " << up2 << std::endl;
+							// Subtract from up1
+							up1 -= up2;
 						};
 					};
+
+					_update_gathered[i] += dopt * dt * up1 * p.second->get_at_time_by_idx(t, i) * decay;
 				};
 			};
 		};

@@ -23,7 +23,7 @@
 #define DIAG_SETUP 0
 #define DIAG_SOLVE 0
 #define DIAG_TIME_SOLVE 0
-#define DIAG_SOLVE_RAND_DIV 1
+#define DIAG_SOLVE_RAND_DIV 0
 
 /************************************
 * Namespace for dboltz
@@ -1792,21 +1792,6 @@ namespace dboltz {
 				t_end = _time.n();
 			};
 
-			// Choose divisions
-			std::random_shuffle ( timepoints_all.begin(), timepoints_all.end() );
-			division_times = std::vector<int>(timepoints_all.begin(),timepoints_all.begin()+n_divisions-1);
-			std::sort(division_times.begin(), division_times.end());
-			// Add t_start to the beginning
-			division_times.insert(division_times.begin(),t_start);
-
-			if (DIAG_SOLVE_RAND_DIV) {
-				std::cout << "Division times: " << division_times.size() << std::endl;
-				for (auto i=0; i<n_divisions; i++) {
-					std::cout << division_times[i] << " ";
-				};
-				std::cout << std::endl;
-			};
-
 			/*****
 			Step 0 - Check nesterov
 			*****/
@@ -1842,6 +1827,37 @@ namespace dboltz {
 			};
 
 			/*****
+			Step 2 - choose divisions
+			*****/
+
+			// Choose divisions
+			std::random_shuffle ( timepoints_all.begin(), timepoints_all.end() );
+			division_times = std::vector<int>(timepoints_all.begin(),timepoints_all.begin()+n_divisions-1);
+			std::sort(division_times.begin(), division_times.end());
+			// Adjust first point
+			while (division_times.front() <= t_start) {
+				division_times.erase(division_times.begin());
+			};
+			// Now the first point is greater than t_start
+			division_times.insert(division_times.begin(),t_start);
+			// Now the first point is t_start
+			// Adjust last point
+			while (division_times.back() >= _n_t_soln) {
+				division_times.pop_back();
+			};
+			// Now the last point is less than _n_t_soln
+			division_times.push_back(_n_t_soln);
+			// Now the last point is _n_t_soln
+
+			if (options.verbose) {
+				std::cout << "Division times: " << std::flush;
+				for (auto i=0; i<division_times.size(); i++) {
+					std::cout << division_times[i] << " ";
+				};
+				std::cout << std::endl;
+			};
+
+			/*****
 			Step 4 - reset the moments at all times
 			*****/
 
@@ -1852,6 +1868,12 @@ namespace dboltz {
 			/*****
 			Step 5 - Go through all times
 			*****/
+
+			// Current division
+			int div_idx = -1;
+			int t_div_start, t_div_end;
+			// Start of the next div
+			int t_div_start_next = t_start;
 
 			// Use the class variable _t_opt to iterate
 			for (_t_opt=t_start; _t_opt < _n_t_soln; _t_opt++)
@@ -1865,22 +1887,33 @@ namespace dboltz {
 				*****/
 
 				// Have we entered a new division?
-				auto it = std::find(division_times.begin(), division_times.end(), _t_opt);
-				if (it != division_times.end()) {
-					// Yes, we have!
-					int t_div_start = _t_opt;
-					int div_idx = it-division_times.begin();
-					int t_div_end;
-					if (div_idx == division_times.size()-1) {
-						// End is _n_t_soln
-						t_div_end = _n_t_soln;
-					} else {
-						// End is start of next division
-						t_div_end = division_times[div_idx+1];
+				if (_t_opt == t_div_start_next) {
+
+					// Yes, starting new div
+					if (DIAG_SOLVE_RAND_DIV) {
+						std::cout << "Starting new div..." << std::endl;
 					};
 
+					// First gather old update
+					if (_t_opt != t_start) {
+						if (DIAG_SOLVE_RAND_DIV) {
+							std::cout << "Gathering update in div idx " << div_idx << " update from " << t_div_start << " to: " << t_div_end << std::endl;
+						};
+						for (auto itbf=_bfs.begin(); itbf!=_bfs.end(); itbf++) {
+							itbf->update_gather(t_div_start, t_div_end, _time.delta(), dopt, options.exp_decay, exp_decay_t0, exp_decay_lambda, options.l2_reg_params_mode, l2_lambda_params, l2_reg_centers);
+						};
+					};
+
+					// Advance the idxs
+					div_idx++;
+					t_div_start = t_div_start_next;
+					t_div_end = division_times[div_idx+1];
+					t_div_start_next = t_div_end;
+
 					// Solve var trajs between these
-					if (DIAG_SOLVE_RAND_DIV) { std::cout << "Solving var term in div idx: " << div_idx << " times: " << t_div_start << " to: " << t_div_end << std::endl; };
+					if (DIAG_SOLVE_RAND_DIV) { 
+						std::cout << "Solving var term in div idx: " << div_idx << " times: " << t_div_start << " to: " << t_div_end << std::endl; 
+					};
 
 					solve_var_traj_from_zero(t_div_start,t_div_end);
 
@@ -1890,8 +1923,10 @@ namespace dboltz {
 						write_var_terms(options.dir_write+"var_terms/",i_opt);
 					};
 					*/
-					
-					if (DIAG_SOLVE_RAND_DIV) { std::cout << "OK" << std::endl; };
+				};
+
+				if (options.verbose) {
+					std::cout << " div: " << div_idx << std::flush;
 				};
 
 				/*****
@@ -1979,15 +2014,16 @@ namespace dboltz {
 					for (auto itp = _ixn_params.begin(); itp != _ixn_params.end(); itp++) {
 						itp->moments_retrieve_at_time(IxnParamTraj::ASLEEP,_t_opt,fnames_to_use[i_opt_from_zero].size());
 					};
+				};
 
-					/*****
-					Step 5.1.6 - Gather the update
-					*****/
-
-					for (auto itbf=_bfs.begin(); itbf!=_bfs.end(); itbf++) {
-						itbf->update_gather(_t_opt, _t_opt+1, _time.delta(), dopt, options.exp_decay, exp_decay_t0, exp_decay_lambda, options.l2_reg_params_mode, l2_lambda_params, l2_reg_centers);
+				// If the last timestep, also gather the update
+				if (_t_opt == _n_t_soln-1) {
+					if (DIAG_SOLVE_RAND_DIV) {
+						std::cout << "Gathering update in div idx " << div_idx << " update from " << t_div_start << " to: " << t_div_end << std::endl;
 					};
-
+					for (auto itbf=_bfs.begin(); itbf!=_bfs.end(); itbf++) {
+						itbf->update_gather(t_div_start, t_div_end, _time.delta(), dopt, options.exp_decay, exp_decay_t0, exp_decay_lambda, options.l2_reg_params_mode, l2_lambda_params, l2_reg_centers);
+					};
 				};
 
 				if (options.verbose) {
@@ -2001,7 +2037,7 @@ namespace dboltz {
 			};
 
 			/*****
-			Step 6 - Commit the updates
+			Step 6 - Commit gathered update
 			*****/
 
 			for (auto itbf=_bfs.begin(); itbf!=_bfs.end(); itbf++) {

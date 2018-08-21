@@ -52,6 +52,9 @@ namespace dboltz {
 		int n() const;
 		double get_by_idx(int i) const;
 
+		// Set n
+		void set_n(int n);
+
 		// Get indexes surrounding a point
 		// ie point is between i and i+1 where i is returned
 		int surrounding_idxs(double x) const; 

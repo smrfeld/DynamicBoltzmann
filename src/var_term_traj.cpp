@@ -46,6 +46,9 @@ namespace dboltz {
 		// Derivatives of the num bf
 		_num_bf_derivs = new double[_n_ixn_params_in_num_bf];
 
+		// Set denom ixn params
+		_denom_ixn_params = denom_ixn_params;
+
 		// Vals
 		for (int it=0; it<_n_t; it++) {
 			_vals.push_back(Array(denom_ixn_params));
@@ -87,9 +90,29 @@ namespace dboltz {
 		_vals = other._vals;
 		_val_len = other._val_len;
 		_update_var_terms = other._update_var_terms;
+		_denom_ixn_params = other._denom_ixn_params;
 	};
 	void VarTermTraj::_clean_up() {
+		_vals.clear();
 		safeDelArr(_num_bf_derivs);
+	};
+
+
+	/********************
+	Update time
+	********************/
+
+	void VarTermTraj::set_n_t(int n_t) {
+		// Clean up
+		_clean_up();
+
+		// Set
+		_n_t = n_t;
+
+		// Vals
+		for (int it=0; it<_n_t; it++) {
+			_vals.push_back(Array(_denom_ixn_params));
+		};
 	};
 
 	/********************

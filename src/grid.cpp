@@ -77,6 +77,23 @@ namespace dboltz {
 	};
 
 	/********************
+	Set n
+	********************/
+
+	// Set n
+	void Grid::set_n(int n) {
+		// Clean old
+		safeDelArr(_grid);
+		// Set new
+		_n = n;
+		// New grid
+		_grid = new double[_n];
+		for (int i=0; i<_n; i++) {
+			_grid[i] = _min+i*_delta;
+		};
+	};
+
+	/********************
 	Surrounding idxs
 	********************/
 

@@ -96,6 +96,12 @@ namespace dboltz {
 		~IxnParamTraj();
 
 		/********************
+		Set time
+		********************/
+
+		void set_n_t(int n_t);
+
+		/********************
 		Add a species
 		********************/
 

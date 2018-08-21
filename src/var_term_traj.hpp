@@ -56,41 +56,77 @@ namespace dboltz {
 		// The interaction parameters that are arguments to _num_bf, so we can take derivatives
 		std::vector<VarTermTraj*> _update_var_terms;
 
+		// The ixn params appearing in the arg to the F in the denom
+		std::vector<IxnParamTraj*> _denom_ixn_params;
+
 		// Clean up/copy
 		void _copy(const VarTermTraj& other);
 		void _clean_up();
 
 	public:
 
-		// Constructor
+		/********************
+		Constructor
+		********************/
+
 		VarTermTraj(std::string name, IxnParamTraj *num, BasisFunc *denom, std::vector<IxnParamTraj*> denom_ixn_params, BasisFunc *num_bf, int n_ixn_params_in_num_bf, int n_t);
 		VarTermTraj(const VarTermTraj& other);
 		VarTermTraj & operator=(const VarTermTraj& other);
 		~VarTermTraj();
 
-		// Set the pointers needed to update this term
+		/********************
+		Update time
+		********************/
+
+		void set_n_t(int n_t);
+
+		/********************
+		Set the pointers needed to update this term
+		********************/
+
 		void add_update_ptr(VarTermTraj* var_term);
 
-		// Validate setup
+		/********************
+		Validate setup
+		********************/
+
 		void validate_setup() const;
 
-		// Get numerator/denominator
+		/********************
+		Get numerator/denominator
+		********************/
+
 		IxnParamTraj* get_numerator_ixn_param_traj() const;
 		BasisFunc* get_denominator_basis_func() const;
 
-		// Calculate next timestep
+		/********************
+		Calculate next timestep
+		********************/
+
 		void calculate_at_time(int it_next, double dt);
 
-		// Set to zero at some timestep
+		/********************
+		Set to zero at some timestep
+		********************/
+
 		void set_to_zero_at_time(int it);
 
-		// Get value
+		/********************
+		Get value
+		********************/
+
 		double get_at_time_by_idx(int it, int i);
 
-		// Get name
+		/********************
+		Get name
+		********************/
+
 		std::string name();
 
-		// Write
+		/********************
+		Write
+		********************/
+
 		void write_vals(std::string dir, int idx_opt_step) const;
 	};
 

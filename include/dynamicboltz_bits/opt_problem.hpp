@@ -181,6 +181,12 @@ namespace dboltz {
 		~OptProblem();
 
 		/********************
+		Change the time limit
+		********************/
+
+		void set_n_t(int n_t);
+
+		/********************
 		Set IC for ixn param
 		********************/
 

@@ -604,7 +604,7 @@ namespace dboltz {
 		double decay = 1.0;
 		double up1,up2,l2_center;
 		IxnParamTraj* num;
-		
+
 		// Go through all idxs
 		for (int i=0; i<_val_len; i++) {
 
@@ -642,7 +642,7 @@ namespace dboltz {
 						};
 					};
 
-					_update_gathered[i] += dopt * dt * up1 * p.second->get_at_time_by_idx(t, i) * decay;
+					_update_gathered[i] += dopt * dt * up1 * p.second->get_at_time_by_idx(t, i) * decay / (t_end - t_start);
 				};
 			};
 		};

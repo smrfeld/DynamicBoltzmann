@@ -142,6 +142,28 @@ namespace dboltz {
 	};
 
 	/********************
+	Set time
+	********************/
+
+	void IxnParamTraj::set_n_t(int n_t) {
+		// Clean
+		_clean_up();
+
+		// Set new
+		_n_t = n_t;
+
+		// Init new
+		_vals = new double[_n_t];
+		std::fill_n(_vals,_n_t,0.0);
+		_vals[0] = _val0;
+
+		_asleep = new double[_n_t];
+		std::fill_n(_asleep,_n_t,0.0);
+		_awake = new double[_n_t];
+		std::fill_n(_awake,_n_t,0.0);
+	};
+
+	/********************
 	Add species
 	********************/
 

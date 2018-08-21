@@ -132,6 +132,12 @@ namespace dboltz {
 		~Impl();
 
 		/********************
+		Change the time limit
+		********************/
+
+		void set_n_t(int n_t);
+
+		/********************
 		Set IC for ixn param
 		********************/
 
@@ -582,6 +588,23 @@ namespace dboltz {
 		_n_t_soln = other._n_t_soln;
 		_t_opt = other._t_opt;
 		_latt = other._latt;
+	};
+
+	/********************
+	Change the time limit
+	********************/
+
+	void OptProblem::Impl::set_n_t(int n_t) {
+		// Change time object
+		_time.set_n(n_t);
+		// Ixn terms
+		for (auto itp=_ixn_params.begin(); itp!=_ixn_params.end(); itp++) {
+			itp->set_n_t(n_t);
+		};
+		// Var terms
+		for (auto itv=_var_terms.begin(); itv!=_var_terms.end(); itv++) {
+			itv->set_n_t(n_t);
+		};
 	};
 
 	/********************
@@ -1603,7 +1626,6 @@ namespace dboltz {
 			for (auto itbf=_bfs.begin(); itbf!=_bfs.end(); itbf++) {
 				itbf->update_committ_gathered();
 			};
-
 		};
 
 		// Write the basis funcs one last time
@@ -2031,17 +2053,26 @@ namespace dboltz {
 				};
 			};
 
-			// Write the moments
-			if (options.write && options.write_moments) {
-				write_moments(options.dir_write+"moments/",i_opt);
-			};
-
 			/*****
 			Step 6 - Commit gathered update
 			*****/
 
 			for (auto itbf=_bfs.begin(); itbf!=_bfs.end(); itbf++) {
 				itbf->update_committ_gathered();
+			};
+
+			/*****
+			Step 7 - Write if needed
+			*****/
+
+			// Write the moments if needed
+			if (options.write && options.write_moments) {
+				write_moments(options.dir_write+"moments/",i_opt);
+			};
+
+			// Write var terms if needed
+			if (options.write && options.write_var_terms) {
+				write_var_terms(options.dir_write+"var_terms/",i_opt);
 			};
 		};
 
@@ -2450,6 +2481,18 @@ namespace dboltz {
         return *this; 
 	};
 	OptProblem::~OptProblem() = default;
+
+	/********************
+	Change the time limit
+	********************/
+
+	void OptProblem::set_n_t(int n_t) {
+		_impl->set_n_t(n_t);
+	};
+
+	/********************
+	Set IC for ixn param
+	********************/
 
 	void OptProblem::set_ic_for_ixn_param(std::string param_name, double val) {
 		_impl->set_ic_for_ixn_param(param_name,val);

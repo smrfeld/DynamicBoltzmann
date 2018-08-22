@@ -1052,7 +1052,50 @@ namespace dboltz {
 
 			if (DIAG_SOLVE) { std::cout << "Solving var term" << std::endl; };
 
-			solve_var_traj();
+			if (!options.restart_var_term_mode) {
+				
+				// Just solve
+				solve_var_traj();
+
+			} else {
+				
+				// Restart var term integration as needed
+				int t0=0;
+				int t1;
+				if (options.restart_var_term_timepoints.size() != 0) {
+					t1 = options.restart_var_term_timepoints[0];
+				} else {
+					t1 = _n_t_soln;
+				};
+
+				// Solve
+				std::cout << "Solving var: " << t0 << " " << t1 << std::endl;
+				solve_var_traj_from_zero(t0,t1);
+
+				// Iterate
+				for (int i=1; i<options.restart_var_term_timepoints.size(); i++) {
+					// Advance
+					t0 = t1;
+					t1 = options.restart_var_term_timepoints[i];
+					// Check max of this segment
+					if (t1 > _n_t_soln) {
+						break;
+					};
+					// Solve
+					std::cout << "Solving var: " << t0 << " " << t1 << std::endl;
+					solve_var_traj_from_zero(t0,t1);
+				};
+
+				// Last time?
+				if (t1 < _n_t_soln || (t0 < _n_t_soln && t1 > _n_t_soln)) {
+					t0 = t1;
+					t1 = _n_t_soln;
+					// Solve
+					std::cout << "Solving var: " << t0 << " " << t1 << std::endl;
+					solve_var_traj_from_zero(t0,t1);
+				};
+			
+			};
 
 			// Write
 			if (options.write && options.write_var_terms) {

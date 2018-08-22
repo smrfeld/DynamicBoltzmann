@@ -104,7 +104,7 @@ namespace dboltz {
 
 	void VarTermTraj::set_n_t(int n_t) {
 		// Clean up
-		_clean_up();
+		_vals.clear();
 
 		// Set
 		_n_t = n_t;

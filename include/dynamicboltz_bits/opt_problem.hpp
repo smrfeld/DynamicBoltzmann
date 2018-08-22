@@ -113,6 +113,10 @@ namespace dboltz {
 		std::vector<int> time_cutoff_start_values; // inclusive
 		std::vector<int> time_cutoff_end_values; // exclusive
 
+		// Restart points for the var terms
+		bool restart_var_term_mode;
+		std::vector<int> restart_var_term_timepoints;
+
 		/********************
 		Constructor
 		********************/
@@ -139,6 +143,7 @@ namespace dboltz {
 			asleep_final_hidden_are_binary = true;
 			exp_decay = false;
 			time_cutoff = false;
+			restart_var_term_mode = false;
 		};
 	};
 

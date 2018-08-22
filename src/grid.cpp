@@ -91,6 +91,8 @@ namespace dboltz {
 		for (int i=0; i<_n; i++) {
 			_grid[i] = _min+i*_delta;
 		};
+		// New max
+		_max = _grid[_n-1];
 	};
 
 	/********************

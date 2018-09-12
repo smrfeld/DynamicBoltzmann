@@ -3,7 +3,6 @@
 // Other headers
 #include "../include/dynamicboltz_bits/general.hpp"
 #include "ixn_param_traj.hpp"
-#include "var_term_traj.hpp"
 
 #include <iostream>
 #include "math.h"
@@ -384,9 +383,9 @@ namespace dboltz {
 	Add pointers needed to update
 	********************/
 
-	void BasisFunc::add_update_ptrs(IxnParamTraj* ixn_param, VarTermTraj* var_term)
+	void BasisFunc::add_update_ptrs(IxnParamTraj* ixn_param)
 	{
-		_update_ptrs.push_back(std::make_pair(ixn_param,var_term));
+		_update_ptrs.push_back(ixn_param);
 	};
 
 	/********************
@@ -401,7 +400,7 @@ namespace dboltz {
 			exit(EXIT_FAILURE);
 		};
 		for (auto pr: _update_ptrs) {
-			std::cout << "   Updated using ixn param: " << pr.first->name() << " and var term: " << pr.second->name() << std::endl;
+			std::cout << "   Updated using ixn param: " << pr->name() << std::endl;
 		};
 	};
 
@@ -562,6 +561,7 @@ namespace dboltz {
 
 				// Go through all updating terms
 				for (auto p: _update_ptrs) {
+					/*
 					up1 = dopt * dt * p.first->moments_diff_at_time(t) * p.second->get_at_time_by_idx(t, i) * decay;
 					_vals[i] += up1;
 
@@ -586,6 +586,7 @@ namespace dboltz {
 							// std::cout << up1 << " " << up2 << std::endl;
 						};
 					};
+					*/
 				};
 			};
 		};
@@ -618,6 +619,7 @@ namespace dboltz {
 
 				// Go through all updating terms
 				for (auto p: _update_ptrs) {
+					/*
 					up1 = p.first->moments_diff_at_time(t);
 
 					// L2
@@ -643,6 +645,7 @@ namespace dboltz {
 					};
 
 					_update_gathered[i] += dopt * dt * up1 * p.second->get_at_time_by_idx(t, i) * decay / (t_end - t_start);
+					*/
 				};
 			};
 		};
@@ -739,8 +742,9 @@ namespace dboltz {
 
 		// Go through ixn params
 		double r=1;
+		double width = 0.25; // variance = width x spacing of grid
 		for (int ip=0; ip<_n_params; ip++) {
-			r *= exp(-pow(_ixn_params[ip]->get_at_time(it)-_ixn_params[ip]->get_by_idx(idxs[ip]),2)/(2.*1.0*_ixn_params[ip]->delta())) / sqrt(2.*M_PI*1.0*_ixn_params[ip]->delta());
+			r *= exp(-pow(_ixn_params[ip]->get_at_time(it)-_ixn_params[ip]->get_by_idx(idxs[ip]),2)/(2.*width*_ixn_params[ip]->delta())) / sqrt(2.*M_PI*width*_ixn_params[ip]->delta());
 		};
 
 		// Clean

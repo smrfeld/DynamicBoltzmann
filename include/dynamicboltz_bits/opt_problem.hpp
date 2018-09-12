@@ -73,9 +73,6 @@ namespace dboltz {
 		// Write moments
 		bool write_moments;
 
-		// Write the variational terms
-		bool write_var_terms;
-
 		// Write only the final basis function
 		bool write_bf_only_final;
 
@@ -113,10 +110,6 @@ namespace dboltz {
 		std::vector<int> time_cutoff_start_values; // inclusive
 		std::vector<int> time_cutoff_end_values; // exclusive
 
-		// Restart points for the var terms
-		bool restart_var_term_mode;
-		std::vector<int> restart_var_term_timepoints;
-
 		/********************
 		Constructor
 		********************/
@@ -129,7 +122,6 @@ namespace dboltz {
 			dir_write = "";
 			write_ixn_params = true;
 			write_moments = true;
-			write_var_terms = false;
 			write_bf_only_final = false;
 			l2_reg_params_mode = false;
 			clear_dir = true;
@@ -143,7 +135,6 @@ namespace dboltz {
 			asleep_final_hidden_are_binary = true;
 			exp_decay = false;
 			time_cutoff = false;
-			restart_var_term_mode = false;
 		};
 	};
 
@@ -229,13 +220,6 @@ namespace dboltz {
 		void solve_ixn_param_traj();
 
 		/********************
-		Solve for variational trajectory
-		********************/
-
-		void solve_var_traj();
-		void solve_var_traj_from_zero(int it_start, int it_end); // inclusive (it_start = 0) to exclusive (no value at it_end)
-
-		/********************
 		Solve
 		********************/
 
@@ -273,7 +257,6 @@ namespace dboltz {
 		void write_ixn_params(std::string dir, int idx1, int idx2) const;
 		void write_ixn_params(std::string dir, int idx, std::vector<int> idxs) const;		
 		void write_bfs(std::string dir, int idx) const;
-		void write_var_terms(std::string dir, int idx) const;
 		void write_moments(std::string dir, int idx) const;
 		void write_moments(std::string dir, int idx1, int idx2) const;
 		void write_moments(std::string dir, int idx, std::vector<int> idxs) const;

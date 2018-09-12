@@ -26,8 +26,7 @@ SRC_NAMES = basis_func.cpp \
 	include_impl/opt_problem.cpp \
 	ixn_param_traj.cpp \
 	lattice.cpp \
-	species.cpp \
-	var_term_traj.cpp
+	species.cpp
 SRCS = $(addprefix $(SOURCE_DIR)/, $(SRC_NAMES))
 OBJS = $(addprefix $(BUILD_DIR)/, $(SRC_NAMES:.cpp=.o))
 DEPS = $(OBJS:.o=.d)

@@ -101,7 +101,7 @@ namespace dboltz {
 		IxnParamTraj* _parent_ixn_param;
 
 		// The variational terms and ixn_params needed to update
-		std::vector<std::pair<IxnParamTraj*,VarTermTraj*>> _update_ptrs;
+		std::vector<IxnParamTraj*> _update_ptrs;
 
 		// Get bounding n-dim cube of 4 pts
 		void _get_bounding(int it, bool safe=false);
@@ -149,7 +149,7 @@ namespace dboltz {
 		void nesterov_set_prev_equal_curr();
 
 		// Add pointers needed to update
-		void add_update_ptrs(IxnParamTraj* ixn_param, VarTermTraj* var_term);
+		void add_update_ptrs(IxnParamTraj* ixn_param);
 
 		// Validate setup
 		void validate_setup() const;

@@ -9,7 +9,6 @@
 #include "../ixn_param_traj.hpp"
 #include "../lattice.hpp"
 #include "../species.hpp"
-#include "../var_term_traj.hpp"
 
 #include <list>
 #include <iostream>
@@ -51,9 +50,6 @@ namespace dboltz {
 
 		// List of basis funcs
 		std::list<BasisFunc> _bfs;
-
-		// List of variational terms
-		std::list<VarTermTraj> _var_terms;
 
 		// List of hidden units, and flag if they exist
 		bool _hidden_layer_exists;
@@ -99,8 +95,6 @@ namespace dboltz {
 		IxnParamTraj* _find_ixn_param(std::string name);
 		// Find basis function
 		BasisFunc* _find_basis_func(std::string name);
-		// Find var term traj
-		VarTermTraj* _find_var_term(std::string name);
 		// Find counter
 		Counter* _find_ctr_by_species(std::string s);
 		Counter* _find_ctr_by_species(std::string s1, std::string s2);
@@ -172,13 +166,6 @@ namespace dboltz {
 		void solve_ixn_param_traj(int t_end=0);
 
 		/********************
-		Solve for variational trajectory
-		********************/
-
-		void solve_var_traj();
-		void solve_var_traj_from_zero(int it_start, int it_end);
-
-		/********************
 		Solve
 		********************/
 
@@ -218,7 +205,6 @@ namespace dboltz {
 		void write_ixn_params(std::string dir, int idx_opt_step) const;
 		void write_ixn_params(std::string dir, int idx_opt_step, std::vector<int> idxs) const;
 		void write_bfs(std::string dir, int idx_opt_step) const;
-		void write_var_terms(std::string dir, int idx_opt_step) const;
 		void write_moments(std::string dir, int idx_opt_step) const;
 		void write_moments(std::string dir, int idx_opt_step, std::vector<int> idxs) const;
 	};
@@ -459,61 +445,12 @@ namespace dboltz {
 		};
 		if (DIAG_SETUP) { std::cout << "ok." << std::endl; };
 
-		// Create the variational terms
-		if (DIAG_SETUP) { std::cout << "Create var terms..." << std::flush; };
-		BasisFunc *num_bf_ptr = nullptr;
-		IxnParamTraj *ixn_param_ptr = nullptr;
-		// Go through numerators
-		for (auto const &num: dims) {
-			// Go through denominators
-			for (auto const &denom: dims) {
-				// Find the basis func dimensions
-				bf_ips.clear();
-				for (auto bfd: denom.basis_func_dims()) {
-					bf_ips.push_back(_not_nullptr(_find_ixn_param(bfd)));
-				};
-				// Find the basis func
-				bf_ptr = _not_nullptr(_find_basis_func("F_"+denom.name()));
-				// Find the interaction param
-				ixn_param_ptr = _not_nullptr(_find_ixn_param(num.name()));
-				// Find the basis func corresponding to the numerator
-				num_bf_ptr = _not_nullptr(_find_basis_func("F_"+num.name()));
-				// Create the var term
-				_var_terms.push_back(VarTermTraj("var_"+num.name()+"_wrt_F_"+denom.name(), ixn_param_ptr, bf_ptr, bf_ips, num_bf_ptr, num.basis_func_dims().size(), n_t));
-			};
-		};
-		if (DIAG_SETUP) { std::cout << "ok." << std::endl; };
-
-		// Add the pointers to variational terms needed to update this var term
-		if (DIAG_SETUP) { std::cout << "Add ptrs to var term..." << std::flush; };
-		VarTermTraj* vt_ptr=nullptr;
-		// Go through numerators
-		for (auto const &num: dims) {
-			// Go through denoms
-			for (auto denom=_bfs.begin(); denom!=_bfs.end(); denom++) {
-				// Find the ixn params that are arguments to the num's basis func
-				bf_ips.clear();
-				for (auto bfd: num.basis_func_dims()) {
-					bf_ips.push_back(_not_nullptr(_find_ixn_param(bfd)));
-				};
-				// Find the variational term
-				vt_ptr = _not_nullptr(_find_var_term("var_"+num.name()+"_wrt_"+denom->name()));
-				// Find the variational terms needed to update this one
-				for (auto ip_ptr: bf_ips) {
-					vt_ptr->add_update_ptr(_not_nullptr(_find_var_term("var_"+ip_ptr->name()+"_wrt_"+denom->name())));
-				};
-			};
-		};
-		if (DIAG_SETUP) { std::cout << "ok." << std::endl; };
-
 		// Add pointers to the basis functions needed to update them
 		if (DIAG_SETUP) { std::cout << "Add ptrs to basis func..." << std::flush; };
 		for (auto itbf=_bfs.begin(); itbf!=_bfs.end(); itbf++) {
 			for (auto itp=_ixn_params.begin(); itp!=_ixn_params.end(); itp++) {
-				// Find the variational term
-				vt_ptr = _not_nullptr(_find_var_term("var_"+itp->name()+"_wrt_"+itbf->name()));
 				// Add
-				itbf->add_update_ptrs(&*itp,vt_ptr);
+				itbf->add_update_ptrs(&*itp);
 			};
 		};
 		if (DIAG_SETUP) { std::cout << "ok." << std::endl; };
@@ -563,7 +500,6 @@ namespace dboltz {
 		_n_param = 0;
 		_ixn_params.clear();
 		_bfs.clear();
-		_var_terms.clear();
 		_hidden_layer_exists = false;
 		_hidden_units.clear();
 		_conn_vh.clear();
@@ -578,7 +514,6 @@ namespace dboltz {
 		_n_param = other._n_param;
 		_ixn_params = other._ixn_params;
 		_bfs = other._bfs;
-		_var_terms = other._var_terms;
 		_hidden_layer_exists = other._hidden_layer_exists;
 		_hidden_units = other._hidden_units;
 		_conn_vh = other._conn_vh;
@@ -600,10 +535,6 @@ namespace dboltz {
 		// Ixn terms
 		for (auto itp=_ixn_params.begin(); itp!=_ixn_params.end(); itp++) {
 			itp->set_n_t(n_t);
-		};
-		// Var terms
-		for (auto itv=_var_terms.begin(); itv!=_var_terms.end(); itv++) {
-			itv->set_n_t(n_t);
 		};
 	};
 
@@ -748,9 +679,6 @@ namespace dboltz {
 		for (auto it: _ixn_params) {
 			it.validate_setup();
 		};
-		for (auto it: _var_terms) {
-			it.validate_setup();
-		};
 		for (auto it: _bfs) {
 			it.validate_setup();
 		};
@@ -794,35 +722,6 @@ namespace dboltz {
 			_n_t_soln++;
 		};
 	};
-
-	/********************
-	Solve variational term traj
-	********************/
-
-	void OptProblem::Impl::solve_var_traj() {
-		// Go through all times
-		for (int it=1; it<_n_t_soln; it++) {
-			// Go through all var terms
-			for (auto itv=_var_terms.begin(); itv!=_var_terms.end(); itv++) {
-				itv->calculate_at_time(it,_time.delta());
-			};
-		};
-	};
-
-	void OptProblem::Impl::solve_var_traj_from_zero(int it_start, int it_end) {
-		// Set all to zero at it_start
-		for (auto itv=_var_terms.begin(); itv!=_var_terms.end(); itv++) {
-			itv->set_to_zero_at_time(it_start);
-		};
-		// Go through times and solve
-		for (int it=it_start+1; it<it_end; it++) {
-			// Go through all var terms
-			for (auto itv=_var_terms.begin(); itv!=_var_terms.end(); itv++) {
-				itv->calculate_at_time(it,_time.delta());
-			};
-		};
-	};
-
 
 
 
@@ -921,9 +820,6 @@ namespace dboltz {
 			system(("mkdir -p " + options.dir_write + "F").c_str());
 			system(("mkdir -p " + options.dir_write + "ixn_params").c_str());
 			system(("mkdir -p " + options.dir_write + "moments").c_str());
-		};
-		if (options.write_var_terms) {
-			system(("mkdir -p " + options.dir_write + "var_terms").c_str());
 		};
 
 		// Write the grids
@@ -1044,69 +940,6 @@ namespace dboltz {
 			if (DIAG_TIME_SOLVE) {
 				t2 = clock();
 				std::cout << "	traj: " << double(t2 - t1) / CLOCKS_PER_SEC << std::endl;
-			};
-
-			/*****
-			Step 2 - Solve the variational problem traj
-			*****/
-
-			if (DIAG_SOLVE) { std::cout << "Solving var term" << std::endl; };
-
-			if (!options.restart_var_term_mode) {
-				
-				// Just solve
-				solve_var_traj();
-
-			} else {
-				
-				// Restart var term integration as needed
-				int t0=0;
-				int t1;
-				if (options.restart_var_term_timepoints.size() != 0) {
-					t1 = options.restart_var_term_timepoints[0];
-				} else {
-					t1 = _n_t_soln;
-				};
-
-				// Solve
-				std::cout << "Solving var: " << t0 << " " << t1 << std::endl;
-				solve_var_traj_from_zero(t0,t1);
-
-				// Iterate
-				for (int i=1; i<options.restart_var_term_timepoints.size(); i++) {
-					// Advance
-					t0 = t1;
-					t1 = options.restart_var_term_timepoints[i];
-					// Check max of this segment
-					if (t1 > _n_t_soln) {
-						break;
-					};
-					// Solve
-					std::cout << "Solving var: " << t0 << " " << t1 << std::endl;
-					solve_var_traj_from_zero(t0,t1);
-				};
-
-				// Last time?
-				if (t1 < _n_t_soln || (t0 < _n_t_soln && t1 > _n_t_soln)) {
-					t0 = t1;
-					t1 = _n_t_soln;
-					// Solve
-					std::cout << "Solving var: " << t0 << " " << t1 << std::endl;
-					solve_var_traj_from_zero(t0,t1);
-				};
-			
-			};
-
-			// Write
-			if (options.write && options.write_var_terms) {
-				write_var_terms(options.dir_write+"var_terms/",i_opt);
-			};
-			
-			if (DIAG_SOLVE) { std::cout << "OK" << std::endl; };
-
-			if (DIAG_TIME_SOLVE) {
-				t3 = clock();
-				std::cout << "	var: " << double(t3 - t2) / CLOCKS_PER_SEC << std::endl;
 			};
 
 			/*****
@@ -1389,9 +1222,6 @@ namespace dboltz {
 			if (options.write_moments) {
 				system(("mkdir -p " + options.dir_write + "moments").c_str());
 			};
-			if (options.write_var_terms) {
-				system(("mkdir -p " + options.dir_write + "var_terms").c_str());
-			};
 		};
 
 		// Write the grids
@@ -1507,21 +1337,6 @@ namespace dboltz {
 					};
 				};
 
-				if (DIAG_SOLVE) { std::cout << "OK" << std::endl; };
-
-				/*****
-				Step 2.3 - Solve the variational problem traj
-				*****/
-
-				if (DIAG_SOLVE) { std::cout << "Solving var term" << std::endl; };
-
-				solve_var_traj();
-
-				// Write
-				if (options.write && options.write_var_terms && fnames_to_use[i_opt][i_batch].write) {
-					write_var_terms(options.dir_write+"var_terms/",i_opt_translated);
-				};
-				
 				if (DIAG_SOLVE) { std::cout << "OK" << std::endl; };
 
 				/*****
@@ -1775,9 +1590,6 @@ namespace dboltz {
 			system(("mkdir -p " + options.dir_write + "ixn_params").c_str());
 			system(("mkdir -p " + options.dir_write + "moments").c_str());
 		};
-		if (options.write_var_terms) {
-			system(("mkdir -p " + options.dir_write + "var_terms").c_str());
-		};
 
 		// Write the grids
 		if (options.write) {
@@ -1975,19 +1787,6 @@ namespace dboltz {
 					t_div_end = division_times[div_idx+1];
 					t_div_start_next = t_div_end;
 
-					// Solve var trajs between these
-					if (DIAG_SOLVE_RAND_DIV) { 
-						std::cout << "Solving var term in div idx: " << div_idx << " times: " << t_div_start << " to: " << t_div_end << std::endl; 
-					};
-
-					solve_var_traj_from_zero(t_div_start,t_div_end);
-
-					// Write
-					/*
-					if (options.write && options.write_var_terms) {
-						write_var_terms(options.dir_write+"var_terms/",i_opt);
-					};
-					*/
 				};
 
 				if (options.verbose) {
@@ -2113,10 +1912,6 @@ namespace dboltz {
 				write_moments(options.dir_write+"moments/",i_opt);
 			};
 
-			// Write var terms if needed
-			if (options.write && options.write_var_terms) {
-				write_var_terms(options.dir_write+"var_terms/",i_opt);
-			};
 		};
 
 		// Write the basis funcs one last time
@@ -2202,11 +1997,6 @@ namespace dboltz {
 	};
 	void OptProblem::Impl::write_bfs(std::string dir, int idx_opt_step) const {
 		for (auto it=_bfs.begin(); it!=_bfs.end(); it++) {
-			it->write_vals(dir, idx_opt_step);
-		};
-	};
-	void OptProblem::Impl::write_var_terms(std::string dir, int idx_opt_step) const {
-		for (auto it=_var_terms.begin(); it!=_var_terms.end(); it++) {
 			it->write_vals(dir, idx_opt_step);
 		};
 	};
@@ -2342,14 +2132,6 @@ namespace dboltz {
 	};
 	BasisFunc* OptProblem::Impl::_find_basis_func(std::string name) {
 		for (auto it=_bfs.begin(); it!=_bfs.end(); it++) {
-			if (it->name() == name) {
-				return &*it;
-			};
-		};
-		return nullptr;
-	};
-	VarTermTraj* OptProblem::Impl::_find_var_term(std::string name) {
-		for (auto it=_var_terms.begin(); it!=_var_terms.end(); it++) {
 			if (it->name() == name) {
 				return &*it;
 			};
@@ -2562,12 +2344,6 @@ namespace dboltz {
 	void OptProblem::solve_ixn_param_traj() {
 		_impl->solve_ixn_param_traj();
 	};
-	void OptProblem::solve_var_traj() {
-		_impl->solve_var_traj();
-	};
-	void OptProblem::solve_var_traj_from_zero(int it_start, int it_end) {
-		_impl->solve_var_traj_from_zero(it_start,it_end);
-	};
 
 	void OptProblem::solve(std::vector<std::string> fnames, int n_opt, int batch_size, int n_cd_steps, double dopt, OptionsSolve options) {
 		_impl->solve(fnames,n_opt,batch_size,n_cd_steps,dopt,options);
@@ -2619,9 +2395,6 @@ namespace dboltz {
 	};
 	void OptProblem::write_bfs(std::string dir, int idx) const {
 		_impl->write_bfs(dir,idx);
-	};
-	void OptProblem::write_var_terms(std::string dir, int idx) const {
-		_impl->write_var_terms(dir,idx);
 	};
 	void OptProblem::write_moments(std::string dir, int idx) const {
 		_impl->write_moments(dir,idx);

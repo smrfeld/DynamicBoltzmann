@@ -25,10 +25,10 @@
 #define DIAG_SOLVE_RAND_DIV 0
 
 /************************************
-* Namespace for dboltz
+* Namespace for dblz
 ************************************/
 
-namespace dboltz {
+namespace dblz {
 
 	/****************************************
 	OptProblem - IMPLEMENTATION

@@ -14,10 +14,10 @@
 #endif
 
 /************************************
-* Namespace for dboltz
+* Namespace for dblz
 ************************************/
 
-namespace dboltz {
+namespace dblz {
 
 	/****************************************
 	Doublets, Triplets of Species ptrs

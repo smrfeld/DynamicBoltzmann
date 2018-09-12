@@ -4,10 +4,10 @@
 #include <sstream>
 
 /************************************
-* Namespace for dboltz
+* Namespace for dblz
 ************************************/
 
-namespace dboltz {
+namespace dblz {
 
 	/********************
 	Zero pad a string

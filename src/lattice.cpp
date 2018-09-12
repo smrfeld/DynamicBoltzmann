@@ -15,10 +15,10 @@
 #include <random>
 
 /************************************
-* Namespace for dboltz
+* Namespace for dblz
 ************************************/
 
-namespace dboltz {
+namespace dblz {
 
 	/****************************************
 	Class to hold a connection from visible to hidden

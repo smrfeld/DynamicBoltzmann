@@ -9,10 +9,10 @@
 #include <fstream>
 
 /************************************
-* Namespace for dboltz
+* Namespace for dblz
 ************************************/
 
-namespace dboltz {
+namespace dblz {
 
 	/****************************************
 	Counter

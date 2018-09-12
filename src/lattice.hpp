@@ -19,10 +19,10 @@
 #endif
 
 /************************************
-* Namespace for dboltz
+* Namespace for dblz
 ************************************/
 
-namespace dboltz {
+namespace dblz {
 
 	/****************************************
 	Structure to hold pairs and triplets of sites

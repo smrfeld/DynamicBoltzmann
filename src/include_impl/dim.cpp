@@ -3,10 +3,10 @@
 #include <iostream>
 
 /************************************
-* Namespace for dboltz
+* Namespace for dblz
 ************************************/
 
-namespace dboltz {
+namespace dblz {
 
 	/****************************************
 	Dim - IMPLEMENTATION

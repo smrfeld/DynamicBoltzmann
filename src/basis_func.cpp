@@ -10,10 +10,10 @@
 #include <iomanip>
 
 /************************************
-* Namespace for dboltz
+* Namespace for dblz
 ************************************/
 
-namespace dboltz {
+namespace dblz {
 
 	// Sign function
 	int sgn(double val) {

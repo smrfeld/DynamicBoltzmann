@@ -14,10 +14,10 @@
 #endif
 
 /************************************
-* Namespace for dboltz
+* Namespace for dblz
 ************************************/
 
-namespace dboltz {
+namespace dblz {
 
 	/****************************************
 	Filename structure - only needed for solve_varying_ic

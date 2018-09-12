@@ -1,6 +1,11 @@
-#ifndef GRID_H
-#define GRID_H
-#include "grid.hpp"
+#ifndef VECTOR_H
+#define VECTOR_H
+#include <vector>
+#endif
+
+#ifndef STRING_H
+#define STRING_H
+#include <string>
 #endif
 
 /************************************
@@ -25,13 +30,20 @@ namespace dblz {
 	class Site;
 	class HiddenUnit;
 	class BasisFunc;
+	class Domain1D;
 
-	class IxnParamTraj : public Grid {
+	class IxnParamTraj {
 
 	private:
 
+		// Name
+		std::string _name;
+
 		// Type
 		IxnParamType _type;
+
+		// Domain
+		std::shared_ptr<Domain1D> _domain;
 
 		// Species
 		
@@ -94,6 +106,18 @@ namespace dblz {
 		IxnParamTraj& operator=(const IxnParamTraj& other);
 		IxnParamTraj& operator=(IxnParamTraj&& other);
 		~IxnParamTraj();
+
+		/********************
+		Name
+		********************/
+
+		std::string get_name() const;
+
+		/********************
+		Get domain
+		********************/
+
+		std::shared_ptr<Domain1D> get_domain() const;
 
 		/********************
 		Set time

@@ -163,14 +163,14 @@ namespace dblz {
 		 * @param[in]  dims         Vector of dimensions
 		 * @param[in]  species      Vector of species present
 		 * @param[in]  t_max        Maximum time
-		 * @param[in]  n_t          No. of timepoints in the trajectory
+		 * @param[in]  no_timepoints          No. of timepoints in the trajectory
 		 * @param[in]  batch_size   Batch size
 		 * @param[in]  box_length   Box length
 		 * @param[in]  dopt         Optimization step interval
 		 * @param[in]  n_opt        No. optimization steps
 		 * @param[in]  lattice_dim  The lattice dimension
 		 */
-		OptProblem(std::vector<Dim> dims, std::vector<std::string> species_visible, std::vector<std::string> species_hidden, double t_max, int n_t, int box_length, int lattice_dim=3);
+		OptProblem(std::vector<Dim> dims, std::vector<std::string> species_visible, std::vector<std::string> species_hidden, double t_max, int no_timepoints, int box_length, int lattice_dim=3);
 		OptProblem(const OptProblem& other);
 		OptProblem(OptProblem&& other);
 	    OptProblem& operator=(OptProblem other);
@@ -180,7 +180,7 @@ namespace dblz {
 		Change the time limit
 		********************/
 
-		void set_n_t(int n_t);
+		void set_no_timepoints(int no_timepoints);
 
 		/********************
 		Set IC for ixn param

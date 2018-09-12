@@ -6,6 +6,7 @@
 #include "lattice.hpp"
 #include "hidden_unit.hpp"
 #include "basis_func.hpp"
+#include "domain.hpp"
 
 #include <iostream>
 #include <fstream>
@@ -24,8 +25,10 @@ namespace dblz {
 	Constructor
 	********************/
 
-	IxnParamTraj::IxnParamTraj(std::string name, IxnParamType type, double min, double max, int n, double val0, int n_t, int *t_opt_ptr) : Grid(name,min,max,n)
+	IxnParamTraj::IxnParamTraj(std::string name, IxnParamType type, double min, double max, int n, double val0, int n_t, int *t_opt_ptr) : _domain(std::make_shared<Domain1D>(name,min,max,n))
 	{
+		_name = name;
+
 		_type = type;
 		_val0 = val0;
 		_n_t = n_t;
@@ -47,17 +50,17 @@ namespace dblz {
 		_awake_fixed = nullptr;
 	};
 
-	IxnParamTraj::IxnParamTraj(const IxnParamTraj& other) : Grid(other) {
+	IxnParamTraj::IxnParamTraj(const IxnParamTraj& other) : _domain(new Domain1D(*other._domain)) {
 		_copy(other);
 	};
-	IxnParamTraj::IxnParamTraj(IxnParamTraj&& other) : Grid(other) {
+	IxnParamTraj::IxnParamTraj(IxnParamTraj&& other) : _domain(std::move(other._domain)) {
 		_copy(other);
 		other._reset();
 	};
 	IxnParamTraj& IxnParamTraj::operator=(const IxnParamTraj& other) {
 		if (this != &other)
 		{
-			Grid::operator=(other);
+			_domain.reset(new Domain1D (*other._domain));
 
 			_clean_up();
 			_copy(other);
@@ -67,7 +70,7 @@ namespace dblz {
 	IxnParamTraj& IxnParamTraj::operator=(IxnParamTraj&& other) {
 		if (this != &other)
 		{
-			Grid::operator=(other);
+			_domain = std::move(other._domain);
 
 			_clean_up();
 			_copy(other);
@@ -80,6 +83,8 @@ namespace dblz {
 	};
 	void IxnParamTraj::_copy(const IxnParamTraj& other)
 	{
+		_name = other._name;
+
 		_type = other._type;
 
 		_sp_bias_visible = other._sp_bias_visible;
@@ -111,6 +116,8 @@ namespace dblz {
 	};
 	void IxnParamTraj::_reset()
 	{
+		_name = "";
+
 		_sp_bias_visible.clear();
 		_sp_bias_hidden.clear();
 		_sp_doublet.clear();
@@ -139,6 +146,22 @@ namespace dblz {
 		if (_awake_fixed) {
 			safeDelArr(_awake_fixed);
 		};
+	};
+
+	/********************
+	Name
+	********************/
+
+	std::string IxnParamTraj::get_name() const {
+		return _name;
+	};
+
+	/********************
+	Get domain
+	********************/
+
+	std::shared_ptr<Domain1D> IxnParamTraj::get_domain() const {
+		return _domain;
 	};
 
 	/********************
@@ -259,7 +282,7 @@ namespace dblz {
 	********************/
 
 	void IxnParamTraj::validate_setup() const {
-		std::cout << "--- Validate ixn param: " << name() << " ---" << std::endl; 
+		std::cout << "--- Validate ixn param: " << _name << " ---" << std::endl; 
 		if (_bf) {
 			std::cout << "   Has basis func: " << _bf->name() << std::endl;
 		} else {
@@ -330,7 +353,7 @@ namespace dblz {
 	bool IxnParamTraj::calculate_at_time(int it_next, double dt)
 	{
 		_vals[it_next] = _vals[it_next-1] + dt*_bf->get_at_time(it_next-1);
-		return in_grid(_vals[it_next]);
+		return _domain->check_in_domain(_vals[it_next]);
 	};
 
 	/********************
@@ -426,7 +449,7 @@ namespace dblz {
 
 	void IxnParamTraj::write_vals(std::string dir, int idx_opt_step, std::vector<int> idxs, int n_t_traj) const {
 		std::ofstream f;
-		std::string fname = dir+name()+"_"+pad_str(idx_opt_step,4);
+		std::string fname = dir+_name+"_"+pad_str(idx_opt_step,4);
 		for (auto idx: idxs) {
 			fname += "_" + pad_str(idx,4);
 		};
@@ -440,7 +463,7 @@ namespace dblz {
 
 	void IxnParamTraj::write_moments(std::string dir, int idx_opt_step, std::vector<int> idxs, int n_t_traj) const {
 		std::ofstream f;
-		std::string fname = dir+name()+"_"+pad_str(idx_opt_step,4);
+		std::string fname = dir+_name+"_"+pad_str(idx_opt_step,4);
 		for (auto idx: idxs) {
 			fname += "_" + pad_str(idx,4);
 		};

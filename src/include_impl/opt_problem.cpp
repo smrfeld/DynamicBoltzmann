@@ -9,6 +9,7 @@
 #include "../ixn_param_traj.hpp"
 #include "../lattice.hpp"
 #include "../species.hpp"
+#include "../domain.hpp"
 
 #include <list>
 #include <iostream>
@@ -60,14 +61,14 @@ namespace dblz {
 		std::list<Counter> _counters;
 
 		// Time dimension
-		Grid _time;
+		Domain1D _time;
 
 		// Species present
 		std::list<Species> _species;
 		std::list<HiddenSpecies> _hidden_species;
 
 		// Number of steps in this nu solution
-		int _n_t_soln;
+		int _no_timepoints_soln;
 
 		// The current time in the optimization step
 		int _t_opt;
@@ -118,7 +119,7 @@ namespace dblz {
 		Constructor
 		********************/
 
-		Impl(std::vector<Dim> dims, std::vector<std::string> species_visible, std::vector<std::string> species_hidden, double t_max, int n_t, int box_length, int lattice_dim);
+		Impl(std::vector<Dim> dims, std::vector<std::string> species_visible, std::vector<std::string> species_hidden, double t_max, int no_timepoints, int box_length, int lattice_dim);
 		Impl(const Impl& other);
 		Impl(Impl&& other);
 	    Impl& operator=(const Impl& other);
@@ -129,7 +130,7 @@ namespace dblz {
 		Change the time limit
 		********************/
 
-		void set_n_t(int n_t);
+		void set_no_timepoints(int no_timepoints);
 
 		/********************
 		Set IC for ixn param
@@ -256,13 +257,13 @@ namespace dblz {
 	Constructor
 	********************/
 
-	OptProblem::Impl::Impl(std::vector<Dim> dims, std::vector<std::string> species_visible, std::vector<std::string> species_hidden, double t_max, int n_t, int box_length, int lattice_dim) : _latt(lattice_dim,box_length), _time("time",0.0,t_max,n_t)
+	OptProblem::Impl::Impl(std::vector<Dim> dims, std::vector<std::string> species_visible, std::vector<std::string> species_hidden, double t_max, int no_timepoints, int box_length, int lattice_dim) : _latt(lattice_dim,box_length), _time("time",0.0,t_max,no_timepoints)
 	{
 		// Set parameters
 		if (DIAG_SETUP) { std::cout << "Copying params..." << std::flush; };
 		_n_param = dims.size();
 		_t_opt = 0;
-		_n_t_soln = 0;
+		_no_timepoints_soln = 0;
 		_hidden_layer_exists = false;
 		if (DIAG_SETUP) { std::cout << "ok." << std::endl; };
 
@@ -327,7 +328,7 @@ namespace dblz {
 			if (d.type()==H) {
 
 				// Create
-				_ixn_params.push_back(IxnParamTraj(d.name(),Hp,d.min(),d.max(),d.n(),d.init(),n_t,&_t_opt));
+				_ixn_params.push_back(IxnParamTraj(d.name(),Hp,d.min(),d.max(),d.n(),d.init(),no_timepoints,&_t_opt));
 
 				for (auto s: d.get_species_h()) {
 					// Find and add the species
@@ -342,7 +343,7 @@ namespace dblz {
 			} else if (d.type()==J) { 
 
 				// Create
-				_ixn_params.push_back(IxnParamTraj(d.name(),Jp,d.min(),d.max(),d.n(),d.init(),n_t,&_t_opt));
+				_ixn_params.push_back(IxnParamTraj(d.name(),Jp,d.min(),d.max(),d.n(),d.init(),no_timepoints,&_t_opt));
 
 				for (auto s: d.get_species_J()) {
 					// Find and add the species
@@ -368,7 +369,7 @@ namespace dblz {
 				};
 
 				// Create
-				_ixn_params.push_back(IxnParamTraj(d.name(),Kp,d.min(),d.max(),d.n(),d.init(),n_t,&_t_opt));
+				_ixn_params.push_back(IxnParamTraj(d.name(),Kp,d.min(),d.max(),d.n(),d.init(),no_timepoints,&_t_opt));
 
 				for (auto s: d.get_species_K()) {
 					// Find and add the species
@@ -390,7 +391,7 @@ namespace dblz {
 			} else if (d.type()==W) { 
 
 				// Create
-				_ixn_params.push_back(IxnParamTraj(d.name(),Wp,d.min(),d.max(),d.n(),d.init(),n_t,&_t_opt));
+				_ixn_params.push_back(IxnParamTraj(d.name(),Wp,d.min(),d.max(),d.n(),d.init(),no_timepoints,&_t_opt));
 
 				for (auto s: d.get_species_W()) {
 					// Find and add the species
@@ -404,7 +405,7 @@ namespace dblz {
 			} else if (d.type()==B) {
 
 				// Create
-				_ixn_params.push_back(IxnParamTraj(d.name(),Bp,d.min(),d.max(),d.n(),d.init(),n_t,&_t_opt));
+				_ixn_params.push_back(IxnParamTraj(d.name(),Bp,d.min(),d.max(),d.n(),d.init(),no_timepoints,&_t_opt));
 
 				for (auto s: d.get_species_b()) {
 					// Find and add the species
@@ -439,7 +440,7 @@ namespace dblz {
 		BasisFunc* bf_ptr=nullptr;
 		for (auto itp=_ixn_params.begin(); itp!=_ixn_params.end(); itp++) {
 			// Find the basis func
-			bf_ptr = _not_nullptr(_find_basis_func("F_"+itp->name()));
+			bf_ptr = _not_nullptr(_find_basis_func("F_"+itp->get_name()));
 			// Set
 			itp->set_basis_func_ptr(bf_ptr);
 		};
@@ -505,7 +506,7 @@ namespace dblz {
 		_conn_vh.clear();
 		_species.clear();
 		_hidden_species.clear();
-		_n_t_soln = 0;
+		_no_timepoints_soln = 0;
 		_t_opt = 0;
 	};
 
@@ -520,7 +521,7 @@ namespace dblz {
 		_time = other._time;
 		_species = other._species;
 		_hidden_species = other._hidden_species;
-		_n_t_soln = other._n_t_soln;
+		_no_timepoints_soln = other._no_timepoints_soln;
 		_t_opt = other._t_opt;
 		_latt = other._latt;
 	};
@@ -529,12 +530,12 @@ namespace dblz {
 	Change the time limit
 	********************/
 
-	void OptProblem::Impl::set_n_t(int n_t) {
+	void OptProblem::Impl::set_no_timepoints(int no_timepoints) {
 		// Change time object
-		_time.set_n(n_t);
+		_time.resize_no_pts_at_fixed_spacing(no_timepoints);
 		// Ixn terms
 		for (auto itp=_ixn_params.begin(); itp!=_ixn_params.end(); itp++) {
-			itp->set_n_t(n_t);
+			itp->get_domain()->resize_no_pts_at_fixed_spacing(no_timepoints);
 		};
 	};
 
@@ -694,7 +695,7 @@ namespace dblz {
 
 	void OptProblem::Impl::solve_ixn_param_traj(int t_end) {
 		// Number of time points before the solution has gone out of bounds
-		_n_t_soln = 1;
+		_no_timepoints_soln = 1;
 
 		// Have we gone out of the domain?
 		bool in_domain;
@@ -702,7 +703,7 @@ namespace dblz {
 		// Max time
 		int t_end_use = t_end;
 		if (t_end==0) {
-			t_end_use = _time.n();	
+			t_end_use = _time.get_no_pts();	
 		};
 
 		// Go through all times
@@ -710,16 +711,16 @@ namespace dblz {
 			// Go through all ixn params
 			for (auto itp=_ixn_params.begin(); itp!=_ixn_params.end(); itp++) {
 				// Solve
-				in_domain = itp->calculate_at_time(it,_time.delta());
+				in_domain = itp->calculate_at_time(it,_time.get_delta());
 				if (!in_domain) {
 					// Stop
-					std::cout << "WARNING: out of bounds: " << itp->get_at_time(it) << " is out of the grid at time: " << _n_t_soln+1 << std::endl;
-					itp->print_grid_range();
+					std::cout << "WARNING: out of bounds: " << itp->get_at_time(it) << " is out of the grid at time: " << _no_timepoints_soln+1 << std::endl;
+					itp->get_domain()->print_domain_range();
 					return;
 				};
 			};
 			// Increment time
-			_n_t_soln++;
+			_no_timepoints_soln++;
 		};
 	};
 
@@ -889,7 +890,7 @@ namespace dblz {
 				t_end = options.time_cutoff_end_values[i_opt_from_zero];
 			} else {
 				t_start = 0;
-				t_end = _time.n();
+				t_end = _time.get_no_pts();
 			};
 
 			/*****
@@ -966,7 +967,7 @@ namespace dblz {
 			if (DIAG_SOLVE) { std::cout << "Looping over times" << std::endl; };
 
 			// Use the class variable _t_opt to iterate
-			for (_t_opt=t_start; _t_opt < _n_t_soln; _t_opt++)
+			for (_t_opt=t_start; _t_opt < _no_timepoints_soln; _t_opt++)
 			{
 				if (options.verbose) {
 					std::cout << "time: " << _t_opt << std::flush;
@@ -1120,7 +1121,7 @@ namespace dblz {
 			*****/
 
 			for (auto itbf=_bfs.begin(); itbf!=_bfs.end(); itbf++) {
-				itbf->update(t_start, _n_t_soln, _time.delta(), dopt, options.exp_decay, exp_decay_t0, exp_decay_lambda, options.l2_reg_params_mode, l2_lambda_params, l2_reg_centers);
+				itbf->update(t_start, _no_timepoints_soln, _time.get_delta(), dopt, options.exp_decay, exp_decay_t0, exp_decay_lambda, options.l2_reg_params_mode, l2_lambda_params, l2_reg_centers);
 			};
 		};
 
@@ -1273,7 +1274,7 @@ namespace dblz {
 				t_end = options.time_cutoff_end_values[i_opt];
 			} else {
 				t_start = 0;
-				t_end = _time.n();
+				t_end = _time.get_no_pts();
 			};
 
 			/*****
@@ -1358,7 +1359,7 @@ namespace dblz {
 				if (DIAG_SOLVE) { std::cout << "Looping over times" << std::endl; };
 
 				// Use the class variable _t_opt to iterate
-				for (_t_opt=t_start; _t_opt < _n_t_soln; _t_opt++)
+				for (_t_opt=t_start; _t_opt < _no_timepoints_soln; _t_opt++)
 				{
 					if (options.verbose) {
 						std::cout << "." << std::flush;
@@ -1472,7 +1473,7 @@ namespace dblz {
 				*****/
 
 				for (auto itbf=_bfs.begin(); itbf!=_bfs.end(); itbf++) {
-					itbf->update_gather(t_start, _n_t_soln, _time.delta(), dopt, options.exp_decay, exp_decay_t0, exp_decay_lambda, options.l2_reg_params_mode, l2_lambda_params, l2_reg_centers);
+					itbf->update_gather(t_start, _no_timepoints_soln, _time.get_delta(), dopt, options.exp_decay, exp_decay_t0, exp_decay_lambda, options.l2_reg_params_mode, l2_lambda_params, l2_reg_centers);
 				};
 
 			};
@@ -1634,17 +1635,17 @@ namespace dblz {
 		int t_start,t_end;
 
 		// Check that no divisions specified is acceptable
-		if (n_divisions > _time.n()) {
-			std::cerr << "Error! specified: " << n_divisions << " divisions but there are only: " << _time.n() << " timesteps...." << std::endl;
+		if (n_divisions > _time.get_no_pts()) {
+			std::cerr << "Error! specified: " << n_divisions << " divisions but there are only: " << _time.get_no_pts() << " timesteps...." << std::endl;
 			exit(EXIT_FAILURE);
 		};
 
 		// Struct to hold the chosen division timepoints
 		std::vector<int> timepoints_all;
-		for(auto i=0; i<_time.n(); i++) {
+		for(auto i=0; i<_time.get_no_pts(); i++) {
 			timepoints_all.push_back(i);	
 		};
-		std::vector<int> division_times;
+		std::vector<int> divisiono_timepointsimes;
 
 		// Iterate over optimization steps
 		for (int i_opt_from_zero=0; i_opt_from_zero<n_opt; i_opt_from_zero++)
@@ -1666,7 +1667,7 @@ namespace dblz {
 				t_end = options.time_cutoff_end_values[i_opt_from_zero];
 			} else {
 				t_start = 0;
-				t_end = _time.n();
+				t_end = _time.get_no_pts();
 			};
 
 			/*****
@@ -1709,27 +1710,27 @@ namespace dblz {
 
 			// Choose divisions
 			std::random_shuffle ( timepoints_all.begin(), timepoints_all.end() );
-			division_times = std::vector<int>(timepoints_all.begin(),timepoints_all.begin()+n_divisions-1);
-			std::sort(division_times.begin(), division_times.end());
+			divisiono_timepointsimes = std::vector<int>(timepoints_all.begin(),timepoints_all.begin()+n_divisions-1);
+			std::sort(divisiono_timepointsimes.begin(), divisiono_timepointsimes.end());
 			// Adjust first point
-			while (division_times.front() <= t_start) {
-				division_times.erase(division_times.begin());
+			while (divisiono_timepointsimes.front() <= t_start) {
+				divisiono_timepointsimes.erase(divisiono_timepointsimes.begin());
 			};
 			// Now the first point is greater than t_start
-			division_times.insert(division_times.begin(),t_start);
+			divisiono_timepointsimes.insert(divisiono_timepointsimes.begin(),t_start);
 			// Now the first point is t_start
 			// Adjust last point
-			while (division_times.back() >= _n_t_soln) {
-				division_times.pop_back();
+			while (divisiono_timepointsimes.back() >= _no_timepoints_soln) {
+				divisiono_timepointsimes.pop_back();
 			};
-			// Now the last point is less than _n_t_soln
-			division_times.push_back(_n_t_soln);
-			// Now the last point is _n_t_soln
+			// Now the last point is less than _no_timepoints_soln
+			divisiono_timepointsimes.push_back(_no_timepoints_soln);
+			// Now the last point is _no_timepoints_soln
 
 			if (options.verbose) {
 				std::cout << "Division times: " << std::flush;
-				for (auto i=0; i<division_times.size(); i++) {
-					std::cout << division_times[i] << " ";
+				for (auto i=0; i<divisiono_timepointsimes.size(); i++) {
+					std::cout << divisiono_timepointsimes[i] << " ";
 				};
 				std::cout << std::endl;
 			};
@@ -1753,7 +1754,7 @@ namespace dblz {
 			int t_div_start_next = t_start;
 
 			// Use the class variable _t_opt to iterate
-			for (_t_opt=t_start; _t_opt < _n_t_soln; _t_opt++)
+			for (_t_opt=t_start; _t_opt < _no_timepoints_soln; _t_opt++)
 			{
 				if (options.verbose) {
 					std::cout << "time: " << _t_opt << std::flush;
@@ -1777,14 +1778,14 @@ namespace dblz {
 							std::cout << "Gathering update in div idx " << div_idx << " update from " << t_div_start << " to: " << t_div_end << std::endl;
 						};
 						for (auto itbf=_bfs.begin(); itbf!=_bfs.end(); itbf++) {
-							itbf->update_gather(t_div_start, t_div_end, _time.delta(), dopt, options.exp_decay, exp_decay_t0, exp_decay_lambda, options.l2_reg_params_mode, l2_lambda_params, l2_reg_centers);
+							itbf->update_gather(t_div_start, t_div_end, _time.get_delta(), dopt, options.exp_decay, exp_decay_t0, exp_decay_lambda, options.l2_reg_params_mode, l2_lambda_params, l2_reg_centers);
 						};
 					};
 
 					// Advance the idxs
 					div_idx++;
 					t_div_start = t_div_start_next;
-					t_div_end = division_times[div_idx+1];
+					t_div_end = divisiono_timepointsimes[div_idx+1];
 					t_div_start_next = t_div_end;
 
 				};
@@ -1881,12 +1882,12 @@ namespace dblz {
 				};
 
 				// If the last timestep, also gather the update
-				if (_t_opt == _n_t_soln-1) {
+				if (_t_opt == _no_timepoints_soln-1) {
 					if (DIAG_SOLVE_RAND_DIV) {
 						std::cout << "Gathering update in div idx " << div_idx << " update from " << t_div_start << " to: " << t_div_end << std::endl;
 					};
 					for (auto itbf=_bfs.begin(); itbf!=_bfs.end(); itbf++) {
-						itbf->update_gather(t_div_start, t_div_end, _time.delta(), dopt, options.exp_decay, exp_decay_t0, exp_decay_lambda, options.l2_reg_params_mode, l2_lambda_params, l2_reg_centers);
+						itbf->update_gather(t_div_start, t_div_end, _time.get_delta(), dopt, options.exp_decay, exp_decay_t0, exp_decay_lambda, options.l2_reg_params_mode, l2_lambda_params, l2_reg_centers);
 					};
 				};
 
@@ -1982,17 +1983,17 @@ namespace dblz {
 		};
 	};
 	void OptProblem::Impl::write_t_grid(std::string dir) const {
-		_time.write_grid(dir+"grid_time.txt");
+		_time.write_domain(dir+"grid_time.txt");
 	};
 
 	void OptProblem::Impl::write_ixn_params(std::string dir, int idx_opt_step) const {
 		for (auto it = _ixn_params.begin(); it!=_ixn_params.end(); it++) {
-			it->write_vals(dir,idx_opt_step,{},_n_t_soln);
+			it->write_vals(dir,idx_opt_step,{},_no_timepoints_soln);
 		};
 	};
 	void OptProblem::Impl::write_ixn_params(std::string dir, int idx_opt_step, std::vector<int> idxs) const {
 		for (auto it = _ixn_params.begin(); it!=_ixn_params.end(); it++) {
-			it->write_vals(dir,idx_opt_step,idxs,_n_t_soln);
+			it->write_vals(dir,idx_opt_step,idxs,_no_timepoints_soln);
 		};
 	};
 	void OptProblem::Impl::write_bfs(std::string dir, int idx_opt_step) const {
@@ -2002,12 +2003,12 @@ namespace dblz {
 	};
 	void OptProblem::Impl::write_moments(std::string dir, int idx_opt_step) const {
 		for (auto it = _ixn_params.begin(); it!=_ixn_params.end(); it++) {
-			it->write_moments(dir,idx_opt_step,{},_n_t_soln);
+			it->write_moments(dir,idx_opt_step,{},_no_timepoints_soln);
 		};
 	};
 	void OptProblem::Impl::write_moments(std::string dir, int idx_opt_step, std::vector<int> idxs) const {
 		for (auto it = _ixn_params.begin(); it!=_ixn_params.end(); it++) {
-			it->write_moments(dir,idx_opt_step,idxs,_n_t_soln);
+			it->write_moments(dir,idx_opt_step,idxs,_no_timepoints_soln);
 		};
 	};
 
@@ -2124,7 +2125,7 @@ namespace dblz {
 	};
 	IxnParamTraj* OptProblem::Impl::_find_ixn_param(std::string name) {
 		for (auto it=_ixn_params.begin(); it!=_ixn_params.end(); it++) {
-			if (it->name() == name) {
+			if (it->get_name() == name) {
 				return &*it;
 			};
 		};
@@ -2298,7 +2299,7 @@ namespace dblz {
 	****************************************/
 
 	// Constructor
-	OptProblem::OptProblem(std::vector<Dim> dims, std::vector<std::string> species_visible, std::vector<std::string> species_hidden, double t_max, int n_t, int box_length, int lattice_dim) : _impl(new Impl(dims,species_visible,species_hidden,t_max,n_t,box_length,lattice_dim)) {};
+	OptProblem::OptProblem(std::vector<Dim> dims, std::vector<std::string> species_visible, std::vector<std::string> species_hidden, double t_max, int no_timepoints, int box_length, int lattice_dim) : _impl(new Impl(dims,species_visible,species_hidden,t_max,no_timepoints,box_length,lattice_dim)) {};
 	OptProblem::OptProblem(const OptProblem& other) : _impl(new Impl(*other._impl)) {};
 	OptProblem::OptProblem(OptProblem&& other) = default;
 	OptProblem& OptProblem::operator=(OptProblem other) {
@@ -2311,8 +2312,8 @@ namespace dblz {
 	Change the time limit
 	********************/
 
-	void OptProblem::set_n_t(int n_t) {
-		_impl->set_n_t(n_t);
+	void OptProblem::set_no_timepoints(int no_timepoints) {
+		_impl->set_no_timepoints(no_timepoints);
 	};
 
 	/********************

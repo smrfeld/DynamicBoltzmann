@@ -167,10 +167,6 @@ namespace dblz {
 		void update_gather(int t_start, int t_end, double dt, double dopt, bool exp_decay, double exp_decay_t0, double exp_decay_lambda, bool l2_reg_params_mode, std::map<IxnParamTraj*,double> &l2_lambda_params, std::map<IxnParamTraj*,double> &l2_reg_centers);
 		void update_committ_gathered();
 
-		// Test fill in various dimensions
-		void test_fill_2d();
-		void test_fill_3d();
-
 		// From parent
 		
 		// Get/set an element by index

@@ -43,7 +43,10 @@ namespace dblz {
 		IxnParamType _type;
 
 		// Domain
-		std::shared_ptr<Domain1D> _domain;
+		double _domain_min;
+		double _domain_max;
+		double _domain_delta;
+		int _domain_no_pts;
 
 		// Species
 		
@@ -100,7 +103,7 @@ namespace dblz {
 		Constructor
 		********************/
 
-		IxnParamTraj(std::string name, IxnParamType type, double min, double max, int n, double val0, int n_t, int *t_opt_ptr);
+		IxnParamTraj(std::string name, IxnParamType type, double domain_min, double domain_max, int domain_no_pts, double val0, int n_t, int *t_opt_ptr);
 		IxnParamTraj(const IxnParamTraj& other);
 		IxnParamTraj(IxnParamTraj&& other);
 		IxnParamTraj& operator=(const IxnParamTraj& other);
@@ -114,10 +117,32 @@ namespace dblz {
 		std::string get_name() const;
 
 		/********************
-		Get domain
+		Domain
 		********************/
 
-		std::shared_ptr<Domain1D> get_domain() const;
+		// Getters
+		int get_domain_no_pts() const;
+		double get_domain_min() const;
+		double get_domain_max() const;
+		double get_domain_delta() const;
+
+		// Get pt in domain
+		double get_domain_pt_by_idx(int i) const;
+
+		// Check if point is in domain
+		bool check_if_pt_is_inside_domain(double x) const;
+
+		// Get indexes surrounding a point
+		// ie point is between i and i+1 where i is returned
+		int get_domain_idxs_surrounding_pt(double x) const; 
+
+		// Get fraction of a point between successive points
+		double get_domain_frac_between(double x) const;
+		// Second optional specification: the return of the surrounding idxs
+		double get_domain_frac_between(double x, int i) const;
+
+		// Print domain range
+		void print_domain_range() const;
 
 		/********************
 		Set time

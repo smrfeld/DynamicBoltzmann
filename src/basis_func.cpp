@@ -32,7 +32,7 @@ namespace dblz {
 
 		// Values
 		_val_len = 1;
-		for (auto v: _ixn_params) { _val_len *= v->get_domain()->get_no_pts(); };
+		for (auto v: _ixn_params) { _val_len *= v->get_domain_no_pts(); };
 		_vals = new double[_val_len];
 
 		// Zero by default
@@ -45,7 +45,7 @@ namespace dblz {
 			pwr = 1;
 			for (int jv=iv+1; jv<_n_params; jv++)
 			{
-				pwr *= _ixn_params[jv]->get_domain()->get_no_pts();
+				pwr *= _ixn_params[jv]->get_domain_no_pts();
 			};
 			_dim_pwrs.push_back(pwr); 
 		};
@@ -178,7 +178,7 @@ namespace dblz {
 			get_idxs(i, idxs);
 			for (int ip=0; ip<_n_params; ip++) 
 			{
-				f << _ixn_params[ip]->get_domain()->get_by_idx(idxs[ip]);
+				f << _ixn_params[ip]->get_domain_pt_by_idx(idxs[ip]);
 				if (ip != _n_params-1) { f << " "; };
 			};
 			f << "\n";
@@ -442,10 +442,10 @@ namespace dblz {
 						outside = true; // Yes it's outside on at least one dim
 						_idxs_ext_1[d] = 0;
 						_idxs_ext_2[d] = 1;
-					} else if (idx > _ixn_params[d]->get_domain()->get_no_pts()-1) {
+					} else if (idx > _ixn_params[d]->get_domain_no_pts()-1) {
 						outside = true; // Yes it's outside on at least one dim
-						_idxs_ext_1[d] = _ixn_params[d]->get_domain()->get_no_pts()-1;
-						_idxs_ext_2[d] = _ixn_params[d]->get_domain()->get_no_pts()-2;
+						_idxs_ext_1[d] = _ixn_params[d]->get_domain_no_pts()-1;
+						_idxs_ext_2[d] = _ixn_params[d]->get_domain_no_pts()-2;
 					} else {
 						_idxs_ext_1[d] = idx;
 						_idxs_ext_2[d] = idx;
@@ -477,9 +477,9 @@ namespace dblz {
 		// Check that x is in the box
 		if (safe) {
 			for (int id=0; id<_n_params; id++) {
-				if (!(_ixn_params[id]->get_domain()->check_in_domain(_ixn_params[id]->get_at_time(it)))) {
+				if (!(_ixn_params[id]->check_if_pt_is_inside_domain(_ixn_params[id]->get_at_time(it)))) {
 					std::cerr << "ERROR - " << _ixn_params[id]->get_at_time(it) << " is outside the grid:" << std::endl;
-					_ixn_params[id]->get_domain()->print_domain_range();
+					_ixn_params[id]->print_domain_range();
 					exit(EXIT_FAILURE);
 				};
 			};
@@ -494,8 +494,8 @@ namespace dblz {
 		double x;
 		for (int id=0; id<_n_params; id++) {
 			x = _ixn_params[id]->get_at_time(it);
-			_idxs_bounding[id] = _ixn_params[id]->get_domain()->get_surrounding_idxs(x);
-			_fracs[id] = _ixn_params[id]->get_domain()->get_frac_between(x,_idxs_bounding[id]);
+			_idxs_bounding[id] = _ixn_params[id]->get_domain_idxs_surrounding_pt(x);
+			_fracs[id] = _ixn_params[id]->get_domain_frac_between(x,_idxs_bounding[id]);
 		};
 
 		// Get bounding box
@@ -709,8 +709,8 @@ namespace dblz {
 		double width = 0.25; // variance = width x spacing of grid
 		double delta,dist;
 		for (int ip=0; ip<_n_params; ip++) {
-			dist = _ixn_params[ip]->get_at_time(it)-_ixn_params[ip]->get_domain()->get_by_idx(idxs[ip]);
-			delta = _ixn_params[ip]->get_domain()->get_delta();
+			dist = _ixn_params[ip]->get_at_time(it)-_ixn_params[ip]->get_domain_pt_by_idx(idxs[ip]);
+			delta = _ixn_params[ip]->get_domain_delta();
 			r *= exp(-pow(dist,2)/(2.*width*delta)) / sqrt(2.*M_PI*width*delta);
 		};
 

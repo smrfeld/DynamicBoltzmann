@@ -6,7 +6,6 @@
 #include "lattice.hpp"
 #include "hidden_unit.hpp"
 #include "basis_func.hpp"
-#include "domain.hpp"
 
 #include <iostream>
 #include <fstream>
@@ -25,11 +24,18 @@ namespace dblz {
 	Constructor
 	********************/
 
-	IxnParamTraj::IxnParamTraj(std::string name, IxnParamType type, double min, double max, int n, double val0, int n_t, int *t_opt_ptr) : _domain(std::make_shared<Domain1D>(name,min,max,n))
+	IxnParamTraj::IxnParamTraj(std::string name, IxnParamType type, double domain_min, double domain_max, int domain_no_pts, double val0, int n_t, int *t_opt_ptr)
 	{
 		_name = name;
 
 		_type = type;
+
+		// Domain
+		_domain_min = domain_min;
+		_domain_max = domain_max;
+		_domain_no_pts = domain_no_pts;
+		_domain_delta = (_domain_max-_domain_min) / (_domain_no_pts-1);
+
 		_val0 = val0;
 		_n_t = n_t;
 
@@ -50,18 +56,16 @@ namespace dblz {
 		_awake_fixed = nullptr;
 	};
 
-	IxnParamTraj::IxnParamTraj(const IxnParamTraj& other) : _domain(new Domain1D(*other._domain)) {
+	IxnParamTraj::IxnParamTraj(const IxnParamTraj& other) {
 		_copy(other);
 	};
-	IxnParamTraj::IxnParamTraj(IxnParamTraj&& other) : _domain(std::move(other._domain)) {
+	IxnParamTraj::IxnParamTraj(IxnParamTraj&& other) {
 		_copy(other);
 		other._reset();
 	};
 	IxnParamTraj& IxnParamTraj::operator=(const IxnParamTraj& other) {
 		if (this != &other)
 		{
-			_domain.reset(new Domain1D (*other._domain));
-
 			_clean_up();
 			_copy(other);
 		};
@@ -70,8 +74,6 @@ namespace dblz {
 	IxnParamTraj& IxnParamTraj::operator=(IxnParamTraj&& other) {
 		if (this != &other)
 		{
-			_domain = std::move(other._domain);
-
 			_clean_up();
 			_copy(other);
 			other._reset();
@@ -86,6 +88,11 @@ namespace dblz {
 		_name = other._name;
 
 		_type = other._type;
+
+		_domain_min = other._domain_min;
+		_domain_max = other._domain_max;
+		_domain_delta = other._domain_delta;
+		_domain_no_pts = other._domain_no_pts;
 
 		_sp_bias_visible = other._sp_bias_visible;
 		_sp_bias_hidden = other._sp_bias_hidden;
@@ -117,6 +124,11 @@ namespace dblz {
 	void IxnParamTraj::_reset()
 	{
 		_name = "";
+
+		_domain_min = 0.0;
+		_domain_max = 0.0;
+		_domain_delta = 0.0;
+		_domain_no_pts = 0;
 
 		_sp_bias_visible.clear();
 		_sp_bias_hidden.clear();
@@ -157,11 +169,60 @@ namespace dblz {
 	};
 
 	/********************
-	Get domain
+	Domain
 	********************/
 
-	std::shared_ptr<Domain1D> IxnParamTraj::get_domain() const {
-		return _domain;
+	// Getters
+	int IxnParamTraj::get_domain_no_pts() const {
+		return _domain_no_pts;
+	};
+	double IxnParamTraj::get_domain_min() const {
+		return _domain_min;
+	};
+	double IxnParamTraj::get_domain_max() const {
+		return _domain_max;
+	};
+	double IxnParamTraj::get_domain_delta() const {
+		return _domain_delta;
+	};
+
+	// Get pt in domain
+	double IxnParamTraj::get_domain_pt_by_idx(int i) const {
+		if (i >= _domain_no_pts) {
+			std::cerr << ">>> Error: IxnParamTraj::get_domain_pt_by_idx <<< Idx: " << i << " is out of domain " << _name << " of size " << _domain_no_pts << std::endl;
+		};
+		return _domain_min + i * _domain_delta;
+	};
+
+	// Check if point is in domain
+	bool IxnParamTraj::check_if_pt_is_inside_domain(double x) const {
+		if (x < _domain_min || x > _domain_max) { 
+			return false; 
+		} else {
+			return true;
+		};
+	};
+
+	// Get indexes surrounding a point
+	// ie point is between i and i+1 where i is returned
+	int IxnParamTraj::get_domain_idxs_surrounding_pt(double x) const {
+		int i = (x - _domain_min) / _domain_delta;
+		if (i==_domain_no_pts-1) {i--;};
+		return i;
+	};
+
+	// Get fraction of a point between successive points
+	double IxnParamTraj::get_domain_frac_between(double x) const {
+		return get_domain_frac_between(x,get_domain_idxs_surrounding_pt(x));
+	};
+	// Second optional specification: the return of the surrounding idxs
+	double IxnParamTraj::get_domain_frac_between(double x, int i) const {
+		return (x - get_domain_pt_by_idx(i)) / _domain_delta;
+	};
+
+	// Print domain range
+	void IxnParamTraj::print_domain_range() const {
+		std::cout << "Domain: " << _name << " min: " << _domain_min << " max: " << _domain_max << std::endl;
 	};
 
 	/********************
@@ -353,7 +414,7 @@ namespace dblz {
 	bool IxnParamTraj::calculate_at_time(int it_next, double dt)
 	{
 		_vals[it_next] = _vals[it_next-1] + dt*_bf->get_at_time(it_next-1);
-		return _domain->check_in_domain(_vals[it_next]);
+		return check_if_pt_is_inside_domain(_vals[it_next]);
 	};
 
 	/********************

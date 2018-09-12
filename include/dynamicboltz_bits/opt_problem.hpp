@@ -170,7 +170,7 @@ namespace dblz {
 		 * @param[in]  n_opt        No. optimization steps
 		 * @param[in]  lattice_dim  The lattice dimension
 		 */
-		OptProblem(std::vector<Dim> dims, std::vector<std::string> species_visible, std::vector<std::string> species_hidden, double t_max, int no_timepoints, int box_length, int lattice_dim=3);
+		OptProblem(std::vector<Dim> dims, std::vector<std::string> species_visible, std::vector<std::string> species_hidden, double dt, int no_timepoints, int box_length, int lattice_dim=3);
 		OptProblem(const OptProblem& other);
 		OptProblem(OptProblem&& other);
 	    OptProblem& operator=(OptProblem other);

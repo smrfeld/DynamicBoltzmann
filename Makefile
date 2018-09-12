@@ -19,7 +19,6 @@ INSTALL_INCLUDE_DIR = /usr/local/include
 # source files
 SRC_NAMES = basis_func.cpp \
 	counter.cpp \
-	domain.cpp \
 	hidden_unit.cpp \
 	include_impl/dim.cpp \
 	include_impl/general.cpp \

@@ -1,14 +1,18 @@
+#include "counter.hpp"
+
+// Other headers
+#include "species.hpp"
+
 #include <iostream>
-#include "species.hpp" // includes counter.hpp
 #include <algorithm>
 #include <iomanip>
 #include <fstream>
 
 /************************************
-* Namespace for Gillespie3D
+* Namespace for bmla
 ************************************/
 
-namespace DynamicBoltzmann {
+namespace bmla {
 
 	/****************************************
 	Counter

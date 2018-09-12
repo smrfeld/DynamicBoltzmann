@@ -1,27 +1,26 @@
-// string
-#ifndef STRING_h
-#define STRING_h
+#ifndef STRING_H
+#define STRING_H
 #include <string>
 #endif
 
-// vector
-#ifndef VECTOR_h
-#define VECTOR_h
+#ifndef VECTOR_H
+#define VECTOR_H
 #include <vector> 
 #endif
 
 /************************************
-* Namespace for Gillespie3D
+* Namespace for bmla
 ************************************/
 
-namespace DynamicBoltzmann {
+namespace bmla {
+
+	// Forward
+	class Species;
 
 	/****************************************
 	Counter
 	****************************************/
 	
-	class Species; 
-
 	enum CounterType { COUNT, NN, TRIPLET, QUARTIC };
 
 	class Counter {

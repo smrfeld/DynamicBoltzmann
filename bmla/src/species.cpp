@@ -1,11 +1,16 @@
+#include "species.hpp"
+
+// Other headers
+#include "counter.hpp"
+#include "ixn_param.hpp"
+
 #include <iostream>
-#include "ixn_param.hpp" // also includes species header
 
 /************************************
-* Namespace for Gillespie3D
+* Namespace for bmla
 ************************************/
 
-namespace DynamicBoltzmann {
+namespace bmla {
 
 	/****************************************
 	Doublets, Triplets of Species ptrs

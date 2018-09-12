@@ -1,18 +1,24 @@
-#include "ixn_param.hpp" // also includes lattice header
+#include "lattice.hpp"
+
+// Other headers
+#include "species.hpp"
+#include "ixn_param.hpp"
+#include "../include/bmla_bits/general.hpp"
+#include "hidden_unit.hpp"
+
 #include <iostream>
 #include <fstream>
 #include <numeric>
-#include "../include/general.hpp"
 #include "math.h"
 #include <ctime>
 #include <sstream>
 #include <random>
 
 /************************************
-* Namespace for DynamicBoltzmann
+* Namespace for bmla
 ************************************/
 
-namespace DynamicBoltzmann {
+namespace bmla {
 
 	/****************************************
 	Class to hold a connection from visible to hidden

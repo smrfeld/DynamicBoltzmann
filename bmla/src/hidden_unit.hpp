@@ -1,13 +1,23 @@
-#ifndef LATTICE_h
-#define LATTICE_h
-#include "lattice.hpp"
+#ifndef VECTOR_H
+#define VECTOR_H
+#include <vector> 
+#endif
+
+#ifndef MAP_H
+#define MAP_H
+#include <map> 
 #endif
 
 /************************************
-* Namespace for DynamicBoltzmann
+* Namespace for bmla
 ************************************/
 
-namespace DynamicBoltzmann {
+namespace bmla {
+
+	// Forward
+	class ConnectionVH;
+	class HiddenSpecies;
+	class IxnParam;
 
 	/************************************
 	Hidden unit

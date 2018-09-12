@@ -1,13 +1,19 @@
+#include "hidden_unit.hpp"
+
+// Other includes
+#include "../include/bmla_bits/general.hpp"
+#include "lattice.hpp"
+#include "species.hpp"
+#include "ixn_param.hpp"
+
 #include "math.h"
 #include <iostream>
-#include "../include/general.hpp"
-#include "ixn_param.hpp" // includes hidden units
 
 /************************************
-* Namespace for DynamicBoltzmann
+* Namespace for bmla
 ************************************/
 
-namespace DynamicBoltzmann {
+namespace bmla {
 
 	/************************************
 	Hidden unit

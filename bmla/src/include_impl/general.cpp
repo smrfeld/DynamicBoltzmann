@@ -1,12 +1,13 @@
-#include "../include/general.hpp"
+#include "../../include/bmla_bits/general.hpp"
+
 #include <iomanip>
 #include <sstream>
 
 /************************************
-* Namespace for DynamicBoltzmann
+* Namespace for bmla
 ************************************/
 
-namespace DynamicBoltzmann {
+namespace bmla {
 
 	/********************
 	Zero pad a string

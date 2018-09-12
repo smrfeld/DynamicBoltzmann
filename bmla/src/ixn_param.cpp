@@ -1,15 +1,21 @@
 #include "ixn_param.hpp"
-#include "../include/general.hpp"
+
+// Other headers
+#include "species.hpp"
+#include "../include/bmla_bits/general.hpp"
+#include "lattice.hpp"
+#include "hidden_unit.hpp"
+
 #include <iostream>
 #include <fstream>
 #include "math.h"
 #include <algorithm>
 
 /************************************
-* Namespace for DynamicBoltzmann
+* Namespace for bmla
 ************************************/
 
-namespace DynamicBoltzmann {
+namespace bmla {
 
 	/****************************************
 	Ixn Param

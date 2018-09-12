@@ -1,38 +1,31 @@
-// string
-#ifndef STRING_h
-#define STRING_h
+#ifndef STRING_H
+#define STRING_H
 #include <string>
 #endif
 
-// utility for pair
-#ifndef PAIR_h
-#define PAIR_h
-#include <utility>
-#endif
-
-// map
-#ifndef MAP_h
-#define MAP_h
+#ifndef MAP_H
+#define MAP_H
 #include <map>
 #endif
 
-// Counter
-#ifndef COUNTER_h
-#define COUNTER_h
-#include "counter.hpp"
+#ifndef VECTOR_H
+#define VECTOR_H
+#include <vector>
 #endif
 
 /************************************
-* Namespace for Gillespie3D
+* Namespace for bmla
 ************************************/
 
-namespace DynamicBoltzmann {
+namespace bmla {
 
 	/****************************************
 	Doublets, Triplets of Species ptrs
 	****************************************/
 
+	// Forward
 	class HiddenSpecies;
+	class Species;
 
 	struct Species2 {
 		Species *sp1;
@@ -61,7 +54,6 @@ namespace DynamicBoltzmann {
 	// Comparator
 	bool operator <(const Species4& a, const Species4& b);
 
-
 	struct SpeciesVH {
 		Species *sp_visible;
 		HiddenSpecies *sp_hidden;
@@ -75,7 +67,9 @@ namespace DynamicBoltzmann {
 	Species
 	****************************************/
 	
+	// Forward
 	class IxnParam;
+	class Counter;
 
 	class Species {
 

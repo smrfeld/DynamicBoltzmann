@@ -1,0 +1,8 @@
+#ifndef BMLA_H
+#define BMLA_H
+
+#include "bmla_bits/dim.hpp"
+#include "bmla_bits/bmla.hpp"
+#include "bmla_bits/general.hpp"
+
+#endif

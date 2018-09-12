@@ -1,23 +1,28 @@
-#ifndef VECTOR_h
-#define VECTOR_h
+#ifndef VECTOR_H
+#define VECTOR_H
 #include <vector>
 #endif
 
-#ifndef STRING_h
-#define STRING_h
+#ifndef STRING_H
+#define STRING_H
 #include <string>
 #endif
 
-#ifndef HIDDEN_UNIT_h
-#define HIDDEN_UNIT_h
-#include "hidden_unit.hpp"
-#endif
-
 /************************************
-* Namespace for DynamicBoltzmann
+* Namespace for bmla
 ************************************/
 
-namespace DynamicBoltzmann {
+namespace bmla {
+
+	// Forwards
+	class Species;
+	class HiddenSpecies;
+	struct Species2;
+	struct Species3;
+	struct Species4;
+	struct SpeciesVH;
+	class Site;
+	class HiddenUnit;
 
 	/****************************************
 	Interaction parameter

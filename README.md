@@ -29,8 +29,19 @@ g++ -std=c++14 -O3 -ldynamicboltz myprogram.cpp -o myprogram.o
 
 ## Namespace
 
-The namespace is `dboltz` ("DynamicBoltzmann").
+The namespace is `dblz` ("DynamicBoltzmann").
 
 # BMLA
 
-To build the library called `bmla` - navigate to the dir `bmla`, then as above! Headers are in `/usr/local/include/bmla`.
+To build the library called `bmla` - navigate to the dir `bmla`, then as above! A convenient headir is `/usr/local/include/bmla`.
+
+## Compilation
+
+Link your program using:
+```
+g++ -std=c++14 -O3 -lbmla myprogram.cpp -o myprogram.o
+```
+
+## Namespace
+
+The namespace is `bmla`.

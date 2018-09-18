@@ -42,26 +42,26 @@ namespace dblz {
 		// Make a fully linked list of sites
 		if (dim == 1) {
 			for (int x=1; x<=box_length; x++) {
-				_latt.push_back(UnitVisible(x));					
+				_latt_v.push_back(UnitVisible(x));					
 			};
 		} else if (dim == 2) {
 			for (int x=1; x<=box_length; x++) {
 				for (int y=1; y<=box_length; y++) {
-					_latt.push_back(UnitVisible(x,y));					
+					_latt_v.push_back(UnitVisible(x,y));					
 				};
 			};
 		} else if (dim == 3) {
 			for (int x=1; x<=box_length; x++) {
 				for (int y=1; y<=box_length; y++) {
 					for (int z=1; z<=box_length; z++) {
-						_latt.push_back(UnitVisible(x,y,z));					
+						_latt_v.push_back(UnitVisible(x,y,z));					
 					};
 				};
 			};
 		};
 	};
 	Lattice::Lattice(int dim, int box_length, std::vector<Sptr> possible_species_of_all_units_vis) : Lattice(dim,box_length) {
-		for (Latt_it lit=_latt.begin(); lit != _latt.end(); lit++) {
+		for (auto lit=_latt_v.begin(); lit != _latt_v.end(); lit++) {
 			lit->set_possible_species(possible_species_of_all_units_vis);
 		};
 	};
@@ -97,16 +97,26 @@ namespace dblz {
 	void Lattice::_copy(const Lattice& other) {
 		_dim = other._dim;
 		_box_length = other._box_length;
-		_latt = other._latt;
+		_latt_v = other._latt_v;
+		_latt_h = other._latt_h;
+		_latt_h_map_dim_1 = other._latt_h_map_dim_1;
+		_latt_h_map_dim_2 = other._latt_h_map_dim_2;
+		_latt_h_map_dim_3 = other._latt_h_map_dim_3;
 		_conns_vv = other._conns_vv;
 		_conns_vvv = other._conns_vvv;
+		_conns_vh = other._conns_vh;
 	};
 	void Lattice::_reset() {
 		_dim = 0;
 		_box_length = 0;
-		_latt.clear();
+		_latt_v.clear();
+		_latt_h.clear();
+		_latt_h_map_dim_1.clear();
+		_latt_h_map_dim_2.clear();
+		_latt_h_map_dim_3.clear();
 		_conns_vv.clear();
 		_conns_vvv.clear();
+		_conns_vh.clear();
 	};
 
 	/********************
@@ -115,13 +125,13 @@ namespace dblz {
 
 	void Lattice::check_setup() const {
 		// Go through all sites
-		for (auto const &s: _latt) {
+		for (auto const &s: _latt_v) {
 			s.check_setup();
 		};
 	};
 
 	void Lattice::print_occupancy(bool binary) const {
-		for (auto const &s: _latt) {
+		for (auto const &s: _latt_v) {
 			if (_dim == 1) {
 				std::cout << s.x() << " " << std::flush;
 			} else if (_dim == 2) {
@@ -154,13 +164,20 @@ namespace dblz {
 			exit(EXIT_FAILURE);
 		};
 
-		for (auto &s: _latt) {
+		for (auto &s: _latt_v) {
 			s.add_possible_species(species);
 		};
 	};
 
 	void Lattice::all_unit_h_add_possible_species(Sptr species) {
-		// ...
+		if (!species) {
+			std::cerr << ">>> Error: Lattice::all_unit_h_add_possible_species <<< nullptr is not allowed!" << std::endl;
+			exit(EXIT_FAILURE);
+		};
+
+		for (auto &s: _latt_h) {
+			s.add_possible_species(species);
+		};	
 	};
 
 	/********************
@@ -168,13 +185,15 @@ namespace dblz {
 	********************/
 
 	void Lattice::all_unit_v_set_bias_dict(std::shared_ptr<BiasDict> bias_dict) {
-		for (auto &s: _latt) {
+		for (auto &s: _latt_v) {
 			s.set_bias_dict(bias_dict);
 		};
 	};
 
 	void Lattice::all_unit_h_set_bias_dict(std::shared_ptr<BiasDict> bias_dict) {
-
+		for (auto &s: _latt_h) {
+			s.set_bias_dict(bias_dict);
+		};
 	};
 
 	/********************
@@ -186,19 +205,19 @@ namespace dblz {
 	};
 	void Lattice::all_conns_vv_init(std::shared_ptr<O2IxnDict> ixn_dict) {
 
-		Latt_it lit = _latt.begin();
+		auto lit = _latt_v.begin();
 		UnitVisible *nbr = nullptr;
-		while (lit != _latt.end()) {
+		while (lit != _latt_v.end()) {
 			// Only connect to "plus one" (not minus one) => no duplicates!
 
 			// Dim 1,2,3
 			if (lit->x()+1 <= _box_length) {
 				if (_dim == 1) {
-					nbr = &_look_up(lit->x()+1);
+					nbr = _look_up_unit_v(lit->x()+1);
 				} else if (_dim == 2) {
-					nbr = &_look_up(lit->x()+1,lit->y());
+					nbr = _look_up_unit_v(lit->x()+1,lit->y());
 				} else if (_dim == 3) {
-					nbr = &_look_up(lit->x()+1,lit->y(),lit->z());
+					nbr = _look_up_unit_v(lit->x()+1,lit->y(),lit->z());
 				};
 				add_conn_vv(&*lit,nbr,ixn_dict);
 			};
@@ -207,9 +226,9 @@ namespace dblz {
 			if (_dim == 2 || _dim == 3) {
 				if (lit->y()+1 <= _box_length) {
 					if (_dim == 2) {
-						nbr = &_look_up(lit->x(),lit->y()+1);
+						nbr = _look_up_unit_v(lit->x(),lit->y()+1);
 					} else if (_dim == 3) {
-						nbr = &_look_up(lit->x(),lit->y()+1,lit->z());
+						nbr = _look_up_unit_v(lit->x(),lit->y()+1,lit->z());
 					};
 					add_conn_vv(&*lit,nbr,ixn_dict);
 				};
@@ -219,7 +238,7 @@ namespace dblz {
 			if (_dim == 3) {
 				if (lit->z()+1 <= _box_length) {
 					if (_dim == 3) {
-						nbr = &_look_up(lit->x(),lit->y(),lit->z()+1);
+						nbr = _look_up_unit_v(lit->x(),lit->y(),lit->z()+1);
 					};
 					add_conn_vv(&*lit,nbr,ixn_dict);
 				};
@@ -236,23 +255,23 @@ namespace dblz {
 
 	void Lattice::all_conns_vvv_init(std::shared_ptr<O3IxnDict> ixn_dict) {
 
-		Latt_it lit = _latt.begin();
+		auto lit = _latt_v.begin();
 		UnitVisible *nbr1 = nullptr, *nbr2 = nullptr;
-		while (lit != _latt.end()) {
+		while (lit != _latt_v.end()) {
 			// Only connect to "plus one/two" (not minus one/two) => no duplicates!
 
 			// Dim 1,2,3
 			// Right 1, Right 1
 			if (lit->x()+2 <= _box_length) {
 				if (_dim == 1) {
-					nbr1 = &_look_up(lit->x()+1);
-					nbr2 = &_look_up(lit->x()+2);
+					nbr1 = _look_up_unit_v(lit->x()+1);
+					nbr2 = _look_up_unit_v(lit->x()+2);
 				} else if (_dim == 2) {
-					nbr1 = &_look_up(lit->x()+1,lit->y());
-					nbr2 = &_look_up(lit->x()+2,lit->y());
+					nbr1 = _look_up_unit_v(lit->x()+1,lit->y());
+					nbr2 = _look_up_unit_v(lit->x()+2,lit->y());
 				} else if (_dim == 3) {
-					nbr1 = &_look_up(lit->x()+1,lit->y(),lit->z());
-					nbr2 = &_look_up(lit->x()+2,lit->y(),lit->z());
+					nbr1 = _look_up_unit_v(lit->x()+1,lit->y(),lit->z());
+					nbr2 = _look_up_unit_v(lit->x()+2,lit->y(),lit->z());
 				};
 				add_conn_vvv(&*lit,nbr1,nbr2,ixn_dict);
 			};
@@ -262,33 +281,33 @@ namespace dblz {
 				// Up 1, up 1
 				if (lit->y()+2 <= _box_length) {
 					if (_dim == 2) {
-						nbr1 = &_look_up(lit->x(),lit->y()+1);
-						nbr2 = &_look_up(lit->x(),lit->y()+2);
+						nbr1 = _look_up_unit_v(lit->x(),lit->y()+1);
+						nbr2 = _look_up_unit_v(lit->x(),lit->y()+2);
 					} else if (_dim == 3) {
-						nbr1 = &_look_up(lit->x(),lit->y()+1,lit->z());
-						nbr2 = &_look_up(lit->x(),lit->y()+2,lit->z());
+						nbr1 = _look_up_unit_v(lit->x(),lit->y()+1,lit->z());
+						nbr2 = _look_up_unit_v(lit->x(),lit->y()+2,lit->z());
 					};
 					add_conn_vvv(&*lit,nbr1,nbr2,ixn_dict);
 				};
 				// Up 1, right 1
 				if (lit->x()+1 <= _box_length && lit->y()+1 <= _box_length) {
 					if (_dim == 2) {
-						nbr1 = &_look_up(lit->x(),lit->y()+1);
-						nbr2 = &_look_up(lit->x()+1,lit->y()+1);
+						nbr1 = _look_up_unit_v(lit->x(),lit->y()+1);
+						nbr2 = _look_up_unit_v(lit->x()+1,lit->y()+1);
 					} else if (_dim == 3) {
-						nbr1 = &_look_up(lit->x(),lit->y()+1,lit->z());
-						nbr2 = &_look_up(lit->x()+1,lit->y()+1,lit->z());
+						nbr1 = _look_up_unit_v(lit->x(),lit->y()+1,lit->z());
+						nbr2 = _look_up_unit_v(lit->x()+1,lit->y()+1,lit->z());
 					};
 					add_conn_vvv(&*lit,nbr1,nbr2,ixn_dict);
 				};
 				// Right 1, up 1
 				if (lit->x()+1 <= _box_length && lit->y()+1 <= _box_length) {
 					if (_dim == 2) {
-						nbr1 = &_look_up(lit->x()+1,lit->y());
-						nbr2 = &_look_up(lit->x()+1,lit->y()+1);
+						nbr1 = _look_up_unit_v(lit->x()+1,lit->y());
+						nbr2 = _look_up_unit_v(lit->x()+1,lit->y()+1);
 					} else if (_dim == 3) {
-						nbr1 = &_look_up(lit->x()+1,lit->y(),lit->z());
-						nbr2 = &_look_up(lit->x()+1,lit->y()+1,lit->z());
+						nbr1 = _look_up_unit_v(lit->x()+1,lit->y(),lit->z());
+						nbr2 = _look_up_unit_v(lit->x()+1,lit->y()+1,lit->z());
 					};
 					add_conn_vvv(&*lit,nbr1,nbr2,ixn_dict);
 				};
@@ -299,40 +318,40 @@ namespace dblz {
 				// Forward 1, forward 1
 				if (lit->z()+2 <= _box_length) {
 					if (_dim == 3) {
-						nbr1 = &_look_up(lit->x(),lit->y(),lit->z()+1);
-						nbr2 = &_look_up(lit->x(),lit->y(),lit->z()+2);
+						nbr1 = _look_up_unit_v(lit->x(),lit->y(),lit->z()+1);
+						nbr2 = _look_up_unit_v(lit->x(),lit->y(),lit->z()+2);
 					};
 					add_conn_vvv(&*lit,nbr1,nbr2,ixn_dict);
 				};
 				// Forward 1, right 1
 				if (lit->x()+1 <= _box_length && lit->z()+1 <= _box_length) {
 					if (_dim == 3) {
-						nbr1 = &_look_up(lit->x(),lit->y(),lit->z()+1);
-						nbr2 = &_look_up(lit->x()+1,lit->y(),lit->z()+1);
+						nbr1 = _look_up_unit_v(lit->x(),lit->y(),lit->z()+1);
+						nbr2 = _look_up_unit_v(lit->x()+1,lit->y(),lit->z()+1);
 					};
 					add_conn_vvv(&*lit,nbr1,nbr2,ixn_dict);
 				};
 				// Right 1, forward 1
 				if (lit->x()+1 <= _box_length && lit->z()+1 <= _box_length) {
 					if (_dim == 3) {
-						nbr1 = &_look_up(lit->x()+1,lit->y(),lit->z());
-						nbr2 = &_look_up(lit->x()+1,lit->y(),lit->z()+1);
+						nbr1 = _look_up_unit_v(lit->x()+1,lit->y(),lit->z());
+						nbr2 = _look_up_unit_v(lit->x()+1,lit->y(),lit->z()+1);
 					};
 					add_conn_vvv(&*lit,nbr1,nbr2,ixn_dict);
 				};
 				// Forward 1, up 1
 				if (lit->y()+1 <= _box_length && lit->z()+1 <= _box_length) {
 					if (_dim == 3) {
-						nbr1 = &_look_up(lit->x(),lit->y(),lit->z()+1);
-						nbr2 = &_look_up(lit->x(),lit->y()+1,lit->z()+1);
+						nbr1 = _look_up_unit_v(lit->x(),lit->y(),lit->z()+1);
+						nbr2 = _look_up_unit_v(lit->x(),lit->y()+1,lit->z()+1);
 					};
 					add_conn_vvv(&*lit,nbr1,nbr2,ixn_dict);
 				};
 				// Up 1, forward 1
 				if (lit->y()+1 <= _box_length && lit->z()+1 <= _box_length) {
 					if (_dim == 3) {
-						nbr1 = &_look_up(lit->x(),lit->y()+1,lit->z());
-						nbr2 = &_look_up(lit->x(),lit->y()+1,lit->z()+1);
+						nbr1 = _look_up_unit_v(lit->x(),lit->y()+1,lit->z());
+						nbr2 = _look_up_unit_v(lit->x(),lit->y()+1,lit->z()+1);
 					};
 					add_conn_vvv(&*lit,nbr1,nbr2,ixn_dict);
 				};
@@ -363,7 +382,7 @@ namespace dblz {
 	********************/
 
 	void Lattice::all_units_v_add_to_moment_h(std::shared_ptr<Moment> moment) {
-		for (auto &s: _latt) {
+		for (auto &s: _latt_v) {
 			moment->add_unit_to_monitor_h(&s);
 		};
 	};
@@ -382,47 +401,115 @@ namespace dblz {
 	Add visible-visible connections
 	********************/
 
-	void Lattice::add_conn_vv(UnitVisible *uv1, UnitVisible *uv2, std::shared_ptr<O2IxnDict> ixn_dict) {
+	ConnVV& Lattice::add_conn_vv(UnitVisible *uv1, UnitVisible *uv2) {
 		_conns_vv.push_back(ConnVV(uv1,uv2));
+		uv1->add_conn(&_conns_vv.back(),0);
+		uv2->add_conn(&_conns_vv.back(),1);
+		return _conns_vv.back();
+	};
+	ConnVV& Lattice::add_conn_vv(UnitVisible *uv1, UnitVisible *uv2, std::shared_ptr<O2IxnDict> ixn_dict) {
+		add_conn_vv(uv1,uv2);
 		if (ixn_dict) {
 			_conns_vv.back().set_ixn_dict(ixn_dict);
 		};
-		uv1->add_conn(&_conns_vv.back(),0);
-		uv2->add_conn(&_conns_vv.back(),1);
+		return _conns_vv.back();
 	};
-	void Lattice::add_conn_vvv(UnitVisible *uv1, UnitVisible *uv2, UnitVisible *uv3, std::shared_ptr<O3IxnDict> ixn_dict) {
+	ConnVVV& Lattice::add_conn_vvv(UnitVisible *uv1, UnitVisible *uv2, UnitVisible *uv3) {
 		_conns_vvv.push_back(ConnVVV(uv1,uv2,uv3));
-		if (ixn_dict) {
-			_conns_vvv.back().set_ixn_dict(ixn_dict);
-		};
 		uv1->add_conn(&_conns_vvv.back(),0);
 		uv2->add_conn(&_conns_vvv.back(),1);
 		uv3->add_conn(&_conns_vvv.back(),2);
+		return _conns_vvv.back();
+	};
+	ConnVVV& Lattice::add_conn_vvv(UnitVisible *uv1, UnitVisible *uv2, UnitVisible *uv3, std::shared_ptr<O3IxnDict> ixn_dict) {
+		add_conn_vvv(uv1,uv2,uv3);
+		if (ixn_dict) {
+			_conns_vvv.back().set_ixn_dict(ixn_dict);
+		};
+		return _conns_vvv.back();
 	};
 
 	/********************
 	Add hidden units
 	********************/
 
-	void Lattice::add_hidden_unit() {
+	UnitHidden& Lattice::add_hidden_unit(int layer, int x) {
+		_latt_h.push_back(UnitHidden(layer,x));
+		_latt_h_map_dim_1[layer][x] = &_latt_h.back();
+		return _latt_h.back();
+	};
+	UnitHidden& Lattice::add_hidden_unit(int layer, int x, int y) {
+		_latt_h.push_back(UnitHidden(layer,x,y));
+		_latt_h_map_dim_2[layer][x][y] = &_latt_h.back();
+		return _latt_h.back();
+	};
+	UnitHidden& Lattice::add_hidden_unit(int layer, int x, int y, int z) {
+		_latt_h.push_back(UnitHidden(layer,x,y,z));
+		_latt_h_map_dim_3[layer][x][y][z] = &_latt_h.back();
+		return _latt_h.back();
+	};
+	UnitHidden& Lattice::add_hidden_unit(int layer, int x, std::vector<Sptr> species_possible) {
+		_latt_h.push_back(UnitHidden(layer,x,species_possible));
+		_latt_h_map_dim_1[layer][x] = &_latt_h.back();
+		return _latt_h.back();
+	};
+	UnitHidden& Lattice::add_hidden_unit(int layer, int x, int y, std::vector<Sptr> species_possible) {
+		_latt_h.push_back(UnitHidden(layer,x,y,species_possible));
+		_latt_h_map_dim_2[layer][x][y] = &_latt_h.back();
+		return _latt_h.back();
+	};
+	UnitHidden& Lattice::add_hidden_unit(int layer, int x, int y, int z, std::vector<Sptr> species_possible) {
+		_latt_h.push_back(UnitHidden(layer,x,y,z,species_possible));
+		_latt_h_map_dim_3[layer][x][y][z] = &_latt_h.back();
+		return _latt_h.back();
+	};
 
+	/********************
+	Add visible-hidden connections
+	********************/
+
+	ConnVH& Lattice::add_conn_vh(UnitVisible *uv, UnitHidden *uh) {
+		_conns_vh.push_back(ConnVH(uv,uh));
+		uv->add_conn(&_conns_vh.back());
+		uh->add_conn(&_conns_vh.back());
+		return _conns_vh.back();
+	};
+	ConnVH& Lattice::add_conn_vh(UnitVisible *uv, UnitHidden *uh, std::shared_ptr<O2IxnDict> ixn_dict) {
+		add_conn_vh(uv,uh);
+		if (ixn_dict) {
+			_conns_vh.back().set_ixn_dict(ixn_dict);
+		};
+		return _conns_vh.back();
 	};
 
 	/********************
 	Get unit
 	********************/
 
-	UnitVisible& Lattice::get_unit_visible(int x) {
+	UnitVisible& Lattice::get_unit_v(int x) {
 		_check_dim(1);
-		return _look_up(x);
+		return *_look_up_unit_v(x);
 	};
-	UnitVisible& Lattice::get_unit_visible(int x, int y) {
+	UnitVisible& Lattice::get_unit_v(int x, int y) {
 		_check_dim(2);
-		return _look_up(x,y);
+		return *_look_up_unit_v(x,y);
 	};
-	UnitVisible& Lattice::get_unit_visible(int x, int y, int z) {
+	UnitVisible& Lattice::get_unit_v(int x, int y, int z) {
 		_check_dim(3);
-		return _look_up(x,y,z);
+		return *_look_up_unit_v(x,y,z);
+	};
+
+	UnitHidden& Lattice::get_unit_h(int layer, int x) {
+		_check_dim(1);
+		return *_look_up_unit_h(layer,x);
+	};
+	UnitHidden& Lattice::get_unit_h(int layer, int x, int y) {
+		_check_dim(2);
+		return *_look_up_unit_h(layer,x,y);
+	};
+	UnitHidden& Lattice::get_unit_h(int layer, int x, int y, int z) {
+		_check_dim(3);
+		return *_look_up_unit_h(layer,x,y,z);
 	};
 
 	/********************
@@ -432,8 +519,8 @@ namespace dblz {
 	ConnVV& Lattice::get_conn_vv(int x1, int x2) {
 		_check_dim(1);
 
-		UnitVisible *uv1 = &_look_up(x1);
-		UnitVisible *uv2 = &_look_up(x2);
+		UnitVisible *uv1 = _look_up_unit_v(x1);
+		UnitVisible *uv2 = _look_up_unit_v(x2);
 
 		std::vector<std::pair<ConnVV*,int>> conns = uv1->get_conns_vv();
 		for (auto &conn: conns) {
@@ -449,8 +536,8 @@ namespace dblz {
 	ConnVV& Lattice::get_conn_vv(int x1, int y1, int x2, int y2) {
 		_check_dim(2);
 
-		UnitVisible *uv1 = &_look_up(x1,y1);
-		UnitVisible *uv2 = &_look_up(x2,y2);
+		UnitVisible *uv1 = _look_up_unit_v(x1,y1);
+		UnitVisible *uv2 = _look_up_unit_v(x2,y2);
 
 		std::vector<std::pair<ConnVV*,int>> conns = uv1->get_conns_vv();
 		for (auto &conn: conns) {
@@ -466,8 +553,8 @@ namespace dblz {
 	ConnVV& Lattice::get_conn_vv(int x1, int y1, int z1, int x2, int y2, int z2) {
 		_check_dim(3);
 
-		UnitVisible *uv1 = &_look_up(x1,y1,z1);
-		UnitVisible *uv2 = &_look_up(x2,y2,z2);
+		UnitVisible *uv1 = _look_up_unit_v(x1,y1,z1);
+		UnitVisible *uv2 = _look_up_unit_v(x2,y2,z2);
 
 		std::vector<std::pair<ConnVV*,int>> conns = uv1->get_conns_vv();
 		for (auto &conn: conns) {
@@ -484,9 +571,9 @@ namespace dblz {
 	ConnVVV& Lattice::get_conn_vvv(int x1, int x2, int x3) {
 		_check_dim(1);
 
-		UnitVisible *uv1 = &_look_up(x1);
-		UnitVisible *uv2 = &_look_up(x2);
-		UnitVisible *uv3 = &_look_up(x3);
+		UnitVisible *uv1 = _look_up_unit_v(x1);
+		UnitVisible *uv2 = _look_up_unit_v(x2);
+		UnitVisible *uv3 = _look_up_unit_v(x3);
 
 		std::vector<std::pair<ConnVVV*,int>> conns = uv1->get_conns_vvv();
 		for (auto &conn: conns) {
@@ -502,9 +589,9 @@ namespace dblz {
 	ConnVVV& Lattice::get_conn_vvv(int x1, int y1, int x2, int y2, int x3, int y3) {
 		_check_dim(2);
 
-		UnitVisible *uv1 = &_look_up(x1,y1);
-		UnitVisible *uv2 = &_look_up(x2,y2);
-		UnitVisible *uv3 = &_look_up(x3,y3);
+		UnitVisible *uv1 = _look_up_unit_v(x1,y1);
+		UnitVisible *uv2 = _look_up_unit_v(x2,y2);
+		UnitVisible *uv3 = _look_up_unit_v(x3,y3);
 
 		std::vector<std::pair<ConnVVV*,int>> conns = uv1->get_conns_vvv();
 		for (auto &conn: conns) {
@@ -520,9 +607,9 @@ namespace dblz {
 	ConnVVV& Lattice::get_conn_vvv(int x1, int y1, int z1, int x2, int y2, int z2, int x3, int y3, int z3) {
 		_check_dim(3);
 
-		UnitVisible *uv1 = &_look_up(x1,y1,z1);
-		UnitVisible *uv2 = &_look_up(x2,y2,z2);
-		UnitVisible *uv3 = &_look_up(x3,y3,z3);
+		UnitVisible *uv1 = _look_up_unit_v(x1,y1,z1);
+		UnitVisible *uv2 = _look_up_unit_v(x2,y2,z2);
+		UnitVisible *uv3 = _look_up_unit_v(x3,y3,z3);
 
 		std::vector<std::pair<ConnVVV*,int>> conns = uv1->get_conns_vvv();
 		for (auto &conn: conns) {
@@ -543,8 +630,11 @@ namespace dblz {
 	int Lattice::dim() const {
 		return _dim;
 	};
-	int Lattice::no_units_vis() { 
-		return _latt.size(); 
+	int Lattice::no_units_v() { 
+		return _latt_v.size(); 
+	};
+	int Lattice::no_units_h() { 
+		return _latt_h.size(); 
 	};
 
 	/********************
@@ -552,21 +642,21 @@ namespace dblz {
 	********************/
 
 	// Clear the lattice
-	void Lattice::set_all_units_empty() {
-		for (auto &s: _latt) {
+	void Lattice::all_units_set_empty() {
+		for (auto &s: _latt_v) {
 			s.set_b_mode_empty();
 			s.set_p_mode_empty();
 		};
 	};
 
 	// Binary/probabilistic
-	void Lattice::convert_all_units_to_b_mode() {
-		for (auto &s: _latt) {
+	void Lattice::all_units_convert_to_b_mode() {
+		for (auto &s: _latt_v) {
 			s.convert_p_to_b_mode();
 		};
 	};
-	void Lattice::convert_all_units_to_p_mode() {
-		for (auto &s: _latt) {
+	void Lattice::all_units_convert_to_p_mode() {
+		for (auto &s: _latt_v) {
 			s.convert_b_to_p_mode();
 		};
 	};
@@ -579,7 +669,7 @@ namespace dblz {
 	{
 		std::ofstream f;
 		f.open (fname);
-		for (auto const &l: _latt) {
+		for (auto const &l: _latt_v) {
 			if (_dim == 1) {
 				f << l.x() << "\n";
 			} else if (_dim == 2) {
@@ -623,11 +713,11 @@ namespace dblz {
 			    };
 		    	// Add to Latt
 		    	if (_dim == 1) {
-		    		s = _look_up(atoi(x.c_str()));
+		    		s = _look_up_unit_v(atoi(x.c_str()));
 			    } else if (_dim == 2) {
-		    		s = _look_up(atoi(x.c_str()),atoi(y.c_str()));
+		    		s = _look_up_unit_v(atoi(x.c_str()),atoi(y.c_str()));
 			    } else if (_dim == 3) {
-			    	s = _look_up(atoi(x.c_str()),atoi(y.c_str()),atoi(z.c_str()));
+			    	s = _look_up_unit_v(atoi(x.c_str()),atoi(y.c_str()),atoi(z.c_str()));
 			    };
 			    if (binary) {
 		    		s->set_prob(_sp_map[sp],1.0);
@@ -652,7 +742,7 @@ namespace dblz {
 
 	void Lattice::sample_at_timepoint(int timepoint, bool binary) {
 
-		for (auto &s: _latt) {
+		for (auto &s: _latt_v) {
 			s.sample_at_timepoint(timepoint, binary);
 		};
 	};
@@ -665,13 +755,13 @@ namespace dblz {
 	double Lattice::get_count(Sptr &sp, bool binary) const {
 		double count = 0.0;
 		if (binary) {
-			for (auto const &s: _latt) {
+			for (auto const &s: _latt_v) {
 				if (sp == s.get_b_mode_species()) {
 					count += 1.0;
 				};
 			};
 		} else {
-			for (auto const &s: _latt) {
+			for (auto const &s: _latt_v) {
 				count += s.get_p_mode_prob(sp);
 			};
 		};
@@ -702,17 +792,17 @@ namespace dblz {
 
 		const UnitVisible *nbr = nullptr;
 		double count = 0.0;
-		for (auto &s: _latt) {
+		for (auto &s: _latt_v) {
 			// Only connect to "plus one" (not minus one) => no duplicates!
 
 			// Dim 1,2,3
 			if (s.x()+1 <= _box_length) {
 				if (_dim == 1) {
-					nbr = &_look_up_const(s.x()+1);
+					nbr = _look_up_unit_v_const(s.x()+1);
 				} else if (_dim == 2) {
-					nbr = &_look_up_const(s.x()+1,s.y());
+					nbr = _look_up_unit_v_const(s.x()+1,s.y());
 				} else if (_dim == 3) {
-					nbr = &_look_up_const(s.x()+1,s.y(),s.z());
+					nbr = _look_up_unit_v_const(s.x()+1,s.y(),s.z());
 				};
 
 				_get_count(count, sp1, sp2, s, nbr, binary, reversibly);
@@ -721,9 +811,9 @@ namespace dblz {
 			// Dim 2,3
 			if (s.y()+1 <= _box_length) {
 				if (_dim == 2) {
-					nbr = &_look_up_const(s.x(),s.y()+1);
+					nbr = _look_up_unit_v_const(s.x(),s.y()+1);
 				} else if (_dim == 3) {
-					nbr = &_look_up_const(s.x(),s.y()+1,s.z());
+					nbr = _look_up_unit_v_const(s.x(),s.y()+1,s.z());
 				};
 
 				_get_count(count, sp1, sp2, s, nbr, binary, reversibly);
@@ -732,7 +822,7 @@ namespace dblz {
 			// Dim 3
 			if (s.z()+1 <= _box_length) {
 				if (_dim == 3) {
-					nbr = &_look_up_const(s.x(),s.y(),s.z()+1);
+					nbr = _look_up_unit_v_const(s.x(),s.y(),s.z()+1);
 				};
 
 				_get_count(count, sp1, sp2, s, nbr, binary, reversibly);
@@ -779,59 +869,177 @@ namespace dblz {
 	Lookup a site iterator from x,y,z
 	********************/
 
-	const UnitVisible& Lattice::_look_up_const(int x) const {
+	const UnitVisible* Lattice::_look_up_unit_v_const(int x) const {
+		if (x > _box_length || x < 1) {
+			return nullptr;
+		};
+
 		// Figure out index in list
 		int n = x-1;
 
 		// Grab
-		Latt::const_iterator it = _latt.begin();
+		std::list<UnitVisible>::const_iterator it = _latt_v.begin();
 		std::advance(it,n);
-		return *it;
+		return &*it;
 	};
-	UnitVisible& Lattice::_look_up(int x) {
+	const UnitVisible* Lattice::_look_up_unit_v_const(int x, int y) const {
+		if (x > _box_length || x < 1 || y > _box_length || y < 1) {
+			return nullptr;
+		};
+
+		// Figure out index in list
+		int n = (x-1)*_box_length + y-1;
+
+		// Grab
+		std::list<UnitVisible>::const_iterator it = _latt_v.begin();
+		std::advance(it,n);
+		return &*it;
+	};
+	const UnitVisible* Lattice::_look_up_unit_v_const(int x, int y, int z) const {
+		if (x > _box_length || x < 1 || y > _box_length || y < 1 || z > _box_length || z < 1) {
+			return nullptr;
+		};
+
+		// Figure out index in list
+		int n = (x-1)*_box_length*_box_length + (y-1)*_box_length + z-1;
+
+		// Grab
+		std::list<UnitVisible>::const_iterator it = _latt_v.begin();
+		std::advance(it,n);
+		return &*it;
+	};
+	UnitVisible* Lattice::_look_up_unit_v(int x) {
+		if (x > _box_length || x < 1) {
+			return nullptr;
+		};
+
 		// Figure out index in list
 		int n = x-1;
 
 		// Grab
-		Latt_it it = _latt.begin();
+		auto it = _latt_v.begin();
 		std::advance(it,n);
-		return *it;
+		return &*it;
 	};
-	const UnitVisible& Lattice::_look_up_const(int x, int y) const {
+	UnitVisible* Lattice::_look_up_unit_v(int x, int y) {
+		if (x > _box_length || x < 1 || y > _box_length || y < 1) {
+			return nullptr;
+		};
+
 		// Figure out index in list
 		int n = (x-1)*_box_length + y-1;
 
 		// Grab
-		Latt::const_iterator it = _latt.begin();
+		auto it = _latt_v.begin();
 		std::advance(it,n);
-		return *it;
+		return &*it;
 	};
-	UnitVisible& Lattice::_look_up(int x, int y) {
-		// Figure out index in list
-		int n = (x-1)*_box_length + y-1;
+	UnitVisible* Lattice::_look_up_unit_v(int x, int y, int z) {
+		if (x > _box_length || x < 1 || y > _box_length || y < 1 || z > _box_length || z < 1) {
+			return nullptr;
+		};
 
-		// Grab
-		Latt_it it = _latt.begin();
-		std::advance(it,n);
-		return *it;
-	};
-	const UnitVisible& Lattice::_look_up_const(int x, int y, int z) const {
 		// Figure out index in list
 		int n = (x-1)*_box_length*_box_length + (y-1)*_box_length + z-1;
 
 		// Grab
-		Latt::const_iterator it = _latt.begin();
+		auto it = _latt_v.begin();
 		std::advance(it,n);
-		return *it;
+		return &*it;
 	};
-	UnitVisible& Lattice::_look_up(int x, int y, int z) {
-		// Figure out index in list
-		int n = (x-1)*_box_length*_box_length + (y-1)*_box_length + z-1;
 
-		// Grab
-		Latt_it it = _latt.begin();
-		std::advance(it,n);
-		return *it;
+
+
+
+	const UnitHidden* Lattice::_look_up_unit_h_const(int layer, int x) const {
+		auto it1 = _latt_h_map_dim_1.find(layer);
+		if (it1 == _latt_h_map_dim_1.end()) {
+			return nullptr;
+		};
+		auto it2 = it1->second.find(x);
+		if (it2 == it1->second.end()) {
+			return nullptr;
+		};
+		return it2->second;
+	};
+	const UnitHidden* Lattice::_look_up_unit_h_const(int layer, int x, int y) const {
+		auto it1 = _latt_h_map_dim_2.find(layer);
+		if (it1 == _latt_h_map_dim_2.end()) {
+			return nullptr;
+		};
+		auto it2 = it1->second.find(x);
+		if (it2 == it1->second.end()) {
+			return nullptr;
+		};
+		auto it3 = it2->second.find(y);
+		if (it3 == it2->second.end()) {
+			return nullptr;
+		};
+		return it3->second;
+	};
+	const UnitHidden* Lattice::_look_up_unit_h_const(int layer, int x, int y, int z) const {
+		auto it1 = _latt_h_map_dim_3.find(layer);
+		if (it1 == _latt_h_map_dim_3.end()) {
+			return nullptr;
+		};
+		auto it2 = it1->second.find(x);
+		if (it2 == it1->second.end()) {
+			return nullptr;
+		};
+		auto it3 = it2->second.find(y);
+		if (it3 == it2->second.end()) {
+			return nullptr;
+		};
+		auto it4 = it3->second.find(z);
+		if (it4 == it3->second.end()) {
+			return nullptr;
+		};
+		return it4->second;
+	};
+	UnitHidden* Lattice::_look_up_unit_h(int layer, int x) {
+		auto it1 = _latt_h_map_dim_1.find(layer);
+		if (it1 == _latt_h_map_dim_1.end()) {
+			return nullptr;
+		};
+		auto it2 = it1->second.find(x);
+		if (it2 == it1->second.end()) {
+			return nullptr;
+		};
+		return it2->second;
+	};
+	UnitHidden* Lattice::_look_up_unit_h(int layer, int x, int y) {
+		auto it1 = _latt_h_map_dim_2.find(layer);
+		if (it1 == _latt_h_map_dim_2.end()) {
+			return nullptr;
+		};
+		auto it2 = it1->second.find(x);
+		if (it2 == it1->second.end()) {
+			return nullptr;
+		};
+		auto it3 = it2->second.find(y);
+		if (it3 == it2->second.end()) {
+			return nullptr;
+		};
+		return it3->second;
+	};
+	UnitHidden* Lattice::_look_up_unit_h(int layer, int x, int y, int z) {
+		auto it1 = _latt_h_map_dim_3.find(layer);
+		if (it1 == _latt_h_map_dim_3.end()) {
+			return nullptr;
+		};
+		auto it2 = it1->second.find(x);
+		if (it2 == it1->second.end()) {
+			return nullptr;
+		};
+		auto it3 = it2->second.find(y);
+		if (it3 == it2->second.end()) {
+			return nullptr;
+		};
+		auto it4 = it3->second.find(z);
+		if (it4 == it3->second.end()) {
+			return nullptr;
+		};
+		return it4->second;
 	};
 
 	/********************

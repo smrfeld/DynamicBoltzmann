@@ -11,7 +11,7 @@ namespace dblz {
 
 	// Forward
 	class UnitVisible;
-	// class UnitHidden;
+	class UnitHidden;
 	class O2IxnDict;
 	class O3IxnDict;
 
@@ -72,52 +72,130 @@ namespace dblz {
 		double get_act_for_species_at_unit_at_timepoint(const Sptr &sp_to_place, int idx, int timepoint);
 	};
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	
 	/****************************************
 	ConnVH
 	****************************************/
 
-	/*
 	class ConnVH {
 	private:
 
 		UnitVisible *_uv;
-		std::shared_ptr<UnitHidden> _uh;
+		UnitHidden *_uh;
 
 		std::shared_ptr<O2IxnDict> _ixn_dict;
 
 		// Constructor helpers
 		void _clean_up();
-		void _reset();
 		void _copy(const ConnVH& other);
-
+		void _move(ConnVH& other);
+		
 	public:
-	*/
+
 		/********************
 		Constructor
 		********************/
-	/*
-		ConnVH(UnitVisible *uv, std::shared_ptr<UnitHidden> uh);
-		ConnVH(UnitVisible *uv, std::shared_ptr<UnitHidden> uh, std::shared_ptr<O2IxnDict> ixn_dict);
+
+		ConnVH(UnitVisible *uv, UnitHidden* uh);
 		ConnVH(const ConnVH& other);
 		ConnVH(ConnVH&& other);
 		ConnVH& operator=(const ConnVH& other);
 		ConnVH& operator=(ConnVH&& other);
 		~ConnVH();
-	*/
+
+		/********************
+		Check units involved
+		********************/
+
+		bool check_connects_unit(UnitVisible *uv) const;
+		bool check_connects_unit(UnitHidden *uh) const;
+		bool check_connects_units(UnitVisible *uv, UnitHidden *uh) const;
+
+		/********************
+		Get count
+		********************/
+
+		double get_moment(std::string ixn_param_name, bool binary=true) const;
+
 		/********************
 		Set ixns
 		********************/
-	/*
-		void set_ixn_dict(std::shared_ptr<O2IxnDict> ixn_dict);
-	*/
+
+		void set_ixn_dict(std::shared_ptr<O2IxnDict> &ixn_dict);
+
 		/********************
 		Get activation on site
 		********************/
-	/*
-		double get_act_visible(Sptr sp_to_place);
-		double get_act_hidden(Sptr sp_to_place);
+
+		double get_act_for_species_at_unit_v_at_timepoint(const Sptr &sp_to_place, int timepoint);
+		double get_act_for_species_at_unit_h_at_timepoint(const Sptr &sp_to_place, int timepoint);
 	};
-	*/
+	
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 	/****************************************
 	ConnVVV

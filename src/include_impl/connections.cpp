@@ -217,6 +217,235 @@ namespace dblz {
 
 
 
+
+
+
+
+
+
+
+	/****************************************
+	Class to hold a connection
+	****************************************/
+
+	// Constructor
+	ConnVH::ConnVH(UnitVisible *uv, UnitHidden* uh) {
+		_uv = uv;
+		_uh = uh;
+	};
+	ConnVH::ConnVH(const ConnVH& other) {
+		_copy(other);
+	};
+	ConnVH::ConnVH(ConnVH&& other) {
+		_move(other);
+	};
+	ConnVH& ConnVH::operator=(const ConnVH& other) {
+		if (this != &other) {
+			_clean_up();
+			_copy(other);
+		};
+		return *this;
+	};
+	ConnVH& ConnVH::operator=(ConnVH&& other) {
+		if (this != &other) {
+			_clean_up();
+			_move(other);
+		};
+		return *this;
+	};
+	ConnVH::~ConnVH() {
+		_clean_up();
+	};
+	void ConnVH::_clean_up() {
+		// Nothing....
+	};
+	void ConnVH::_move(ConnVH& other) {
+		_uv = std::move(other._uv);
+		_uh = std::move(other._uh);
+		_ixn_dict = std::move(other._ixn_dict);
+	};
+	void ConnVH::_copy(const ConnVH& other) {
+		_uv = other._uv;
+		_uh = other._uh;
+		_ixn_dict = other._ixn_dict;
+	};
+
+	/********************
+	Check units involved
+	********************/
+
+	bool ConnVH::check_connects_unit(UnitVisible *uv) const {
+		if (_uv == uv) {
+			return true;
+		};
+		return false;
+	};
+	bool ConnVH::check_connects_unit(UnitHidden *uh) const {
+		if (_uh == uh) {
+			return true;
+		};
+		return false;
+	};
+	bool ConnVH::check_connects_units(UnitVisible *uv, UnitHidden *uh) const {
+		if (_uv == uv && _uh == uh) {
+			return true;
+		};
+		return false;
+	};
+
+	/********************
+	Get count
+	********************/
+
+	double ConnVH::get_moment(std::string ixn_param_name, bool binary) const {
+		if (!_ixn_dict) {
+			std::cerr << ">>> Error: ConnVH::get_moment <<< no ixn dict exists on this conn" << std::endl;
+			exit(EXIT_FAILURE);
+		};
+
+		double count = 0.0;
+
+		std::vector<Sptr2> species = _ixn_dict->get_species_from_ixn(ixn_param_name);
+		for (auto &sp: species) {
+
+			if (binary) {
+
+				// Binary
+				if (_uv->get_b_mode_species() == sp.s1 && _uh->get_b_mode_species() == sp.s2) {
+					count += 1.0;
+				};
+
+			} else {
+
+				// Prob
+				count += _uv->get_p_mode_prob(sp.s1) * _uh->get_p_mode_prob(sp.s2);
+			};
+		};
+
+		return count;
+	};
+
+	/********************
+	Set ixns
+	********************/
+
+	void ConnVH::set_ixn_dict(std::shared_ptr<O2IxnDict> &ixn_dict) {
+		_ixn_dict = ixn_dict;
+	};
+
+	/********************
+	Get activation on site
+	********************/
+
+	double ConnVH::get_act_for_species_at_unit_v_at_timepoint(const Sptr &sp_to_place, int timepoint) {
+		double act=0.0;
+
+		// 0 if no ixn dict
+		if (!_ixn_dict) {
+			return act;
+		};
+
+		double ixn;
+		// Go through species of other site
+		if (_uh->check_is_b_mode()) {
+			//////////
+			// Binary
+			/////////
+			Sptr sp_other = _uh->get_b_mode_species();
+			// Get ixn
+			ixn = _ixn_dict->get_ixn_at_timepoint(sp_to_place,sp_other,timepoint);
+			// Add
+			act += ixn; // * 1.0 * 1.0
+		} else {
+			////////////////
+			// Probabilistic
+			////////////////
+			for (auto const &pr: _uh->get_p_mode_probs()) {
+				if (pr.second == 0.0) {
+					continue;
+				};
+				// Get ixn
+				ixn = _ixn_dict->get_ixn_at_timepoint(sp_to_place,pr.first,timepoint);
+				// Add
+				act += ixn * pr.second; // * 1.0
+			};
+		};
+
+		return act;
+	};
+
+	double ConnVH::get_act_for_species_at_unit_h_at_timepoint(const Sptr &sp_to_place, int timepoint) {
+		double act=0.0;
+
+		// 0 if no ixn dict
+		if (!_ixn_dict) {
+			return act;
+		};
+
+		double ixn;
+		// Go through species of other site
+		if (_uv->check_is_b_mode()) {
+			//////////
+			// Binary
+			/////////
+			Sptr sp_other = _uv->get_b_mode_species();
+			// Get ixn
+			ixn = _ixn_dict->get_ixn_at_timepoint(sp_other,sp_to_place,timepoint);
+			// Add
+			act += ixn; // * 1.0 * 1.0
+		} else {
+			////////////////
+			// Probabilistic
+			////////////////
+			for (auto const &pr: _uv->get_p_mode_probs()) {
+				if (pr.second == 0.0) {
+					continue;
+				};
+				// Get ixn
+				ixn = _ixn_dict->get_ixn_at_timepoint(pr.first,sp_to_place,timepoint);
+				// Add
+				act += ixn * pr.second; // * 1.0
+			};
+		};
+
+		return act;
+	};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 	/****************************************
 	Class to hold a connection
 	****************************************/

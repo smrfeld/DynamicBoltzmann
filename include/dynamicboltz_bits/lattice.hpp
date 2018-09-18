@@ -31,21 +31,18 @@ namespace dblz {
 
 	// Forwards
 	class UnitVisible;
+	class UnitHidden;
 	class BiasDict;
+	class ConnVH;
 	class ConnVV;
 	class ConnVVV;
 	class O2IxnDict;
 	class O3IxnDict;
-	struct Sptr2;
-	struct Sptr3;
 	class Moment;
 
 	/****************************************
 	Lattice
 	****************************************/
-
-	typedef std::list<UnitVisible> Latt;
-	typedef Latt::iterator Latt_it;
 
 	class Lattice
 	{
@@ -57,20 +54,33 @@ namespace dblz {
 		// Size
 		int _box_length;
 
-		// Visible units
-		Latt _latt;
+		// Visible/hidden units
+		std::list<UnitVisible> _latt_v;
+		std::list<UnitHidden> _latt_h;
+
+		// Index for the hidden layer
+		std::unordered_map<int,std::unordered_map<int,UnitHidden*>> _latt_h_map_dim_1;
+		std::unordered_map<int,std::unordered_map<int,std::unordered_map<int,UnitHidden*>>> _latt_h_map_dim_2;
+		std::unordered_map<int,std::unordered_map<int,std::unordered_map<int,std::unordered_map<int,UnitHidden*>>>> _latt_h_map_dim_3;
 
 		// Connections
 		std::list<ConnVV> _conns_vv;
 		std::list<ConnVVV> _conns_vvv;
+		std::list<ConnVH> _conns_vh;
 
 		// Lookup a site iterator from x,y,z
-		const UnitVisible& _look_up_const(int x) const;
-		const UnitVisible& _look_up_const(int x, int y) const;
-		const UnitVisible& _look_up_const(int x, int y, int z) const;
-		UnitVisible& _look_up(int x);
-		UnitVisible& _look_up(int x, int y);
-		UnitVisible& _look_up(int x, int y, int z);
+		const UnitVisible* _look_up_unit_v_const(int x) const;
+		const UnitVisible* _look_up_unit_v_const(int x, int y) const;
+		const UnitVisible* _look_up_unit_v_const(int x, int y, int z) const;
+		UnitVisible* _look_up_unit_v(int x);
+		UnitVisible* _look_up_unit_v(int x, int y);
+		UnitVisible* _look_up_unit_v(int x, int y, int z);
+		const UnitHidden* _look_up_unit_h_const(int layer, int x) const;
+		const UnitHidden* _look_up_unit_h_const(int layer, int x, int y) const;
+		const UnitHidden* _look_up_unit_h_const(int layer, int x, int y, int z) const;
+		UnitHidden* _look_up_unit_h(int layer, int x);
+		UnitHidden* _look_up_unit_h(int layer, int x, int y);
+		UnitHidden* _look_up_unit_h(int layer, int x, int y, int z);
 
 		// Check dim
 		void _check_dim(int dim) const;
@@ -136,28 +146,40 @@ namespace dblz {
 		Add visible-visible connections
 		********************/
 
-		void add_conn_vv(UnitVisible *uv1, UnitVisible *uv2, std::shared_ptr<O2IxnDict> ixn_dict);
-		void add_conn_vvv(UnitVisible *uv1, UnitVisible *uv2, UnitVisible *uv3, std::shared_ptr<O3IxnDict> ixn_dict);
+		ConnVV& add_conn_vv(UnitVisible *uv1, UnitVisible *uv2);
+		ConnVV& add_conn_vv(UnitVisible *uv1, UnitVisible *uv2, std::shared_ptr<O2IxnDict> ixn_dict);
+		ConnVVV& add_conn_vvv(UnitVisible *uv1, UnitVisible *uv2, UnitVisible *uv3);
+		ConnVVV& add_conn_vvv(UnitVisible *uv1, UnitVisible *uv2, UnitVisible *uv3, std::shared_ptr<O3IxnDict> ixn_dict);
 
 		/********************
 		Add hidden units
 		********************/
 
-		void add_hidden_unit();
+		UnitHidden& add_hidden_unit(int layer, int x);
+		UnitHidden& add_hidden_unit(int layer, int x, int y);
+		UnitHidden& add_hidden_unit(int layer, int x, int y, int z);
+		UnitHidden& add_hidden_unit(int layer, int x, std::vector<Sptr> species_possible);
+		UnitHidden& add_hidden_unit(int layer, int x, int y, std::vector<Sptr> species_possible);
+		UnitHidden& add_hidden_unit(int layer, int x, int y, int z, std::vector<Sptr> species_possible);
+
+		/********************
+		Add visible-hidden connections
+		********************/
+
+		ConnVH& add_conn_vh(UnitVisible *uv, UnitHidden *uh);
+		ConnVH& add_conn_vh(UnitVisible *uv, UnitHidden *uh, std::shared_ptr<O2IxnDict> ixn_dict);
 
 		/********************
 		Get unit
 		********************/
 
-		UnitVisible& get_unit_visible(int x);
-		UnitVisible& get_unit_visible(int x, int y);
-		UnitVisible& get_unit_visible(int x, int y, int z);
+		UnitVisible& get_unit_v(int x);
+		UnitVisible& get_unit_v(int x, int y);
+		UnitVisible& get_unit_v(int x, int y, int z);
 
-		/*
-		UnitHidden& get_unit_hidden(int layer, int x) const;
-		UnitHidden& get_unit_hidden(int layer, int x, int y) const;
-		UnitHidden& get_unit_hidden(int layer, int x, int y, int z) const;
-		*/
+		UnitHidden& get_unit_h(int layer, int x);
+		UnitHidden& get_unit_h(int layer, int x, int y);
+		UnitHidden& get_unit_h(int layer, int x, int y, int z);
 
 		/********************
 		Get connection
@@ -171,24 +193,28 @@ namespace dblz {
 		ConnVVV& get_conn_vvv(int x1, int y1, int x2, int y2, int x3, int y3);
 		ConnVVV& get_conn_vvv(int x1, int y1, int z1, int x2, int y2, int z2, int x3, int y3, int z3);
 
+		ConnVH& get_conn_vh(int x1, int layer2, int x2);
+		ConnVH& get_conn_vh(int x1, int y1, int layer2, int x2, int y2);
+		ConnVH& get_conn_vh(int x1, int y1, int z1, int layer2, int x2, int y2, int z2);
+
 		/********************
 		Getters (general)
 		********************/
 
 		int dim() const;
-		int no_units_vis();
-		// int no_units_hidden();
+		int no_units_v();
+		int no_units_h();
 
 		/********************
 		Apply funcs to all units
 		********************/
 
 		// Clear the lattice
-		void set_all_units_empty();
+		void all_units_set_empty();
 
 		// Binary/probabilistic
-		void convert_all_units_to_b_mode();
-		void convert_all_units_to_p_mode();
+		void all_units_convert_to_b_mode();
+		void all_units_convert_to_p_mode();
 
 		/********************
 		Write/read latt to a file

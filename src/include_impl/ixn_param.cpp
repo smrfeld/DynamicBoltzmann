@@ -25,9 +25,6 @@ namespace dblz {
 		// Name
 		std::string _name;
 
-		// Type
-		IxnParamType _type;
-
 		// Values
 		// Timepoints = timesteps + 1
 		int _no_timepoints;
@@ -162,8 +159,6 @@ namespace dblz {
 
 		_name = name;
 
-		_type = type;
-
 		_init_cond = init_cond;
 
 		_no_timesteps = 0;
@@ -174,7 +169,7 @@ namespace dblz {
 		_vals[0] = _init_cond;
 
 		// Moment
-		_moment = std::make_unique<Moment>(_type);
+		_moment = std::make_unique<Moment>(type);
 	};
 	IxnParam::Impl::Impl(const Impl& other) {
 		_copy(other);
@@ -205,7 +200,6 @@ namespace dblz {
 	};
 	void IxnParam::Impl::_copy(const Impl& other) {
 		_name = other._name;
-		_type = other._type;
 		_no_timesteps = other._no_timesteps;
 		_no_timepoints = other._no_timepoints;
 		_vals = new double[_no_timepoints];
@@ -217,7 +211,6 @@ namespace dblz {
 	};
 	void IxnParam::Impl::_move(Impl& other) {
 		_name = other._name;
-		_type = other._type;
 		_no_timesteps = other._no_timesteps;
 		_no_timepoints = other._no_timepoints;
 		_vals = new double[_no_timepoints];
@@ -282,7 +275,7 @@ namespace dblz {
 	};
 
 	IxnParamType IxnParam::Impl::get_type() const {
-		return _type;
+		return _moment->get_type();
 	};
 
 	/********************

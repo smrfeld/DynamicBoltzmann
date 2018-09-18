@@ -329,10 +329,10 @@ namespace dblz {
 		safeDelArr(idxs);
 	};
 
-	void Array::write_vals(std::string dir, std::string name, int idx_opt_step) const
+	void Array::write_vals(std::string fname) const
 	{
 		std::ofstream f;
-		f.open (dir+name+"_"+pad_str(idx_opt_step,4)+".txt");
+		f.open (fname);
 		for (int i=0; i<_val_len; i++)
 		{
 			f << std::setprecision(15) << _vals[i];

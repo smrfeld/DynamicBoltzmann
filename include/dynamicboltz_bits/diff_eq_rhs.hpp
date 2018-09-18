@@ -168,7 +168,7 @@ namespace dblz {
 		********************/
 
 		void write_grid(std::string fname) const;
-		void write_vals(std::string dir, std::string name, int idx) const;
+		void write_vals(std::string fname) const;
 		void read_vals(std::string fname);
 
 		/********************

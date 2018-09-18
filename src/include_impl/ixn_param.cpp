@@ -4,6 +4,7 @@
 #include "../../include/dynamicboltz_bits/general.hpp"
 #include "../../include/dynamicboltz_bits/species.hpp"
 #include "../../include/dynamicboltz_bits/moment.hpp"
+#include "../../include/dynamicboltz_bits/diff_eq_rhs.hpp"
 
 #include <iostream>
 #include <fstream>
@@ -277,6 +278,7 @@ namespace dblz {
 	double IxnParam::Impl::get_val_at_timepoint(int timepoint) const {
 		if (timepoint >= _no_timepoints) {
 			std::cerr << ">>> Error: IxnParam::Impl::get_val_at_timepoint <<< " << timepoint << " is out of bounds: " << _no_timepoints << std::endl;
+			exit(EXIT_FAILURE);
 		};
 		return _vals[timepoint];
 	};
@@ -290,7 +292,16 @@ namespace dblz {
 	};
 
 	void IxnParam::Impl::solve_diff_eq_at_timepoint_to_plus_one(int timepoint, double dt) {
-		// ...
+		if (timepoint >= _no_timepoints) {
+			std::cerr << ">>> Error: IxnParam::Impl::solve_diff_eq_at_timepoint_to_plus_one <<< " << timepoint << " is out of bounds: " << _no_timepoints << std::endl;
+			exit(EXIT_FAILURE);
+		};
+		if (!_diff_eq) {
+			std::cerr << ">>> Error: IxnParam::Impl::solve_diff_eq_at_timepoint_to_plus_one <<< No diff eq set" << std::endl;
+			exit(EXIT_FAILURE);
+		};
+
+		_vals[timepoint+1] = _vals[timepoint] + dt * _diff_eq->get_val_at_timepoint(timepoint);
 	};
 
 	/********************

@@ -737,17 +737,36 @@ namespace dblz {
 	Write/read Latt to a file
 	********************/
 
-	void Lattice::write_to_file(std::string fname) 
+	void Lattice::write_to_file(std::string fname, bool binary) 
 	{
 		std::ofstream f;
 		f.open (fname);
 		for (auto const &l: _latt_v) {
-			if (_dim == 1) {
-				f << l.x() << "\n";
-			} else if (_dim == 2) {
-				f << l.x() << " " << l.y() << "\n";
-			} else if (_dim == 3) {
-				f << l.x() << " " << l.y() << " " << l.z() << "\n";
+			if (binary) {
+				if (!l.check_b_mode_is_empty()) {
+					if (_dim == 1) {
+						f << l.x();
+					} else if (_dim == 2) {
+						f << l.x() << " " << l.y();
+					} else if (_dim == 3) {
+						f << l.x() << " " << l.y() << " " << l.z();
+					};
+					f << " " << l.get_b_mode_species()->get_name() << "\n";
+				};
+			} else {
+				if (!l.check_p_mode_is_empty()) {
+					if (_dim == 1) {
+						f << l.x();
+					} else if (_dim == 2) {
+						f << l.x() << " " << l.y();
+					} else if (_dim == 3) {
+						f << l.x() << " " << l.y() << " " << l.z();
+					};
+					for (auto const &pr: l.get_p_mode_probs()) {
+						f << " " << pr.first->get_name() << " " << pr.second;
+					};
+					f << "\n";
+				};
 			};
 		};
 		f.close();

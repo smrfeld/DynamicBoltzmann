@@ -222,7 +222,7 @@ namespace dblz {
 		Write/read latt to a file
 		********************/
 
-		void write_to_file(std::string fname);
+		void write_to_file(std::string fname, bool binary=true);
 		void read_from_file(std::string fname, bool binary=true);
 
 		/********************

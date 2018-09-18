@@ -6,6 +6,7 @@
 #include "../../include/dynamicboltz_bits/unit_visible.hpp"
 #include "../../include/dynamicboltz_bits/connections.hpp"
 #include "../../include/dynamicboltz_bits/ixn_dicts.hpp"
+#include "../../include/dynamicboltz_bits/moment.hpp"
 
 #include <iostream>
 #include <fstream>
@@ -59,9 +60,9 @@ namespace dblz {
 			};
 		};
 	};
-	Lattice::Lattice(int dim, int box_length, std::vector<Sptr> possible_species_of_all_units_visible) : Lattice(dim,box_length) {
+	Lattice::Lattice(int dim, int box_length, std::vector<Sptr> possible_species_of_all_units_vis) : Lattice(dim,box_length) {
 		for (Latt_it lit=_latt.begin(); lit != _latt.end(); lit++) {
-			lit->set_possible_species(possible_species_of_all_units_visible);
+			lit->set_possible_species(possible_species_of_all_units_vis);
 		};
 	};
 	Lattice::Lattice(const Lattice& other) {
@@ -148,9 +149,9 @@ namespace dblz {
 	********************/
 
 	// Add possible species to all sites
-	void Lattice::add_possible_species_to_all_units_visible(Sptr species) {
+	void Lattice::add_possible_species_to_all_units_vis(Sptr species) {
 		if (!species) {
-			std::cerr << ">>> Error: Lattice::add_possible_species_to_all_units_visible <<< nullptr is not allowed!" << std::endl;
+			std::cerr << ">>> Error: Lattice::add_possible_species_to_all_units_vis <<< nullptr is not allowed!" << std::endl;
 			exit(EXIT_FAILURE);
 		};
 
@@ -160,17 +161,17 @@ namespace dblz {
 	};
 
 	// Biases
-	void Lattice::set_bias_dict_of_all_units_visible(std::shared_ptr<BiasDict> bias_dict) {
+	void Lattice::set_bias_dict_of_all_units_vis(std::shared_ptr<BiasDict> bias_dict) {
 		for (auto &s: _latt) {
 			s.set_bias_dict(bias_dict);
 		};
 	};
 
 	// Visible-Visible ixns
-	void Lattice::init_conns_NN_all_units_visible() {
-		init_conns_NN_all_units_visible(nullptr);
+	void Lattice::init_conns_NN_all_units_vis() {
+		init_conns_NN_all_units_vis(nullptr);
 	};
-	void Lattice::init_conns_NN_all_units_visible(std::shared_ptr<O2IxnDict> ixn_dict) {
+	void Lattice::init_conns_NN_all_units_vis(std::shared_ptr<O2IxnDict> ixn_dict) {
 
 		Latt_it lit = _latt.begin();
 		UnitVisible *nbr = nullptr;
@@ -216,10 +217,10 @@ namespace dblz {
 		};
 	};
 
-	void Lattice::init_conns_triplet_all_units_visible() {
-		init_conns_triplet_all_units_visible(nullptr);
+	void Lattice::init_conns_triplet_all_units_vis() {
+		init_conns_triplet_all_units_vis(nullptr);
 	};
-	void Lattice::init_conns_triplet_all_units_visible(std::shared_ptr<O3IxnDict> ixn_dict) {
+	void Lattice::init_conns_triplet_all_units_vis(std::shared_ptr<O3IxnDict> ixn_dict) {
 
 		Latt_it lit = _latt.begin();
 		UnitVisible *nbr1 = nullptr, *nbr2 = nullptr;
@@ -328,12 +329,12 @@ namespace dblz {
 		};
 	};
 
-	void Lattice::set_ixn_dict_all_conns_vv(std::shared_ptr<O2IxnDict> ixn_dict) {
+	void Lattice::set_ixn_dict_of_all_conns_vv(std::shared_ptr<O2IxnDict> ixn_dict) {
 		for (auto &conn: _conns_vv) {
 			conn.set_ixn_dict(ixn_dict);
 		};
 	};
-	void Lattice::set_ixn_dict_all_conns_vvv(std::shared_ptr<O3IxnDict> ixn_dict) {
+	void Lattice::set_ixn_dict_of_all_conns_vvv(std::shared_ptr<O3IxnDict> ixn_dict) {
 		for (auto &conn: _conns_vvv) {
 			conn.set_ixn_dict(ixn_dict);
 		};
@@ -355,6 +356,22 @@ namespace dblz {
 		uv1->add_conn(&_conns_vvv.back(),0);
 		uv2->add_conn(&_conns_vvv.back(),1);
 		uv3->add_conn(&_conns_vvv.back(),2);
+	};
+
+	void Lattice::add_all_units_vis_to_moment_h(std::shared_ptr<Moment> moment) {
+		for (auto &s: _latt) {
+			moment->add_unit_to_monitor_h(&s);
+		};
+	};
+	void Lattice::add_all_conns_vv_to_moment_j(std::shared_ptr<Moment> moment) {
+		for (auto &c: _conns_vv) {
+			moment->add_conn_to_monitor_j(&c);
+		};
+	};
+	void Lattice::add_all_conns_vvv_to_moment_k(std::shared_ptr<Moment> moment) {
+		for (auto &c: _conns_vvv) {
+			moment->add_conn_to_monitor_k(&c);
+		};
 	};
 
 	/********************
@@ -492,7 +509,7 @@ namespace dblz {
 	int Lattice::dim() const {
 		return _dim;
 	};
-	int Lattice::no_units_visible() { 
+	int Lattice::no_units_vis() { 
 		return _latt.size(); 
 	};
 

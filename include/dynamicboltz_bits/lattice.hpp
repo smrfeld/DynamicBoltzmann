@@ -38,6 +38,7 @@ namespace dblz {
 	class O3IxnDict;
 	struct Sptr2;
 	struct Sptr3;
+	class Moment;
 
 	/****************************************
 	Lattice
@@ -90,7 +91,7 @@ namespace dblz {
 		********************/
 
 		Lattice(int dim, int box_length);
-		Lattice(int dim, int box_length, std::vector<Sptr> possible_species_of_all_units_visible);
+		Lattice(int dim, int box_length, std::vector<Sptr> possible_species_of_all_units_vis);
 		Lattice(const Lattice& other);
 		Lattice(Lattice&& other);
 		Lattice& operator=(const Lattice& other);
@@ -109,29 +110,33 @@ namespace dblz {
 		********************/
 
 		// Add possible species
-		void add_possible_species_to_all_units_visible(Sptr species);
+		void add_possible_species_to_all_units_vis(Sptr species);
 		// void add_possible_species_to_all_unit_hidden(Sptr species);
 
 		// Biases
-		void set_bias_dict_of_all_units_visible(std::shared_ptr<BiasDict> bias_dict);
+		void set_bias_dict_of_all_units_vis(std::shared_ptr<BiasDict> bias_dict);
 		// void set_bias_dict_of_all_units_hidden(std::shared_ptr<BiasDict> bias_dict);
 
 		// Visible-Visible ixns
 
-		void init_conns_NN_all_units_visible();
-		void init_conns_NN_all_units_visible(std::shared_ptr<O2IxnDict> ixn_dict);
+		void init_conns_NN_all_units_vis();
+		void init_conns_NN_all_units_vis(std::shared_ptr<O2IxnDict> ixn_dict);
 
-		void init_conns_triplet_all_units_visible();
-		void init_conns_triplet_all_units_visible(std::shared_ptr<O3IxnDict> ixn_dict);
+		void init_conns_triplet_all_units_vis();
+		void init_conns_triplet_all_units_vis(std::shared_ptr<O3IxnDict> ixn_dict);
 
-		void set_ixn_dict_all_conns_vv(std::shared_ptr<O2IxnDict> ixn_dict);
-		void set_ixn_dict_all_conns_vvv(std::shared_ptr<O3IxnDict> ixn_dict);
+		void set_ixn_dict_of_all_conns_vv(std::shared_ptr<O2IxnDict> ixn_dict);
+		void set_ixn_dict_of_all_conns_vvv(std::shared_ptr<O3IxnDict> ixn_dict);
 
 		void add_conn_vv(UnitVisible *uv1, UnitVisible *uv2, std::shared_ptr<O2IxnDict> ixn_dict);
 		void add_conn_vvv(UnitVisible *uv1, UnitVisible *uv2, UnitVisible *uv3, std::shared_ptr<O3IxnDict> ixn_dict);
 
 		// Hidden units
 		// void add_hidden_unit();
+
+		void add_all_units_vis_to_moment_h(std::shared_ptr<Moment> moment);
+		void add_all_conns_vv_to_moment_j(std::shared_ptr<Moment> moment);
+		void add_all_conns_vvv_to_moment_k(std::shared_ptr<Moment> moment);
 
 		/********************
 		Get unit
@@ -164,7 +169,7 @@ namespace dblz {
 		********************/
 
 		int dim() const;
-		int no_units_visible();
+		int no_units_vis();
 		// int no_units_hidden();
 
 		/********************

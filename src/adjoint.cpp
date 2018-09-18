@@ -197,7 +197,7 @@ namespace dblz {
 
 			// Next dim
 			i_dim++;
-		};
+		}; 
 
 		// Difference in moments
 		double moment_delta = _ixn_param->get_moment()->get_moment_at_timepoint(MomentType::ASLEEP, timepoint) - _ixn_param->get_moment()->get_moment_at_timepoint(MomentType::AWAKE, timepoint);

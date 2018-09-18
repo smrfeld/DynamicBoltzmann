@@ -39,7 +39,7 @@ int main() {
 	auto rhs = make_shared<DiffEqRHS>("bias DE RHS",domain);
 
 	// Add to ixn
-	ixn->set_diff_eq(rhs);
+	ixn->set_diff_eq_rhs(rhs);
 
 	cout << "Made RHS of diff eq: " << rhs->get_name() << endl;
 	cout << endl;
@@ -80,7 +80,32 @@ int main() {
 		std::cout << "t = " << t+1 << " val = " << ixn->get_val_at_timepoint(t+1) << std::endl;
 	};
 
-	cout << "Solved diff eq" << endl;
+	cout << "Solved diff eq for state var" << endl;
+	cout << endl;
+
+	/****************************************
+	Adjoint
+	****************************************/
+
+	auto adjoint = make_shared<Adjoint>("adjoint",ixn);
+	ixn->set_adjoint(adjoint);
+
+	std::cout << "Made adjoint: " << adjoint->get_name() << std::endl;
+	std::cout << std::endl;
+
+	/****************************************
+	Solve
+	****************************************/
+
+	adjoint->set_no_timesteps(20);
+	adjoint->set_zero_end_cond_timepoint(20);
+	std::cout << "t = " << 20 << " val = " << adjoint->get_val_at_timepoint(20) << std::endl;
+	for (auto t=20; t>=1; t--) {
+		adjoint->solve_diff_eq_at_timepoint_to_minus_one(t,dt);
+		std::cout << "t = " << t-1 << " val = " << adjoint->get_val_at_timepoint(t-1) << std::endl;
+	};
+
+	cout << "Solved diff eq for adjoint" << endl;
 	cout << endl;
 
 	return 0;

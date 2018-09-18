@@ -262,6 +262,9 @@ namespace dblz {
 		_vals = new double[_no_timepoints];
 		std::fill_n(_vals,_no_timepoints,0.0);
 		_vals[0] = _init_cond;
+
+		// Set for moment
+		_moment->set_no_timesteps(_no_timesteps);
 	};
 
 

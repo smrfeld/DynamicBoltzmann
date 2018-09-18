@@ -77,6 +77,7 @@ namespace dblz {
 		_monitor_h = other._monitor_h; 
 		_monitor_j = other._monitor_j; 
 		_monitor_k = other._monitor_k; 
+		_monitor_w = other._monitor_w; 
 
 		_no_timesteps = other._no_timesteps;
 		_no_timepoints = other._no_timepoints;
@@ -89,14 +90,6 @@ namespace dblz {
 		// averaged
 		_vals_awake_averaged = other._vals_awake_averaged;
 		_vals_asleep_averaged = other._vals_asleep_averaged;
-
-		/*
-		_sp_h = other._sp_h;
-		_sp_b = other._sp_b;
-		_sp_j = other._sp_j;
-		_sp_k = other._sp_k;
-		_sp_w = other._sp_w;
-		*/
 		
 		// Reset the other
 		other._name = "";
@@ -104,6 +97,7 @@ namespace dblz {
 		other._monitor_h.clear(); 
 		other._monitor_j.clear(); 
 		other._monitor_k.clear(); 
+		other._monitor_w.clear(); 
 
 		other._no_timesteps = 0;
 		other._no_timepoints = 0;
@@ -114,14 +108,6 @@ namespace dblz {
 
 		other._vals_awake_averaged = nullptr;
 		other._vals_asleep_averaged = nullptr;
-
-		/*
-		other._sp_h.clear();
-		other._sp_b.clear();
-		other._sp_j.clear();
-		other._sp_k.clear();
-		other._sp_w.clear();
-		*/
 	};
 	void Moment::_copy(const Moment& other) {
 		_name = other._name;
@@ -130,6 +116,7 @@ namespace dblz {
 		_monitor_h = other._monitor_h; 
 		_monitor_j = other._monitor_j; 
 		_monitor_k = other._monitor_k; 
+		_monitor_w = other._monitor_w; 
 
 		_no_timesteps = other._no_timesteps;
 		_no_timepoints = other._no_timepoints;
@@ -146,14 +133,6 @@ namespace dblz {
 		std::copy( other._vals_awake_averaged, other._vals_awake_averaged + _no_timepoints, _vals_awake_averaged );
 		_vals_asleep_averaged = new double[_no_timepoints];
 		std::copy( other._vals_asleep_averaged, other._vals_asleep_averaged + _no_timepoints, _vals_asleep_averaged );
-
-		/*
-		_sp_h = other._sp_h;
-		_sp_b = other._sp_b;
-		_sp_j = other._sp_j;
-		_sp_k = other._sp_k;
-		_sp_w = other._sp_w;
-		*/
 	};
 
 	/********************
@@ -201,87 +180,13 @@ namespace dblz {
 		};
 		_monitor_k.push_back(conn);
 	};
-
-	// Add species
-	/*
-	void Moment::add_species_h(Sptr species) {
-		if (_type != IxnParamType::H) {
-			std::cerr << ">>> ERROR: Moment::Impl::add_species_h <<< Not of type H." << std::endl;
-			exit(EXIT_FAILURE);
-		};
-		_sp_h.push_back(species);	
-	};
-	void Moment::add_species_b(Sptr species) {
-		if (_type != IxnParamType::B) {
-			std::cerr << ">>> ERROR: Moment::Impl::add_species_h <<< Not of type B." << std::endl;
-			exit(EXIT_FAILURE);
-		};
-		_sp_b.push_back(species);
-	};
-	void Moment::add_species_j(Sptr species1, Sptr species2) {
-		if (_type != IxnParamType::J) {
-			std::cerr << ">>> ERROR: Moment::Impl::add_species_h <<< Not of type J." << std::endl;
-			exit(EXIT_FAILURE);
-		};
-		_sp_j.push_back(Sptr2(species1,species2));
-	};
-	void Moment::add_species_k(Sptr species1, Sptr species2, Sptr species3) {
-		if (_type != IxnParamType::K) {
-			std::cerr << ">>> ERROR: Moment::Impl::add_species_h <<< Not of type K." << std::endl;
-			exit(EXIT_FAILURE);
-		};
-		_sp_k.push_back(Sptr3(species1,species2,species3));
-	};
-	void Moment::add_species_w(Sptr speciesV, Sptr speciesH) {
+	void Moment::add_conn_to_monitor_w(ConnVH *conn) {
 		if (_type != IxnParamType::W) {
-			std::cerr << ">>> ERROR: Moment::Impl::add_species_h <<< Not of type W." << std::endl;
+			std::cerr << ">>> Error: Moment::add_conn_to_monitor_w <<< tried to add connVH but moment is not of type W" << std::endl;
 			exit(EXIT_FAILURE);
 		};
-		_sp_w.push_back(Sptr2(speciesV,speciesH));
+		_monitor_w.push_back(conn);
 	};
-	*/
-
-	/********************
-	Get species
-	********************/
-
-	/*
-	const std::vector<Sptr>& Moment::get_species_h() const {
-		if (_type != IxnParamType::H) {
-			std::cerr << ">>> ERROR: Moment::Impl::get_species_h <<< Not of type H." << std::endl;
-			exit(EXIT_FAILURE);
-		};
-		return _sp_h;
-	};
-	const std::vector<Sptr>& Moment::get_species_b() const {
-		if (_type != IxnParamType::B) {
-			std::cerr << ">>> ERROR: Moment::Impl::get_species_h <<< Not of type B." << std::endl;
-			exit(EXIT_FAILURE);
-		};
-		return _sp_b;
-	};
-	const std::vector<Sptr2>& Moment::get_species_j() const {
-		if (_type != IxnParamType::J) {
-			std::cerr << ">>> ERROR: Moment::Impl::get_species_h <<< Not of type J." << std::endl;
-			exit(EXIT_FAILURE);
-		};
-		return _sp_j;
-	};
-	const std::vector<Sptr3>& Moment::get_species_k() const {
-		if (_type != IxnParamType::K) {
-			std::cerr << ">>> ERROR: Moment::Impl::get_species_h <<< Not of type K." << std::endl;
-			exit(EXIT_FAILURE);
-		};
-		return _sp_k;
-	};
-	const std::vector<Sptr2>& Moment::get_species_w() const {
-		if (_type != IxnParamType::W) {
-			std::cerr << ">>> ERROR: Moment::Impl::get_species_h <<< Not of type W." << std::endl;
-			exit(EXIT_FAILURE);
-		};
-		return _sp_w;
-	};
-	*/
 
 	/********************
 	Name
@@ -432,6 +337,11 @@ namespace dblz {
 		} else if (_type == IxnParamType::K) {
 			// K
 			for (auto const &conn: _monitor_k) {
+				count += conn->get_moment(_name,binary);
+			};
+		} else if (_type == IxnParamType::W) {
+			// K
+			for (auto const &conn: _monitor_w) {
 				count += conn->get_moment(_name,binary);
 			};
 		};

@@ -136,38 +136,40 @@ namespace dblz {
 		// Set ixn dicts of connections
 		void all_conns_vv_set_ixn_dict(std::shared_ptr<O2IxnDict> ixn_dict);
 		void all_conns_vvv_set_ixn_dict(std::shared_ptr<O3IxnDict> ixn_dict);
+		void all_conns_vh_set_ixn_dict(std::shared_ptr<O2IxnDict> ixn_dict);
 
 		// Link units to moments
 		void all_units_v_add_to_moment_h(std::shared_ptr<Moment> moment);
 		void all_conns_vv_add_to_moment_j(std::shared_ptr<Moment> moment);
 		void all_conns_vvv_add_to_moment_k(std::shared_ptr<Moment> moment);
+		void all_conns_vh_add_to_moment_w(std::shared_ptr<Moment> moment);
 
 		/********************
 		Add visible-visible connections
 		********************/
 
-		ConnVV& add_conn_vv(UnitVisible *uv1, UnitVisible *uv2);
-		ConnVV& add_conn_vv(UnitVisible *uv1, UnitVisible *uv2, std::shared_ptr<O2IxnDict> ixn_dict);
-		ConnVVV& add_conn_vvv(UnitVisible *uv1, UnitVisible *uv2, UnitVisible *uv3);
-		ConnVVV& add_conn_vvv(UnitVisible *uv1, UnitVisible *uv2, UnitVisible *uv3, std::shared_ptr<O3IxnDict> ixn_dict);
+		void add_conn_vv(UnitVisible *uv1, UnitVisible *uv2);
+		void add_conn_vv(UnitVisible *uv1, UnitVisible *uv2, std::shared_ptr<O2IxnDict> ixn_dict);
+		void add_conn_vvv(UnitVisible *uv1, UnitVisible *uv2, UnitVisible *uv3);
+		void add_conn_vvv(UnitVisible *uv1, UnitVisible *uv2, UnitVisible *uv3, std::shared_ptr<O3IxnDict> ixn_dict);
 
 		/********************
 		Add hidden units
 		********************/
 
-		UnitHidden& add_hidden_unit(int layer, int x);
-		UnitHidden& add_hidden_unit(int layer, int x, int y);
-		UnitHidden& add_hidden_unit(int layer, int x, int y, int z);
-		UnitHidden& add_hidden_unit(int layer, int x, std::vector<Sptr> species_possible);
-		UnitHidden& add_hidden_unit(int layer, int x, int y, std::vector<Sptr> species_possible);
-		UnitHidden& add_hidden_unit(int layer, int x, int y, int z, std::vector<Sptr> species_possible);
+		void add_hidden_unit(int layer, int x);
+		void add_hidden_unit(int layer, int x, int y);
+		void add_hidden_unit(int layer, int x, int y, int z);
+		void add_hidden_unit(int layer, int x, std::vector<Sptr> species_possible);
+		void add_hidden_unit(int layer, int x, int y, std::vector<Sptr> species_possible);
+		void add_hidden_unit(int layer, int x, int y, int z, std::vector<Sptr> species_possible);
 
 		/********************
 		Add visible-hidden connections
 		********************/
 
-		ConnVH& add_conn_vh(UnitVisible *uv, UnitHidden *uh);
-		ConnVH& add_conn_vh(UnitVisible *uv, UnitHidden *uh, std::shared_ptr<O2IxnDict> ixn_dict);
+		void add_conn_vh(UnitVisible *uv, UnitHidden *uh);
+		void add_conn_vh(UnitVisible *uv, UnitHidden *uh, std::shared_ptr<O2IxnDict> ixn_dict);
 
 		/********************
 		Get unit

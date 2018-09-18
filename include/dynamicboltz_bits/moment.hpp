@@ -23,6 +23,7 @@ namespace dblz {
 	class UnitVisible;
 	class ConnVV;
 	class ConnVVV;
+	class ConnVH;
 	enum class IxnParamType: unsigned int;
 
 	/****************************************
@@ -45,6 +46,7 @@ namespace dblz {
 		std::vector<UnitVisible*> _monitor_h;
 		std::vector<ConnVV*> _monitor_j;
 		std::vector<ConnVVV*> _monitor_k;
+		std::vector<ConnVH*> _monitor_w;
 
 		// No time points = time steps + 1
 		int _no_timesteps;
@@ -62,15 +64,6 @@ namespace dblz {
 		// Size = _no_timesteps
 		double *_vals_awake_averaged;
 		double *_vals_asleep_averaged;
-
-		// Species
-		/*
-		std::vector<Sptr> _sp_h;
-		std::vector<Sptr> _sp_b;
-		std::vector<Sptr2> _sp_j;
-		std::vector<Sptr3> _sp_k;
-		std::vector<Sptr2> _sp_w;
-		*/
 	
 		// Constructor helpers
 		void _clean_up();
@@ -110,27 +103,7 @@ namespace dblz {
 		void add_unit_to_monitor_h(UnitVisible *uv);
 		void add_conn_to_monitor_j(ConnVV *conn);
 		void add_conn_to_monitor_k(ConnVVV *conn);
-
-		// Add species
-		/*
-		void add_species_h(Sptr species);
-		void add_species_b(Sptr species);
-		void add_species_j(Sptr species1, Sptr species2);
-		void add_species_k(Sptr species1, Sptr species2, Sptr species3);
-		void add_species_w(Sptr speciesV, Sptr speciesH);
-		*/
-
-		/********************
-		Get species
-		********************/
-
-		/*
-		const std::vector<Sptr>& get_species_h() const;
-		const std::vector<Sptr>& get_species_b() const;
-		const std::vector<Sptr2>& get_species_j() const;
-		const std::vector<Sptr3>& get_species_k() const;
-		const std::vector<Sptr2>& get_species_w() const;
-		*/
+		void add_conn_to_monitor_w(ConnVH *conn);
 
 		/********************
 		Name, type

@@ -68,6 +68,30 @@ int main() {
 	cout << endl;
 
 	/****************************************
+	Add hidden units
+	****************************************/
+
+	int layer=1;
+	for (auto i=1; i<=9; i++) {
+		latt.add_hidden_unit(layer,i);
+	};
+
+	cout << "Added hidden units" << endl;
+	cout << endl;
+
+	/****************************************
+	Add hidden-visible connections
+	****************************************/
+
+	for (auto i=1; i<=9; i++) {
+		latt.add_conn_vh(&latt.get_unit_v(i),&latt.get_unit_h(layer,i));
+		latt.add_conn_vh(&latt.get_unit_v(i+1),&latt.get_unit_h(layer,i));
+	};
+
+	cout << "Added vis-hidden conns" << endl;
+	cout << endl;
+
+	/****************************************
 	Populate the lattice
 	****************************************/
 

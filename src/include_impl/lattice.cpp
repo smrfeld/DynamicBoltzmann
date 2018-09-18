@@ -376,6 +376,11 @@ namespace dblz {
 			conn.set_ixn_dict(ixn_dict);
 		};
 	};
+	void Lattice::all_conns_vh_set_ixn_dict(std::shared_ptr<O2IxnDict> ixn_dict) {
+		for (auto &conn: _conns_vh) {
+			conn.set_ixn_dict(ixn_dict);
+		};
+	};
 
 	/********************
 	Helpers to setup all sites - Link units to moments
@@ -396,90 +401,83 @@ namespace dblz {
 			moment->add_conn_to_monitor_k(&c);
 		};
 	};
+	void Lattice::all_conns_vh_add_to_moment_w(std::shared_ptr<Moment> moment) {
+		for (auto &c: _conns_vh) {
+			moment->add_conn_to_monitor_w(&c);
+		};
+	};
 
 	/********************
 	Add visible-visible connections
 	********************/
 
-	ConnVV& Lattice::add_conn_vv(UnitVisible *uv1, UnitVisible *uv2) {
+	void Lattice::add_conn_vv(UnitVisible *uv1, UnitVisible *uv2) {
 		_conns_vv.push_back(ConnVV(uv1,uv2));
 		uv1->add_conn(&_conns_vv.back(),0);
 		uv2->add_conn(&_conns_vv.back(),1);
-		return _conns_vv.back();
 	};
-	ConnVV& Lattice::add_conn_vv(UnitVisible *uv1, UnitVisible *uv2, std::shared_ptr<O2IxnDict> ixn_dict) {
+	void Lattice::add_conn_vv(UnitVisible *uv1, UnitVisible *uv2, std::shared_ptr<O2IxnDict> ixn_dict) {
 		add_conn_vv(uv1,uv2);
 		if (ixn_dict) {
 			_conns_vv.back().set_ixn_dict(ixn_dict);
 		};
-		return _conns_vv.back();
 	};
-	ConnVVV& Lattice::add_conn_vvv(UnitVisible *uv1, UnitVisible *uv2, UnitVisible *uv3) {
+	void Lattice::add_conn_vvv(UnitVisible *uv1, UnitVisible *uv2, UnitVisible *uv3) {
 		_conns_vvv.push_back(ConnVVV(uv1,uv2,uv3));
 		uv1->add_conn(&_conns_vvv.back(),0);
 		uv2->add_conn(&_conns_vvv.back(),1);
 		uv3->add_conn(&_conns_vvv.back(),2);
-		return _conns_vvv.back();
 	};
-	ConnVVV& Lattice::add_conn_vvv(UnitVisible *uv1, UnitVisible *uv2, UnitVisible *uv3, std::shared_ptr<O3IxnDict> ixn_dict) {
+	void Lattice::add_conn_vvv(UnitVisible *uv1, UnitVisible *uv2, UnitVisible *uv3, std::shared_ptr<O3IxnDict> ixn_dict) {
 		add_conn_vvv(uv1,uv2,uv3);
 		if (ixn_dict) {
 			_conns_vvv.back().set_ixn_dict(ixn_dict);
 		};
-		return _conns_vvv.back();
 	};
 
 	/********************
 	Add hidden units
 	********************/
 
-	UnitHidden& Lattice::add_hidden_unit(int layer, int x) {
+	void Lattice::add_hidden_unit(int layer, int x) {
 		_latt_h.push_back(UnitHidden(layer,x));
 		_latt_h_map_dim_1[layer][x] = &_latt_h.back();
-		return _latt_h.back();
 	};
-	UnitHidden& Lattice::add_hidden_unit(int layer, int x, int y) {
+	void Lattice::add_hidden_unit(int layer, int x, int y) {
 		_latt_h.push_back(UnitHidden(layer,x,y));
 		_latt_h_map_dim_2[layer][x][y] = &_latt_h.back();
-		return _latt_h.back();
 	};
-	UnitHidden& Lattice::add_hidden_unit(int layer, int x, int y, int z) {
+	void Lattice::add_hidden_unit(int layer, int x, int y, int z) {
 		_latt_h.push_back(UnitHidden(layer,x,y,z));
 		_latt_h_map_dim_3[layer][x][y][z] = &_latt_h.back();
-		return _latt_h.back();
 	};
-	UnitHidden& Lattice::add_hidden_unit(int layer, int x, std::vector<Sptr> species_possible) {
+	void Lattice::add_hidden_unit(int layer, int x, std::vector<Sptr> species_possible) {
 		_latt_h.push_back(UnitHidden(layer,x,species_possible));
 		_latt_h_map_dim_1[layer][x] = &_latt_h.back();
-		return _latt_h.back();
 	};
-	UnitHidden& Lattice::add_hidden_unit(int layer, int x, int y, std::vector<Sptr> species_possible) {
+	void Lattice::add_hidden_unit(int layer, int x, int y, std::vector<Sptr> species_possible) {
 		_latt_h.push_back(UnitHidden(layer,x,y,species_possible));
 		_latt_h_map_dim_2[layer][x][y] = &_latt_h.back();
-		return _latt_h.back();
 	};
-	UnitHidden& Lattice::add_hidden_unit(int layer, int x, int y, int z, std::vector<Sptr> species_possible) {
+	void Lattice::add_hidden_unit(int layer, int x, int y, int z, std::vector<Sptr> species_possible) {
 		_latt_h.push_back(UnitHidden(layer,x,y,z,species_possible));
 		_latt_h_map_dim_3[layer][x][y][z] = &_latt_h.back();
-		return _latt_h.back();
 	};
 
 	/********************
 	Add visible-hidden connections
 	********************/
 
-	ConnVH& Lattice::add_conn_vh(UnitVisible *uv, UnitHidden *uh) {
+	void Lattice::add_conn_vh(UnitVisible *uv, UnitHidden *uh) { 
 		_conns_vh.push_back(ConnVH(uv,uh));
 		uv->add_conn(&_conns_vh.back());
 		uh->add_conn(&_conns_vh.back());
-		return _conns_vh.back();
 	};
-	ConnVH& Lattice::add_conn_vh(UnitVisible *uv, UnitHidden *uh, std::shared_ptr<O2IxnDict> ixn_dict) {
+	void Lattice::add_conn_vh(UnitVisible *uv, UnitHidden *uh, std::shared_ptr<O2IxnDict> ixn_dict) {
 		add_conn_vh(uv,uh);
 		if (ixn_dict) {
 			_conns_vh.back().set_ixn_dict(ixn_dict);
 		};
-		return _conns_vh.back();
 	};
 
 	/********************

@@ -22,7 +22,7 @@ SRC_NAMES = include_impl/species.cpp \
 	include_impl/diff_eq_rhs.cpp \
 	include_impl/general.cpp \
 	include_impl/moment.cpp \
-	include_impl/unit_visible.cpp \
+	include_impl/unit.cpp \
 	include_impl/ixn_dicts.cpp \
 	include_impl/connections.cpp \
 	include_impl/lattice.cpp

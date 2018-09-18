@@ -2,7 +2,7 @@
 
 // Other headers
 #include "../../include/dynamicboltz_bits/general.hpp"
-#include "../../include/dynamicboltz_bits/unit_visible.hpp"
+#include "../../include/dynamicboltz_bits/unit.hpp"
 #include "../../include/dynamicboltz_bits/ixn_dicts.hpp"
 #include "../../include/dynamicboltz_bits/species.hpp"
 
@@ -133,7 +133,7 @@ namespace dblz {
 	Get activation on site
 	********************/
 
-	double ConnVV::get_act_for_species_at_unit_at_timepoint(Sptr &sp_to_place, int idx, int timepoint) {
+	double ConnVV::get_act_for_species_at_unit_at_timepoint(const Sptr &sp_to_place, int idx, int timepoint) {
 		double act=0.0;
 
 		// 0 if no ixn dict
@@ -345,7 +345,7 @@ namespace dblz {
 	Get activation on site
 	********************/
 
-	double ConnVVV::get_act_for_species_at_unit_at_timepoint(Sptr &sp_to_place, int idx, int timepoint) {
+	double ConnVVV::get_act_for_species_at_unit_at_timepoint(const Sptr &sp_to_place, int idx, int timepoint) {
 		double act=0.0;
 
 		// 0 if no ixn dict

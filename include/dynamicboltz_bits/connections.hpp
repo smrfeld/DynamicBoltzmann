@@ -69,7 +69,7 @@ namespace dblz {
 		********************/
 
 		// Idx = 1,2
-		double get_act_for_species_at_unit_at_timepoint(Sptr &sp_to_place, int idx, int timepoint);
+		double get_act_for_species_at_unit_at_timepoint(const Sptr &sp_to_place, int idx, int timepoint);
 	};
 
 	/****************************************
@@ -175,6 +175,6 @@ namespace dblz {
 		********************/
 
 		// Idx = 1,2,3
-		double get_act_for_species_at_unit_at_timepoint(Sptr &sp_to_place, int idx, int timepoint);
+		double get_act_for_species_at_unit_at_timepoint(const Sptr &sp_to_place, int idx, int timepoint);
 	};
 };

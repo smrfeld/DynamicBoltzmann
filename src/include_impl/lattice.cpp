@@ -664,6 +664,8 @@ namespace dblz {
 		};
 	};
 	double Lattice::get_count(Sptr &sp1, Sptr &sp2, bool binary, bool reversibly) const {
+		exit(EXIT_FAILURE);
+
 		const UnitVisible *nbr = nullptr;
 		double count = 0.0;
 		for (auto &s: _latt) {
@@ -726,6 +728,8 @@ namespace dblz {
 	};
 
 	double Lattice::get_count(Sptr &sp1, Sptr &sp2, Sptr &sp3, bool binary, bool reversibly) const {
+		exit(EXIT_FAILURE);
+		
 		double count = 0.0;
 		
 		// ugh...

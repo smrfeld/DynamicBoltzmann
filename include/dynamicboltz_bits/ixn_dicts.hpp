@@ -40,6 +40,10 @@ namespace dblz {
 		// Site to site to ixns
 		std::map<Sptr,std::vector<Iptr>> _dict;
 
+		// Reverse map
+		std::map<Iptr,std::vector<Sptr>> _i_dict;
+		std::map<std::string,std::vector<Sptr>> _i_str_dict;
+
 		// Constructor helpers
 		void _clean_up();
 		void _copy(const BiasDict& other);
@@ -60,6 +64,10 @@ namespace dblz {
 
 		// Get from the dict
 		double get_ixn_at_timepoint(Sptr sp, int timepoint) const;
+
+		// Get species
+		const std::vector<Sptr>& get_species_from_ixn(Iptr ixn) const;
+		const std::vector<Sptr>& get_species_from_ixn(std::string ixn_param_name) const;
 	};
 
 	/****************************************
@@ -84,10 +92,14 @@ namespace dblz {
 		~O2IxnDict();
 
 		// Add to the dict
-		void add_ixn(Sptr sp_of_site_1, Sptr sp_of_site_2, Iptr ixn, bool this_order=false);
+		void add_ixn(Sptr sp_of_site_1, Sptr sp_of_site_2, Iptr ixn, bool reversibly=true);
 
 		// Get from the dict
 		double get_ixn_at_timepoint(Sptr sp_of_site_1, Sptr sp_of_site_2, int timepoint) const;
+
+		// Get species
+		const std::vector<Sptr2>& get_species_from_ixn(Iptr ixn) const;
+		const std::vector<Sptr2>& get_species_from_ixn(std::string ixn_param_name) const;
 	};
 
 	/****************************************
@@ -112,9 +124,13 @@ namespace dblz {
 		~O3IxnDict();
 
 		// Add to the dict
-		void add_ixn(Sptr sp_of_site_1, Sptr sp_of_site_2, Sptr sp_of_site_3, Iptr ixn, bool this_order);
+		void add_ixn(Sptr sp_of_site_1, Sptr sp_of_site_2, Sptr sp_of_site_3, Iptr ixn, bool reversibly=true);
 
 		// Get from the dict
 		double get_ixn_at_timepoint(Sptr sp_of_site_1, Sptr sp_of_site_2, Sptr sp_of_site_3, int timepoint) const;
+
+		// Get species
+		const std::vector<Sptr3>& get_species_from_ixn(Iptr ixn) const;
+		const std::vector<Sptr3>& get_species_from_ixn(std::string ixn_param_name) const;
 	};
 };

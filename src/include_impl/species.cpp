@@ -106,6 +106,9 @@ namespace dblz {
 
 	// Two species
 	Sptr2::Sptr2(Sptr s1, Sptr s2) {
+		this->s1 = s1;
+		this->s2 = s2;
+		/*
 		if (s1 >= s2) {
 			this->s1 = s1;
 			this->s2 = s2;
@@ -113,6 +116,7 @@ namespace dblz {
 			this->s1 = s2;
 			this->s2 = s1;
 		};
+		*/
 	};
 	bool operator <(const Sptr2& a, const Sptr2& b) {
     	return std::tie(a.s1, a.s2) < std::tie(b.s1, b.s2);
@@ -120,6 +124,10 @@ namespace dblz {
 
 	// Three species
 	Sptr3::Sptr3(Sptr s1, Sptr s2, Sptr s3) {
+		this->s1 = s1;
+		this->s2 = s2;
+		this->s3 = s3;
+		/*
 		if (s1>=s2 && s2 >= s3) {
 			this->s1 = s1;
 			this->s2 = s2;
@@ -145,6 +153,7 @@ namespace dblz {
 			this->s2 = s2;
 			this->s3 = s1;
 		};
+		*/
 	};
 	bool operator <(const Sptr3& a, const Sptr3& b) {
     	return std::tie(a.s1, a.s2, a.s3) < std::tie(b.s1, b.s2, b.s3);

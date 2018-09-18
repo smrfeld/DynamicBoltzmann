@@ -4,6 +4,7 @@
 #include "../../include/dynamicboltz_bits/general.hpp"
 #include "../../include/dynamicboltz_bits/unit_visible.hpp"
 #include "../../include/dynamicboltz_bits/ixn_dicts.hpp"
+#include "../../include/dynamicboltz_bits/species.hpp"
 
 #include <iostream>
 #include <fstream>
@@ -92,29 +93,28 @@ namespace dblz {
 	Get count
 	********************/
 
-	double ConnVV::get_count(Sptr &sp1, Sptr &sp2, bool binary, bool this_order) const {
+	double ConnVV::get_moment(std::string ixn_param_name, bool binary) const {
+		if (!_ixn_dict) {
+			std::cerr << ">>> Error: ConnVV::get_moment <<< no ixn dict exists on this conn" << std::endl;
+			exit(EXIT_FAILURE);
+		};
+
 		double count = 0.0;
 
-		if (binary) {
+		std::vector<Sptr2> species = _ixn_dict->get_species_from_ixn(ixn_param_name);
+		for (auto &sp: species) {
 
-			// Binary
+			if (binary) {
 
-			if (_uv1->get_b_mode_species() == sp1 && _uv2->get_b_mode_species() == sp2) {
-				count += 1.0;
-			};
-			if (!this_order && (sp1 != sp2)) {
-				if (_uv1->get_b_mode_species() == sp2 && _uv2->get_b_mode_species() == sp1) {
+				// Binary
+				if (_uv1->get_b_mode_species() == sp.s1 && _uv2->get_b_mode_species() == sp.s2) {
 					count += 1.0;
 				};
-			};
 
-		} else {
+			} else {
 
-			// Prob
-
-			count += _uv1->get_p_mode_prob(sp1) * _uv2->get_p_mode_prob(sp2);
-			if (!this_order && (sp1 != sp2)) {
-				count += _uv1->get_p_mode_prob(sp2) * _uv2->get_p_mode_prob(sp1);
+				// Prob
+				count += _uv1->get_p_mode_prob(sp.s1) * _uv2->get_p_mode_prob(sp.s2);
 			};
 		};
 
@@ -305,29 +305,28 @@ namespace dblz {
 	Get count
 	********************/
 
-	double ConnVVV::get_count(Sptr &sp1, Sptr &sp2, Sptr &sp3, bool binary, bool this_order) const {
+	double ConnVVV::get_moment(std::string ixn_param_name, bool binary) const {
+		if (!_ixn_dict) {
+			std::cerr << ">>> Error: ConnVVV::get_moment <<< no ixn dict exist on this conn" << std::endl;
+			exit(EXIT_FAILURE);
+		};
+
 		double count = 0.0;
 
-		if (binary) {
+		std::vector<Sptr3> species = _ixn_dict->get_species_from_ixn(ixn_param_name);
+		for (auto &sp: species) {
 
-			// Binary
+			if (binary) {
 
-			if (_uv1->get_b_mode_species() == sp1 && _uv2->get_b_mode_species() == sp2 && _uv3->get_b_mode_species() == sp3) {
-				count += 1.0;
-			};
-			if (!this_order && sp1 != sp3) {
-				if (_uv1->get_b_mode_species() == sp3 && _uv2->get_b_mode_species() == sp2 && _uv3->get_b_mode_species() == sp1) {
+				// Binary
+				if (_uv1->get_b_mode_species() == sp.s1 && _uv2->get_b_mode_species() == sp.s2 && _uv3->get_b_mode_species() == sp.s3) {
 					count += 1.0;
 				};
-			};
 
-		} else {
+			} else {
 
-			// Prob
-
-			count += _uv1->get_p_mode_prob(sp1) * _uv2->get_p_mode_prob(sp2) * _uv3->get_p_mode_prob(sp3);
-			if (!this_order && (sp1 != sp3)) {
-				count += _uv1->get_p_mode_prob(sp3) * _uv2->get_p_mode_prob(sp2) * _uv3->get_p_mode_prob(sp1);
+				// Prob
+				count += _uv1->get_p_mode_prob(sp.s1) * _uv2->get_p_mode_prob(sp.s2) * _uv3->get_p_mode_prob(sp.s3);
 			};
 		};
 

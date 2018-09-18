@@ -117,6 +117,12 @@ namespace dblz {
 		void convert_p_to_b_mode();
 
 		/********************
+		Get moment
+		********************/
+
+		double get_moment(std::string ixn_param_name, bool binary=true) const;
+
+		/********************
 		Get activation
 		********************/
 

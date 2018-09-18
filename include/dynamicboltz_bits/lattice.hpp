@@ -64,12 +64,19 @@ namespace dblz {
 		std::list<ConnVVV> _conns_vvv;
 
 		// Lookup a site iterator from x,y,z
+		const UnitVisible& _look_up_const(int x) const;
+		const UnitVisible& _look_up_const(int x, int y) const;
+		const UnitVisible& _look_up_const(int x, int y, int z) const;
 		UnitVisible& _look_up(int x);
 		UnitVisible& _look_up(int x, int y);
 		UnitVisible& _look_up(int x, int y, int z);
 
 		// Check dim
 		void _check_dim(int dim) const;
+
+		// Count helpers
+		void _get_count(double &count, Sptr &sp1, Sptr &sp2, const UnitVisible &uv1, const UnitVisible *uv2, bool binary, bool reversibly) const;
+		void _get_count(double &count, Sptr &sp1, Sptr &sp2, Sptr &sp3, const UnitVisible &uv1, const UnitVisible *uv2, const UnitVisible *uv3, bool binary, bool reversibly) const;
 
 		// Contructor helpers
 		void _clean_up();
@@ -189,8 +196,8 @@ namespace dblz {
 		********************/
 
 		double get_count(Sptr &sp, bool binary=true) const;
-		double get_count(Sptr &sp1, Sptr &sp2, bool binary=true, bool this_order=false) const;
-		double get_count(Sptr &sp1, Sptr &sp2, Sptr &sp3, bool binary=true, bool this_order=false) const;
+		double get_count(Sptr &sp1, Sptr &sp2, bool binary=true, bool reversibly=true) const;
+		double get_count(Sptr &sp1, Sptr &sp2, Sptr &sp3, bool binary=true, bool reversibly=true) const;
 	};
 
 };

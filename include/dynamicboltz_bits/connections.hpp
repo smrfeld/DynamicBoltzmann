@@ -56,7 +56,7 @@ namespace dblz {
 		Get count
 		********************/
 
-		double get_count(Sptr &sp1, Sptr &sp2, bool binary=true, bool this_order=false) const;
+		double get_moment(std::string ixn_param_name, bool binary=true) const;
 
 		/********************
 		Set ixns
@@ -159,10 +159,10 @@ namespace dblz {
 		bool check_connects_units(UnitVisible *uv1, UnitVisible *uv2, UnitVisible *uv3, bool this_order=false);
 
 		/********************
-		Get count
+		Get moment
 		********************/
 
-		double get_count(Sptr &sp1, Sptr &sp2, Sptr &sp3, bool binary=true, bool this_order=false) const;
+		double get_moment(std::string ixn_param_name, bool binary=true) const;
 
 		/********************
 		Set ixns

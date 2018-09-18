@@ -22,9 +22,6 @@ namespace dblz {
 
 	private:
 
-		// Name
-		std::string _name;
-
 		// Values
 		// Timepoints = timesteps + 1
 		int _no_timepoints;
@@ -157,8 +154,6 @@ namespace dblz {
 
 	IxnParam::Impl::Impl(std::string name, IxnParamType type, double init_cond) {
 
-		_name = name;
-
 		_init_cond = init_cond;
 
 		_no_timesteps = 0;
@@ -169,7 +164,7 @@ namespace dblz {
 		_vals[0] = _init_cond;
 
 		// Moment
-		_moment = std::make_unique<Moment>(type);
+		_moment = std::make_unique<Moment>(name, type);
 	};
 	IxnParam::Impl::Impl(const Impl& other) {
 		_copy(other);
@@ -199,7 +194,6 @@ namespace dblz {
 		safeDelArr(_vals);
 	};
 	void IxnParam::Impl::_copy(const Impl& other) {
-		_name = other._name;
 		_no_timesteps = other._no_timesteps;
 		_no_timepoints = other._no_timepoints;
 		_vals = new double[_no_timepoints];
@@ -210,7 +204,6 @@ namespace dblz {
 		_moment = other._moment;
 	};
 	void IxnParam::Impl::_move(Impl& other) {
-		_name = other._name;
 		_no_timesteps = other._no_timesteps;
 		_no_timepoints = other._no_timepoints;
 		_vals = new double[_no_timepoints];
@@ -221,7 +214,6 @@ namespace dblz {
 		_moment = std::move(other._moment);
 
 		// Reset the other
-		other._name = "";
 		other._no_timesteps = 0;
 		other._no_timepoints = 0;
 		safeDelArr(other._vals);
@@ -271,7 +263,7 @@ namespace dblz {
 	********************/
 
 	std::string IxnParam::Impl::get_name() const {
-		return _name;
+		return _moment->get_name();
 	};
 
 	IxnParamType IxnParam::Impl::get_type() const {

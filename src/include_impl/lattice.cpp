@@ -610,6 +610,7 @@ namespace dblz {
 	Get counts
 	********************/
 
+	// 1 particle
 	double Lattice::get_count(Sptr &sp, bool binary) const {
 		double count = 0.0;
 		if (binary) {
@@ -626,18 +627,92 @@ namespace dblz {
 
 		return count;
 	};
-	double Lattice::get_count(Sptr &sp1, Sptr &sp2, bool binary, bool this_order) const {
-		double count = 0.0;
-		for (auto const &conn: _conns_vv) {
-			count += conn.get_count(sp1,sp2,binary,this_order);
+
+	// 2 particle
+	void Lattice::_get_count(double &count, Sptr &sp1, Sptr &sp2, const UnitVisible &uv1, const UnitVisible *uv2, bool binary, bool reversibly) const {
+		if (binary) {
+			if ((sp1 == uv1.get_b_mode_species()) && (sp2 == uv2->get_b_mode_species())) {
+				count += 1.0;
+			};
+			if (reversibly && sp1 != sp2) {
+				if ((sp1 == uv2->get_b_mode_species()) && (sp2 == uv1.get_b_mode_species())) {
+					count += 1.0;
+				};
+			};
+		} else {
+			count += uv1.get_p_mode_prob(sp1) * uv2->get_p_mode_prob(sp2); 
+			if (reversibly && sp1 != sp2) {
+				count += uv1.get_p_mode_prob(sp2) * uv2->get_p_mode_prob(sp1); 
+			};
 		};
+	};
+	double Lattice::get_count(Sptr &sp1, Sptr &sp2, bool binary, bool reversibly) const {
+		const UnitVisible *nbr = nullptr;
+		double count = 0.0;
+		for (auto &s: _latt) {
+			// Only connect to "plus one" (not minus one) => no duplicates!
+
+			// Dim 1,2,3
+			if (s.x()+1 <= _box_length) {
+				if (_dim == 1) {
+					nbr = &_look_up_const(s.x()+1);
+				} else if (_dim == 2) {
+					nbr = &_look_up_const(s.x()+1,s.y());
+				} else if (_dim == 3) {
+					nbr = &_look_up_const(s.x()+1,s.y(),s.z());
+				};
+
+				_get_count(count, sp1, sp2, s, nbr, binary, reversibly);
+			};
+
+			// Dim 2,3
+			if (s.y()+1 <= _box_length) {
+				if (_dim == 2) {
+					nbr = &_look_up_const(s.x(),s.y()+1);
+				} else if (_dim == 3) {
+					nbr = &_look_up_const(s.x(),s.y()+1,s.z());
+				};
+
+				_get_count(count, sp1, sp2, s, nbr, binary, reversibly);
+			};
+
+			// Dim 3
+			if (s.z()+1 <= _box_length) {
+				if (_dim == 3) {
+					nbr = &_look_up_const(s.x(),s.y(),s.z()+1);
+				};
+
+				_get_count(count, sp1, sp2, s, nbr, binary, reversibly);
+			};
+		};
+
 		return count;
 	};
-	double Lattice::get_count(Sptr &sp1, Sptr &sp2, Sptr &sp3, bool binary, bool this_order) const {
-		double count = 0.0;
-		for (auto const &conn: _conns_vvv) {
-			count += conn.get_count(sp1,sp2,sp3,binary,this_order);
+
+	// 3 particle
+	void Lattice::_get_count(double &count, Sptr &sp1, Sptr &sp2, Sptr &sp3, const UnitVisible &uv1, const UnitVisible *uv2, const UnitVisible *uv3, bool binary, bool reversibly) const {
+		if (binary) {
+			if ((sp1 == uv1.get_b_mode_species()) && (sp2 == uv2->get_b_mode_species()) && (sp3 == uv3->get_b_mode_species())) {
+				count += 1.0;
+			};
+			if (reversibly && sp1 != sp3) {
+				if ((sp3 == uv1.get_b_mode_species()) && (sp2 == uv2->get_b_mode_species()) && (sp1 == uv3->get_b_mode_species())) {
+					count += 1.0;
+				};
+			};
+		} else {
+			count += uv1.get_p_mode_prob(sp1) * uv2->get_p_mode_prob(sp2) * uv3->get_p_mode_prob(sp3); 
+			if (reversibly && sp1 != sp3) {
+				count += uv1.get_p_mode_prob(sp3) * uv2->get_p_mode_prob(sp2) * uv3->get_p_mode_prob(sp1); 
+			};
 		};
+	};
+
+	double Lattice::get_count(Sptr &sp1, Sptr &sp2, Sptr &sp3, bool binary, bool reversibly) const {
+		double count = 0.0;
+		
+		// ugh...
+
 		return count;	
 	};
 
@@ -649,6 +724,15 @@ namespace dblz {
 	Lookup a site iterator from x,y,z
 	********************/
 
+	const UnitVisible& Lattice::_look_up_const(int x) const {
+		// Figure out index in list
+		int n = x-1;
+
+		// Grab
+		Latt::const_iterator it = _latt.begin();
+		std::advance(it,n);
+		return *it;
+	};
 	UnitVisible& Lattice::_look_up(int x) {
 		// Figure out index in list
 		int n = x-1;
@@ -658,12 +742,30 @@ namespace dblz {
 		std::advance(it,n);
 		return *it;
 	};
+	const UnitVisible& Lattice::_look_up_const(int x, int y) const {
+		// Figure out index in list
+		int n = (x-1)*_box_length + y-1;
+
+		// Grab
+		Latt::const_iterator it = _latt.begin();
+		std::advance(it,n);
+		return *it;
+	};
 	UnitVisible& Lattice::_look_up(int x, int y) {
 		// Figure out index in list
 		int n = (x-1)*_box_length + y-1;
 
 		// Grab
 		Latt_it it = _latt.begin();
+		std::advance(it,n);
+		return *it;
+	};
+	const UnitVisible& Lattice::_look_up_const(int x, int y, int z) const {
+		// Figure out index in list
+		int n = (x-1)*_box_length*_box_length + (y-1)*_box_length + z-1;
+
+		// Grab
+		Latt::const_iterator it = _latt.begin();
 		std::advance(it,n);
 		return *it;
 	};

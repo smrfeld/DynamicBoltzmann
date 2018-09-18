@@ -153,6 +153,12 @@ namespace dblz {
 		void convert_p_to_b_mode();
 
 		/********************
+		Get moment
+		********************/
+
+		double get_moment(std::string ixn_param_name, bool binary=true) const;
+
+		/********************
 		Get activation
 		********************/
 
@@ -600,6 +606,37 @@ namespace dblz {
 		_b_mode_flag = true;
 	};
 
+	/********************
+	Get moment
+	********************/
+
+	double UnitVisible::Impl::get_moment(std::string ixn_param_name, bool binary) const {
+		if (!_bias_dict) {
+			std::cerr << ">>> Error: UnitVisible::Impl::get_moment <<< no bias dict exists on this unit" << std::endl;
+			exit(EXIT_FAILURE);
+		};
+
+		double count = 0.0;
+
+		std::vector<Sptr> species = _bias_dict->get_species_from_ixn(ixn_param_name);
+		for (auto &sp: species) {
+
+			if (binary) {
+
+				// Binary
+				if (_b_mode_sp == sp) {
+					count += 1.0;
+				};
+
+			} else {
+
+				// Prob
+				count += get_p_mode_prob(sp);
+			};
+		};
+
+		return count;
+	};
 
 	/********************
 	Get activation
@@ -883,6 +920,14 @@ namespace dblz {
 	};
 	void UnitVisible::convert_p_to_b_mode() {
 		_impl->convert_p_to_b_mode();
+	};
+
+	/********************
+	Get moment
+	********************/
+
+	double UnitVisible::get_moment(std::string ixn_param_name, bool binary) const {
+		return _impl->get_moment(ixn_param_name,binary);
 	};
 
 	/********************

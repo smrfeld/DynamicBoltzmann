@@ -24,7 +24,8 @@ namespace dblz {
 	Constructor
 	********************/
 
-	Moment::Moment(IxnParamType type) {
+	Moment::Moment(std::string name, IxnParamType type) {
+		_name = name;
 		_type = type;
 
 		_no_timesteps = 0;
@@ -70,7 +71,7 @@ namespace dblz {
 
 	void Moment::_clean_up() {};
 	void Moment::_move(Moment &other) {
-
+		_name = other._name;
 		_type = other._type;
 
 		_monitor_h = other._monitor_h; 
@@ -89,13 +90,16 @@ namespace dblz {
 		_vals_awake_averaged = other._vals_awake_averaged;
 		_vals_asleep_averaged = other._vals_asleep_averaged;
 
+		/*
 		_sp_h = other._sp_h;
 		_sp_b = other._sp_b;
 		_sp_j = other._sp_j;
 		_sp_k = other._sp_k;
 		_sp_w = other._sp_w;
-
+		*/
+		
 		// Reset the other
+		other._name = "";
 
 		other._monitor_h.clear(); 
 		other._monitor_j.clear(); 
@@ -111,14 +115,16 @@ namespace dblz {
 		other._vals_awake_averaged = nullptr;
 		other._vals_asleep_averaged = nullptr;
 
+		/*
 		other._sp_h.clear();
 		other._sp_b.clear();
 		other._sp_j.clear();
 		other._sp_k.clear();
 		other._sp_w.clear();
+		*/
 	};
 	void Moment::_copy(const Moment& other) {
-
+		_name = other._name;
 		_type = other._type;
 
 		_monitor_h = other._monitor_h; 
@@ -141,11 +147,13 @@ namespace dblz {
 		_vals_asleep_averaged = new double[_no_timepoints];
 		std::copy( other._vals_asleep_averaged, other._vals_asleep_averaged + _no_timepoints, _vals_asleep_averaged );
 
+		/*
 		_sp_h = other._sp_h;
 		_sp_b = other._sp_b;
 		_sp_j = other._sp_j;
 		_sp_k = other._sp_k;
 		_sp_w = other._sp_w;
+		*/
 	};
 
 	/********************
@@ -179,22 +187,23 @@ namespace dblz {
 		};
 		_monitor_h.push_back(uv);
 	};
-	void Moment::add_conn_to_monitor_j(ConnVV *conn, bool this_order) {
+	void Moment::add_conn_to_monitor_j(ConnVV *conn) {
 		if (_type != IxnParamType::J) {
 			std::cerr << ">>> Error: Moment::add_conn_to_monitor_j <<< tried to add connVV but moment is not of type J" << std::endl;
 			exit(EXIT_FAILURE);
 		};
-		_monitor_j.push_back(std::make_pair(conn,this_order));
+		_monitor_j.push_back(conn);
 	};
-	void Moment::add_conn_to_monitor_k(ConnVVV *conn, bool this_order) {
+	void Moment::add_conn_to_monitor_k(ConnVVV *conn) {
 		if (_type != IxnParamType::K) {
 			std::cerr << ">>> Error: Moment::add_conn_to_monitor_k <<< tried to add connVVV but moment is not of type K" << std::endl;
 			exit(EXIT_FAILURE);
 		};
-		_monitor_k.push_back(std::make_pair(conn,this_order));
+		_monitor_k.push_back(conn);
 	};
 
 	// Add species
+	/*
 	void Moment::add_species_h(Sptr species) {
 		if (_type != IxnParamType::H) {
 			std::cerr << ">>> ERROR: Moment::Impl::add_species_h <<< Not of type H." << std::endl;
@@ -230,11 +239,13 @@ namespace dblz {
 		};
 		_sp_w.push_back(Sptr2(speciesV,speciesH));
 	};
+	*/
 
 	/********************
 	Get species
 	********************/
 
+	/*
 	const std::vector<Sptr>& Moment::get_species_h() const {
 		if (_type != IxnParamType::H) {
 			std::cerr << ">>> ERROR: Moment::Impl::get_species_h <<< Not of type H." << std::endl;
@@ -269,6 +280,18 @@ namespace dblz {
 			exit(EXIT_FAILURE);
 		};
 		return _sp_w;
+	};
+	*/
+
+	/********************
+	Name
+	********************/
+
+	std::string Moment::get_name() const {
+		return _name;
+	};
+	IxnParamType Moment::get_type() const {
+		return _type;
 	};
 
 	/********************
@@ -398,36 +421,18 @@ namespace dblz {
 		double count = 0.0;
 		if (_type == IxnParamType::H) {
 			// H
-			if (binary) {
-				Sptr sp_unit;
-				for (auto const &s: _monitor_h) {
-					sp_unit = s->get_b_mode_species();
-					for (auto const &sp: _sp_h) {
-						if (sp_unit == sp) {
-							count += 1.0;
-						};
-					};
-				};
-			} else {
-				for (auto const &s: _monitor_h) {
-					for (auto const &sp: _sp_h) {
-						count += s->get_p_mode_prob(sp);
-					};
-				};
+			for (auto const &unit: _monitor_h) {
+				count += unit->get_moment(_name,binary);
 			};
 		} else if (_type == IxnParamType::J) {
 			// J
 			for (auto const &conn: _monitor_j) {
-				for (auto &sp_pair: _sp_j) {
-					count += conn.first->get_count(sp_pair.s1,sp_pair.s2,binary,conn.second);
-				};
+				count += conn->get_moment(_name,binary);
 			};
 		} else if (_type == IxnParamType::K) {
 			// K
 			for (auto const &conn: _monitor_k) {
-				for (auto &sp_triplet: _sp_k) {
-					count += conn.first->get_count(sp_triplet.s1,sp_triplet.s2,sp_triplet.s3,binary,conn.second);
-				};
+				count += conn->get_moment(_name,binary);
 			};
 		};
 

@@ -3,6 +3,11 @@
 #include <vector>
 #endif
 
+#ifndef STRING_H
+#define STRING_H
+#include <string>
+#endif
+
 #ifndef FWDS_SPECIES_H
 #define FWDS_SPECIES_H
 #include "fwds/fwds_species.hpp"
@@ -30,13 +35,16 @@ namespace dblz {
 
 	private:
 
+		// Name
+		std::string _name;
+
 		// Type = H, J, K, B, W
 		IxnParamType _type;
 
 		// Units to monitor
 		std::vector<UnitVisible*> _monitor_h;
-		std::vector<std::pair<ConnVV*,bool>> _monitor_j;
-		std::vector<std::pair<ConnVVV*,bool>> _monitor_k;
+		std::vector<ConnVV*> _monitor_j;
+		std::vector<ConnVVV*> _monitor_k;
 
 		// No time points = time steps + 1
 		int _no_timesteps;
@@ -56,12 +64,14 @@ namespace dblz {
 		double *_vals_asleep_averaged;
 
 		// Species
+		/*
 		std::vector<Sptr> _sp_h;
 		std::vector<Sptr> _sp_b;
 		std::vector<Sptr2> _sp_j;
 		std::vector<Sptr3> _sp_k;
 		std::vector<Sptr2> _sp_w;
-
+		*/
+	
 		// Constructor helpers
 		void _clean_up();
 		void _move(Moment &other);
@@ -73,7 +83,7 @@ namespace dblz {
 		Constructor
 		********************/
 
-		Moment(IxnParamType type);
+		Moment(std::string name, IxnParamType type);
 		Moment(const Moment& other);
 		Moment(Moment&& other);
 		Moment& operator=(const Moment& other);
@@ -98,25 +108,36 @@ namespace dblz {
 
 		// Add units
 		void add_unit_to_monitor_h(UnitVisible *uv);
-		void add_conn_to_monitor_j(ConnVV *conn, bool this_order=false);
-		void add_conn_to_monitor_k(ConnVVV *conn, bool this_order=false);
+		void add_conn_to_monitor_j(ConnVV *conn);
+		void add_conn_to_monitor_k(ConnVVV *conn);
 
 		// Add species
+		/*
 		void add_species_h(Sptr species);
 		void add_species_b(Sptr species);
 		void add_species_j(Sptr species1, Sptr species2);
 		void add_species_k(Sptr species1, Sptr species2, Sptr species3);
 		void add_species_w(Sptr speciesV, Sptr speciesH);
+		*/
 
 		/********************
 		Get species
 		********************/
 
+		/*
 		const std::vector<Sptr>& get_species_h() const;
 		const std::vector<Sptr>& get_species_b() const;
 		const std::vector<Sptr2>& get_species_j() const;
 		const std::vector<Sptr3>& get_species_k() const;
 		const std::vector<Sptr2>& get_species_w() const;
+		*/
+
+		/********************
+		Name, type
+		********************/
+
+		std::string get_name() const;
+		IxnParamType get_type() const;
 
 		/********************
 		Number timesteps

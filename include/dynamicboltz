@@ -1,8 +1,16 @@
 #ifndef DYNAMIC_BOLTZ_H
 #define DYNAMIC_BOLTZ_H
 
-#include "dynamicboltz_bits/dim.hpp"
-#include "dynamicboltz_bits/opt_problem.hpp"
+#include "dynamicboltz_bits/connections.hpp"
+#include "dynamicboltz_bits/diff_eq_rhs.hpp"
+#include "dynamicboltz_bits/fwds/fwds_ixn_param.hpp"
+#include "dynamicboltz_bits/fwds/fwds_species.hpp"
 #include "dynamicboltz_bits/general.hpp"
+#include "dynamicboltz_bits/ixn_dicts.hpp"
+#include "dynamicboltz_bits/ixn_param.hpp"
+#include "dynamicboltz_bits/lattice.hpp"
+#include "dynamicboltz_bits/moment.hpp"
+#include "dynamicboltz_bits/species.hpp"
+#include "dynamicboltz_bits/unit_visible.hpp"
 
 #endif

@@ -17,15 +17,15 @@ INSTALL_LIB_DIR = /usr/local/lib
 INSTALL_INCLUDE_DIR = /usr/local/include
 
 # source files
-SRC_NAMES = basis_func.cpp \
-	counter.cpp \
-	hidden_unit.cpp \
-	include_impl/dim.cpp \
+SRC_NAMES = include_impl/species.cpp \
+	include_impl/ixn_param.cpp \
+	include_impl/diff_eq_rhs.cpp \
 	include_impl/general.cpp \
-	include_impl/opt_problem.cpp \
-	ixn_param_traj.cpp \
-	lattice.cpp \
-	species.cpp
+	include_impl/moment.cpp \
+	include_impl/unit_visible.cpp \
+	include_impl/ixn_dicts.cpp \
+	include_impl/connections.cpp \
+	include_impl/lattice.cpp
 SRCS = $(addprefix $(SOURCE_DIR)/, $(SRC_NAMES))
 OBJS = $(addprefix $(BUILD_DIR)/, $(SRC_NAMES:.cpp=.o))
 DEPS = $(OBJS:.o=.d)
@@ -56,6 +56,8 @@ install:
 	mkdir -p $(INSTALL_LIB_DIR)
 	mkdir -p $(INSTALL_INCLUDE_DIR)
 	mkdir -p $(INSTALL_INCLUDE_DIR)/dynamicboltz_bits
+	mkdir -p $(INSTALL_INCLUDE_DIR)/dynamicboltz_bits/fwds
 	cp -p $(TARGET_LIB) $(INSTALL_LIB_DIR)
 	cp -p include/dynamicboltz_bits/*.hpp $(INSTALL_INCLUDE_DIR)/dynamicboltz_bits
+	cp -p include/dynamicboltz_bits/fwds/*.hpp $(INSTALL_INCLUDE_DIR)/dynamicboltz_bits/fwds
 	cp -p include/dynamicboltz $(INSTALL_INCLUDE_DIR)

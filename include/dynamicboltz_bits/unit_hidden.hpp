@@ -23,9 +23,14 @@ namespace dblz {
 	class HiddenSpecies;
 	class IxnParamTraj;
 
-	class HiddenUnit
+	class UnitHidden
 	{
 	private:
+
+		// Dimension and location
+		int _layer;
+		int _dim;
+		int _x,_y,_z;
 
 		// Connections
 		std::vector<ConnectionVH*> _conn;
@@ -41,7 +46,7 @@ namespace dblz {
 		// Constructor helpers
 		void _clean_up();
 		void _reset();
-		void _copy(const HiddenUnit& other);
+		void _copy(const UnitHidden& other);
 
 	public:
 
@@ -49,12 +54,12 @@ namespace dblz {
 		Constructor
 		********************/
 
-		HiddenUnit();
-		HiddenUnit(const HiddenUnit& other);
-		HiddenUnit(HiddenUnit&& other);
-		HiddenUnit& operator=(const HiddenUnit& other);
-		HiddenUnit& operator=(HiddenUnit&& other);
-		~HiddenUnit();	
+		UnitHidden();
+		UnitHidden(const UnitHidden& other);
+		UnitHidden(UnitHidden&& other);
+		UnitHidden& operator=(const UnitHidden& other);
+		UnitHidden& operator=(UnitHidden&& other);
+		~UnitHidden();	
 
 		/********************
 		Add possible species

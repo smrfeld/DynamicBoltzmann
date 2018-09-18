@@ -3,11 +3,6 @@
 #include <string>
 #endif
 
-#ifndef VECTOR_h
-#define VECTOR_h
-#include <vector>
-#endif
-
 /************************************
 * Namespace for dblz
 ************************************/
@@ -17,6 +12,12 @@ namespace dblz {
 	/****************************************
 	General
 	****************************************/
+
+	/********************
+	Sign function
+	********************/
+
+	int sgn(double val);
 
 	/********************
 	Zero pad a string
@@ -45,11 +46,4 @@ namespace dblz {
 			delete[] p; p=nullptr;
 		};
 	};
-
-	/********************
-	Sample a vector of propensities (cumulative probabilities)		
-	********************/
-
-	int sample_prop_vec(std::vector<double> &props);
-
 };

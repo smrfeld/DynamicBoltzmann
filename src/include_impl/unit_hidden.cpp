@@ -1,4 +1,4 @@
-#include "hidden_unit.hpp"
+#include "../../include/dynamicboltz_bits/hidden_unit.hpp"
 
 // Other headers
 #include "../include/dynamicboltz_bits/general.hpp"
@@ -23,20 +23,20 @@ namespace dblz {
 	Constructor
 	********************/
 
-	HiddenUnit::HiddenUnit()
+	UnitHidden::UnitHidden()
 	{
 		_prob_empty = 1.0;
 	};
-	HiddenUnit::HiddenUnit(const HiddenUnit& other)
+	UnitHidden::UnitHidden(const UnitHidden& other)
 	{
 		_copy(other);
 	};
-	HiddenUnit::HiddenUnit(HiddenUnit&& other)
+	UnitHidden::UnitHidden(UnitHidden&& other)
 	{
 		_copy(other);
 		other._reset();
 	};
-	HiddenUnit& HiddenUnit::operator=(const HiddenUnit& other)
+	UnitHidden& UnitHidden::operator=(const UnitHidden& other)
 	{
 		if (this != &other) {
 			_clean_up();
@@ -44,7 +44,7 @@ namespace dblz {
 		};
 		return *this;
 	};
-	HiddenUnit& HiddenUnit::operator=(HiddenUnit&& other)
+	UnitHidden& UnitHidden::operator=(UnitHidden&& other)
 	{
 		if (this != &other) {
 			_clean_up();
@@ -53,21 +53,21 @@ namespace dblz {
 		};
 		return *this;
 	};
-	HiddenUnit::~HiddenUnit()
+	UnitHidden::~UnitHidden()
 	{
 		_clean_up();
 	};
-	void HiddenUnit::_clean_up() {
+	void UnitHidden::_clean_up() {
 		// Nothing....
 	};
-	void HiddenUnit::_reset() {
+	void UnitHidden::_reset() {
 		_sp_possible.clear();
 		_conn.clear();
 		_bias.clear();
 		_prob_empty = 1.0;
 		_probs.clear();
 	};
-	void HiddenUnit::_copy(const HiddenUnit& other) {
+	void UnitHidden::_copy(const UnitHidden& other) {
 		_sp_possible = other._sp_possible;
 		_conn = other._conn;
 		_bias = other._bias;
@@ -79,7 +79,7 @@ namespace dblz {
 	Add possible species
 	********************/
 
-	void HiddenUnit::add_hidden_species_possibility(HiddenSpecies* sp) {
+	void UnitHidden::add_hidden_species_possibility(HiddenSpecies* sp) {
 		_sp_possible.push_back(sp);
 		_probs[sp] = 0.;
 		_bias[sp] = std::vector<IxnParamTraj*>();
@@ -89,7 +89,7 @@ namespace dblz {
 	Add a connection
 	********************/
 
-	void HiddenUnit::add_visible_hidden_conn(ConnectionVH* conn) {
+	void UnitHidden::add_visible_hidden_conn(ConnectionVH* conn) {
 		_conn.push_back(conn);
 	};
 
@@ -97,7 +97,7 @@ namespace dblz {
 	Print connections
 	********************/
 
-	void HiddenUnit::print_conns(bool newline) const {
+	void UnitHidden::print_conns(bool newline) const {
 		/*
 		std::cout << "Hidden unit connected to: ";
 		for (auto c: _conn) {
@@ -121,7 +121,7 @@ namespace dblz {
 	Getters
 	********************/
 
-	double HiddenUnit::get_prob(HiddenSpecies *hsp) const {
+	double UnitHidden::get_prob(HiddenSpecies *hsp) const {
 		if (!hsp) {
 			// Prob empty
 			return _prob_empty;
@@ -139,7 +139,7 @@ namespace dblz {
 	Set the bias
 	********************/
 
-	void HiddenUnit::add_bias(IxnParamTraj *ip) {
+	void UnitHidden::add_bias(IxnParamTraj *ip) {
 		// Get species involved
 		std::vector<HiddenSpecies*> hsp_vec = ip->get_species_hidden_bias();
 
@@ -158,7 +158,7 @@ namespace dblz {
 	Activate
 	********************/
 
-	void HiddenUnit::activate(bool binary) {
+	void UnitHidden::activate(bool binary) {
 
 		// Propensity vector
 		std::vector<double> probs;
@@ -246,7 +246,7 @@ namespace dblz {
 	Binarize
 	********************/
 
-	void HiddenUnit::binarize() {
+	void UnitHidden::binarize() {
 		// 1 if probability = _val
 		if (randD(0.0,1.0) <= _probs.begin()->second) {
 			_probs[_probs.begin()->first] = 1.;

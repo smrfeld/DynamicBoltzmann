@@ -1,4 +1,4 @@
-#include "../../include/dynamicboltz_bits/species.hpp"
+#include "../include/dynamicboltz_bits/species.hpp"
 
 #include <iostream>
 

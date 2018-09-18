@@ -17,15 +17,15 @@ INSTALL_LIB_DIR = /usr/local/lib
 INSTALL_INCLUDE_DIR = /usr/local/include
 
 # source files
-SRC_NAMES = include_impl/species.cpp \
-	include_impl/ixn_param.cpp \
-	include_impl/diff_eq_rhs.cpp \
-	include_impl/general.cpp \
-	include_impl/moment.cpp \
-	include_impl/unit.cpp \
-	include_impl/ixn_dicts.cpp \
-	include_impl/connections.cpp \
-	include_impl/lattice.cpp
+SRC_NAMES = species.cpp \
+	ixn_param.cpp \
+	diff_eq_rhs.cpp \
+	general.cpp \
+	moment.cpp \
+	unit.cpp \
+	ixn_dicts.cpp \
+	connections.cpp \
+	lattice.cpp
 SRCS = $(addprefix $(SOURCE_DIR)/, $(SRC_NAMES))
 OBJS = $(addprefix $(BUILD_DIR)/, $(SRC_NAMES:.cpp=.o))
 DEPS = $(OBJS:.o=.d)

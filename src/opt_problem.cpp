@@ -1,8 +1,8 @@
-#include "../../include/dynamicboltz_bits/opt_problem.hpp"
+#include "../include/dynamicboltz_bits/opt_problem.hpp"
 
 // Other headers
-#include "../../include/dynamicboltz_bits/dim.hpp"
-#include "../../include/dynamicboltz_bits/general.hpp"
+#include "../include/dynamicboltz_bits/dim.hpp"
+#include "../include/dynamicboltz_bits/general.hpp"
 #include "../basis_func.hpp"
 #include "../counter.hpp"
 #include "../hidden_unit.hpp"

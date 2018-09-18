@@ -1,12 +1,12 @@
-#include "../../include/dynamicboltz_bits/lattice.hpp"
+#include "../include/dynamicboltz_bits/lattice.hpp"
 
 // Other headers
-#include "../../include/dynamicboltz_bits/general.hpp"
-#include "../../include/dynamicboltz_bits/species.hpp"
-#include "../../include/dynamicboltz_bits/unit.hpp"
-#include "../../include/dynamicboltz_bits/connections.hpp"
-#include "../../include/dynamicboltz_bits/ixn_dicts.hpp"
-#include "../../include/dynamicboltz_bits/moment.hpp"
+#include "../include/dynamicboltz_bits/general.hpp"
+#include "../include/dynamicboltz_bits/species.hpp"
+#include "../include/dynamicboltz_bits/unit.hpp"
+#include "../include/dynamicboltz_bits/connections.hpp"
+#include "../include/dynamicboltz_bits/ixn_dicts.hpp"
+#include "../include/dynamicboltz_bits/moment.hpp"
 
 #include <iostream>
 #include <fstream>

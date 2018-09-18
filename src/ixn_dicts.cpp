@@ -1,8 +1,8 @@
-#include "../../include/dynamicboltz_bits/ixn_dicts.hpp"
+#include "../include/dynamicboltz_bits/ixn_dicts.hpp"
 
 // Other headers
-#include "../../include/dynamicboltz_bits/species.hpp"
-#include "../../include/dynamicboltz_bits/ixn_param.hpp"
+#include "../include/dynamicboltz_bits/species.hpp"
+#include "../include/dynamicboltz_bits/ixn_param.hpp"
 
 #include <iostream>
 

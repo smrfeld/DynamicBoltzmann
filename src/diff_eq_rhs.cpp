@@ -1,8 +1,8 @@
-#include "../../include/dynamicboltz_bits/diff_eq_rhs.hpp"
+#include "../include/dynamicboltz_bits/diff_eq_rhs.hpp"
 
 // Other headers
-#include "../../include/dynamicboltz_bits/general.hpp"
-#include "../../include/dynamicboltz_bits/ixn_param.hpp"
+#include "../include/dynamicboltz_bits/general.hpp"
+#include "../include/dynamicboltz_bits/ixn_param.hpp"
 
 #include <iostream>
 #include "math.h"

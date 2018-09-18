@@ -1,10 +1,10 @@
-#include "../../include/dynamicboltz_bits/ixn_param.hpp"
+#include "../include/dynamicboltz_bits/ixn_param.hpp"
 
 // Other headers
-#include "../../include/dynamicboltz_bits/general.hpp"
-#include "../../include/dynamicboltz_bits/species.hpp"
-#include "../../include/dynamicboltz_bits/moment.hpp"
-#include "../../include/dynamicboltz_bits/diff_eq_rhs.hpp"
+#include "../include/dynamicboltz_bits/general.hpp"
+#include "../include/dynamicboltz_bits/species.hpp"
+#include "../include/dynamicboltz_bits/moment.hpp"
+#include "../include/dynamicboltz_bits/diff_eq_rhs.hpp"
 
 #include <iostream>
 #include <fstream>

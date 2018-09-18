@@ -25,7 +25,8 @@ SRC_NAMES = species.cpp \
 	unit.cpp \
 	ixn_dicts.cpp \
 	connections.cpp \
-	lattice.cpp
+	lattice.cpp \
+	adjoint.cpp
 SRCS = $(addprefix $(SOURCE_DIR)/, $(SRC_NAMES))
 OBJS = $(addprefix $(BUILD_DIR)/, $(SRC_NAMES:.cpp=.o))
 DEPS = $(OBJS:.o=.d)

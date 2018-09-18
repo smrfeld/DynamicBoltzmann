@@ -1,6 +1,7 @@
 #ifndef DYNAMIC_BOLTZ_H
 #define DYNAMIC_BOLTZ_H
 
+#include "dynamicboltz_bits/adjoint.hpp"
 #include "dynamicboltz_bits/connections.hpp"
 #include "dynamicboltz_bits/diff_eq_rhs.hpp"
 #include "dynamicboltz_bits/fwds/fwds_ixn_param.hpp"

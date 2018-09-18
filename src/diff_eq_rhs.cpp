@@ -258,6 +258,14 @@ namespace dblz {
 	};
 
 	/********************
+	Get domain
+	********************/
+
+	const std::vector<Domain1D>& Array::get_domain() const {
+		return _domain;
+	};
+
+	/********************
 	Get/set an element by index
 	********************/
 

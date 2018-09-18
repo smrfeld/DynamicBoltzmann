@@ -27,6 +27,7 @@ namespace dblz {
 	// Forwards
 	class DiffEqRHS;
 	class Moment;
+	class Adjoint;
 
 	/****************************************
 	Interaction parameter
@@ -95,7 +96,8 @@ namespace dblz {
 		Diff eq
 		********************/
 
-		void set_diff_eq(std::shared_ptr<DiffEqRHS> diff_eq);
+		std::shared_ptr<DiffEqRHS> get_diff_eq_rhs() const;
+		void set_diff_eq_rhs(std::shared_ptr<DiffEqRHS> diff_eq);
 
 		void solve_diff_eq_at_timepoint_to_plus_one(int timepoint, double dt);
 
@@ -114,6 +116,12 @@ namespace dblz {
 		void write_moments(std::string dir, int idx_opt_step, std::vector<int> idxs, int n_t_traj) const;
 		*/
 
+		/********************
+		Adjoint
+		********************/
+
+		void set_adjoint(std::shared_ptr<Adjoint> adjoint);
+		std::shared_ptr<Adjoint> get_adjoint() const;
 	};
 
 };

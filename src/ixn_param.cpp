@@ -5,6 +5,7 @@
 #include "../include/dynamicboltz_bits/species.hpp"
 #include "../include/dynamicboltz_bits/moment.hpp"
 #include "../include/dynamicboltz_bits/diff_eq_rhs.hpp"
+#include "../include/dynamicboltz_bits/adjoint.hpp"
 
 #include <iostream>
 #include <fstream>
@@ -22,6 +23,9 @@ namespace dblz {
 	class IxnParam::Impl {
 
 	private:
+
+		// Adjoint
+		std::shared_ptr<Adjoint> _adjoint;
 
 		// Values
 		// Timepoints = timesteps + 1
@@ -94,7 +98,8 @@ namespace dblz {
 		Diff eq
 		********************/
 
-		void set_diff_eq(std::shared_ptr<DiffEqRHS> diff_eq);
+		std::shared_ptr<DiffEqRHS> get_diff_eq_rhs() const;
+		void set_diff_eq_rhs(std::shared_ptr<DiffEqRHS> diff_eq);
 
 		void solve_diff_eq_at_timepoint_to_plus_one(int timepoint, double dt);
 
@@ -103,6 +108,13 @@ namespace dblz {
 		********************/
 
 		std::shared_ptr<Moment> get_moment() const;
+
+		/********************
+		Adjoint
+		********************/
+
+		void set_adjoint(std::shared_ptr<Adjoint> adjoint);
+		std::shared_ptr<Adjoint> get_adjoint() const;
 
 	};
 
@@ -166,6 +178,9 @@ namespace dblz {
 
 		// Moment
 		_moment = std::make_unique<Moment>(name, type);
+
+		// Adjoint
+		_adjoint = nullptr;
 	};
 	IxnParam::Impl::Impl(const Impl& other) {
 		_copy(other);
@@ -203,6 +218,7 @@ namespace dblz {
 
 		_diff_eq = other._diff_eq;
 		_moment = other._moment;
+		_adjoint = other._adjoint;
 	};
 	void IxnParam::Impl::_move(Impl& other) {
 		_no_timesteps = other._no_timesteps;
@@ -219,6 +235,8 @@ namespace dblz {
 		other._no_timepoints = 0;
 		safeDelArr(other._vals);
 		other._init_cond = 0.0;
+
+		_adjoint = std::move(other._adjoint);
 	};
 
 	/********************
@@ -287,7 +305,10 @@ namespace dblz {
 	Diff eq
 	********************/
 
-	void IxnParam::Impl::set_diff_eq(std::shared_ptr<DiffEqRHS> diff_eq) {
+	std::shared_ptr<DiffEqRHS> IxnParam::Impl::get_diff_eq_rhs() const {
+		return _diff_eq;
+	};
+	void IxnParam::Impl::set_diff_eq_rhs(std::shared_ptr<DiffEqRHS> diff_eq) {
 		_diff_eq = diff_eq;
 	};
 
@@ -312,7 +333,16 @@ namespace dblz {
 		return _moment;
 	};
 
+	/********************
+	Adjoint
+	********************/
 
+	void IxnParam::Impl::set_adjoint(std::shared_ptr<Adjoint> adjoint) {
+		_adjoint = adjoint;
+	};
+	std::shared_ptr<Adjoint> IxnParam::Impl::get_adjoint() const {
+		return _adjoint;
+	};
 
 
 
@@ -423,8 +453,11 @@ namespace dblz {
 	Diff eq
 	********************/
 
-	void IxnParam::set_diff_eq(std::shared_ptr<DiffEqRHS> diff_eq) {
-		_impl->set_diff_eq(diff_eq);
+	std::shared_ptr<DiffEqRHS> IxnParam::get_diff_eq_rhs() const {
+		return _impl->get_diff_eq_rhs();
+	};
+	void IxnParam::set_diff_eq_rhs(std::shared_ptr<DiffEqRHS> diff_eq) {
+		_impl->set_diff_eq_rhs(diff_eq);
 	};
 
 	void IxnParam::solve_diff_eq_at_timepoint_to_plus_one(int timepoint, double dt) {
@@ -437,6 +470,17 @@ namespace dblz {
 
 	std::shared_ptr<Moment> IxnParam::get_moment() const {
 		return _impl->get_moment();
+	};
+
+	/********************
+	Adjoint
+	********************/
+
+	void IxnParam::set_adjoint(std::shared_ptr<Adjoint> adjoint) {
+		_impl->set_adjoint(adjoint);
+	};
+	std::shared_ptr<Adjoint> IxnParam::get_adjoint() const {
+		return _impl->get_adjoint();
 	};
 };
 

@@ -35,13 +35,6 @@ namespace dblz {
 		double *_vals;
 		double _init_cond;
 
-		// Species
-		std::vector<Sptr> _sp_h;
-		std::vector<Sptr> _sp_b;
-		std::vector<Sptr2> _sp_j;
-		std::vector<Sptr3> _sp_k;
-		std::vector<Sptr2> _sp_w;
-
 		// Diff eq RHS
 		std::shared_ptr<DiffEqRHS> _diff_eq;
 
@@ -71,26 +64,6 @@ namespace dblz {
 		********************/
 
 		void check_setup() const;
-
-		/********************
-		Add species
-		********************/
-
-		void add_species_h(Sptr species);
-		void add_species_b(Sptr species);
-		void add_species_j(Sptr species_of_site_1, Sptr species_of_site_2);
-		void add_species_k(Sptr species_of_site_1, Sptr species_of_site_2, Sptr species_of_site_3);
-		void add_species_w(Sptr species_of_visible, Sptr species_of_hidden);
-
-		/********************
-		Get species
-		********************/
-
-		const std::vector<Sptr>& get_species_h() const;
-		const std::vector<Sptr>& get_species_b() const;
-		const std::vector<Sptr2>& get_species_j() const;
-		const std::vector<Sptr3>& get_species_k() const;
-		const std::vector<Sptr2>& get_species_w() const;
 
 		/********************
 		Timepoints
@@ -239,12 +212,6 @@ namespace dblz {
 		std::copy(other._vals,other._vals+_no_timepoints,_vals);
 		_init_cond = other._init_cond;
 
-		_sp_h = other._sp_h;
-		_sp_b = other._sp_b;
-		_sp_j = other._sp_j;
-		_sp_k = other._sp_k;
-		_sp_w = other._sp_w;
-
 		_diff_eq = other._diff_eq;
 		_moment = other._moment;
 	};
@@ -257,12 +224,6 @@ namespace dblz {
 		std::copy(other._vals,other._vals+_no_timepoints,_vals);
 		_init_cond = other._init_cond;
 
-		_sp_h = other._sp_h;
-		_sp_b = other._sp_b;
-		_sp_j = other._sp_j;
-		_sp_k = other._sp_k;
-		_sp_w = other._sp_w;
-
 		_diff_eq = std::move(other._diff_eq);
 		_moment = std::move(other._moment);
 
@@ -272,11 +233,6 @@ namespace dblz {
 		other._no_timepoints = 0;
 		safeDelArr(other._vals);
 		other._init_cond = 0.0;
-		other._sp_h.clear();
-		other._sp_b.clear();
-		other._sp_j.clear();
-		other._sp_k.clear();
-		other._sp_w.clear();
 	};
 
 	/********************
@@ -285,46 +241,6 @@ namespace dblz {
 
 	void IxnParam::Impl::check_setup() const {
 		// ...
-	};
-
-	/********************
-	Add species
-	********************/
-
-	void IxnParam::Impl::add_species_h(Sptr species) {
-		_moment->add_species_h(species);
-	};
-	void IxnParam::Impl::add_species_b(Sptr species) {
-		_moment->add_species_b(species);
-	};
-	void IxnParam::Impl::add_species_j(Sptr species_of_site_1, Sptr species_of_site_2) {
-		_moment->add_species_j(species_of_site_1,species_of_site_2);
-	};
-	void IxnParam::Impl::add_species_k(Sptr species_of_site_1, Sptr species_of_site_2, Sptr species_of_site_3) {
-		_moment->add_species_k(species_of_site_1,species_of_site_2,species_of_site_3);
-	};
-	void IxnParam::Impl::add_species_w(Sptr species_of_visible, Sptr species_of_hidden) {
-		_moment->add_species_w(species_of_visible,species_of_hidden);
-	};
-
-	/********************
-	Get species
-	********************/
-
-	const std::vector<Sptr>& IxnParam::Impl::get_species_h() const {
-		return _moment->get_species_h();
-	};
-	const std::vector<Sptr>& IxnParam::Impl::get_species_b() const {
-		return _moment->get_species_b();
-	};
-	const std::vector<Sptr2>& IxnParam::Impl::get_species_j() const {
-		return _moment->get_species_j();
-	};
-	const std::vector<Sptr3>& IxnParam::Impl::get_species_k() const {
-		return _moment->get_species_k();
-	}; 
-	const std::vector<Sptr2>& IxnParam::Impl::get_species_w() const {
-		return _moment->get_species_w();
 	};
 
 	/********************
@@ -463,46 +379,6 @@ namespace dblz {
 
 	void IxnParam::check_setup() const {
 		_impl->check_setup();
-	};
-
-	/********************
-	Add species
-	********************/
-
-	void IxnParam::add_species_h(Sptr species) {
-		_impl->add_species_h(species);
-	};
-	void IxnParam::add_species_b(Sptr species) {
-		_impl->add_species_b(species);
-	};
-	void IxnParam::add_species_j(Sptr species_of_site_1, Sptr species_of_site_2) {
-		_impl->add_species_j(species_of_site_1,species_of_site_2);
-	};
-	void IxnParam::add_species_k(Sptr species_of_site_1, Sptr species_of_site_2, Sptr species_of_site_3) {
-		_impl->add_species_k(species_of_site_1,species_of_site_2,species_of_site_3);
-	};
-	void IxnParam::add_species_w(Sptr species_of_visible, Sptr species_of_hidden) {
-		_impl->add_species_w(species_of_visible,species_of_hidden);
-	};
-
-	/********************
-	Get species
-	********************/
-
-	const std::vector<Sptr>& IxnParam::get_species_h() const {
-		return _impl->get_species_h();
-	};
-	const std::vector<Sptr>& IxnParam::get_species_b() const {
-		return _impl->get_species_b();
-	};
-	const std::vector<Sptr2>& IxnParam::get_species_j() const {
-		return _impl->get_species_j();
-	};
-	const std::vector<Sptr3>& IxnParam::get_species_k() const {
-		return _impl->get_species_k();
-	};
-	const std::vector<Sptr2>& IxnParam::get_species_w() const {
-		return _impl->get_species_w();
 	};
 
 	/********************

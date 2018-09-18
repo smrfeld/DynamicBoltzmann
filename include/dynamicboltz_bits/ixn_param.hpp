@@ -62,26 +62,6 @@ namespace dblz {
 		void check_setup() const;
 
 		/********************
-		Add species
-		********************/
-
-		void add_species_h(Sptr species);
-		void add_species_b(Sptr species);
-		void add_species_j(Sptr species_of_site_1, Sptr species_of_site_2);
-		void add_species_k(Sptr species_of_site_1, Sptr species_of_site_2, Sptr species_of_site_3);
-		void add_species_w(Sptr species_of_visible, Sptr species_of_hidden);
-
-		/********************
-		Get species
-		********************/
-
-		const std::vector<Sptr>& get_species_h() const;
-		const std::vector<Sptr>& get_species_b() const;
-		const std::vector<Sptr2>& get_species_j() const;
-		const std::vector<Sptr3>& get_species_k() const;
-		const std::vector<Sptr2>& get_species_w() const;
-
-		/********************
 		Timesteps
 		********************/
 

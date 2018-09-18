@@ -23,15 +23,15 @@ int main() {
 	****************************************/
 
 	auto ixn_bias_A = make_shared<IxnParam>("bias for A",IxnParamType::H, 0.8);
-	ixn_bias_A->add_species_h(species_A);
+	ixn_bias_A->get_moment()->add_species_h(species_A);
 
 	// A-A
 	auto ixn_AA = make_shared<IxnParam>("A-A ixn",IxnParamType::J, 0.8);
-	ixn_AA->add_species_j(species_A,species_A);
+	ixn_AA->get_moment()->add_species_j(species_A,species_A);
 
 	// A-B
 	auto ixn_AB = make_shared<IxnParam>("A-B ixn",IxnParamType::J, 0.3);
-	ixn_AB->add_species_j(species_A,species_B);
+	ixn_AB->get_moment()->add_species_j(species_A,species_B);
 
 	cout << "Made ixn bias for A: " << ixn_bias_A->get_name() << endl;
 	cout << "Made ixn A-A: " << ixn_AA->get_name() << endl;

@@ -152,15 +152,37 @@ namespace dblz {
 				std::cout << std::endl;
 			};
 		};
+		for (auto const &s: _latt_h) {
+			std::cout << "[Hidden] " << std::flush;
+			if (_dim == 1) {
+				std::cout << s.x() << " " << std::flush;
+			} else if (_dim == 2) {
+				std::cout << s.x() << " " << s.y() << " " << std::flush;
+			} else if (_dim == 3) {
+				std::cout << s.x() << " " << s.y() << " " << s.z() << " " << std::flush;
+			};
+			if (binary) {
+				if (s.get_b_mode_species()) {
+					std::cout << s.get_b_mode_species()->get_name() << std::endl;
+				} else {
+					std::cout << "EMPTY" << std::endl;
+				};
+			} else {
+				for (auto &pr: s.get_p_mode_probs()) {
+					std::cout << "(" << pr.first->get_name() << " " << pr.second << ") ";
+				};
+				std::cout << std::endl;
+			};
+		};
 	};
 
 	/********************
 	Helpers to setup all sites - Add possible species to all sites
 	********************/
 
-	void Lattice::all_unit_v_add_possible_species(Sptr species) {
+	void Lattice::all_units_v_add_possible_species(Sptr species) {
 		if (!species) {
-			std::cerr << ">>> Error: Lattice::all_unit_v_add_possible_species <<< nullptr is not allowed!" << std::endl;
+			std::cerr << ">>> Error: Lattice::all_units_v_add_possible_species <<< nullptr is not allowed!" << std::endl;
 			exit(EXIT_FAILURE);
 		};
 
@@ -169,9 +191,9 @@ namespace dblz {
 		};
 	};
 
-	void Lattice::all_unit_h_add_possible_species(Sptr species) {
+	void Lattice::all_units_h_add_possible_species(Sptr species) {
 		if (!species) {
-			std::cerr << ">>> Error: Lattice::all_unit_h_add_possible_species <<< nullptr is not allowed!" << std::endl;
+			std::cerr << ">>> Error: Lattice::all_units_h_add_possible_species <<< nullptr is not allowed!" << std::endl;
 			exit(EXIT_FAILURE);
 		};
 
@@ -184,13 +206,13 @@ namespace dblz {
 	Helpers to setup all sites - Biases
 	********************/
 
-	void Lattice::all_unit_v_set_bias_dict(std::shared_ptr<BiasDict> bias_dict) {
+	void Lattice::all_units_v_set_bias_dict(std::shared_ptr<BiasDict> bias_dict) {
 		for (auto &s: _latt_v) {
 			s.set_bias_dict(bias_dict);
 		};
 	};
 
-	void Lattice::all_unit_h_set_bias_dict(std::shared_ptr<BiasDict> bias_dict) {
+	void Lattice::all_units_h_set_bias_dict(std::shared_ptr<BiasDict> bias_dict) {
 		for (auto &s: _latt_h) {
 			s.set_bias_dict(bias_dict);
 		};
@@ -621,6 +643,58 @@ namespace dblz {
 		exit(EXIT_FAILURE);
 	};
 
+	ConnVH& Lattice::get_conn_vh(int x1, int layer2, int x2) {
+		_check_dim(1);
+
+		UnitVisible *uv = _look_up_unit_v(x1);
+		UnitHidden *uh = _look_up_unit_h(layer2,x2);
+
+		std::vector<ConnVH*> conns = uv->get_conns_vh();
+		for (auto &conn: conns) {
+			if (conn->check_connects_units(uv,uh)) {
+				return *conn;
+			};
+		};
+
+		// Never get here
+		std::cerr << ">>> Error: Lattice::get_conn_vh <<< Connection: " << x1 << " to " << layer2 << " " << x2 << " not found!" << std::endl;
+		exit(EXIT_FAILURE);
+	};
+	ConnVH& Lattice::get_conn_vh(int x1, int y1, int layer2, int x2, int y2) {
+		_check_dim(2);
+
+		UnitVisible *uv = _look_up_unit_v(x1,y1);
+		UnitHidden *uh = _look_up_unit_h(layer2,x2,y2);
+
+		std::vector<ConnVH*> conns = uv->get_conns_vh();
+		for (auto &conn: conns) {
+			if (conn->check_connects_units(uv,uh)) {
+				return *conn;
+			};
+		};
+
+		// Never get here
+		std::cerr << ">>> Error: Lattice::get_conn_vh <<< Connection: " << x1 << " " << y1 << " to " << layer2 << " " << x2 << " " << y2 << " not found!" << std::endl;
+		exit(EXIT_FAILURE);
+	};
+	ConnVH& Lattice::get_conn_vh(int x1, int y1, int z1, int layer2, int x2, int y2, int z2) {
+		_check_dim(3);
+
+		UnitVisible *uv = _look_up_unit_v(x1,y1,z1);
+		UnitHidden *uh = _look_up_unit_h(layer2,x2,y2,z2);
+
+		std::vector<ConnVH*> conns = uv->get_conns_vh();
+		for (auto &conn: conns) {
+			if (conn->check_connects_units(uv,uh)) {
+				return *conn;
+			};
+		};
+
+		// Never get here
+		std::cerr << ">>> Error: Lattice::get_conn_vh <<< Connection: " << x1 << " " << y1 << " " << z1 << " to " << layer2 << " " << x2 << " " << y2 << " " << z2<< " not found!" << std::endl;
+		exit(EXIT_FAILURE);
+	};
+
 	/********************
 	Getters
 	********************/
@@ -738,9 +812,13 @@ namespace dblz {
 	Sample
 	********************/
 
-	void Lattice::sample_at_timepoint(int timepoint, bool binary) {
-
+	void Lattice::sample_v_at_timepoint(int timepoint, bool binary) {
 		for (auto &s: _latt_v) {
+			s.sample_at_timepoint(timepoint, binary);
+		};
+	};
+	void Lattice::sample_h_at_timepoint(int timepoint, bool binary) {
+		for (auto &s: _latt_h) {
 			s.sample_at_timepoint(timepoint, binary);
 		};
 	};

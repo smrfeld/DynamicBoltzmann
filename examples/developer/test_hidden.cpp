@@ -42,7 +42,7 @@ int main() {
 	Lattice latt(1,10);
 
 	// Set possible species
-	latt.all_unit_v_add_possible_species(species_A);
+	latt.all_units_v_add_possible_species(species_A);
 
 	// Make NN connectivity
 	latt.all_conns_vv_init();
@@ -61,7 +61,7 @@ int main() {
 	bias_dict->add_ixn(species_A,ixn_bias_A);
 
 	// Add to lattice
-	latt.all_unit_v_set_bias_dict(bias_dict);
+	latt.all_units_v_set_bias_dict(bias_dict);
 	latt.all_conns_vv_set_ixn_dict(ixn_dict);
 
 	cout << "Added ixns to lattice conns" << endl;
@@ -75,6 +75,9 @@ int main() {
 	for (auto i=1; i<=9; i++) {
 		latt.add_hidden_unit(layer,i);
 	};
+	
+	// Set hidden species
+	latt.all_units_h_add_possible_species(species_B);
 
 	cout << "Added hidden units" << endl;
 	cout << endl;
@@ -87,6 +90,11 @@ int main() {
 		latt.add_conn_vh(&latt.get_unit_v(i),&latt.get_unit_h(layer,i));
 		latt.add_conn_vh(&latt.get_unit_v(i+1),&latt.get_unit_h(layer,i));
 	};
+
+	// Set ixn dict
+	auto ixn_dict_vh = make_shared<O2IxnDict>();
+	ixn_dict_vh->add_ixn(species_A,species_B,ixn_AB);
+	latt.all_conns_vh_set_ixn_dict(ixn_dict_vh);
 
 	cout << "Added vis-hidden conns" << endl;
 	cout << endl;
@@ -105,16 +113,49 @@ int main() {
 	cout << endl;
 
 	/****************************************
-	Sample
+	Add units to the ixn funcs moment
+	****************************************/
+
+	auto moment_A = ixn_bias_A->get_moment();
+	moment_A->set_batch_size(10);
+
+	auto moment_AA = ixn_AA->get_moment();
+	moment_AA->set_batch_size(10);
+
+	auto moment_AB = ixn_AB->get_moment();
+	moment_AB->set_batch_size(10);
+
+	// Add
+	for (auto i=1; i<=10; i++) {
+		moment_A->add_unit_to_monitor_h(&latt.get_unit_v(i));
+	};
+	for (auto i=1; i<=9; i++) {
+		moment_AA->add_conn_to_monitor_j(&latt.get_conn_vv(i,i+1));
+	};
+	for (auto i=1; i<=9; i++) {
+		moment_AB->add_conn_to_monitor_w(&latt.get_conn_vh(i,layer,i));
+		moment_AB->add_conn_to_monitor_w(&latt.get_conn_vh(i+1,layer,i));
+	};
+
+	cout << "Setup moment for ixn func bias A and A-A" << endl;
+	cout << endl;
+
+	/****************************************
+	Sample and reap
 	****************************************/
 
 	for (auto i=0; i<10; i++) {
-		latt.sample_at_timepoint(0);
+		latt.sample_v_at_timepoint(0);
+		latt.sample_h_at_timepoint(0);
+
+		moment_A->reap_as_timepoint_in_batch(MomentType::AWAKE, 0, i);
+		moment_AA->reap_as_timepoint_in_batch(MomentType::AWAKE, 0, i);
+		moment_AB->reap_as_timepoint_in_batch(MomentType::AWAKE, 0, i);
 
 		cout << "Sampled:" << endl;
+		/*
 		cout << "Count A = " << latt.get_count(species_A) << endl;
 		cout << "Count B = " << latt.get_count(species_B) << endl;
-		/*
 		cout << "NN(AA) = " << latt.get_count(species_A,species_A) << endl;
 		cout << "NN(AB - this dir) = " << latt.get_count(species_A,species_B,true) << endl;
 		cout << "NN(BA - this dir) = " << latt.get_count(species_A,species_B,true) << endl;
@@ -126,41 +167,14 @@ int main() {
 		cout << endl;
 	};
 
-	/****************************************
-	Add units to the ixn funcs moment
-	****************************************/
-
-	auto moment_A = ixn_bias_A->get_moment();
-	moment_A->set_batch_size(10);
-
-	auto moment_AA = ixn_AA->get_moment();
-	moment_AA->set_batch_size(10);
-
-	// Add
-	for (auto i=1; i<=10; i++) {
-		moment_A->add_unit_to_monitor_h(&latt.get_unit_v(i));
-	};
-	for (auto i=1; i<=9; i++) {
-		moment_AA->add_conn_to_monitor_j(&latt.get_conn_vv(i,i+1));
-	};
-
-	cout << "Setup moment for ixn func bias A and A-A" << endl;
-	cout << endl;
-
-	/****************************************
-	Reap moment
-	****************************************/
-
-	for (auto i=0; i<10; i++) {
-		latt.sample_at_timepoint(0);
-		cout << "Count A = " << latt.get_count(species_A) << endl;
-		moment_A->reap_as_timepoint_in_batch(MomentType::AWAKE, 0, i);
-		moment_AA->reap_as_timepoint_in_batch(MomentType::AWAKE, 0, i);
-	};
 	moment_A->average_reaps_as_timepoint(MomentType::AWAKE, 0);
 	moment_AA->average_reaps_as_timepoint(MomentType::AWAKE, 0);
+	moment_AB->average_reaps_as_timepoint(MomentType::AWAKE, 0);
 
-	cout << "Reaped and averaged moment while sampling: bias A = " << moment_A->get_moment_at_timepoint(MomentType::AWAKE,0) << " NN(AA) = " << moment_AA->get_moment_at_timepoint(MomentType::AWAKE,0) << endl;
+	cout << "Reaped and averaged moment while sampling:" << endl;
+	cout <<"Bias A = " << moment_A->get_moment_at_timepoint(MomentType::AWAKE,0) << endl;
+	cout << "NN(AA) = " << moment_AA->get_moment_at_timepoint(MomentType::AWAKE,0) << endl;
+	cout << "NN(AB) = " << moment_AB->get_moment_at_timepoint(MomentType::AWAKE,0) << endl;
 	cout << endl;
 
 	return 0;

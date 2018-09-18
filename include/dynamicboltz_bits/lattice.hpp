@@ -120,12 +120,12 @@ namespace dblz {
 		********************/
 
 		// Add possible species
-		void all_unit_v_add_possible_species(Sptr species);
-		void all_unit_h_add_possible_species(Sptr species);
+		void all_units_v_add_possible_species(Sptr species);
+		void all_units_h_add_possible_species(Sptr species);
 
 		// Biases
-		void all_unit_v_set_bias_dict(std::shared_ptr<BiasDict> bias_dict);
-		void all_unit_h_set_bias_dict(std::shared_ptr<BiasDict> bias_dict);
+		void all_units_v_set_bias_dict(std::shared_ptr<BiasDict> bias_dict);
+		void all_units_h_set_bias_dict(std::shared_ptr<BiasDict> bias_dict);
 
 		// Make connections
 		void all_conns_vv_init();
@@ -229,7 +229,8 @@ namespace dblz {
 		Sample
 		********************/
 
-		void sample_at_timepoint(int timepoint, bool binary=true);
+		void sample_v_at_timepoint(int timepoint, bool binary=true);
+		void sample_h_at_timepoint(int timepoint, bool binary=true);
 
 		/********************
 		Get counts

@@ -43,8 +43,8 @@ int main() {
 	Lattice latt(3,20);
 
 	// Set possible species
-	latt.all_unit_v_add_possible_species(species_A);
-	latt.all_unit_v_add_possible_species(species_B);
+	latt.all_units_v_add_possible_species(species_A);
+	latt.all_units_v_add_possible_species(species_B);
 
 	// Make NN connectivity
 	latt.all_conns_vv_init();
@@ -64,7 +64,7 @@ int main() {
 	bias_dict->add_ixn(species_A,ixn_bias_A);
 
 	// Add to lattice
-	latt.all_unit_v_set_bias_dict(bias_dict);
+	latt.all_units_v_set_bias_dict(bias_dict);
 	latt.all_conns_vv_set_ixn_dict(ixn_dict);
 
 	cout << "Added ixns to lattice conns" << endl;

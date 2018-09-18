@@ -602,6 +602,14 @@ namespace dblz {
 				_sampling_props[i+2] = _sampling_props[i+1] + _sampling_prob;
 			};
 
+			/*
+			std::cout << "Propensities: ";
+			for (auto const &x: _sampling_props) {
+				std::cout << x << " ";
+			};
+			std::cout << std::endl;
+			*/
+
 			// Sample RV
 			_sample_prop_vec();
 
@@ -1092,6 +1100,11 @@ namespace dblz {
 			act += conn_vvv.first->get_act_for_species_at_unit_at_timepoint(species,conn_vvv.second,timepoint);
 		};
 
+		// VH conns
+		for (auto const &conn_vh: _conns_vh) {
+			act += conn_vh->get_act_for_species_at_unit_v_at_timepoint(species,timepoint);
+		};
+
 		return act;
 	};
 
@@ -1466,6 +1479,11 @@ namespace dblz {
 		// Bias
 		if (bias_dict) {
 			act += bias_dict->get_ixn_at_timepoint(species,timepoint);
+		};
+
+		// VH conns
+		for (auto const &conn_vh: _conns_vh) {
+			act += conn_vh->get_act_for_species_at_unit_h_at_timepoint(species,timepoint);
 		};
 
 		return act;

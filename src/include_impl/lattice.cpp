@@ -754,9 +754,8 @@ namespace dblz {
 	};
 	void Lattice::read_from_file(std::string fname, bool binary)
 	{
-		/*
-		// Clear the current Latt
-		set_all_units_empty();
+		// Clear the current lattice
+		all_units_set_empty();
 
 		std::ifstream f;
 		f.open(fname);
@@ -792,11 +791,11 @@ namespace dblz {
 			    	s = _look_up_unit_v(atoi(x.c_str()),atoi(y.c_str()),atoi(z.c_str()));
 			    };
 			    if (binary) {
-		    		s->set_prob(_sp_map[sp],1.0);
+		    		s->set_b_mode_species(sp);
 		    	} else {
 		    		prob_val = atof(prob.c_str());
-		    		s->set_prob(_sp_map[sp],prob_val);
-		    		s->set_prob(nullptr,1.0-prob_val);
+		    		s->set_p_mode_prob(sp,prob_val);
+		    		s->set_p_mode_prob("",1.0-prob_val);
 		    	};
 	    		// Reset
 		    	sp=""; x=""; y=""; z=""; prob="";
@@ -805,7 +804,6 @@ namespace dblz {
 		f.close();
 
 		// std::cout << "Read: " << fname << std::endl;
-		*/
 	};
 
 	/********************

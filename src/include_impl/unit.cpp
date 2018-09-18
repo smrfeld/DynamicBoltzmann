@@ -479,6 +479,11 @@ namespace dblz {
 		_p_mode_probs[sp] = prob;
 	};
 	void Unit::Impl::set_p_mode_prob(std::string sp, double prob) {
+		if (sp == "") {
+			_p_mode_prob_empty = prob;
+			return;
+		};
+		
 		*(_p_mode_probs_str[sp]) = prob;
 	};
 	void Unit::Impl::set_p_mode_empty() {

@@ -145,13 +145,12 @@ namespace dblz {
 	};
 
 	/********************
-	Finish setup
+	Helpers to setup all sites - Add possible species to all sites
 	********************/
 
-	// Add possible species to all sites
-	void Lattice::add_possible_species_to_all_units_vis(Sptr species) {
+	void Lattice::all_unit_v_add_possible_species(Sptr species) {
 		if (!species) {
-			std::cerr << ">>> Error: Lattice::add_possible_species_to_all_units_vis <<< nullptr is not allowed!" << std::endl;
+			std::cerr << ">>> Error: Lattice::all_unit_v_add_possible_species <<< nullptr is not allowed!" << std::endl;
 			exit(EXIT_FAILURE);
 		};
 
@@ -160,18 +159,32 @@ namespace dblz {
 		};
 	};
 
-	// Biases
-	void Lattice::set_bias_dict_of_all_units_vis(std::shared_ptr<BiasDict> bias_dict) {
+	void Lattice::all_unit_h_add_possible_species(Sptr species) {
+		// ...
+	};
+
+	/********************
+	Helpers to setup all sites - Biases
+	********************/
+
+	void Lattice::all_unit_v_set_bias_dict(std::shared_ptr<BiasDict> bias_dict) {
 		for (auto &s: _latt) {
 			s.set_bias_dict(bias_dict);
 		};
 	};
 
-	// Visible-Visible ixns
-	void Lattice::init_conns_NN_all_units_vis() {
-		init_conns_NN_all_units_vis(nullptr);
+	void Lattice::all_unit_h_set_bias_dict(std::shared_ptr<BiasDict> bias_dict) {
+
 	};
-	void Lattice::init_conns_NN_all_units_vis(std::shared_ptr<O2IxnDict> ixn_dict) {
+
+	/********************
+	Helpers to setup all sites - Visible-Visible ixns
+	********************/
+
+	void Lattice::all_conns_vv_init() {
+		all_conns_vv_init(nullptr);
+	};
+	void Lattice::all_conns_vv_init(std::shared_ptr<O2IxnDict> ixn_dict) {
 
 		Latt_it lit = _latt.begin();
 		UnitVisible *nbr = nullptr;
@@ -217,10 +230,11 @@ namespace dblz {
 		};
 	};
 
-	void Lattice::init_conns_triplet_all_units_vis() {
-		init_conns_triplet_all_units_vis(nullptr);
+	void Lattice::all_conns_vvv_init() {
+		all_conns_vvv_init(nullptr);
 	};
-	void Lattice::init_conns_triplet_all_units_vis(std::shared_ptr<O3IxnDict> ixn_dict) {
+
+	void Lattice::all_conns_vvv_init(std::shared_ptr<O3IxnDict> ixn_dict) {
 
 		Latt_it lit = _latt.begin();
 		UnitVisible *nbr1 = nullptr, *nbr2 = nullptr;
@@ -329,16 +343,44 @@ namespace dblz {
 		};
 	};
 
-	void Lattice::set_ixn_dict_of_all_conns_vv(std::shared_ptr<O2IxnDict> ixn_dict) {
+	/********************
+	Helpers to setup all sites - Set ixn dicts of connections
+	********************/
+
+	void Lattice::all_conns_vv_set_ixn_dict(std::shared_ptr<O2IxnDict> ixn_dict) {
 		for (auto &conn: _conns_vv) {
 			conn.set_ixn_dict(ixn_dict);
 		};
 	};
-	void Lattice::set_ixn_dict_of_all_conns_vvv(std::shared_ptr<O3IxnDict> ixn_dict) {
+	void Lattice::all_conns_vvv_set_ixn_dict(std::shared_ptr<O3IxnDict> ixn_dict) {
 		for (auto &conn: _conns_vvv) {
 			conn.set_ixn_dict(ixn_dict);
 		};
 	};
+
+	/********************
+	Helpers to setup all sites - Link units to moments
+	********************/
+
+	void Lattice::all_units_v_add_to_moment_h(std::shared_ptr<Moment> moment) {
+		for (auto &s: _latt) {
+			moment->add_unit_to_monitor_h(&s);
+		};
+	};
+	void Lattice::all_conns_vv_add_to_moment_j(std::shared_ptr<Moment> moment) {
+		for (auto &c: _conns_vv) {
+			moment->add_conn_to_monitor_j(&c);
+		};
+	};
+	void Lattice::all_conns_vvv_add_to_moment_k(std::shared_ptr<Moment> moment) {
+		for (auto &c: _conns_vvv) {
+			moment->add_conn_to_monitor_k(&c);
+		};
+	};
+
+	/********************
+	Add visible-visible connections
+	********************/
 
 	void Lattice::add_conn_vv(UnitVisible *uv1, UnitVisible *uv2, std::shared_ptr<O2IxnDict> ixn_dict) {
 		_conns_vv.push_back(ConnVV(uv1,uv2));
@@ -358,20 +400,12 @@ namespace dblz {
 		uv3->add_conn(&_conns_vvv.back(),2);
 	};
 
-	void Lattice::add_all_units_vis_to_moment_h(std::shared_ptr<Moment> moment) {
-		for (auto &s: _latt) {
-			moment->add_unit_to_monitor_h(&s);
-		};
-	};
-	void Lattice::add_all_conns_vv_to_moment_j(std::shared_ptr<Moment> moment) {
-		for (auto &c: _conns_vv) {
-			moment->add_conn_to_monitor_j(&c);
-		};
-	};
-	void Lattice::add_all_conns_vvv_to_moment_k(std::shared_ptr<Moment> moment) {
-		for (auto &c: _conns_vvv) {
-			moment->add_conn_to_monitor_k(&c);
-		};
+	/********************
+	Add hidden units
+	********************/
+
+	void Lattice::add_hidden_unit() {
+
 	};
 
 	/********************

@@ -43,11 +43,11 @@ int main() {
 	Lattice latt(3,20);
 
 	// Set possible species
-	latt.add_possible_species_to_all_units_vis(species_A);
-	latt.add_possible_species_to_all_units_vis(species_B);
+	latt.all_unit_v_add_possible_species(species_A);
+	latt.all_unit_v_add_possible_species(species_B);
 
 	// Make NN connectivity
-	latt.init_conns_NN_all_units_vis();
+	latt.all_conns_vv_init();
 
 	cout << "Made lattice" << endl;
 	cout << endl;
@@ -64,8 +64,8 @@ int main() {
 	bias_dict->add_ixn(species_A,ixn_bias_A);
 
 	// Add to lattice
-	latt.set_bias_dict_of_all_units_vis(bias_dict);
-	latt.set_ixn_dict_of_all_conns_vv(ixn_dict);
+	latt.all_unit_v_set_bias_dict(bias_dict);
+	latt.all_conns_vv_set_ixn_dict(ixn_dict);
 
 	cout << "Added ixns to lattice conns" << endl;
 	cout << endl;
@@ -84,9 +84,9 @@ int main() {
 	moment_AA->set_batch_size(10);
 
 	// Add
-	latt.add_all_units_vis_to_moment_h(moment_A);
-	latt.add_all_conns_vv_to_moment_j(moment_AA);
-	latt.add_all_conns_vv_to_moment_j(moment_AB);
+	latt.all_units_v_add_to_moment_h(moment_A);
+	latt.all_conns_vv_add_to_moment_j(moment_AA);
+	latt.all_conns_vv_add_to_moment_j(moment_AB);
 
 	cout << "Setup moment for ixn func bias A and A-B and A-A" << endl;
 	cout << endl;

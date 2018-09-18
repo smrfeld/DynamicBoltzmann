@@ -106,37 +106,44 @@ namespace dblz {
 		void print_occupancy(bool binary=true) const;
 
 		/********************
-		Finish setup
+		Helpers to setup all sites
 		********************/
 
 		// Add possible species
-		void add_possible_species_to_all_units_vis(Sptr species);
-		// void add_possible_species_to_all_unit_hidden(Sptr species);
+		void all_unit_v_add_possible_species(Sptr species);
+		void all_unit_h_add_possible_species(Sptr species);
 
 		// Biases
-		void set_bias_dict_of_all_units_vis(std::shared_ptr<BiasDict> bias_dict);
-		// void set_bias_dict_of_all_units_hidden(std::shared_ptr<BiasDict> bias_dict);
+		void all_unit_v_set_bias_dict(std::shared_ptr<BiasDict> bias_dict);
+		void all_unit_h_set_bias_dict(std::shared_ptr<BiasDict> bias_dict);
 
-		// Visible-Visible ixns
+		// Make connections
+		void all_conns_vv_init();
+		void all_conns_vv_init(std::shared_ptr<O2IxnDict> ixn_dict);
+		void all_conns_vvv_init();
+		void all_conns_vvv_init(std::shared_ptr<O3IxnDict> ixn_dict);
 
-		void init_conns_NN_all_units_vis();
-		void init_conns_NN_all_units_vis(std::shared_ptr<O2IxnDict> ixn_dict);
+		// Set ixn dicts of connections
+		void all_conns_vv_set_ixn_dict(std::shared_ptr<O2IxnDict> ixn_dict);
+		void all_conns_vvv_set_ixn_dict(std::shared_ptr<O3IxnDict> ixn_dict);
 
-		void init_conns_triplet_all_units_vis();
-		void init_conns_triplet_all_units_vis(std::shared_ptr<O3IxnDict> ixn_dict);
+		// Link units to moments
+		void all_units_v_add_to_moment_h(std::shared_ptr<Moment> moment);
+		void all_conns_vv_add_to_moment_j(std::shared_ptr<Moment> moment);
+		void all_conns_vvv_add_to_moment_k(std::shared_ptr<Moment> moment);
 
-		void set_ixn_dict_of_all_conns_vv(std::shared_ptr<O2IxnDict> ixn_dict);
-		void set_ixn_dict_of_all_conns_vvv(std::shared_ptr<O3IxnDict> ixn_dict);
+		/********************
+		Add visible-visible connections
+		********************/
 
 		void add_conn_vv(UnitVisible *uv1, UnitVisible *uv2, std::shared_ptr<O2IxnDict> ixn_dict);
 		void add_conn_vvv(UnitVisible *uv1, UnitVisible *uv2, UnitVisible *uv3, std::shared_ptr<O3IxnDict> ixn_dict);
 
-		// Hidden units
-		// void add_hidden_unit();
+		/********************
+		Add hidden units
+		********************/
 
-		void add_all_units_vis_to_moment_h(std::shared_ptr<Moment> moment);
-		void add_all_conns_vv_to_moment_j(std::shared_ptr<Moment> moment);
-		void add_all_conns_vvv_to_moment_k(std::shared_ptr<Moment> moment);
+		void add_hidden_unit();
 
 		/********************
 		Get unit

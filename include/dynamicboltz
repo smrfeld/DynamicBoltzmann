@@ -11,6 +11,6 @@
 #include "dynamicboltz_bits/lattice.hpp"
 #include "dynamicboltz_bits/moment.hpp"
 #include "dynamicboltz_bits/species.hpp"
-#include "dynamicboltz_bits/unit_visible.hpp"
+#include "dynamicboltz_bits/unit.hpp"
 
 #endif

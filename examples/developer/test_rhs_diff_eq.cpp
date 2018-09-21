@@ -108,6 +108,17 @@ int main() {
 	cout << "Solved diff eq for adjoint" << endl;
 	cout << endl;
 
+	/****************************************
+	Check if derivs exist
+	****************************************/
+
+	int idxs[1];
+	idxs[0] = 13;
+	std::cout << "Does deriv wrt idx=13 exist at timepoint...." << std::endl;
+	for (auto t=0; t<20; t++) {
+		std::cout << "t = " << t << " exist? " << rhs->does_deriv_wrt_point_exist_at_timepoint(t,idxs) << " because idxs (13,14,15) = (" << domain[0].get_pt_by_idx(13) << " " << domain[0].get_pt_by_idx(14) << " " << domain[0].get_pt_by_idx(15) << ") and the val " << ixn->get_val_at_timepoint(t) << std::endl;
+	};
+
 	return 0;
 };
 

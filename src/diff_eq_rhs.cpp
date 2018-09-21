@@ -19,23 +19,20 @@ namespace dblz {
 	Domain1D
 	****************************************/
 
-	Domain1D::Domain1D(Iptr ixn_param, double min, double max, int no_pts) {
+	Domain1D::Domain1D(Iptr ixn_param, double min, double max, int no_pts) : Dimension1D(min,max,no_pts) {
 		_ixn_param = ixn_param;
-		_min = min;
-		_max = max;
-		_no_pts = no_pts;
-		_delta = (_max - _min) / (_no_pts - 1);
 	};
-	Domain1D::Domain1D(const Domain1D& other) {
+	Domain1D::Domain1D(const Domain1D& other) : Dimension1D(other) {
 		_copy(other);
 	};
-	Domain1D::Domain1D(Domain1D&& other) {
+	Domain1D::Domain1D(Domain1D&& other) : Dimension1D(std::move(other)) {
 		_copy(other);
 		other._reset();
 	};
 	Domain1D& Domain1D::operator=(const Domain1D& other) {
 		if (this != &other)
 		{
+	        Dimension1D::operator=(other);
 			_clean_up();
 			_copy(other);
 		};
@@ -44,6 +41,7 @@ namespace dblz {
 	Domain1D& Domain1D::operator=(Domain1D&& other) {
 		if (this != &other)
 		{
+	        Dimension1D::operator=(std::move(other));
 			_clean_up();
 			_copy(other);
 			other._reset();
@@ -56,17 +54,10 @@ namespace dblz {
 	void Domain1D::_copy(const Domain1D& other)
 	{
 		_ixn_param = other._ixn_param;
-		_min = other._min;
-		_max = other._max;
-		_delta = other._delta;
-		_no_pts = other._no_pts;
 	};
 	void Domain1D::_reset()
 	{
-		_min = 0.0;
-		_max = 0.0;
-		_delta = 0.0;
-		_no_pts = 0;
+		_ixn_param = nullptr;
 	};
 	void Domain1D::_clean_up() {
 	};
@@ -80,57 +71,6 @@ namespace dblz {
 	};
 	Iptr Domain1D::get_ixn_param() const {
 		return _ixn_param;
-	};
-	int Domain1D::get_no_pts() const {
-		return _no_pts;
-	};
-	double Domain1D::get_min() const {
-		return _min;
-	};
-	double Domain1D::get_max() const {
-		return _max;
-	};
-	double Domain1D::get_delta() const {
-		return _delta;
-	};
-
-	// Get pt in domain
-	double Domain1D::get_pt_by_idx(int i) const {
-		if (i >= _no_pts) {
-			std::cerr << ">>> Error: Domain1D::get_pt_by_idx <<< Idx: " << i << " is out of domain " << get_name() << " of size " << _no_pts << std::endl;
-		};
-		return _min + i * _delta;
-	};
-
-	// Check if point is in domain
-	bool Domain1D::check_if_pt_is_inside_domain(double x) const {
-		if (x < _min || x > _max) { 
-			return false; 
-		} else {
-			return true;
-		};
-	};
-
-	// Get indexes surrounding a point
-	// ie point is between i and i+1 where i is returned
-	int Domain1D::get_idxs_surrounding_pt(double x) const {
-		int i = (x - _min) / _delta;
-		if (i==_no_pts-1) {i--;};
-		return i;
-	};
-
-	// Get fraction of a point between successive points
-	double Domain1D::get_frac_between(double x) const {
-		return get_frac_between(x,get_idxs_surrounding_pt(x));
-	};
-	// Second optional specification: the return of the surrounding idxs
-	double Domain1D::get_frac_between(double x, int i) const {
-		return (x - get_pt_by_idx(i)) / _delta;
-	};
-
-	// Print domain range
-	void Domain1D::print_bounds() const {
-		std::cout << "Domain: " << get_name() << " min: " << _min << " max: " << _max << std::endl;
 	};
 
 
@@ -697,6 +637,23 @@ namespace dblz {
 
 		return x;
 	};
+
+	// Derivative wrt a point; idxs = idx in each dimension1D
+	bool DiffEqRHS::does_deriv_wrt_point_exist_at_timepoint(int it, int *idxs) {
+		// Create the bounding box
+		_get_bounding(it);
+
+		// Check idxs
+		// point is between _idxs_bounding-1, _idxs_bounding, XXX , _idxs_bounding+1, _idxs_bounding+2
+		for (int id=0; id<_n_params; id++) {
+			if (!(_idxs_bounding[id]-1 <= idxs[id] && idxs[id] <= _idxs_bounding[id]+2)) {
+				return false;
+			};
+		};
+
+		return true;
+	};
+
 
 	/********************
 	Name

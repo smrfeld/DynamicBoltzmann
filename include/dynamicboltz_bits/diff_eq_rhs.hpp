@@ -18,6 +18,8 @@
 #include "fwds/fwds_ixn_param.hpp"
 #endif
 
+#include <dcubic> // guard is built-in
+
 /************************************
 * Namespace for dblz
 ************************************/
@@ -28,15 +30,11 @@ namespace dblz {
 	Domain1D
 	****************************************/
 
-	class Domain1D {
+	class Domain1D : public dcu::Dimension1D {
 
 	private:
 
 		Iptr _ixn_param;
-		double _min;
-		double _max;
-		double _delta;
-		int _no_pts;
 
 		// Internal copy func/clean up
 		void _clean_up();
@@ -62,28 +60,6 @@ namespace dblz {
 
 		std::string get_name() const;
 		Iptr get_ixn_param() const;
-		int get_no_pts() const;
-		double get_min() const;
-		double get_max() const;
-		double get_delta() const;
-
-		// Get pt in domain
-		double get_pt_by_idx(int i) const;
-
-		// Check if point is in domain
-		bool check_if_pt_is_inside_domain(double x) const;
-
-		// Get indexes surrounding a point
-		// ie point is between i and i+1 where i is returned
-		int get_idxs_surrounding_pt(double x) const; 
-
-		// Get fraction of a point between successive points
-		double get_frac_between(double x) const;
-		// Second optional specification: the return of the surrounding idxs
-		double get_frac_between(double x, int i) const;
-
-		// Print domain range
-		void print_bounds() const;
 	};
 
 
@@ -292,6 +268,9 @@ namespace dblz {
 
 		double get_val_at_timepoint(int it);
 		double get_deriv_at_timepoint(int it, int i_dim);
+
+		// Derivative wrt a point; idxs = idx in each dimension1D
+		bool does_deriv_wrt_point_exist_at_timepoint(int it, int *idxs);
 
 		/********************
 		Nesterov

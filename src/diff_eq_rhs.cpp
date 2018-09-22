@@ -101,239 +101,80 @@ namespace dblz {
 
 
 
+
+
+
 	/****************************************
-	Array
+	Domain
 	****************************************/
 
-	Array::Array(std::vector<Domain1D> domain)
-	{
+	Domain::Domain(std::vector<const Domain1D*> domain) {
 		_domain = domain;
-		_n_params = _domain.size();
-
-		// Values
-		_val_len = 1;
-		for (auto v: _domain) { _val_len *= v.get_no_pts(); };
-		_vals = new double[_val_len];
-
-		// Zero by default
-		std::fill_n(_vals,_val_len,0.0);
-
-		// Update dimension powers
-		int pwr;
-		for (int iv=0; iv<_n_params; iv++) 
-		{
-			pwr = 1;
-			for (int jv=iv+1; jv<_n_params; jv++)
-			{
-				pwr *= _domain[jv].get_no_pts();
-			};
-			_dim_pwrs.push_back(pwr); 
+		for (auto &d: _domain) {
+			_dimensions.push_back(d);
 		};
 	};
-	Array::Array(const Array& other) 
-	{
+	Domain::Domain(const Domain& other) {
 		_copy(other);
 	};
-	Array& Array::operator=(const Array& other)
-	{
-		if (this != &other) {
-			_clean_up();
-			_copy(other);	
-		};
-		return *this;
+	Domain::Domain(Domain&& other) {
+		_copy(other);
+		other._reset();
 	};
-	Array::Array(Array&& other)
-	{
-		// steal other's resources
-		_n_params = other._n_params;
-		_val_len = other._val_len;
-		_domain = other._domain;
-		_dim_pwrs = other._dim_pwrs;
-		_vals = new double[_val_len];
-		std::copy( other._vals, other._vals + _val_len, _vals );
-		// reset other
-		other._n_params = 0;
-		other._val_len = 0;
-		other._domain.clear();
-		other._dim_pwrs.clear();
-		safeDelArr(other._vals);
-	};
-	Array& Array::operator=(Array&& other)
-	{
-		if (this!=&other)
+	Domain& Domain::operator=(const Domain& other) {
+		if (this != &other)
 		{
-			// release the current object’s resources
 			_clean_up();
-			// steal other’s resource
-			_n_params = other._n_params;
-			_val_len = other._val_len;
-			_domain = other._domain;
-			_dim_pwrs = other._dim_pwrs;
-			_vals = new double[_val_len];
-			std::copy( other._vals, other._vals + _val_len, _vals );
-			// reset other
-			other._n_params = 0;
-			other._val_len = 0;
-			other._domain.clear();
-			other._dim_pwrs.clear();
-			safeDelArr(other._vals);		
+			_copy(other);
 		};
 		return *this;
 	};
-	Array::~Array()
-	{
+	Domain& Domain::operator=(Domain&& other) {
+		if (this != &other)
+		{
+			_clean_up();
+			_copy(other);
+			other._reset();
+		};
+		return *this;
+	};
+	Domain::~Domain() {
 		_clean_up();
 	};
-	void Array::_copy(const Array& other) {
-		_n_params = other._n_params;
-		_val_len = other._val_len;
+	void Domain::_copy(const Domain& other)
+	{
+		_dimensions = other._dimensions;
 		_domain = other._domain;
-		_dim_pwrs = other._dim_pwrs;
-
-		_vals = new double[_val_len];
-		std::copy( other._vals, other._vals + _val_len, _vals );
 	};
-	void Array::_clean_up() {
-		safeDelArr(_vals);
+	void Domain::_reset()
+	{
+		_dimensions.clear();
+		_domain.clear();
+	};
+	void Domain::_clean_up() {
 	};
 
 	/********************
-	Get domain
+	Setters
 	********************/
 
-	const std::vector<Domain1D>& Array::get_domain() const {
+	void Domain::add_dimension(const Domain1D* domain) {
+		_domain.push_back(domain);
+		_dimensions.push_back(domain);
+	};
+
+	/********************
+	Getters
+	********************/
+
+	int Domain::size() const {
+		return _domain.size();
+	};
+	std::vector<const dcu::Dimension1D*> Domain::get_dimensions() const {
+		return _dimensions;
+	};
+	std::vector<const Domain1D*> Domain::get_domain() const {
 		return _domain;
-	};
-
-	/********************
-	Get/set an element by index
-	********************/
-
-	double Array::get_by_idxs(int *idxs) const
-	{
-		int i=0;
-		for (int id=0; id<_n_params; id++) {
-			i += _dim_pwrs[id] * idxs[id];
-		};
-		return _vals[i];
-	};
-
-	double Array::get_by_idx(int i) const
-	{
-		return _vals[i];
-	};
-
-	void Array::set_by_idxs(int *idxs, double val)
-	{
-		int i=0;
-		for (int id=0; id<_n_params; id++) {
-			i += _dim_pwrs[id] * idxs[id];
-		};
-		_vals[i] = val;
-	};
-
-	void Array::set_by_idx(int i, double val)
-	{
-		_vals[i] = val;
-	};
-
-	/********************
-	Get indexes by element
-	********************/
-
-	void Array::get_idxs(int i, int *idxs) const {
-		int rem = i;
-		for (int id=0; id<_n_params; id++) {
-			idxs[id] = int(rem/_dim_pwrs[id]);
-			rem = rem % _dim_pwrs[id];
-		};
-	};
-
-	/********************
-	Write to file
-	********************/
-
-	void Array::write_grid(std::string fname) const
-	{
-		std::ofstream f;
-		f.open (fname);
-
-		// Run through all points
-		int *idxs = new int[_n_params];
-		for (int i=0; i<_val_len; i++)
-		{
-			get_idxs(i, idxs);
-			for (int ip=0; ip<_n_params; ip++) 
-			{
-				f << _domain[ip].get_pt_by_idx(idxs[ip]);
-				if (ip != _n_params-1) { f << " "; };
-			};
-			f << "\n";
-		};
-
-		f.close();
-
-		// Clean up
-		safeDelArr(idxs);
-	};
-
-	void Array::write_vals(std::string fname) const
-	{
-		std::ofstream f;
-		f.open (fname);
-		for (int i=0; i<_val_len; i++)
-		{
-			f << std::setprecision(15) << _vals[i];
-			if (i!=_val_len-1) { f << "\n"; };
-		};
-		f.close();
-	};
-
-	void Array::read_vals(std::string fname) 
-	{
-		std::ifstream f;
-		f.open(fname);
-		char frag[100]; // fragments of the line
-		std::string x="";
-		int i=0;
-		if (f.is_open()) { // make sure we found it
-			while (!f.eof()) {
-			    f >> frag;
-			    _vals[i] = atof(frag);
-			    i++;
-			};
-		};
-		f.close();
-	};
-
-	/********************
-	Check dimensions against another array
-	********************/
-
-	bool Array::check_dims(const Array& other) const
-	{
-		// Check no dims
-		if (_n_params != other._n_params) { 
-			std::cerr << "ERROR! No dimensions don't match in update step" << std::endl;
-			return false;
-		};
-
-		// Check each dim
-		for (int id=0; id<_n_params; id++) {
-			if (_domain[id].get_name() != other._domain[id].get_name()) {
-				return false;
-			};
-		};
-		return true;
-	};
-
-	/********************
-	Zero
-	********************/
-
-	void Array::reset_to_zero()
-	{
-		std::fill_n(_vals,_val_len,0.);
 	};
 
 
@@ -384,91 +225,65 @@ namespace dblz {
 	Constructor
 	********************/
 
-	DiffEqRHS::DiffEqRHS(std::string name, std::vector<Domain1D> domain) : Array(domain) {
+	DiffEqRHS::DiffEqRHS(std::string name, Domain domain) : dcu::Grid(domain.get_dimensions()), _idxs_k(domain.size()) {
 		_name = name;
+		_domain = domain.get_domain();
 
-		_derivs = new bool[_n_params];
-		std::fill_n(_derivs,_n_params,false);
-
-		_idxs_bounding = new int[_n_params];
-		_idxs_p_cube = new int[_n_params];
-		_idxs_ext_1 = new int[_n_params];
-		_idxs_ext_2 = new int[_n_params];
-		_fracs = new double[_n_params];
-		_p_cube = new double[int(pow(4,_n_params))];
-
-		_update_gathered = nullptr; // allocated later if needed
-
-		_nesterov_prev_pt = nullptr;
+		// Init structures for evaluating
+		for (auto dim=0; dim<_domain.size(); dim++) {
+			_abscissas.push_back(0.0);
+		};
 	};
-	DiffEqRHS::DiffEqRHS(const DiffEqRHS& other) : Array(other) {
+	DiffEqRHS::DiffEqRHS(const DiffEqRHS& other) : Grid(other), _idxs_k(other._idxs_k) {
 		_copy(other);
 	};
+	DiffEqRHS::DiffEqRHS(DiffEqRHS&& other) : Grid(std::move(other)), _idxs_k(std::move(other._idxs_k)) {
+		_move(other);
+	};
+
 	DiffEqRHS& DiffEqRHS::operator=(const DiffEqRHS& other) {
 		if (this != &other)
 		{
-			Array::operator=(other);
-
 			_clean_up();
 
+			Grid::operator=(other);
+			_idxs_k = other._idxs_k;
 			_copy(other);
 		};
 		return *this;
 	};
+	DiffEqRHS& DiffEqRHS::operator=(DiffEqRHS&& other) {
+		if (this != &other)
+		{
+			_clean_up();
+
+			Grid::operator=(other);
+			_idxs_k = std::move(other._idxs_k);
+			_move(other);
+		};
+		return *this;
+	};
+
 	DiffEqRHS::~DiffEqRHS() {
 		_clean_up();
 	};
 	void DiffEqRHS::_copy(const DiffEqRHS& other) {
 		_name = other._name;
-
-		_derivs = new bool[_n_params];
-		_idxs_bounding = new int[_n_params];
-		_idxs_p_cube = new int[_n_params];
-		_idxs_ext_1 = new int[_n_params];
-		_idxs_ext_2 = new int[_n_params];
-		_fracs = new double[_n_params];
-		_p_cube = new double[int(pow(4,_n_params))];
-
-		std::copy( other._derivs, other._derivs + _n_params, _derivs );
-		std::copy( other._idxs_bounding, other._idxs_bounding + _n_params, _idxs_bounding );
-		std::copy( other._idxs_p_cube, other._idxs_p_cube + _n_params, _idxs_p_cube );
-		std::copy( other._idxs_ext_1, other._idxs_ext_1 + _n_params, _idxs_ext_1 );
-		std::copy( other._idxs_ext_2, other._idxs_ext_2 + _n_params, _idxs_ext_2 );
-		std::copy( other._fracs, other._fracs + _n_params, _fracs );
-		std::copy( other._p_cube, other._p_cube + int(pow(4,_n_params)), _p_cube );
-
-		if (other._update_gathered) {
-			_update_gathered = new double[_val_len];
-			std::copy( other._update_gathered, other._update_gathered + _val_len, _update_gathered );
-		} else {
-			_update_gathered = nullptr;
-		};
-
-		if (other._nesterov_prev_pt) {
-			_nesterov_prev_pt = new Array(*(other._nesterov_prev_pt));
-		} else {
-			_nesterov_prev_pt = nullptr;
-		};
+		_domain = other._domain;
+		_abscissas = other._abscissas;
 	};
-	void DiffEqRHS::_clean_up() {
-		safeDelArr(_derivs);
-		safeDelArr(_idxs_bounding);
-		safeDelArr(_idxs_p_cube);
-		safeDelArr(_idxs_ext_1);
-		safeDelArr(_idxs_ext_2);
-		safeDelArr(_fracs);
-		safeDelArr(_p_cube);
-		safeDelArr(_update_gathered);
-		if (_nesterov_prev_pt) {
-			delete _nesterov_prev_pt;
-			_nesterov_prev_pt = nullptr;
-		};
+	void DiffEqRHS::_move(DiffEqRHS& other) {
+		_name = other._name;
+		_domain = other._domain;
+		_abscissas = other._abscissas;
 	};
+
+	void DiffEqRHS::_clean_up() {};
 
 	/********************
 	Move to the nesterov intermediate point
 	********************/
-
+	/*
 	void DiffEqRHS::nesterov_move_to_intermediate_pt(int opt_step) {
 		if (!_nesterov_prev_pt) {
 			std::cerr << "Error! No prev nesterov pt exists in basis func " << _name << std::endl;
@@ -488,11 +303,13 @@ namespace dblz {
 			_nesterov_prev_pt->set_by_idx(i, curr);
 		};
 	};
-
+	*/
+	
 	/********************
 	Set prev nesterov
 	********************/
 
+	/*
 	void DiffEqRHS::nesterov_set_prev_equal_curr() {
 		if (!_nesterov_prev_pt) {
 			// Make
@@ -503,6 +320,7 @@ namespace dblz {
 			_nesterov_prev_pt->set_by_idx(i, _vals[i]);
 		};
 	};
+	*/
 
 	/********************
 	Validate
@@ -514,159 +332,41 @@ namespace dblz {
 	};
 
 	/********************
-	Get values, if they are in the lattice
-	********************/
-
-	// Recursion to fill p
-	// idx_deltas will in the inner most loop be -1, 0, 1, 2 for i-1,i,i+1,i+2
-	// Initial dim parameter = 0
-	// idxs = contains the i
-	void DiffEqRHS::_fill_p(int dim)
-	{
-		// i-1 to i+2
-		for(_idxs_p_cube[dim] = 0; _idxs_p_cube[dim] < 4; ++_idxs_p_cube[dim]) 
-		{
-			if (dim != _n_params-1)
-			{
-				// Inception - need another for loop
-				_fill_p(dim+1);
-			} else {
-				// Do something!
-
-				// Print
-				/*
-				std::cout << "p cube idxs: ";
-				for (int a=0; a<_n_params; a++) {
-					std::cout << _idxs_p_cube[a] << " ";
-				};
-				*/
-
-				// Check if point is outside box
-				bool outside=false; // Is it outside on at least one dim?
-				int idx;
-				for (int d=0; d<_n_params; d++) {
-					idx = _idxs_bounding[d]+_idxs_p_cube[d]-1;
-					if (idx < 0) {
-						outside = true; // Yes it's outside on at least one dim
-						_idxs_ext_1[d] = 0;
-						_idxs_ext_2[d] = 1;
-					} else if (idx > _domain[d].get_no_pts()-1) {
-						outside = true; // Yes it's outside on at least one dim
-						_idxs_ext_1[d] = _domain[d].get_no_pts()-1;
-						_idxs_ext_2[d] = _domain[d].get_no_pts()-2;
-					} else {
-						_idxs_ext_1[d] = idx;
-						_idxs_ext_2[d] = idx;
-					};
-				};
-
-				// Index in _p_cube to write to
-				int i_write=0;
-				for (int d=0; d<_n_params; d++) {
-					i_write += pow(4,_n_params-d-1) * _idxs_p_cube[d];
-				};
-
-				// Finally, write
-				if (outside) {
-					_p_cube[i_write] = 2*get_by_idxs(_idxs_ext_1) - get_by_idxs(_idxs_ext_2);
-					// std::cout << "writing: 2*(" << _idxs_ext_1[0] << "," << _idxs_ext_1[1] << ") - (" << _idxs_ext_2[0] << "," << _idxs_ext_2[1] << ")";
-				} else {
-					_p_cube[i_write] = get_by_idxs(_idxs_ext_1);
-					// std::cout << "writing: (" << _idxs_ext_1[0] << "," << _idxs_ext_1[1] << ")";
-				};
-				// std::cout << std::endl;
-			};
-		};
-	};
-
-	// Function to get bounding cube of 4 points
-	void DiffEqRHS::_get_bounding(int it, bool safe)
-	{
-		// Check that x is in the box
-		if (safe) {
-			for (int id=0; id<_n_params; id++) {
-				if (!(_domain[id].check_if_pt_is_inside_domain(_domain[id].get_ixn_param()->get_val_at_timepoint(it)))) {
-					std::cerr << "ERROR - " << _domain[id].get_ixn_param()->get_val_at_timepoint(it) << " is outside the grid:" << std::endl;
-					_domain[id].print_bounds();
-					exit(EXIT_FAILURE);
-				};
-			};
-		};
-
-		// Get the interval - i-1,i,POINT,i+1,i+2
-		// indexes in a dimension of length n run from 0 to n-1
-		// this should return i = 0 to n-2
-		// left boundary: i=0 -> -1,0,1,2 where point i=-1 needs extrapolation later
-		// right boundary: i=n-2 -> n-3,n-2,n-1,n where point i=n needs extrapolation later
-		// ALSO: get the fraction this point is between two successive, i.e. between i and i+1
-		double x;
-		for (int id=0; id<_n_params; id++) {
-			x = _domain[id].get_ixn_param()->get_val_at_timepoint(it);
-			_idxs_bounding[id] = _domain[id].get_idxs_surrounding_pt(x);
-			_fracs[id] = _domain[id].get_frac_between(x,_idxs_bounding[id]);
-		};
-
-		// Get bounding box
-		_fill_p(0);
-	};
-
-	/********************
-	Get values, if they are in the lattice
-	********************/
-
-	double DiffEqRHS::get_val_at_timepoint(int it) 
-	{
-		// Create the bounding box
-		_get_bounding(it);
-
-		return _n_cubic_interp(_n_params,_p_cube,_fracs,_derivs);
-	};
-
-	double DiffEqRHS::get_deriv_at_timepoint(int it, int i_dim) {
-		// Deriv
-		_derivs[i_dim] = true;
-
-		// Create the bounding box
-		_get_bounding(it);
-
-		// Eval
-		double x = _n_cubic_interp(_n_params,_p_cube,_fracs,_derivs);
-
-		// Reset
-		_derivs[i_dim] = false;
-
-		return x;
-	};
-
-	// Derivative wrt a point; idxs = idx in each dimension1D
-	bool DiffEqRHS::does_deriv_wrt_point_exist_at_timepoint(int it, int *idxs) {
-		// Create the bounding box
-		_get_bounding(it);
-
-		// Check idxs
-		// point is between _idxs_bounding-1, _idxs_bounding, XXX , _idxs_bounding+1, _idxs_bounding+2
-		for (int id=0; id<_n_params; id++) {
-			if (!(_idxs_bounding[id]-1 <= idxs[id] && idxs[id] <= _idxs_bounding[id]+2)) {
-				return false;
-			};
-		};
-
-		return true;
-	};
-
-
-	/********************
-	Name
+	Getters
 	********************/
 
 	std::string DiffEqRHS::get_name() const {
 		return _name;
 	};
 
+	std::vector<const Domain1D*> DiffEqRHS::get_domain() const {
+		return _domain;
+	};
+
+	void DiffEqRHS::_form_abscissas(int timepoint) {
+		for (auto dim=0; dim<_domain.size(); dim++) {
+			_abscissas[dim] = _domain[dim]->get_ixn_param()->get_val_at_timepoint(timepoint);
+		};
+	};
+
+	double DiffEqRHS::get_val_at_timepoint(int timepoint) {
+		_form_abscissas(timepoint);
+		return get_val_by_ref(_abscissas);
+	};
+	double DiffEqRHS::get_deriv_wrt_u_at_timepoint(int timepoint, dcu::IdxSet4 idxs_k) {
+		_form_abscissas(timepoint);
+		return get_deriv_wrt_pt_value_by_ref(_abscissas, idxs_k);
+	};
+	double DiffEqRHS::get_deriv_wrt_nu_at_timepoint(int timepoint, int k) {
+		_form_abscissas(timepoint);
+		return get_deriv_wrt_x_by_ref(_abscissas, k);
+	};
+
 	/********************
 	Calculate the new basis function
 	********************/
 
+	/*
 	void DiffEqRHS::update(int t_start, int t_end, double dt, double dopt, bool exp_decay, double exp_decay_t0, double exp_decay_lambda, bool l2_reg_params_mode, std::map<IxnParam*,double> &l2_lambda_params, std::map<IxnParam*,double> &l2_reg_centers) 
 	{
 		int *idxs;
@@ -684,7 +384,7 @@ namespace dblz {
 				if (exp_decay) {
 					decay = exp(-exp_decay_lambda*abs(t - exp_decay_t0));
 				};
-
+	*/
 				// Go through all updating terms
 				/*
 				for (auto p: _update_ptrs) {
@@ -714,10 +414,13 @@ namespace dblz {
 					};
 				};
 				*/
+	/*
 			};
 		};
 	};
+	*/
 
+	/*
 	void DiffEqRHS::update_gather(int t_start, int t_end, double dt, double dopt, bool exp_decay, double exp_decay_t0, double exp_decay_lambda, bool l2_reg_params_mode, std::map<IxnParam*,double> &l2_lambda_params, std::map<IxnParam*,double> &l2_reg_centers) 
 	{
 		if (!_update_gathered) {
@@ -742,7 +445,7 @@ namespace dblz {
 				if (exp_decay) {
 					decay = exp(-exp_decay_lambda*abs(t - exp_decay_t0));
 				};
-
+	*/
 				// Go through all updating terms
 				/*
 				for (auto p: _update_ptrs) {
@@ -773,6 +476,7 @@ namespace dblz {
 					_update_gathered[i] += dopt * dt * up1 * p.second->get_val_at_timepoint_by_idx(t, i) * decay / (t_end - t_start);
 				};
 				*/
+	/*
 			};
 		};
 	};
@@ -792,45 +496,7 @@ namespace dblz {
 		// Reset to 0
 		std::fill_n(_update_gathered,_val_len,0.);
 	};
+	*/
 
-	/****************************************
-	DiffEqRHS - PRIVATE
-	****************************************/
-
-	/********************
-	Interpolation
-	********************/
-
-	double DiffEqRHS::_cubic_interp(double p[4], double f) {
-		return p[1] + 0.5 * f *(p[2] - p[0] + f*(2.0*p[0] - 5.0*p[1] + 4.0*p[2] - p[3] + f*(3.0*(p[1] - p[2]) + p[3] - p[0])));
-	};
-	double DiffEqRHS::_deriv(double p[4], double f) {
-		return 0.5 * (p[2] - p[0]) + 2.0 * f * (p[0] - 2.5 * p[1] + 2.0 * p[2] - 0.5 * p[3]) + 3.0 * f * f *( - 0.5 * p[0] + 1.5 * p[1] - 1.5 * p[2] + 0.5 * p[3]);
-	};
-	double DiffEqRHS::_n_cubic_interp(int dim, double* p, double fracs[], bool derivs[])
-	{
-		if (dim == 1)
-		{
-			// Finall reached correct dim for linear interp
-			if (*derivs) {
-				return _deriv(p, *fracs);
-			} else {
- 				return _cubic_interp(p, *fracs);
-			};
-		} else {
-			// Interpolate in next dim
-			double arr[4];
-			int skip = 1 << (dim - 1) * 2;
-			arr[0] = _n_cubic_interp(dim-1, p, fracs+1, derivs+1);
-			arr[1] = _n_cubic_interp(dim-1, p + skip, fracs+1, derivs+1);
-			arr[2] = _n_cubic_interp(dim-1, p + 2*skip, fracs+1, derivs+1);
-			arr[3] = _n_cubic_interp(dim-1, p + 3*skip, fracs+1, derivs+1);
-			if (*derivs) {
-				return _deriv(arr, *fracs);
-			} else {
-				return _cubic_interp(arr, *fracs);
-			};
-		};
-	};
 
 };

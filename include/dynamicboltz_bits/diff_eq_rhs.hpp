@@ -85,31 +85,23 @@ namespace dblz {
 
 
 
+
+
 	/****************************************
-	Array
+	Domain
 	****************************************/
 
-	class Array {
+	class Domain {
+
 	private:
-		
+
+		std::vector<const dcu::Dimension1D*> _dimensions;
+		std::vector<const Domain1D*> _domain;
+
 		// Internal copy func/clean up
-		void _copy(const Array& other);
 		void _clean_up();
-
-	protected:
-
-		// Number of dimensions
-		int _n_params;
-
-		// Vals
-		double *_vals;
-		int _val_len;
-
-		// Dimensions
-		std::vector<Domain1D> _domain;
-
-		// Dimension length squares
-		std::vector<int> _dim_pwrs;
+		void _reset();
+		void _copy(const Domain& other);
 
 	public:
 
@@ -117,59 +109,27 @@ namespace dblz {
 		Constructor
 		********************/
 
-		Array(std::vector<Domain1D> domain);
-		Array(const Array& other);
-		Array& operator=(const Array& other);
-		Array(Array&& other);
-		Array& operator=(Array&& other);
-		~Array();
+		Domain(std::vector<const Domain1D*> domain);
+		Domain(const Domain& other);
+		Domain& operator=(const Domain& other);
+		Domain(Domain&& other);
+		Domain& operator=(Domain&& other);
+		~Domain();
 
 		/********************
-		Get domain
+		Setters
 		********************/
 
-		const std::vector<Domain1D>& get_domain() const;
+		void add_dimension(const Domain1D* domain);
 
 		/********************
-		Get/set an element by index
+		Getters
 		********************/
 
-		double get_by_idxs(int *idxs) const;
-		double get_by_idx(int i) const;
-		void set_by_idxs(int *idxs, double val);
-		void set_by_idx(int i, double val);
-
-		/********************
-		Get indexes by element
-		********************/
-
-		void get_idxs(int i, int* idxs) const;
-
-		/********************
-		Write/Read to a file
-		********************/
-
-		void write_grid(std::string fname) const;
-		void write_vals(std::string fname) const;
-		void read_vals(std::string fname);
-
-		/********************
-		Check dims against another array
-		********************/
-
-		bool check_dims(const Array& other) const;
-
-		/********************
-		Reset to zero
-		********************/
-
-		void reset_to_zero();
+		int size() const;
+		std::vector<const dcu::Dimension1D*> get_dimensions() const;
+		std::vector<const Domain1D*> get_domain() const;
 	};
-
-
-
-
-
 
 
 
@@ -205,43 +165,33 @@ namespace dblz {
 	DiffEqRHS
 	****************************************/
 
-	class DiffEqRHS : public Array {
+	class DiffEqRHS : public dcu::Grid {
 
 	private:
 
 		// Name
 		std::string _name;
 
-		// Get bounding n-dim cube (in 2D, this means 4 pts, etc)
-		void _get_bounding(int it, bool safe=false);
-		void _fill_p(int dim);
-		// Parameters - only alloc/dealloc only once
-		int* _idxs_bounding;
-		int* _idxs_p_cube;
-		int* _idxs_ext_1;
-		int* _idxs_ext_2;
-		double *_fracs;
-		double *_p_cube;
+		// Domain - the domain in dcu::Grid does not store the ixn funcs
+		std::vector<const Domain1D*> _domain;
+
+		// Helper structures for evaluating
+		std::vector<double> _abscissas;
+		dcu::IdxSet4 _idxs_k;
 
 		// Update, if needed
-		double *_update_gathered;
+		// double *_update_gathered;
 
 		// Stored update for nesterov
-		Array *_nesterov_prev_pt;
+		// Array *_nesterov_prev_pt;
 
-		// Store derivatives in each direction
-
-		// Specify in which dimension to take a derivative
-		bool *_derivs;
+		// Internal
+		void _form_abscissas(int timepoint);
 
 		// Internal copy/clean up function
 		void _copy(const DiffEqRHS& other);
+		void _move(DiffEqRHS& other);
 		void _clean_up();
-
-		// Interpolation
-		double _cubic_interp(double p[4], double f);
-		double _deriv(double p[4], double f);
-		double _n_cubic_interp(int dim, double* p, double fracs[], bool derivs[]);
 
 	public:
 
@@ -249,9 +199,11 @@ namespace dblz {
 		Constructor
 		********************/
 
-		DiffEqRHS(std::string name, std::vector<Domain1D> domain);
+		DiffEqRHS(std::string name, Domain domain);
 		DiffEqRHS(const DiffEqRHS& other);
+		DiffEqRHS(DiffEqRHS&& other);
 		DiffEqRHS& operator=(const DiffEqRHS& other);
+		DiffEqRHS& operator=(DiffEqRHS &&other);
 		~DiffEqRHS();
 
 		/********************
@@ -266,21 +218,23 @@ namespace dblz {
 
 		std::string get_name() const;
 
-		double get_val_at_timepoint(int it);
-		double get_deriv_at_timepoint(int it, int i_dim);
+		std::vector<const Domain1D*> get_domain() const;
 
-		// Derivative wrt a point; idxs = idx in each dimension1D
-		bool does_deriv_wrt_point_exist_at_timepoint(int it, int *idxs);
+		double get_val_at_timepoint(int timepoint);
+		double get_deriv_wrt_u_at_timepoint(int timepoint, dcu::IdxSet4 idxs_k);
+		double get_deriv_wrt_nu_at_timepoint(int timepoint, int k);
 
 		/********************
 		Nesterov
 		********************/
 
+		/*
 		// Move to the nesterov intermediate point
 		void nesterov_move_to_intermediate_pt(int opt_step);
 
 		// Set prev nesterov
 		void nesterov_set_prev_equal_curr();
+		*/
 
 		/********************
 		Update
@@ -288,10 +242,11 @@ namespace dblz {
 
 		// Calculate the new basis function
 		// t_start (inclusive) to end (non-inclusive)
+		/*
 		void update(int t_start, int t_end, double dt, double dopt, bool exp_decay, double exp_decay_t0, double exp_decay_lambda, bool l2_reg_params_mode, std::map<IxnParam*,double> &l2_lambda_params, std::map<IxnParam*,double> &l2_reg_centers); 
 		void update_gather(int t_start, int t_end, double dt, double dopt, bool exp_decay, double exp_decay_t0, double exp_decay_lambda, bool l2_reg_params_mode, std::map<IxnParam*,double> &l2_lambda_params, std::map<IxnParam*,double> &l2_reg_centers);
 		void update_committ_gathered();
-
+		*/
 	};
 
 };

@@ -183,7 +183,7 @@ namespace dblz {
 		int i_dim = 0;
 		for (auto const &domain: diff_eq_rhs->get_domain()) {
 			// Get ixn param
-			auto ixn_param_in_deriv = domain.get_ixn_param();
+			auto ixn_param_in_deriv = domain->get_ixn_param();
 
 			// Get adjoint
 			auto adjoint_in_deriv = ixn_param_in_deriv->get_adjoint();
@@ -193,7 +193,7 @@ namespace dblz {
 			};
 
 			// Val
-			deriv += diff_eq_rhs->get_deriv_at_timepoint(timepoint,i_dim) * adjoint_in_deriv->get_val_at_timepoint(timepoint);
+			deriv += diff_eq_rhs->get_deriv_wrt_nu_at_timepoint(timepoint,i_dim) * adjoint_in_deriv->get_val_at_timepoint(timepoint);
 
 			// Next dim
 			i_dim++;

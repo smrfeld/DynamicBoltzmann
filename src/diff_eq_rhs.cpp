@@ -108,10 +108,10 @@ namespace dblz {
 	Domain
 	****************************************/
 
-	Domain::Domain(std::vector<const Domain1D*> domain) {
+	Domain::Domain(std::vector<Domain1D> domain) {
 		_domain = domain;
 		for (auto &d: _domain) {
-			_dimensions.push_back(d);
+			_dimensions.push_back(dcu::Dimension1D(d));
 		};
 	};
 	Domain::Domain(const Domain& other) {
@@ -158,9 +158,9 @@ namespace dblz {
 	Setters
 	********************/
 
-	void Domain::add_dimension(const Domain1D* domain) {
+	void Domain::add_dimension(Domain1D domain) {
 		_domain.push_back(domain);
-		_dimensions.push_back(domain);
+		_dimensions.push_back(dcu::Dimension1D(domain));
 	};
 
 	/********************
@@ -170,10 +170,10 @@ namespace dblz {
 	int Domain::size() const {
 		return _domain.size();
 	};
-	std::vector<const dcu::Dimension1D*> Domain::get_dimensions() const {
+	std::vector<dcu::Dimension1D> Domain::get_dimensions() const {
 		return _dimensions;
 	};
-	std::vector<const Domain1D*> Domain::get_domain() const {
+	std::vector<Domain1D> Domain::get_domain() const {
 		return _domain;
 	};
 
@@ -339,13 +339,13 @@ namespace dblz {
 		return _name;
 	};
 
-	std::vector<const Domain1D*> DiffEqRHS::get_domain() const {
+	const std::vector<Domain1D>& DiffEqRHS::get_domain() const {
 		return _domain;
 	};
 
 	void DiffEqRHS::_form_abscissas(int timepoint) {
 		for (auto dim=0; dim<_domain.size(); dim++) {
-			_abscissas[dim] = _domain[dim]->get_ixn_param()->get_val_at_timepoint(timepoint);
+			_abscissas[dim] = _domain[dim].get_ixn_param()->get_val_at_timepoint(timepoint);
 		};
 	};
 

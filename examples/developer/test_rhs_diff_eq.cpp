@@ -4,6 +4,7 @@
 
 using namespace dblz;
 using namespace std;
+using namespace dcu;
 
 int main() {
 
@@ -33,7 +34,8 @@ int main() {
 	// Domain
 	double min_val=-1.0, max_val=1.0;
 	int no_pts=21;
-	vector<Domain1D> domain({Domain1D(ixn,min_val,max_val,no_pts)});
+	Domain1D domain_1d = Domain1D(ixn,min_val,max_val,no_pts);
+	Domain domain({&domain_1d});
 
 	// RHS
 	auto rhs = make_shared<DiffEqRHS>("bias DE RHS",domain);
@@ -48,14 +50,21 @@ int main() {
 	Set some random grid points
 	****************************************/
 
-	rhs->set_by_idx(15,-0.1);
-	rhs->set_by_idx(16,-0.2);
-	rhs->set_by_idx(17,-0.3);
-	rhs->set_by_idx(18,-0.4);
-	rhs->set_by_idx(19,-0.5);
-	rhs->set_by_idx(20,-0.6);
+	std::vector<int> idx_set({0});
+	idx_set[0] = 15;
+	rhs->get_grid_point_ref(idx_set).set_ordinate(-0.1);
+	idx_set[0] = 16;
+	rhs->get_grid_point_ref(idx_set).set_ordinate(-0.2);
+	idx_set[0] = 17;
+	rhs->get_grid_point_ref(idx_set).set_ordinate(-0.3);
+	idx_set[0] = 18;
+	rhs->get_grid_point_ref(idx_set).set_ordinate(-0.4);
+	idx_set[0] = 19;
+	rhs->get_grid_point_ref(idx_set).set_ordinate(-0.5);
+	idx_set[0] = 20;
+	rhs->get_grid_point_ref(idx_set).set_ordinate(-0.6);
 
-	rhs->write_vals("test_rhs_diff_eq.txt");
+	// rhs->write_vals("test_rhs_diff_eq.txt");
 
 	cout << "Set & wrote RHS" << endl;
 	cout << endl;
@@ -65,7 +74,7 @@ int main() {
 	****************************************/
 
 	std::cout << "Val at time 0 = " << rhs->get_val_at_timepoint(0) << std::endl;
-	std::cout << "Deriv at time 0 = " << rhs->get_deriv_at_timepoint(0,0) << std::endl;
+	std::cout << "Deriv wrt nu at time 0 = " << rhs->get_deriv_wrt_nu_at_timepoint(0,0) << std::endl;
 
 	/****************************************
 	Solve
@@ -112,12 +121,14 @@ int main() {
 	Check if derivs exist
 	****************************************/
 
+	/*
 	int idxs[1];
 	idxs[0] = 13;
 	std::cout << "Does deriv wrt idx=13 exist at timepoint...." << std::endl;
 	for (auto t=0; t<20; t++) {
-		std::cout << "t = " << t << " exist? " << rhs->does_deriv_wrt_point_exist_at_timepoint(t,idxs) << " because idxs (13,14,15) = (" << domain[0].get_pt_by_idx(13) << " " << domain[0].get_pt_by_idx(14) << " " << domain[0].get_pt_by_idx(15) << ") and the val " << ixn->get_val_at_timepoint(t) << std::endl;
+		std::cout << "t = " << t << " exist? " << rhs->does_deriv_wrt_point_exist_at_timepoint(t,idxs) << " because idxs (13,14,15) = (" << domain_1d.get_pt_by_idx(13) << " " << domain_1d.get_pt_by_idx(14) << " " << domain_1d.get_pt_by_idx(15) << ") and the val " << ixn->get_val_at_timepoint(t) << std::endl;
 	};
+	*/
 
 	return 0;
 };

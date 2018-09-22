@@ -95,8 +95,8 @@ namespace dblz {
 
 	private:
 
-		std::vector<const dcu::Dimension1D*> _dimensions;
-		std::vector<const Domain1D*> _domain;
+		std::vector<dcu::Dimension1D> _dimensions;
+		std::vector<Domain1D> _domain;
 
 		// Internal copy func/clean up
 		void _clean_up();
@@ -109,7 +109,8 @@ namespace dblz {
 		Constructor
 		********************/
 
-		Domain(std::vector<const Domain1D*> domain);
+		Domain();
+		Domain(std::vector<Domain1D> domain);
 		Domain(const Domain& other);
 		Domain& operator=(const Domain& other);
 		Domain(Domain&& other);
@@ -120,15 +121,15 @@ namespace dblz {
 		Setters
 		********************/
 
-		void add_dimension(const Domain1D* domain);
+		void add_dimension(Domain1D domain);
 
 		/********************
 		Getters
 		********************/
 
 		int size() const;
-		std::vector<const dcu::Dimension1D*> get_dimensions() const;
-		std::vector<const Domain1D*> get_domain() const;
+		std::vector<dcu::Dimension1D> get_dimensions() const;
+		std::vector<Domain1D> get_domain() const;
 	};
 
 
@@ -173,7 +174,7 @@ namespace dblz {
 		std::string _name;
 
 		// Domain - the domain in dcu::Grid does not store the ixn funcs
-		std::vector<const Domain1D*> _domain;
+		std::vector<Domain1D> _domain;
 
 		// Helper structures for evaluating
 		std::vector<double> _abscissas;
@@ -218,7 +219,7 @@ namespace dblz {
 
 		std::string get_name() const;
 
-		std::vector<const Domain1D*> get_domain() const;
+		const std::vector<Domain1D>& get_domain() const;
 
 		double get_val_at_timepoint(int timepoint);
 		double get_deriv_wrt_u_at_timepoint(int timepoint, dcu::IdxSet4 idxs_k);

@@ -111,7 +111,7 @@ namespace dblz {
 	Setters
 	********************/
 
-	void OptProblem::add_ixn_func(std::shared_ptr<IxnParam> ixn_param) {
+	void OptProblem::add_ixn_param(std::shared_ptr<IxnParam> ixn_param) {
 		_ixn_params.push_back(ixn_param);
 	};
 	void OptProblem::set_lattice(std::shared_ptr<Lattice> latt) {
@@ -220,6 +220,7 @@ namespace dblz {
 		if (options.VERBOSE_NU) {
 			std::cout << "--- Solving diff eq ---" << std::endl;
 		};
+
 		for (auto t=0; t<no_timesteps; t++) {
 			for (auto &ixn_param: _ixn_params) {
 				ixn_param->solve_diff_eq_at_timepoint_to_plus_one(t,dt);

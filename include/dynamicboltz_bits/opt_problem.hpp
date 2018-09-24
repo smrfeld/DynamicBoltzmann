@@ -111,7 +111,7 @@ namespace dblz {
 		Setters
 		********************/
 
-		void add_ixn_func(std::shared_ptr<IxnParam> ixn_param);
+		void add_ixn_param(std::shared_ptr<IxnParam> ixn_param);
 		void set_lattice(std::shared_ptr<Lattice> latt);
 
 		/********************

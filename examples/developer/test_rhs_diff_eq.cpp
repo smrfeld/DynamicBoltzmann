@@ -35,10 +35,10 @@ int main() {
 	double min_val=-1.0, max_val=1.0;
 	int no_pts=21;
 	Domain1D domain_1d = Domain1D(ixn,min_val,max_val,no_pts);
-	Domain domain({&domain_1d});
+	Domain domain({domain_1d});
 
 	// RHS
-	auto rhs = make_shared<DiffEqRHS>("bias DE RHS",domain);
+	auto rhs = make_shared<DiffEqRHS>("bias DE RHS", ixn, domain);
 
 	// Add to ixn
 	ixn->set_diff_eq_rhs(rhs);
@@ -118,17 +118,15 @@ int main() {
 	cout << endl;
 
 	/****************************************
-	Check if derivs exist
+	Form the update
 	****************************************/
 
-	/*
-	int idxs[1];
-	idxs[0] = 13;
-	std::cout << "Does deriv wrt idx=13 exist at timepoint...." << std::endl;
-	for (auto t=0; t<20; t++) {
-		std::cout << "t = " << t << " exist? " << rhs->does_deriv_wrt_point_exist_at_timepoint(t,idxs) << " because idxs (13,14,15) = (" << domain_1d.get_pt_by_idx(13) << " " << domain_1d.get_pt_by_idx(14) << " " << domain_1d.get_pt_by_idx(15) << ") and the val " << ixn->get_val_at_timepoint(t) << std::endl;
-	};
-	*/
+	double dopt=0.1;
+	rhs->calculate_update(0,20,dt,dopt);
+
+	cout << "Formed update" << endl;
+	rhs->print_update_stored();
+	cout << endl;
 
 	return 0;
 };

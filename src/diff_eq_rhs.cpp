@@ -3,6 +3,7 @@
 // Other headers
 #include "../include/dynamicboltz_bits/general.hpp"
 #include "../include/dynamicboltz_bits/ixn_param.hpp"
+#include "../include/dynamicboltz_bits/adjoint.hpp"
 
 #include <iostream>
 #include "math.h"
@@ -225,9 +226,11 @@ namespace dblz {
 	Constructor
 	********************/
 
-	DiffEqRHS::DiffEqRHS(std::string name, Domain domain) : dcu::Grid(domain.get_dimensions()), _idxs_k(domain.size()) {
+	DiffEqRHS::DiffEqRHS(std::string name, Iptr parent_ixn_param, Domain domain) : dcu::Grid(domain.get_dimensions()), _idxs_k(domain.size()) {
 		_name = name;
 		_domain = domain.get_domain();
+		_dimensions = domain.get_dimensions();
+		_parent_ixn_param = parent_ixn_param;
 
 		// Init structures for evaluating
 		for (auto dim=0; dim<_domain.size(); dim++) {
@@ -270,12 +273,16 @@ namespace dblz {
 	void DiffEqRHS::_copy(const DiffEqRHS& other) {
 		_name = other._name;
 		_domain = other._domain;
+		_dimensions = other._dimensions;
 		_abscissas = other._abscissas;
+		_parent_ixn_param = other._parent_ixn_param;
 	};
 	void DiffEqRHS::_move(DiffEqRHS& other) {
 		_name = other._name;
 		_domain = other._domain;
+		_dimensions = other._dimensions;
 		_abscissas = other._abscissas;
+		_parent_ixn_param = other._parent_ixn_param;
 	};
 
 	void DiffEqRHS::_clean_up() {};
@@ -339,6 +346,10 @@ namespace dblz {
 		return _name;
 	};
 
+	Iptr DiffEqRHS::get_parent_ixn_param() const {
+		return _parent_ixn_param;
+	};
+
 	const std::vector<Domain1D>& DiffEqRHS::get_domain() const {
 		return _domain;
 	};
@@ -363,8 +374,88 @@ namespace dblz {
 	};
 
 	/********************
+	Update
+	********************/
+
+	void DiffEqRHS::calculate_update(int timepoint_start, int timepoint_end, double dt, double dopt, bool clear_existing_updates) {
+
+		// Clear previous updates
+		if (clear_existing_updates) {
+			_updates.clear();
+		};
+
+		// Get the adjoint
+		std::shared_ptr<Adjoint> adjoint = _parent_ixn_param->get_adjoint();
+		double adjoint_val;
+
+		// Init idxs set
+		dcu::IdxSet idxs_global(_domain.size());
+		dcu::IdxSet4 idxs_4(_domain.size());
+		dcu::Nbr4 nbr4(idxs_global);
+
+		// Derivative of F
+		double f_deriv;
+
+		// Go through all times
+		for (auto timepoint=timepoint_start; timepoint<timepoint_end; timepoint++) {
+
+			// Adjoint
+			adjoint_val = adjoint->get_val_at_timepoint(timepoint);
+
+			// Form abscissas
+			_form_abscissas(timepoint);
+
+			// Get surrounding nbrs
+			nbr4 = get_surrounding_4_grid_pts_by_ref(_abscissas);
+
+			// Go through nbrs
+			for (auto const &pr: nbr4.types) {
+
+				// Only update for grid pts that are inside!
+				if (pr.second == dcu::GridPtType::INSIDE) {
+
+					// Get local idxs
+					idxs_4 = pr.first;
+
+					// Get deriv
+					f_deriv = get_deriv_wrt_pt_value_by_ref(_abscissas, idxs_4);
+
+					// Convert to global idxs
+					// 0 = i-1
+					idxs_global = nbr4.idxs_i - 1 + idxs_4;
+
+					// Store update
+					_updates[dcu::GridPtKey(idxs_global,_dimensions)] -= dt * dopt * f_deriv * adjoint_val;
+
+				};
+			};
+		};
+	};
+
+	// Verbose
+	void DiffEqRHS::print_update_stored() const {
+		for (auto const &pr: _updates) {
+			std::cout << "Stored update for grid pt: " << pr.first << " = " << pr.second << std::endl;
+		};
+	};
+
+	// Committ the update
+	void DiffEqRHS::committ_update() {
+
+		// Go through stored updates
+		for (auto const &pr: _updates) {
+
+			// Increment
+			get_grid_point_ref(pr.first.get_idx_set()).increment_ordinate(pr.second);
+
+		};
+
+	};
+
+	/********************
 	Calculate the new basis function
 	********************/
+
 
 	/*
 	void DiffEqRHS::update(int t_start, int t_end, double dt, double dopt, bool exp_decay, double exp_decay_t0, double exp_decay_lambda, bool l2_reg_params_mode, std::map<IxnParam*,double> &l2_lambda_params, std::map<IxnParam*,double> &l2_reg_centers) 

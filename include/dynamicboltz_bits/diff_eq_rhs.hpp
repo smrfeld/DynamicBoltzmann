@@ -175,10 +175,17 @@ namespace dblz {
 
 		// Domain - the domain in dcu::Grid does not store the ixn funcs
 		std::vector<Domain1D> _domain;
+		std::vector<dcu::Dimension1D> _dimensions;
 
 		// Helper structures for evaluating
 		std::vector<double> _abscissas;
 		dcu::IdxSet4 _idxs_k;
+
+		// Parent ixn param
+		Iptr _parent_ixn_param;
+
+		// Updates
+		std::map<dcu::GridPtKey, double> _updates;
 
 		// Update, if needed
 		// double *_update_gathered;
@@ -200,7 +207,7 @@ namespace dblz {
 		Constructor
 		********************/
 
-		DiffEqRHS(std::string name, Domain domain);
+		DiffEqRHS(std::string name, Iptr parent_ixn_param, Domain domain);
 		DiffEqRHS(const DiffEqRHS& other);
 		DiffEqRHS(DiffEqRHS&& other);
 		DiffEqRHS& operator=(const DiffEqRHS& other);
@@ -218,6 +225,8 @@ namespace dblz {
 		********************/
 
 		std::string get_name() const;
+
+		Iptr get_parent_ixn_param() const;
 
 		const std::vector<Domain1D>& get_domain() const;
 
@@ -240,6 +249,17 @@ namespace dblz {
 		/********************
 		Update
 		********************/
+
+		// Calculate the update
+		// t_start = inclusive
+		// t_end = non-inclusive
+		void calculate_update(int timepoint_start, int timepoint_end, double dt, double dopt, bool clear_existing_updates=true);
+
+		// Verbose
+		void print_update_stored() const;
+
+		// Committ the update
+		void committ_update();
 
 		// Calculate the new basis function
 		// t_start (inclusive) to end (non-inclusive)

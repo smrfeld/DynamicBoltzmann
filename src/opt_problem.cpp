@@ -26,10 +26,10 @@ namespace dblz {
 	Get fnames
 	********************/
 
-	const std::vector<std::string>& FNameColl::get_fnames() const {
+	const std::vector<FNameSeries>& FNameSeriesColl::get_fname_series_all() const {
 		return _fnames;
 	};
-	const std::string& FNameColl::get_fname(int idx) const {
+	const FNameSeries& FNameSeriesColl::get_fname_series(int idx) const {
 		return _fnames[idx];
 	};
 
@@ -37,8 +37,8 @@ namespace dblz {
 	Add fname
 	********************/
 
-	void FNameColl::add_fname(std::string fname) {
-		_fnames.push_back(fname);
+	void FNameSeriesColl::add_fname_series(FNameSeries fname_series) {
+		_fnames.push_back(fname_series);
 		_idxs.push_back(_fnames.size()-1);
 	};
 
@@ -46,9 +46,9 @@ namespace dblz {
 	Get random subset
 	********************/
 
-	std::vector<int> FNameColl::get_random_subset(int size) {
+	std::vector<int> FNameSeriesColl::get_random_subset(int size) {
 		if (_fnames.size() < size) {
-			std::cerr << ">>> Error: FNameColl::get_random_subset <<< size of subset is equal to size of filename collection" << std::endl;
+			std::cerr << ">>> Error: FNameSeriesColl::get_random_subset <<< size of subset is equal to size of filename collection" << std::endl;
 			exit(EXIT_FAILURE);
 		};
 
@@ -144,7 +144,7 @@ namespace dblz {
 	Wake/asleep loop
 	********************/
 
-	void OptProblem::wake_asleep_loop(int no_timesteps, int batch_size, int no_latt_sampling_steps, FNameColl &fname_coll, bool verbose) {
+	void OptProblem::wake_asleep_loop(int no_timesteps, int batch_size, int no_latt_sampling_steps, FNameSeriesColl &fname_coll, bool verbose) {
 		if (verbose) {
 			std::cout << "--- Sampling lattice ---" << std::endl;
 		};
@@ -166,7 +166,7 @@ namespace dblz {
 				};
 
 				// Read latt
-				_latt->read_from_file(fname_coll.get_fname(idx_subset[i_batch]));
+				_latt->read_from_file(fname_coll.get_fname_series(idx_subset[i_batch]).fnames[timepoint]);
 
 				// Reap awake
 				for (auto &ixn_param: _ixn_params) {
@@ -211,7 +211,7 @@ namespace dblz {
 	********************/
 
 	// One step
-	void OptProblem::solve_one_step(int no_timesteps, int batch_size, double dt, double dopt, int no_latt_sampling_steps, FNameColl &fname_coll, OptionsSolve options) {
+	void OptProblem::solve_one_step(int no_timesteps, int batch_size, double dt, double dopt, int no_latt_sampling_steps, FNameSeriesColl &fname_coll, OptionsSolve options) {
 
 		/*****
 		Solve diff eq for F
@@ -298,7 +298,7 @@ namespace dblz {
 	};
 
 	// Many steps
-	void OptProblem::solve(int no_opt_steps, int no_timesteps, int batch_size, double dt, double dopt, int no_latt_sampling_steps, FNameColl &fname_coll, OptionsSolve options) {
+	void OptProblem::solve(int no_opt_steps, int no_timesteps, int batch_size, double dt, double dopt, int no_latt_sampling_steps, FNameSeriesColl &fname_coll, OptionsSolve options) {
 
 		/*****
 		Init structures

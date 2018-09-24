@@ -101,16 +101,33 @@ int main() {
 	Do an iteration of the learning problem
 	****************************************/
 
-	/********************
-	Params
-	********************/
+	// Opt solver class
+	OptProblem opt(latt);
 
+	// Add ixn param
+	opt.add_ixn_param(ixn);
+
+	// Params
 	int no_opt_steps = 50;
 	int no_timesteps = 20;
 	double dt=0.1;
 	int no_latt_sampling_steps = 10;
 	int batch_size = 5;
 	double dopt=0.002;
+
+	// Filenames
+	FnameSeriesColl fnames;
+	for (auto i_batch=0; i_batch<batch_size; i_batch++) {
+
+		// Series of filenames
+		FNameSeries fname_series;
+		for (auto timepoint=0; timepoint<no_timesteps; timepoint++) {
+			fname_series.fnames.push_back("stoch_sim/lattice_v"+pad_str(i_batch,2)+"/lattice/"+pad_str(timepoint,4)+".txt");
+		};
+
+		// Add
+		fnames.add_fname_series(fname_series);
+	};
 
 	/********************
 	Verbose options

@@ -19,15 +19,25 @@ namespace dblz {
 	class Lattice;
 
 	/****************************************
+	Filename timeseries
+	****************************************/
+
+	struct FNameSeries {
+
+		std::vector<std::string> fnames;
+
+	};
+
+	/****************************************
 	Filename collection
 	****************************************/
 
-	class FNameColl {
+	class FNameSeriesColl {
 
 	private:
 
 		// Filenames
-		std::vector<std::string> _fnames;
+		std::vector<FNameSeries> _fnames;
 		std::vector<int> _idxs;
 
 	public:
@@ -36,14 +46,14 @@ namespace dblz {
 		Get fnames
 		********************/
 
-		const std::vector<std::string>& get_fnames() const;
-		const std::string& get_fname(int idx) const;
+		const std::vector<FNameSeries>& get_fname_series_all() const;
+		const FNameSeries& get_fname_series(int idx) const;
 
 		/********************
 		Add fname
 		********************/
 
-		void add_fname(std::string fname);
+		void add_fname_series(FNameSeries fname_series);
 
 		/********************
 		Get random subset
@@ -114,17 +124,17 @@ namespace dblz {
 		Wake/asleep loop
 		********************/
 
-		void wake_asleep_loop(int no_timesteps, int batch_size, int no_latt_sampling_steps, FNameColl &fname_coll, bool verbose=false);
+		void wake_asleep_loop(int no_timesteps, int batch_size, int no_latt_sampling_steps, FNameSeriesColl &fname_coll, bool verbose=false);
 
 		/********************
 		Solve
 		********************/
 
 		// One step
-		void solve_one_step(int no_timesteps, int batch_size, double dt, double dopt, int no_latt_sampling_steps, FNameColl &fname_coll, OptionsSolve options = OptionsSolve());
+		void solve_one_step(int no_timesteps, int batch_size, double dt, double dopt, int no_latt_sampling_steps, FNameSeriesColl &fname_coll, OptionsSolve options = OptionsSolve());
 
 		// Many steps
-		void solve(int no_opt_steps, int no_timesteps, int batch_size, double dt, double dopt, int no_latt_sampling_steps, FNameColl &fname_coll, OptionsSolve options = OptionsSolve());
+		void solve(int no_opt_steps, int no_timesteps, int batch_size, double dt, double dopt, int no_latt_sampling_steps, FNameSeriesColl &fname_coll, OptionsSolve options = OptionsSolve());
 
 
 	};

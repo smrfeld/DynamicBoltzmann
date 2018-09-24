@@ -253,13 +253,13 @@ namespace dblz {
 		// Calculate the update
 		// t_start = inclusive
 		// t_end = non-inclusive
-		void calculate_update(int timepoint_start, int timepoint_end, double dt, double dopt, bool clear_existing_updates=true);
+		void update_calculate_and_store(int timepoint_start, int timepoint_end, double dt, double dopt, bool clear_existing_updates=true);
 
 		// Verbose
 		void print_update_stored() const;
 
 		// Committ the update
-		void committ_update();
+		void update_committ_stored();
 
 		// Calculate the new basis function
 		// t_start (inclusive) to end (non-inclusive)

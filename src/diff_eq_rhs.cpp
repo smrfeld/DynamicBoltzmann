@@ -377,7 +377,7 @@ namespace dblz {
 	Update
 	********************/
 
-	void DiffEqRHS::calculate_update(int timepoint_start, int timepoint_end, double dt, double dopt, bool clear_existing_updates) {
+	void DiffEqRHS::update_calculate_and_store(int timepoint_start, int timepoint_end, double dt, double dopt, bool clear_existing_updates) {
 
 		// Clear previous updates
 		if (clear_existing_updates) {
@@ -440,7 +440,7 @@ namespace dblz {
 	};
 
 	// Committ the update
-	void DiffEqRHS::committ_update() {
+	void DiffEqRHS::update_committ_stored() {
 
 		// Go through stored updates
 		for (auto const &pr: _updates) {

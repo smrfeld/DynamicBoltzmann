@@ -1,55 +1,59 @@
-#include "gillespie3d.hpp"
 #include <iostream>
+#include <math.h>
 
-using namespace Gillespie3D;
+#include <lattGillespie>
+
+using namespace latg;
+using namespace std;
 
 int main() {
 
 	// Seed random no
-	srand (2);
+	srand (time(NULL));
+	// srand (2);
 
-	// Initial h, j
-	double h0 = 0.5;
-	// double j0 = 0.1;
-	std::map<std::string,double> hdict;
-	hdict["A"] = h0;
-	std::map<std::string,std::map<std::string,double>> jdict;
-	// jdict["A"]["A"] = j0;
+	// h dict
+	map<string,double> h_dict;
+	h_dict["A"] = 0.5;
+	map<string,map<string,double>> j_dict;
 
-	// No annealing steps
-	int n_annealing = 10000;
+	// Reaction rate
+	double k = 1.0;
 
-	// Alterative: initial counts
-	// std::map<std::string,int> counts0;
-	// counts0["A"] = 20;
-
-	// Params
+	// Box length
 	int box_length = 10;
+
+	// Timestep
 	double dt = 0.01;
+
+	// Number of steps to run
 	int n_steps = 101;
-	bool verbose = false;
+
+	// Run
+	bool verbose = true;
 	bool write_counts = true;
-	bool write_nns = true;
+	bool write_nns = false;
 	bool write_latt = true;
 	int write_step = 1;
+	for (int i_version=0; i_version<10; i_version++) {
 
-	// Number of samples to run
-	int n_samples = 100;
-
-	for (int write_version_no=0; write_version_no<n_samples; write_version_no++)
-	{
-		std::cout << write_version_no << " / " << n_samples << std::endl;
-
+		// Make a simulation
 		Simulation sim(dt,box_length);
 
+		// Add species
 		sim.add_species("A");
 
-		sim.add_uni_rxn("rxn", 1.0, "A");
+		// Add unimol rxns
+		
+		// P1
+		sim.add_uni_rxn("rxn", k, "A");
 
-		sim.populate_lattice(hdict,jdict,n_annealing);
+		// Populate
+		sim.populate_lattice(h_dict,j_dict,1000);
 
-		sim.run(n_steps,verbose,write_counts,write_nns,write_latt,write_step,write_version_no);
+		// Simulate
+		sim.run(n_steps,verbose,write_counts,write_nns,write_latt,write_step,i_version);
 	};
 
 	return 0;
-};
+}

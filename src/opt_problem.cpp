@@ -290,7 +290,7 @@ namespace dblz {
 		Wake/asleep loop
 		*****/
 
-		wake_sleep_loop(timepoint_integral_start,timepoint_integral_end,batch_size,no_latt_sampling_steps,fname_coll,options.VERBOSE_WAKE_ASLEEP);
+		wake_sleep_loop(timepoint_integral_start,timepoint_integral_end+1,batch_size,no_latt_sampling_steps,fname_coll,options.VERBOSE_WAKE_ASLEEP);
 
 		if (options.VERBOSE_MOMENT) {
 			for (auto &ixn_param: _ixn_params) {

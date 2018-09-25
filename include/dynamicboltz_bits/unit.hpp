@@ -1,7 +1,4 @@
-#ifndef UNORDERED_MAP_H
-#define UNORDERED_MAP_H
 #include <unordered_map>
-#endif
 
 #ifndef FWDS_SPECIES_H
 #define FWDS_SPECIES_H

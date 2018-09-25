@@ -10,10 +10,10 @@
 NotebookFileLineBreakTest
 NotebookFileLineBreakTest
 NotebookDataPosition[       158,          7]
-NotebookDataLength[      2563,         79]
-NotebookOptionsPosition[      2038,         61]
-NotebookOutlinePosition[      2394,         77]
-CellTagsIndexPosition[      2351,         74]
+NotebookDataLength[      4643,        124]
+NotebookOptionsPosition[      3989,        103]
+NotebookOutlinePosition[      4345,        119]
+CellTagsIndexPosition[      4302,        116]
 WindowFrame->Normal*)
 
 (* Beginning of Notebook Content *)
@@ -31,6 +31,8 @@ Cell[BoxData[
    RowBox[{"NotebookDirectory", "[", "]"}], "]"}], ";"}]], "Input",
  CellChangeTimes->{{3.746820515098518*^9, 3.746820527206663*^9}},
  CellLabel->"In[1]:=",ExpressionUUID->"75cdb08d-e375-479f-a055-38fa7377bf0d"],
+
+Cell[CellGroupData[{
 
 Cell[BoxData[
  RowBox[{"Manipulate", "[", "\[IndentingNewLine]", "\[IndentingNewLine]", 
@@ -56,7 +58,47 @@ Cell[BoxData[
 
  CellChangeTimes->{{3.7468205293077803`*^9, 3.7468206422887497`*^9}, {
   3.746820841119135*^9, 3.746820841203514*^9}},
- CellLabel->"In[32]:=",ExpressionUUID->"fcb9b648-7c4f-45c6-bb3c-f1cc933a905a"]
+ CellLabel->"In[33]:=",ExpressionUUID->"fcb9b648-7c4f-45c6-bb3c-f1cc933a905a"],
+
+Cell[BoxData[
+ TagBox[
+  StyleBox[
+   DynamicModuleBox[{$CellContext`iOpt$$ = 25, Typeset`show$$ = True, 
+    Typeset`bookmarkList$$ = {}, Typeset`bookmarkMode$$ = "Menu", 
+    Typeset`animator$$, Typeset`animvar$$ = 1, Typeset`name$$ = 
+    "\"untitled\"", Typeset`specs$$ = {{
+      Hold[$CellContext`iOpt$$], 1, 50, 1}}, Typeset`size$$ = {
+    400., {121., 125.}}, Typeset`update$$ = 0, Typeset`initDone$$, 
+    Typeset`skipInitDone$$ = True, $CellContext`iOpt$152284$$ = 0}, 
+    DynamicBox[Manipulate`ManipulateBoxes[
+     1, StandardForm, "Variables" :> {$CellContext`iOpt$$ = 1}, 
+      "ControllerVariables" :> {
+        Hold[$CellContext`iOpt$$, $CellContext`iOpt$152284$$, 0]}, 
+      "OtherVariables" :> {
+       Typeset`show$$, Typeset`bookmarkList$$, Typeset`bookmarkMode$$, 
+        Typeset`animator$$, Typeset`animvar$$, Typeset`name$$, 
+        Typeset`specs$$, Typeset`size$$, Typeset`update$$, Typeset`initDone$$,
+         Typeset`skipInitDone$$}, "Body" :> ($CellContext`data = Transpose[
+          Import[
+           StringJoin["../data_learned/moments/bias for A_", 
+            IntegerString[$CellContext`iOpt$$, 10, 3], ".txt"], "Table"]]; 
+       ListLinePlot[$CellContext`data, PlotRange -> {200, 650}]), 
+      "Specifications" :> {{$CellContext`iOpt$$, 1, 50, 1}}, "Options" :> {}, 
+      "DefaultOptions" :> {}],
+     ImageSizeCache->{445., {179., 185.}},
+     SingleEvaluation->True],
+    Deinitialization:>None,
+    DynamicModuleValues:>{},
+    SynchronousInitialization->True,
+    UndoTrackedVariables:>{Typeset`show$$, Typeset`bookmarkMode$$},
+    UnsavedVariables:>{Typeset`initDone$$},
+    UntrackedVariables:>{Typeset`size$$}], "Manipulate",
+   Deployed->True,
+   StripOnInput->False],
+  Manipulate`InterpretManipulate[1]]], "Output",
+ CellChangeTimes->{{3.746827020355781*^9, 3.746827028796372*^9}},
+ CellLabel->"Out[33]=",ExpressionUUID->"5cae8772-ea3b-4001-a921-13d2e9cacdc1"]
+}, Open  ]]
 }, Open  ]]
 },
 WindowSize->{808, 911},
@@ -79,7 +121,10 @@ Notebook[{
 Cell[CellGroupData[{
 Cell[580, 22, 150, 3, 98, "Title",ExpressionUUID->"3ce573fc-6927-465e-90ca-dbe37f307e21"],
 Cell[733, 27, 267, 5, 30, "Input",ExpressionUUID->"75cdb08d-e375-479f-a055-38fa7377bf0d"],
-Cell[1003, 34, 1019, 24, 178, "Input",ExpressionUUID->"fcb9b648-7c4f-45c6-bb3c-f1cc933a905a"]
+Cell[CellGroupData[{
+Cell[1025, 36, 1019, 24, 178, "Input",ExpressionUUID->"fcb9b648-7c4f-45c6-bb3c-f1cc933a905a"],
+Cell[2047, 62, 1914, 37, 383, "Output",ExpressionUUID->"5cae8772-ea3b-4001-a921-13d2e9cacdc1"]
+}, Open  ]]
 }, Open  ]]
 }
 ]

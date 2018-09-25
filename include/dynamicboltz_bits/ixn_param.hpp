@@ -1,12 +1,5 @@
-#ifndef VECTOR_H
-#define VECTOR_H
 #include <vector>
-#endif
-
-#ifndef STRING_H
-#define STRING_H
 #include <string>
-#endif
 
 #ifndef FWDS_SPECIES_H
 #define FWDS_SPECIES_H

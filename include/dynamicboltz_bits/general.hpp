@@ -1,7 +1,4 @@
-#ifndef STRING_h
-#define STRING_h
 #include <string>
-#endif
 
 /************************************
 * Namespace for dblz

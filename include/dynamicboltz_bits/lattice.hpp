@@ -1,22 +1,7 @@
-#ifndef STRING_H
-#define STRING_H
 #include <string>
-#endif
-
-#ifndef VECTOR_H
-#define VECTOR_H
 #include <vector>
-#endif
-
-#ifndef LIST_H
-#define LIST_H
 #include <list>
-#endif
-
-#ifndef UNORDERED_MAP_H
-#define UNORDERED_MAP_H
 #include <unordered_map>
-#endif
 
 #ifndef FWDS_SPECIES_H
 #define FWDS_SPECIES_H

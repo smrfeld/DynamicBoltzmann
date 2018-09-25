@@ -1,17 +1,6 @@
-#ifndef VECTOR_H
-#define VECTOR_H
 #include <vector>
-#endif
-
-#ifndef STRING_H
-#define STRING_H
 #include <string>
-#endif
-
-#ifndef MAP_H
-#define MAP_H
 #include <map>
-#endif
 
 #ifndef FWDS_IXN_PARAM_H
 #define FWDS_IXN_PARAM_H

@@ -117,12 +117,12 @@ int main() {
 
 	// Filenames
 	FNameSeriesColl fnames;
-	for (auto i_batch=0; i_batch<batch_size; i_batch++) {
+	for (auto i_batch=0; i_batch<10; i_batch++) {
 
 		// Series of filenames
 		FNameSeries fname_series;
 		for (auto timepoint=0; timepoint<=no_timesteps; timepoint++) {
-			fname_series.fnames.push_back("stoch_sim/lattice_v"+pad_str(i_batch,2)+"/lattice/"+pad_str(timepoint,4)+".txt");
+			fname_series.fnames.push_back("stoch_sim/lattice_v"+pad_str(i_batch,3)+"/lattice/"+pad_str(timepoint,4)+".txt");
 		};
 
 		// Add

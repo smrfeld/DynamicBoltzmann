@@ -1,7 +1,4 @@
-#ifndef STRING_H
-#define STRING_H
 #include <string>
-#endif
 
 #ifndef FWDS_IXN_PARAM_H
 #define FWDS_IXN_PARAM_H

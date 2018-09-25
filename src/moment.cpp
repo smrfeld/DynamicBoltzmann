@@ -7,6 +7,7 @@
 #include "../include/dynamicboltz_bits/connections.hpp"
 #include "../include/dynamicboltz_bits/species.hpp"
 
+#include <fstream>
 #include <iostream>
 #include <sstream>
 
@@ -273,6 +274,21 @@ namespace dblz {
 	};
 
 	/********************
+	Reset
+	********************/
+
+	void Moment::reset_to_zero() {
+		for (auto timepoint=0; timepoint<_no_timepoints; timepoint++) {
+			for (auto i_batch=0; i_batch<_batch_size; i_batch++) {
+				set_moment_at_timepoint_in_batch(MomentType::AWAKE, timepoint, i_batch, 0.0);
+				set_moment_at_timepoint_in_batch(MomentType::ASLEEP, timepoint, i_batch, 0.0);
+			};
+			set_moment_at_timepoint(MomentType::AWAKE, timepoint, 0.0);
+			set_moment_at_timepoint(MomentType::ASLEEP, timepoint, 0.0);
+		};
+	};
+
+	/********************
 	Get/set moment
 	********************/
 
@@ -376,6 +392,30 @@ namespace dblz {
 		};
 	};
 
+	/********************
+	Write
+	********************/
+
+	void Moment::write_to_file(std::string fname) const {
+		std::ofstream f;
+
+		// Open
+		f.open(fname);
+
+		// Make sure we found it
+		if (!f.is_open()) {
+			std::cerr << ">>> Error: Moment::write_to_file <<< could not write to file: " << fname << std::endl;
+			exit(EXIT_FAILURE);
+		};
+
+		// Go through all time
+		for (auto timepoint=0; timepoint<_no_timepoints; timepoint++) {
+			f << _vals_awake_averaged[timepoint] << " " << _vals_asleep_averaged[timepoint] << "\n";
+		};
+
+		// Close
+		f.close();
+	};
 
 };
 

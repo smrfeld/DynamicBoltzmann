@@ -127,6 +127,12 @@ namespace dblz {
 		void set_batch_size(int batch_size);
 
 		/********************
+		Reset
+		********************/
+
+		void reset_to_zero();
+
+		/********************
 		Get/set moment
 		********************/
 
@@ -148,6 +154,13 @@ namespace dblz {
 		********************/
 
 		void average_reaps_as_timepoint(MomentType type, int timepoint);
+
+		/********************
+		Write
+		********************/
+
+		void write_to_file(std::string fname) const;
+
 	};
 
 };

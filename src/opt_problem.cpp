@@ -6,6 +6,7 @@
 #include "../include/dynamicboltz_bits/adjoint.hpp"
 #include "../include/dynamicboltz_bits/moment.hpp"
 #include "../include/dynamicboltz_bits/diff_eq_rhs.hpp"
+#include "../include/dynamicboltz_bits/general.hpp"
 
 #include <random>
 #include <algorithm>
@@ -144,7 +145,7 @@ namespace dblz {
 	Wake/asleep loop
 	********************/
 
-	void OptProblem::wake_asleep_loop(int no_timesteps, int batch_size, int no_latt_sampling_steps, FNameSeriesColl &fname_coll, bool verbose) {
+	void OptProblem::wake_sleep_loop(int timepoint_start, int timepoint_end, int batch_size, int no_latt_sampling_steps, FNameSeriesColl &fname_coll, bool verbose) {
 		if (verbose) {
 			std::cout << "--- Sampling lattice ---" << std::endl;
 		};
@@ -152,12 +153,19 @@ namespace dblz {
 		// Make a subset
 		std::vector<int> idx_subset = fname_coll.get_random_subset(batch_size);
 
-		for (int timepoint=0; timepoint<=no_timesteps; timepoint++) {
+		// Reset all moments
+		for (auto &ixn_param: _ixn_params) {
+			ixn_param->get_moment()->reset_to_zero();
+		};
+
+		// Iterate over time
+		for (int timepoint=timepoint_start; timepoint<=timepoint_end; timepoint++) {
 
 			if (verbose) {
-				std::cout << "(" << timepoint << "/" << no_timesteps << ") : " << std::flush;
+				std::cout << "(" << timepoint << " in " << timepoint_start << " ... " << timepoint_end << ") : " << std::flush;
 			};
 
+			// Iterate over the batch
 			for (int i_batch=0; i_batch<batch_size; i_batch++)
 			{
 
@@ -210,8 +218,53 @@ namespace dblz {
 	Solve
 	********************/
 
+	// Check if options passed are valid
+	void OptProblem::check_options(int no_timesteps, int batch_size, double dt, double dopt, int no_latt_sampling_steps, OptionsSolve options) {
+
+		if (options.MODE_random_integral_range) {
+			if (options.VAL_random_integral_range_size > no_timesteps) {
+				std::cerr << ">>> Error: OptProblem::check_options <<< options must satisfy: VAL_random_integral_range_size <= no timesteps!" << std::endl;
+				exit(EXIT_FAILURE);
+			};
+		};
+
+	};
+
 	// One step
-	void OptProblem::solve_one_step(int no_timesteps, int batch_size, double dt, double dopt, int no_latt_sampling_steps, FNameSeriesColl &fname_coll, OptionsSolve options) {
+	void OptProblem::solve_one_step(int no_timesteps, int batch_size, double dt, double dopt, int no_latt_sampling_steps, FNameSeriesColl &fname_coll, OptionsSolve options, bool should_check_options) {
+
+		int no_timepoints = no_timesteps + 1;
+
+		/*****
+		Check options
+		*****/
+
+		if (should_check_options) {
+			check_options(no_timesteps,batch_size,dt,dopt,no_latt_sampling_steps,options);
+		};
+
+		/*****
+		Option: random integrand range mode
+		*****/
+
+		int timepoint_integral_start=0;
+		int timepoint_integral_end=no_timesteps;
+
+		if (options.MODE_random_integral_range) {
+			timepoint_integral_start = randI(0,no_timesteps-options.VAL_random_integral_range_size);
+			timepoint_integral_end = timepoint_integral_start+options.VAL_random_integral_range_size;
+
+			// Move the adjoint endpoints, moments
+			for (auto &ixn_param: _ixn_params) {
+				if (ixn_param->get_adjoint()) {
+					// ixn_param->get_adjoint()->set_no_timesteps(options.VAL_random_integral_range_size);
+					ixn_param->get_adjoint()->set_zero_end_cond_timepoint(timepoint_integral_end);
+				};
+
+				// Moment
+				// ixn_param->get_moment()->set_no_timesteps(options.VAL_random_integral_range_size);
+			};
+		};
 
 		/*****
 		Solve diff eq for F
@@ -221,6 +274,7 @@ namespace dblz {
 			std::cout << "--- Solving diff eq ---" << std::endl;
 		};
 
+		// Solve over all time
 		for (auto t=0; t<no_timesteps; t++) {
 			for (auto &ixn_param: _ixn_params) {
 				ixn_param->solve_diff_eq_at_timepoint_to_plus_one(t,dt);
@@ -236,7 +290,7 @@ namespace dblz {
 		Wake/asleep loop
 		*****/
 
-		wake_asleep_loop(no_timesteps,batch_size,no_latt_sampling_steps,fname_coll,options.VERBOSE_WAKE_ASLEEP);
+		wake_sleep_loop(timepoint_integral_start,timepoint_integral_end,batch_size,no_latt_sampling_steps,fname_coll,options.VERBOSE_WAKE_ASLEEP);
 
 		if (options.VERBOSE_MOMENT) {
 			for (auto &ixn_param: _ixn_params) {
@@ -252,7 +306,8 @@ namespace dblz {
 		if (options.VERBOSE_ADJOINT) {
 			std::cout << "--- Solving adjoint ---" << std::endl;
 		};
-		for (auto t=no_timesteps; t>=1; t--) {
+
+		for (auto t=timepoint_integral_end; t>=timepoint_integral_start+1; t--) {
 			for (auto &ixn_param: _ixn_params) {
 				ixn_param->get_adjoint()->solve_diff_eq_at_timepoint_to_minus_one(t,dt);
 			};
@@ -272,7 +327,7 @@ namespace dblz {
 		};
 
 		for (auto &ixn_param: _ixn_params) {
-			ixn_param->get_diff_eq_rhs()->update_calculate_and_store(0,no_timesteps,dt,dopt);
+			ixn_param->get_diff_eq_rhs()->update_calculate_and_store(timepoint_integral_start,timepoint_integral_end,dt,dopt);
 		};
 
 		if (options.VERBOSE_UPDATE) {

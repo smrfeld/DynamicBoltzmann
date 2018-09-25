@@ -67,13 +67,17 @@ namespace dblz {
 	****************************************/
 
 	struct OptionsSolve {
+		// Verbosity
 		bool VERBOSE_NU = false;
 		bool VERBOSE_ADJOINT = false;
 		bool VERBOSE_UPDATE = false;
 		bool VERBOSE_WAKE_ASLEEP = false;
 		bool VERBOSE_MOMENT = true;
-	};
 
+		// Random integral
+		bool MODE_random_integral_range = false;
+		int VAL_random_integral_range_size = 10;
+	};
 
 	/****************************************
 	OptProblem
@@ -124,14 +128,18 @@ namespace dblz {
 		Wake/asleep loop
 		********************/
 
-		void wake_asleep_loop(int no_timesteps, int batch_size, int no_latt_sampling_steps, FNameSeriesColl &fname_coll, bool verbose=false);
+		// timepoint_start & timepoint_end = inclusive
+		void wake_sleep_loop(int timepoint_start, int timepoint_end, int batch_size, int no_latt_sampling_steps, FNameSeriesColl &fname_coll, bool verbose=false);
 
 		/********************
 		Solve
 		********************/
 
+		// Check if options passed are valid
+		void check_options(int no_timesteps, int batch_size, double dt, double dopt, int no_latt_sampling_steps, OptionsSolve options);
+
 		// One step
-		void solve_one_step(int no_timesteps, int batch_size, double dt, double dopt, int no_latt_sampling_steps, FNameSeriesColl &fname_coll, OptionsSolve options = OptionsSolve());
+		void solve_one_step(int no_timesteps, int batch_size, double dt, double dopt, int no_latt_sampling_steps, FNameSeriesColl &fname_coll, OptionsSolve options = OptionsSolve(), bool should_check_options=true);
 
 		// Many steps
 		void solve(int no_opt_steps, int no_timesteps, int batch_size, double dt, double dopt, int no_latt_sampling_steps, FNameSeriesColl &fname_coll, OptionsSolve options = OptionsSolve());

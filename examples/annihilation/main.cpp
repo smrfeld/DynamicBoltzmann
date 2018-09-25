@@ -40,8 +40,8 @@ int main() {
 	cout << "--- Making RHS diff eq ---" << endl;
 
 	// Domain
-	double min_val=-1.0, max_val=0.6;
-	int no_pts=21;
+	double min_val=-10.0, max_val=0.6;
+	int no_pts=51;
 	Domain1D domain_1d = Domain1D(ixn,min_val,max_val,no_pts);
 	Domain domain({domain_1d});
 
@@ -109,11 +109,11 @@ int main() {
 
 	// Params
 	int no_opt_steps = 50;
-	int no_timesteps = 20;
+	int no_timesteps = 100;
 	double dt=0.1;
 	int no_latt_sampling_steps = 10;
 	int batch_size = 5;
-	double dopt=0.002;
+	double dopt=0.00002;
 
 	// Filenames
 	FNameSeriesColl fnames;
@@ -133,10 +133,26 @@ int main() {
 	OptionsSolve options;
 	options.VERBOSE_NU = false;
 	options.VERBOSE_WAKE_ASLEEP = false;
-
+	options.MODE_random_integral_range = true;
+	options.VAL_random_integral_range_size = 10;
 
 	// Solve
-	opt.solve(no_opt_steps,no_timesteps,batch_size,dt,dopt,no_latt_sampling_steps,fnames,options);
+	// opt.solve(no_opt_steps,no_timesteps,batch_size,dt,dopt,no_latt_sampling_steps,fnames,options);
+
+	// Manually
+	opt.init_structures(no_timesteps,batch_size);
+	for (auto opt_step=1; opt_step<=no_opt_steps; opt_step++) {
+
+		std::cout << "------------------" << std::endl;
+		std::cout << "Opt step: " << opt_step << " / " << no_opt_steps << std::endl;
+		std::cout << "------------------" << std::endl;
+
+		// Take a step
+		opt.solve_one_step(no_timesteps,batch_size,dt,dopt,no_latt_sampling_steps,fnames,options);
+
+		// Write moments
+		ixn->get_moment()->write_to_file("data_learned/moments/"+ixn->get_name()+"_"+pad_str(opt_step,3)+".txt");
+	};
 
 	return 0;
 };

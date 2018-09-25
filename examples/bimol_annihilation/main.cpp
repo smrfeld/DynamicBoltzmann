@@ -203,12 +203,12 @@ int main() {
 		ixn_hB->get_adjoint()->write_to_file("data_learned/adjoint/"+ixn_hB->get_name()+"_"+pad_str(opt_step,3)+".txt");
 		ixn_jAB->get_adjoint()->write_to_file("data_learned/adjoint/"+ixn_jAB->get_name()+"_"+pad_str(opt_step,3)+".txt");
 
-		// Write diff eq
-		/*
-		rhs_hA->write_to_file("data_learned/diff_eq_rhs/"+ixn_hA->get_name()+"_"+pad_str(opt_step,3)+".txt");
-		rhs_hB->write_to_file("data_learned/diff_eq_rhs/"+ixn_hB->get_name()+"_"+pad_str(opt_step,3)+".txt");
-		rhs_jAB->write_to_file("data_learned/diff_eq_rhs/"+ixn_jAB->get_name()+"_"+pad_str(opt_step,3)+".txt");
-		*/
+		// Write diff eq rhs
+		if (opt_step == no_opt_steps) {
+			rhs_hA->write_to_file("data_learned/diff_eq_rhs/"+ixn_hA->get_name()+"_"+pad_str(opt_step,3)+".txt");
+			rhs_hB->write_to_file("data_learned/diff_eq_rhs/"+ixn_hB->get_name()+"_"+pad_str(opt_step,3)+".txt");
+			rhs_jAB->write_to_file("data_learned/diff_eq_rhs/"+ixn_jAB->get_name()+"_"+pad_str(opt_step,3)+".txt");
+		};
 	};
 
 	return 0;

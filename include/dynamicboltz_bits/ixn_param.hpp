@@ -101,20 +101,17 @@ namespace dblz {
 		std::shared_ptr<Moment> get_moment() const;
 
 		/********************
-		Write into an ofstream
-		********************/
-
-		/*
-		void write_vals(std::string dir, int idx_opt_step, std::vector<int> idxs, int n_t_traj) const;
-		void write_moments(std::string dir, int idx_opt_step, std::vector<int> idxs, int n_t_traj) const;
-		*/
-
-		/********************
 		Adjoint
 		********************/
 
 		void set_adjoint(std::shared_ptr<Adjoint> adjoint);
 		std::shared_ptr<Adjoint> get_adjoint() const;
+
+		/********************
+		Write to file
+		********************/
+
+		void write_to_file(std::string fname) const;
 	};
 
 };

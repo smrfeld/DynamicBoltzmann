@@ -253,17 +253,6 @@ namespace dblz {
 		if (options.MODE_random_integral_range) {
 			timepoint_integral_start = randI(0,no_timesteps-options.VAL_random_integral_range_size);
 			timepoint_integral_end = timepoint_integral_start+options.VAL_random_integral_range_size;
-
-			// Move the adjoint endpoints, moments
-			for (auto &ixn_param: _ixn_params) {
-				if (ixn_param->get_adjoint()) {
-					// ixn_param->get_adjoint()->set_no_timesteps(options.VAL_random_integral_range_size);
-					ixn_param->get_adjoint()->set_zero_end_cond_timepoint(timepoint_integral_end);
-				};
-
-				// Moment
-				// ixn_param->get_moment()->set_no_timesteps(options.VAL_random_integral_range_size);
-			};
 		};
 
 		/*****
@@ -290,7 +279,7 @@ namespace dblz {
 		Wake/asleep loop
 		*****/
 
-		wake_sleep_loop(timepoint_integral_start,timepoint_integral_end+1,batch_size,no_latt_sampling_steps,fname_coll,options.VERBOSE_WAKE_ASLEEP);
+		wake_sleep_loop(timepoint_integral_start,timepoint_integral_end,batch_size,no_latt_sampling_steps,fname_coll,options.VERBOSE_WAKE_ASLEEP);
 
 		if (options.VERBOSE_MOMENT) {
 			for (auto &ixn_param: _ixn_params) {
@@ -305,6 +294,11 @@ namespace dblz {
 
 		if (options.VERBOSE_ADJOINT) {
 			std::cout << "--- Solving adjoint ---" << std::endl;
+		};
+
+		// Reset
+		for (auto &ixn_param: _ixn_params) {
+			ixn_param->get_adjoint()->reset_to_zero();
 		};
 
 		for (auto t=timepoint_integral_end; t>=timepoint_integral_start+1; t--) {

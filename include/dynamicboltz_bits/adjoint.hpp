@@ -88,6 +88,18 @@ namespace dblz {
 		********************/
 
 		void solve_diff_eq_at_timepoint_to_minus_one(int timepoint, double dt);
+
+		/********************
+		Reset to zero
+		********************/
+
+		void reset_to_zero();
+
+		/********************
+		Write to file
+		********************/
+
+		void write_to_file(std::string fname) const;
 	};
 
 };

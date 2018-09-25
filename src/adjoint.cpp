@@ -205,4 +205,39 @@ namespace dblz {
 		// Step
 		_vals[timepoint-1] = _vals[timepoint] - dt * (deriv - moment_delta);
 	};
+
+	/********************
+	Reset to zero
+	********************/
+
+	void Adjoint::reset_to_zero() {
+		for (auto timepoint=0; timepoint<_no_timepoints; timepoint++) {
+			_vals[timepoint] = 0.0;
+		};
+	};
+
+	/********************
+	Write to file
+	********************/
+
+	void Adjoint::write_to_file(std::string fname) const {
+		std::ofstream f;
+
+		// Open
+		f.open(fname);
+
+		// Make sure we found it
+		if (!f.is_open()) {
+			std::cerr << ">>> Error: Adjoint::write_to_file <<< could not write to file: " << fname << std::endl;
+			exit(EXIT_FAILURE);
+		};
+
+		// Go through all time
+		for (auto timepoint=0; timepoint<_no_timepoints; timepoint++) {
+			f << _vals[timepoint] << "\n";
+		};
+
+		// Close
+		f.close();
+	};
 };

@@ -9,6 +9,7 @@
 
 #include <iostream>
 #include <fstream>
+#include <sstream>
 
 /************************************
 * Namespace for dblz
@@ -115,6 +116,12 @@ namespace dblz {
 
 		void set_adjoint(std::shared_ptr<Adjoint> adjoint);
 		std::shared_ptr<Adjoint> get_adjoint() const;
+
+		/********************
+		Write to file
+		********************/
+
+		void write_to_file(std::string fname) const;
 
 	};
 
@@ -347,8 +354,30 @@ namespace dblz {
 		return _adjoint;
 	};
 
+	/********************
+	Write to file
+	********************/
 
+	void IxnParam::Impl::write_to_file(std::string fname) const {
+		std::ofstream f;
 
+		// Open
+		f.open(fname);
+
+		// Make sure we found it
+		if (!f.is_open()) {
+			std::cerr << ">>> Error: IxnParam::Impl::write_to_file <<< could not write to file: " << fname << std::endl;
+			exit(EXIT_FAILURE);
+		};
+
+		// Go through all time
+		for (auto timepoint=0; timepoint<_no_timepoints; timepoint++) {
+			f << _vals[timepoint] << "\n";
+		};
+
+		// Close
+		f.close();
+	};
 
 
 
@@ -485,6 +514,15 @@ namespace dblz {
 	std::shared_ptr<Adjoint> IxnParam::get_adjoint() const {
 		return _impl->get_adjoint();
 	};
+
+	/********************
+	Write to file
+	********************/
+
+	void IxnParam::write_to_file(std::string fname) const {
+		_impl->write_to_file(fname);
+	};
+
 };
 
 

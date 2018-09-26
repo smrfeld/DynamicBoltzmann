@@ -185,6 +185,7 @@ namespace dblz {
 				for (int i_sampling_step=0; i_sampling_step<no_latt_sampling_steps; i_sampling_step++) 
 				{
 					_latt->sample_v_at_timepoint(timepoint);
+					_latt->sample_h_at_timepoint(timepoint);
 				};
 
 				// Print

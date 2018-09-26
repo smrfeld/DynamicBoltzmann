@@ -7,10 +7,10 @@
 #endif
 
 /************************************
-* Namespace for dblz
+* Namespace for bmla
 ************************************/
 
-namespace dblz {
+namespace bmla {
 
 	// Forward
 	class UnitVisible;
@@ -43,22 +43,17 @@ namespace dblz {
 		std::vector<ConnVVV*> _monitor_k;
 		std::vector<ConnVH*> _monitor_w;
 
-		// No time points = time steps + 1
-		int _no_timesteps;
-		int _no_timepoints;
-
 		// Batch size
 		int _batch_size;
 
 		// Reaped values from the sampler
-		// Size = _no_timesteps * _batch_size
+		// Size = _batch_size
 		double *_vals_awake_reaped;
 		double *_vals_asleep_reaped;
 
 		// Averaged values
-		// Size = _no_timesteps
-		double *_vals_awake_averaged;
-		double *_vals_asleep_averaged;
+		double _val_awake_averaged;
+		double _val_asleep_averaged;
 	
 		// Constructor helpers
 		void _clean_up();
@@ -109,13 +104,6 @@ namespace dblz {
 		IxnParamType get_type() const;
 
 		/********************
-		Number timesteps
-		********************/
-
-		int get_no_timesteps() const;
-		void set_no_timesteps(int no_timesteps);
-
-		/********************
 		Batch size
 		********************/
 
@@ -132,24 +120,24 @@ namespace dblz {
 		Get/set moment
 		********************/
 
-		double get_moment_at_timepoint(MomentType type, int timepoint) const;
-		void set_moment_at_timepoint(MomentType type, int timepoint, double val);
+		double get_moment(MomentType type) const;
+		void set_moment(MomentType type, double val);
 
 		// Batch
-		double get_moment_at_timepoint_in_batch(MomentType type, int timepoint, int i_batch) const;
-		void set_moment_at_timepoint_in_batch(MomentType type, int timepoint, int i_batch, double val);
+		double get_moment_in_batch(MomentType type, int i_batch) const;
+		void set_moment_in_batch(MomentType type, int i_batch, double val);
 
 		/********************
 		Reap from lattice
 		********************/
 
-		void reap_as_timepoint_in_batch(MomentType type, int timepoint, int i_batch, bool binary=true);
+		void reap_in_batch(MomentType type, int i_batch, bool binary=true);
 		
 		/********************
 		Average reaps
 		********************/
 
-		void average_reaps_as_timepoint(MomentType type, int timepoint);
+		void average_reaps(MomentType type);
 
 		/********************
 		Write

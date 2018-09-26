@@ -9,10 +9,10 @@
 #endif
 
 /************************************
-* Namespace for dblz
+* Namespace for bmla
 ************************************/
 
-namespace dblz {
+namespace bmla {
 
 	// Forwards
 	class UnitVisible;
@@ -215,8 +215,8 @@ namespace dblz {
 		Sample
 		********************/
 
-		void sample_v_at_timepoint(int timepoint, bool binary=true);
-		void sample_h_at_timepoint(int timepoint, bool binary=true);
+		void sample_v(bool binary=true);
+		void sample_h(bool binary=true);
 
 		/********************
 		Get counts

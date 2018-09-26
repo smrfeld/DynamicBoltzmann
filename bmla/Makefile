@@ -14,17 +14,18 @@ BUILD_DIR = build
 SOURCE_DIR = src
 # install dir
 INSTALL_LIB_DIR = /usr/local/lib
-INSTALL_INCLUDE_DIR = /usr/local/include/bmla
+INSTALL_INCLUDE_DIR = /usr/local/include
 
 # source files
-SRC_NAMES = counter.cpp \
-	hidden_unit.cpp \
-	include_impl/bmla.cpp \
-	include_impl/dim.cpp \
-	include_impl/general.cpp \
+SRC_NAMES = connections.cpp \
+	general.cpp \
+	ixn_dicts.cpp \
 	ixn_param.cpp \
 	lattice.cpp \
-	species.cpp
+	moment.cpp \
+	opt_problem.cpp \
+	species.cpp \
+	unit.cpp
 SRCS = $(addprefix $(SOURCE_DIR)/, $(SRC_NAMES))
 OBJS = $(addprefix $(BUILD_DIR)/, $(SRC_NAMES:.cpp=.o))
 DEPS = $(OBJS:.o=.d)
@@ -34,7 +35,7 @@ DEPS = $(OBJS:.o=.d)
 all: $(BUILD_DIR) $(TARGET_LIB)
 
 $(BUILD_DIR):
-	mkdir -p $(BUILD_DIR) $(BUILD_DIR)/include_impl
+	mkdir -p $(BUILD_DIR) lib
 
 $(TARGET_LIB): $(OBJS)
 	$(CXX) ${LDFLAGS} $^ -o $@
@@ -55,6 +56,8 @@ install:
 	mkdir -p $(INSTALL_LIB_DIR)
 	mkdir -p $(INSTALL_INCLUDE_DIR)
 	mkdir -p $(INSTALL_INCLUDE_DIR)/bmla_bits
+	mkdir -p $(INSTALL_INCLUDE_DIR)/bmla_bits/fwds
 	cp -p $(TARGET_LIB) $(INSTALL_LIB_DIR)
 	cp -p include/bmla_bits/*.hpp $(INSTALL_INCLUDE_DIR)/bmla_bits
+	cp -p include/bmla_bits/fwds/*.hpp $(INSTALL_INCLUDE_DIR)/bmla_bits/fwds
 	cp -p include/bmla $(INSTALL_INCLUDE_DIR)

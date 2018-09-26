@@ -1,10 +1,8 @@
-# Dynamic Boltzmann Machine for Lattice Chemical Kinetics
+# BMLA for initial conditions
 
 ## Dependencies
 
-d-Cubic library for doing cubic interpolation and derivatives of the interpolation in d dimensions.
-
-Get it from [here](https://github.com/smrfeld/d-Cubic).
+None.
 
 ## Installation
 
@@ -24,18 +22,13 @@ In this case, you will also need to specify using `-L` the location of the libra
 
 ## Usage
 
-To access the headers, simply use: `include <dynamicboltz>`. 
+To access the headers, simply use: `include <bmla>`. 
 
 Link your program using:
 ```
-g++ -std=c++14 -O3 -ldynamicboltz -ldcubic myprogram.cpp -o myprogram.o
+g++ -std=c++14 -O3 -lbmla bmla.cpp -o bmla.o
 ```
-(this assumes you have install `-ldcubic`).
 
 ## Namespace
 
-The namespace is `dblz` ("DynamicBoltzmann").
-
-# BMLA - To learn initial conditions
-
-To learn initial conditions, see the `bmla` folder [here](bmla).
+The namespace is `bmla`.

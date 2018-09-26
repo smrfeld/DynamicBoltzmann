@@ -1,0 +1,128 @@
+(* Content-type: application/vnd.wolfram.mathematica *)
+
+(*** Wolfram Notebook File ***)
+(* http://www.wolfram.com/nb *)
+
+(* CreatedBy='Mathematica 11.3' *)
+
+(*CacheID: 234*)
+(* Internal cache information:
+NotebookFileLineBreakTest
+NotebookFileLineBreakTest
+NotebookDataPosition[       158,          7]
+NotebookDataLength[      4344,        120]
+NotebookOptionsPosition[      3819,        102]
+NotebookOutlinePosition[      4175,        118]
+CellTagsIndexPosition[      4132,        115]
+WindowFrame->Normal*)
+
+(* Beginning of Notebook Content *)
+Notebook[{
+
+Cell[CellGroupData[{
+Cell["Ixn params", "Title",
+ CellChangeTimes->{{3.746820513019732*^9, 3.746820514214099*^9}, {
+  3.7468838577347813`*^9, 
+  3.746883859373808*^9}},ExpressionUUID->"3ce573fc-6927-465e-90ca-\
+dbe37f307e21"],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"SetDirectory", "[", 
+   RowBox[{"NotebookDirectory", "[", "]"}], "]"}], ";"}]], "Input",
+ CellChangeTimes->{{3.746820515098518*^9, 3.746820527206663*^9}},
+ CellLabel->"In[6]:=",ExpressionUUID->"75cdb08d-e375-479f-a055-38fa7377bf0d"],
+
+Cell[BoxData[
+ RowBox[{"Manipulate", "[", "\[IndentingNewLine]", "\[IndentingNewLine]", 
+  RowBox[{
+   RowBox[{
+    RowBox[{"datahA", "=", 
+     RowBox[{"Flatten", "[", 
+      RowBox[{"Import", "[", 
+       RowBox[{
+        RowBox[{"\"\<../data_learned/ixn_params/hA_\>\"", "<>", 
+         RowBox[{"IntegerString", "[", 
+          RowBox[{"iOpt", ",", "10", ",", "3"}], "]"}], "<>", 
+         "\"\<.txt\>\""}], ",", "\"\<Table\>\""}], "]"}], "]"}]}], ";", 
+    "\[IndentingNewLine]", 
+    RowBox[{"datawAX", "=", 
+     RowBox[{"Flatten", "[", 
+      RowBox[{"Import", "[", 
+       RowBox[{
+        RowBox[{"\"\<../data_learned/ixn_params/wAX_\>\"", "<>", 
+         RowBox[{"IntegerString", "[", 
+          RowBox[{"iOpt", ",", "10", ",", "3"}], "]"}], "<>", 
+         "\"\<.txt\>\""}], ",", "\"\<Table\>\""}], "]"}], "]"}]}], ";", 
+    "\[IndentingNewLine]", 
+    RowBox[{"databX", "=", 
+     RowBox[{"Flatten", "[", 
+      RowBox[{"Import", "[", 
+       RowBox[{
+        RowBox[{"\"\<../data_learned/ixn_params/bX_\>\"", "<>", 
+         RowBox[{"IntegerString", "[", 
+          RowBox[{"iOpt", ",", "10", ",", "3"}], "]"}], "<>", 
+         "\"\<.txt\>\""}], ",", "\"\<Table\>\""}], "]"}], "]"}]}], ";", 
+    "\[IndentingNewLine]", "\[IndentingNewLine]", 
+    RowBox[{"Row", "[", 
+     RowBox[{"{", "\[IndentingNewLine]", 
+      RowBox[{
+       RowBox[{"ListLinePlot", "[", 
+        RowBox[{"datahA", ",", 
+         RowBox[{"PlotRange", "\[Rule]", 
+          RowBox[{"{", 
+           RowBox[{
+            RowBox[{"-", "3"}], ",", "1.5"}], "}"}]}]}], "]"}], ",", 
+       "\[IndentingNewLine]", 
+       RowBox[{"ListLinePlot", "[", 
+        RowBox[{"datawAX", ",", 
+         RowBox[{"PlotRange", "\[Rule]", 
+          RowBox[{"{", 
+           RowBox[{
+            RowBox[{"-", "3"}], ",", "1.5"}], "}"}]}]}], "]"}], ",", 
+       "\[IndentingNewLine]", 
+       RowBox[{"ListLinePlot", "[", 
+        RowBox[{"databX", ",", 
+         RowBox[{"PlotRange", "\[Rule]", 
+          RowBox[{"{", 
+           RowBox[{
+            RowBox[{"-", "3"}], ",", "1.5"}], "}"}]}]}], "]"}]}], 
+      "\[IndentingNewLine]", "}"}], "]"}]}], "\[IndentingNewLine]", ",", 
+   RowBox[{"{", 
+    RowBox[{"iOpt", ",", "1", ",", "10", ",", "1"}], "}"}]}], "]"}]], "Input",\
+
+ CellChangeTimes->{{3.7468205293077803`*^9, 3.7468206422887497`*^9}, {
+  3.746820841119135*^9, 3.746820841203514*^9}, {3.7468285740566473`*^9, 
+  3.7468286177801723`*^9}, {3.7468286585530148`*^9, 3.746828681408091*^9}, {
+  3.7468834696444187`*^9, 3.7468835022803698`*^9}, {3.7468838633715153`*^9, 
+  3.746883939663383*^9}, {3.7468862953798237`*^9, 3.746886320699545*^9}, {
+  3.746891855113339*^9, 3.7468918808339367`*^9}},
+ CellLabel->"In[11]:=",ExpressionUUID->"fcb9b648-7c4f-45c6-bb3c-f1cc933a905a"]
+}, Open  ]]
+},
+WindowSize->{808, 911},
+WindowMargins->{{Automatic, 670}, {136, Automatic}},
+FrontEndVersion->"11.3 for Mac OS X x86 (32-bit, 64-bit Kernel) (March 5, \
+2018)",
+StyleDefinitions->"Default.nb"
+]
+(* End of Notebook Content *)
+
+(* Internal cache information *)
+(*CellTagsOutline
+CellTagsIndex->{}
+*)
+(*CellTagsIndex
+CellTagsIndex->{}
+*)
+(*NotebookFileOutline
+Notebook[{
+Cell[CellGroupData[{
+Cell[580, 22, 204, 4, 98, "Title",ExpressionUUID->"3ce573fc-6927-465e-90ca-dbe37f307e21"],
+Cell[787, 28, 267, 5, 30, "Input",ExpressionUUID->"75cdb08d-e375-479f-a055-38fa7377bf0d"],
+Cell[1057, 35, 2746, 64, 388, "Input",ExpressionUUID->"fcb9b648-7c4f-45c6-bb3c-f1cc933a905a"]
+}, Open  ]]
+}
+]
+*)
+

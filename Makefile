@@ -37,7 +37,7 @@ DEPS = $(OBJS:.o=.d)
 all: $(BUILD_DIR) $(TARGET_LIB)
 
 $(BUILD_DIR):
-	mkdir -p $(BUILD_DIR) $(BUILD_DIR)/include_impl
+	mkdir -p $(BUILD_DIR) lib
 
 $(TARGET_LIB): $(OBJS)
 	$(CXX) ${LDFLAGS} $^ -o $@

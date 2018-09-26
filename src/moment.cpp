@@ -76,6 +76,7 @@ namespace dblz {
 		_type = other._type;
 
 		_monitor_h = other._monitor_h; 
+		_monitor_b = other._monitor_b; 
 		_monitor_j = other._monitor_j; 
 		_monitor_k = other._monitor_k; 
 		_monitor_w = other._monitor_w; 
@@ -96,6 +97,7 @@ namespace dblz {
 		other._name = "";
 
 		other._monitor_h.clear(); 
+		other._monitor_b.clear();
 		other._monitor_j.clear(); 
 		other._monitor_k.clear(); 
 		other._monitor_w.clear(); 
@@ -115,6 +117,7 @@ namespace dblz {
 		_type = other._type;
 
 		_monitor_h = other._monitor_h; 
+		_monitor_b = other._monitor_b;
 		_monitor_j = other._monitor_j; 
 		_monitor_k = other._monitor_k; 
 		_monitor_w = other._monitor_w; 
@@ -166,6 +169,13 @@ namespace dblz {
 			exit(EXIT_FAILURE);
 		};
 		_monitor_h.push_back(uv);
+	};
+	void Moment::add_unit_to_monitor_b(UnitHidden *uh) {
+		if (_type != IxnParamType::B) {
+			std::cerr << ">>> Error: Moment::add_unit_to_monitor_b <<< tried to add visible unit but moment is not of type B" << std::endl;
+			exit(EXIT_FAILURE);
+		};
+		_monitor_b.push_back(uh);
 	};
 	void Moment::add_conn_to_monitor_j(ConnVV *conn) {
 		if (_type != IxnParamType::J) {
@@ -343,6 +353,11 @@ namespace dblz {
 		if (_type == IxnParamType::H) {
 			// H
 			for (auto const &unit: _monitor_h) {
+				count += unit->get_moment(_name,binary);
+			};
+		} else if (_type == IxnParamType::B) {
+			// B
+			for (auto const &unit: _monitor_b) {
 				count += unit->get_moment(_name,binary);
 			};
 		} else if (_type == IxnParamType::J) {

@@ -413,6 +413,11 @@ namespace dblz {
 			moment->add_unit_to_monitor_h(&s);
 		};
 	};
+	void Lattice::all_units_h_add_to_moment_b(std::shared_ptr<Moment> moment) {
+		for (auto &s: _latt_h) {
+			moment->add_unit_to_monitor_b(&s);
+		};
+	};
 	void Lattice::all_conns_vv_add_to_moment_j(std::shared_ptr<Moment> moment) {
 		for (auto &c: _conns_vv) {
 			moment->add_conn_to_monitor_j(&c);

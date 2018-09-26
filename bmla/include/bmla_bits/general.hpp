@@ -1,12 +1,4 @@
-#ifndef STRING_H
-#define STRING_H
 #include <string>
-#endif
-
-#ifndef VECTOR_H
-#define VECTOR_H
-#include <vector>
-#endif
 
 /************************************
 * Namespace for bmla
@@ -19,6 +11,12 @@ namespace bmla {
 	****************************************/
 
 	/********************
+	Sign function
+	********************/
+
+	int sgn(double val);
+
+	/********************
 	Zero pad a string
 	********************/
 
@@ -28,8 +26,8 @@ namespace bmla {
 	Random numbers
 	********************/
 
-	double randD(double dMin, double dMax);
-	int randI(int iMin, int iMax);
+	double randD(double dMin, double dMax); // inclusive
+	int randI(int iMin, int iMax); // inclusive
 
 	/********************
 	Pointer deletions
@@ -45,11 +43,4 @@ namespace bmla {
 			delete[] p; p=nullptr;
 		};
 	};
-
-	/********************
-	Sample a vector of propensities (cumulative probabilities)		
-	********************/
-
-	int sample_prop_vec(std::vector<double> &props);
-
 };

@@ -1,10 +1,12 @@
-#include "lattice.hpp"
+#include "../include/bmla_bits/lattice.hpp"
 
 // Other headers
-#include "species.hpp"
-#include "ixn_param.hpp"
 #include "../include/bmla_bits/general.hpp"
-#include "hidden_unit.hpp"
+#include "../include/bmla_bits/species.hpp"
+#include "../include/bmla_bits/unit.hpp"
+#include "../include/bmla_bits/connections.hpp"
+#include "../include/bmla_bits/ixn_dicts.hpp"
+#include "../include/bmla_bits/moment.hpp"
 
 #include <iostream>
 #include <fstream>
@@ -19,530 +21,6 @@
 ************************************/
 
 namespace bmla {
-
-	/****************************************
-	Class to hold a connection from visible to hidden
-	****************************************/
-
-	// Constructor
-	ConnectionVH::ConnectionVH(Site *site, HiddenUnit *hidden_unit, std::vector<IxnParam*> ips) {
-		_site = site;
-		_hidden_unit = hidden_unit;
-		for (auto ip: ips) {
-			add_ixn_param(ip);
-		};	
-	};
-	ConnectionVH::ConnectionVH(const ConnectionVH& other) {
-		_copy(other);
-	};
-	ConnectionVH::ConnectionVH(ConnectionVH&& other) {
-		_copy(other);
-		other._reset();
-	};
-	ConnectionVH& ConnectionVH::operator=(const ConnectionVH& other) {
-		if (this != &other) {
-			_clean_up();
-			_copy(other);
-		};
-		return *this;
-	};
-	ConnectionVH& ConnectionVH::operator=(ConnectionVH&& other) {
-		if (this != &other) {
-			_clean_up();
-			_copy(other);
-			other._reset();
-		};
-		return *this;
-	};
-	ConnectionVH::~ConnectionVH() {
-		_clean_up();
-	};
-	void ConnectionVH::_clean_up() {
-		// Nothing....
-	};
-	void ConnectionVH::_reset() {
-		_site = nullptr;
-		_hidden_unit = nullptr;
-		_ips_visible_hidden.clear();
-		_ips_hidden_visible.clear();
-	};
-	void ConnectionVH::_copy(const ConnectionVH& other) {
-		_site = other._site;
-		_hidden_unit = other._hidden_unit;
-		_ips_visible_hidden = other._ips_visible_hidden;
-		_ips_hidden_visible = other._ips_hidden_visible;
-	};
-
-	// TMP
-	HiddenUnit* ConnectionVH::hidden_unit() const {
-		return _hidden_unit;
-	};
-	Site* ConnectionVH::site() const {
-		return _site;
-	};
-
-	// Add ixn param
-	void ConnectionVH::add_ixn_param(IxnParam* ip) {
-		// Get the species associated with this ixn param
-		std::vector<SpeciesVH> sp_vec = ip->get_species_conn();
-
-		// Go through the species
-		for (auto spvh: sp_vec) {
-			// Store both ways
-			_ips_visible_hidden[spvh.sp_visible][spvh.sp_hidden].push_back(ip);
-			_ips_hidden_visible[spvh.sp_hidden][spvh.sp_visible].push_back(ip);
-		};
-	};
-
-	// Get for a species on the visible unit
-	double ConnectionVH::get_act_visible(Species* sp_visible) {
-		double act=0.0;
-		auto it = _ips_visible_hidden.find(sp_visible);
-		if (it != _ips_visible_hidden.end()) {
-			// Go through all hidden species
-			for (auto iph: it->second) {
-				// Go through all ixn params
-				for (auto ip: iph.second) {
-					// Weight (from ixn param) * hidden units value for this hidden species
-					act += ip->get() * _hidden_unit->get_prob(iph.first);
-				};
-			};
-		};
-		return act;
-	};
-
-	// Get activation for a hidden
-	double ConnectionVH::get_act_hidden(HiddenSpecies* sp_hidden) {
-		double act=0.0;
-		auto it = _ips_hidden_visible.find(sp_hidden);
-		if (it != _ips_hidden_visible.end()) {
-			// Go through all visible species
-			for (auto ipv: it->second) {
-				// Go through all ixn params
-				for (auto ip: ipv.second) {
-					// Weight (from ixn param) * sites value for this visible species
-					act += ip->get() * _site->get_prob(ipv.first);
-				};
-			};
-		};
-		return act;
-	};
-
-	/****************************************
-	Class to hold a lattice Site
-	****************************************/
-
-	/********************
-	Constructor
-	********************/
-
-	Site::Site(int x) : Site(x,0,0) { _dim=1; };
-	Site::Site(int x, int y) : Site(x,y,0) { _dim=2; };
-	Site::Site(int x, int y, int z) {
-		_dim=3;
-		_x = x;
-		_y = y;
-		_z = z;
-		_prob_empty = 1.0; // default = empty
-	};	
-	Site::Site(const Site& other) {
-		_copy(other);
-	};
-	Site::Site(Site&& other) {
-		_copy(other);
-		other._reset();
-	};
-	Site& Site::operator=(const Site& other) {
-		if (this != &other) {
-			_clean_up();
-			_copy(other);
-		};
-		return *this;
-	};
-	Site& Site::operator=(Site&& other) {
-		if (this != &other) {
-			_clean_up();
-			_copy(other);
-			other._reset();
-		};
-		return *this;
-	};
-	Site::~Site() {
-		_clean_up();
-	};
-	void Site::_clean_up() {
-		// Nothing....
-	};
-	void Site::_reset() {
-		_dim = 0;
-		_x = 0;
-		_y = 0;
-		_z = 0;
-		_nbrs.clear();
-		_nbrs_triplets.clear();
-		_nbrs_quartics.clear();
-		_hidden_conns.clear();
-		_prob_empty = 0.0;
-		_probs.clear();
-		_sp_possible.clear();
-	};
-	void Site::_copy(const Site& other) {
-		_dim = other._dim;
-		_x = other._x;
-		_y = other._y;
-		_z = other._z;
-		_nbrs = other._nbrs;
-		_nbrs_triplets = other._nbrs_triplets;
-		_nbrs_quartics = other._nbrs_quartics;
-		_hidden_conns = other._hidden_conns;
-		_prob_empty = other._prob_empty;
-		_probs = other._probs;
-		_sp_possible = other._sp_possible;
-	};
-
-	/********************
-	Validate
-	********************/
-
-	void Site::validate() const {
-		/*
-		std::cout << _x << " " << _y << " " << _z << " hidden nbrs: (" << _hidden_conns.size() << ")" << std::endl;
-		HiddenUnit *hu;
-		for (auto const &c: _hidden_conns) {
-			hu = c->hidden_unit();
-			hu->print_conns(true);
-		};
-		*/
-		std::cout << _x << " " << _y << " " << _z << " triplets: ( " << _nbrs_triplets.size() << ")" << std::endl;
-		for (auto const &s2: _nbrs_triplets) {
-			std::cout << s2.s1->x() << " " << s2.s2->x() << std::endl;
-		};
-	};
-
-	/********************
-	Check location
-	********************/
-
-	int Site::x() const {
-		return _x;
-	};
-	int Site::y() const {
-		return _y;
-	};
-	int Site::z() const {
-		return _z;
-	};
-	bool Site::less_than(const Site &other) const {
-		if (_dim == 1) {
-			return _x < other._x;
-		} else if (_dim == 2) {
-			return std::tie(_x, _y) < std::tie(other._x, other._y);
- 		} else if (_dim == 3) {
-			return std::tie(_x, _y, _z) < std::tie(other._x, other._y, other._z);
-	    } else {
-	    	return false;
-	    };	
-	};
-
-	/********************
-	Add neighbors
-	********************/
-
-	void Site::add_nbr(Site *s) {
-		_nbrs.push_back(s);
-	};
-	void Site::add_nbr_triplet(Site *s1, Site *s2) {
-		_nbrs_triplets.push_back(Site2(s1,s2));
-	};
-	void Site::add_nbr_quartic(Site *s1, Site *s2, Site *s3) {
-		_nbrs_quartics.push_back(Site3(s1,s2,s3));
-	};
-
-	/********************
-	Comparator
-	********************/
-
-	bool operator <(const Site& a, const Site& b) {
-		return a.less_than(b);
-	};
-
-	/********************
-	Add a hidden conn
-	********************/
-
-	void Site::add_visible_hidden_conn(ConnectionVH* connvh) {
-		_hidden_conns.push_back(connvh);
-	};
-
-	/********************
-	Add a species possibility
-	********************/
-
-	void Site::add_species_possibility(Species* sp) {
-		_sp_possible.push_back(sp);
-		_probs[sp] = 0.0;
-	};
-
-	/********************
-	Get probability
-	********************/
-
-	// nullptr for empty
-	double Site::get_prob(Species *sp) const {
-		// nullptr for prob of empty
-		if (sp == nullptr) {
-			return _prob_empty;
-		};
-
-		auto it = _probs.find(sp);
-		if (it != _probs.end()) {
-			return it->second;
-		} else {
-			return 0.0;
-		};
-	};
-
-	// Get all probs (excluding prob of empty)
-	const std::map<Species*, double>& Site::get_probs() const {
-		return _probs;
-	};
-
-	// Set probability
-	// Pass nullptr to set probability of being empty
-	void Site::set_prob(Species *sp, double prob) {
-
-		// nullptr for prob of empty
-		if (sp == nullptr) {
-			_prob_empty = prob;
-			return;
-		};
-
-		// Remove the old counts
-		if (_probs[sp] > 0.0) {
-			_remove_counts_on_species(sp,_probs[sp]);
-		};
-
-		// Store
-		// std::cout << "Set prob for site: " << x << " species " << sp->name() << " to: " << prob << std::endl;
-		_probs[sp] = prob;
-
-		// Increment counts on species
-		_add_counts_on_species(sp,prob);
-	};
-
-	// Set a site to be empty
-	void Site::set_site_empty() {
-		// Remove counts on existing species
-		for (auto pr: _probs) {
-			if (pr.second > 0.0) {
-				_remove_counts_on_species(pr.first,pr.second);
-				// Clear
-				_probs[pr.first] = 0.0;
-			};
-		};
-
-		// Empty prob = 1
-		_prob_empty = 1.0;
-	};
-
-	// Set site to have binary probs
-	void Site::set_site_binary(Species *sp) {
-		// Clear
-		set_site_empty();
-		// Make
-		set_prob(sp,1.0);
-	};
-
-	/********************
-	Sample
-	********************/
-
-	void Site::sample(bool binary) {
-		double energy;
-
-		std::vector<double> props,probs;
-		props.push_back(0.0);
-
-		// Empty = 1
-		props.push_back(1.0);
-		probs.push_back(1.0);
-
-		// Go through all possible species this could be, calculate propensities
-		for (auto sp: _sp_possible) {
-			
-			// Bias
-			energy = sp->h();
-
-			// NNs - go through neihbors
-			for (auto lit: _nbrs) {
-				// Get all probs
-				const std::map<Species*, double> prs = lit->get_probs();
-				// Go through all probs
-				for (auto pr: prs) {
-					// J * prob
-					energy += sp->j(pr.first) * pr.second;
-				};
-			};
-
-			// Triplets - go through all pairs to consider
-			for (auto trip: _nbrs_triplets) {
-				// Get all probs
-				const std::map<Species*, double> prs1 = trip.s1->get_probs();
-				const std::map<Species*, double> prs2 = trip.s2->get_probs();
-				// Go through all probs
-				for (auto const &pr1: prs1) {
-					for (auto const &pr2: prs2) {
-						// K * prob * prob
-						energy += sp->k(pr1.first,pr2.first) * pr1.second * pr2.second;
-					};
-				};
-			};
-
-			// Quartics - go through all pairs to consider
-			for (auto trip: _nbrs_quartics) {
-				// Get all probs
-				const std::map<Species*, double> prs1 = trip.s1->get_probs();
-				const std::map<Species*, double> prs2 = trip.s2->get_probs();
-				const std::map<Species*, double> prs3 = trip.s3->get_probs();
-				// Go through all probs
-				for (auto const &pr1: prs1) {
-					for (auto const &pr2: prs2) {
-						for (auto const &pr3: prs3) {
-							// Q * prob * prob * prob
-							energy += sp->q(pr1.first,pr2.first,pr3.first) * pr1.second * pr2.second * pr3.second;
-						};
-					};
-				};
-			};
-
-			// Conn to hidden layer - go through conns
-			for (auto connvh: _hidden_conns) {
-				energy += connvh->get_act_visible(sp);
-			};
-
-			// Append prop
-			energy = exp(energy);
-			props.push_back(props.back()+energy);
-			probs.push_back(energy);
-		};
-
-		// Commit probs
-		if (binary) {
-
-			// Sample RV
-			int i_chosen = sample_prop_vec(props);
-
-			if (i_chosen==0) {
-				// Flip down (new spin = 0)
-				set_site_empty();
-			} else {
-				// Make the appropriate species at this site (guaranteed empty)
-				set_site_binary(_sp_possible[i_chosen-1]);
-			};
-
-		} else {
-
-			// Normalize probs
-			double tot=0.0;
-			for (auto pr: probs) {
-				tot += pr;
-			};
-
-			// Write into species
-			set_prob(nullptr,probs[0]/tot);
-			for (int i=0; i<_sp_possible.size(); i++) {
-				set_prob(_sp_possible[i],probs[i+1]/tot);
-			};
-		};
-
-	};
-
-	/********************
-	Check if site is empty
-	********************/
-
-	bool Site::empty() const {
-		if (_prob_empty == 1.0) {
-			return true;
-		} else {
-			return false;
-		};
-	};
-
-	/********************
-	Binarize the set
-	********************/
-
-	void Site::binarize() {
-		// Propensity vector
-		std::vector<double> props;
-		std::vector<Species*> sp_vec;
-		props.push_back(0.0);
-		props.push_back(_prob_empty);
-		for (auto pr: _probs) {
-			props.push_back(props.back()+pr.second);
-			sp_vec.push_back(pr.first);
-		};
-
-		int i = sample_prop_vec(props);
-		if (i==0) {
-			set_site_empty();
-		} else {
-			set_site_binary(sp_vec[i-1]);
-		};
-	};
-
-	/****************************************
-	Site - PRIVATE
-	****************************************/
-
-	void Site::_remove_counts_on_species(Species *sp, double prob) {
-		_add_counts_on_species(sp,-1.0*prob);
-	};
-	void Site::_add_counts_on_species(Species *sp, double prob) {
-
-		// Counts
-		sp->count_increment(prob);
-
-		// NNs, if needed
-		for (auto nbr_it: _nbrs) {
-			// Get all the probs
-			const std::map<Species*, double> prs = nbr_it->get_probs();
-			for (auto pr: prs) {
-				// Increment
-				sp->nn_count_increment(pr.first,prob*pr.second);
-			};
-		};
-
-		// Triplets, if needed
-		for (auto trip: _nbrs_triplets) {
-			// Get all the probs
-			const std::map<Species*, double> prs1 = trip.s1->get_probs();
-			const std::map<Species*, double> prs2 = trip.s2->get_probs();
-			for (auto pr1: prs1) {
-				for (auto pr2: prs2) {
-					// Increment
-					sp->triplet_count_increment(pr1.first,pr2.first,prob*pr1.second*pr2.second);
-				};
-			};
-		};
-
-		// Quartics, if needed
-		for (auto quart: _nbrs_quartics) {
-			// Get all the probs
-			const std::map<Species*, double> prs1 = quart.s1->get_probs();
-			const std::map<Species*, double> prs2 = quart.s2->get_probs();
-			const std::map<Species*, double> prs3 = quart.s3->get_probs();
-			for (auto pr1: prs1) {
-				for (auto pr2: prs2) {
-					for (auto pr3: prs3) {
-						// Increment
-						sp->quartic_count_increment(pr1.first,pr2.first,pr3.first,prob*pr1.second*pr2.second*pr3.second);
-					};
-				};
-			};
-		};
-	};
 
 	/****************************************
 	Lattice
@@ -561,30 +39,30 @@ namespace bmla {
 		_dim = dim;
 		_box_length = box_length;
 
-		// Does the lattice have the following structure?
-		_latt_has_nn_structure = false;
-		_latt_has_triplet_structure = false;
-		_latt_has_quartic_structure = false;
-
 		// Make a fully linked list of sites
 		if (dim == 1) {
 			for (int x=1; x<=box_length; x++) {
-				_latt.push_back(Site(x));					
+				_latt_v.push_back(UnitVisible(x));					
 			};
 		} else if (dim == 2) {
 			for (int x=1; x<=box_length; x++) {
 				for (int y=1; y<=box_length; y++) {
-					_latt.push_back(Site(x,y));					
+					_latt_v.push_back(UnitVisible(x,y));					
 				};
 			};
 		} else if (dim == 3) {
 			for (int x=1; x<=box_length; x++) {
 				for (int y=1; y<=box_length; y++) {
 					for (int z=1; z<=box_length; z++) {
-						_latt.push_back(Site(x,y,z));					
+						_latt_v.push_back(UnitVisible(x,y,z));					
 					};
 				};
 			};
+		};
+	};
+	Lattice::Lattice(int dim, int box_length, std::vector<Sptr> possible_species_of_all_units_vis) : Lattice(dim,box_length) {
+		for (auto lit=_latt_v.begin(); lit != _latt_v.end(); lit++) {
+			lit->set_possible_species(possible_species_of_all_units_vis);
 		};
 	};
 	Lattice::Lattice(const Lattice& other) {
@@ -617,32 +95,609 @@ namespace bmla {
 		// Nothing...
 	};
 	void Lattice::_copy(const Lattice& other) {
-		_latt = other._latt;
+		_dim = other._dim;
 		_box_length = other._box_length;
-		_sp_map = other._sp_map;
-		_sp_vec = other._sp_vec;
-		_latt_has_nn_structure = other._latt_has_nn_structure;
-		_latt_has_triplet_structure = other._latt_has_triplet_structure;
-		_latt_has_quartic_structure = other._latt_has_quartic_structure;
+		_latt_v = other._latt_v;
+		_latt_h = other._latt_h;
+		_latt_h_map_dim_1 = other._latt_h_map_dim_1;
+		_latt_h_map_dim_2 = other._latt_h_map_dim_2;
+		_latt_h_map_dim_3 = other._latt_h_map_dim_3;
+		_conns_vv = other._conns_vv;
+		_conns_vvv = other._conns_vvv;
+		_conns_vh = other._conns_vh;
 	};
 	void Lattice::_reset() {
+		_dim = 0;
 		_box_length = 0;
-		_sp_map.clear();
-		_sp_vec.clear();
-		_latt.clear();
-		_latt_has_nn_structure = false;
-		_latt_has_triplet_structure = false;
-		_latt_has_quartic_structure = false;
+		_latt_v.clear();
+		_latt_h.clear();
+		_latt_h_map_dim_1.clear();
+		_latt_h_map_dim_2.clear();
+		_latt_h_map_dim_3.clear();
+		_conns_vv.clear();
+		_conns_vvv.clear();
+		_conns_vh.clear();
 	};
 
 	/********************
-	Validate
+	Check setup
 	********************/
 
-	void Lattice::validate_graph() const {
-		for (auto const &s: _latt) {
-			s.validate();
+	void Lattice::check_setup() const {
+		// Go through all sites
+		for (auto const &s: _latt_v) {
+			s.check_setup();
 		};
+	};
+
+	void Lattice::print_occupancy(bool binary) const {
+		for (auto const &s: _latt_v) {
+			if (_dim == 1) {
+				std::cout << s.x() << " " << std::flush;
+			} else if (_dim == 2) {
+				std::cout << s.x() << " " << s.y() << " " << std::flush;
+			} else if (_dim == 3) {
+				std::cout << s.x() << " " << s.y() << " " << s.z() << " " << std::flush;
+			};
+			if (binary) {
+				if (s.get_b_mode_species()) {
+					std::cout << s.get_b_mode_species()->get_name() << std::endl;
+				} else {
+					std::cout << "EMPTY" << std::endl;
+				};
+			} else {
+				for (auto &pr: s.get_p_mode_probs()) {
+					std::cout << "(" << pr.first->get_name() << " " << pr.second << ") ";
+				};
+				std::cout << std::endl;
+			};
+		};
+		for (auto const &s: _latt_h) {
+			std::cout << "[Hidden] " << std::flush;
+			if (_dim == 1) {
+				std::cout << s.x() << " " << std::flush;
+			} else if (_dim == 2) {
+				std::cout << s.x() << " " << s.y() << " " << std::flush;
+			} else if (_dim == 3) {
+				std::cout << s.x() << " " << s.y() << " " << s.z() << " " << std::flush;
+			};
+			if (binary) {
+				if (s.get_b_mode_species()) {
+					std::cout << s.get_b_mode_species()->get_name() << std::endl;
+				} else {
+					std::cout << "EMPTY" << std::endl;
+				};
+			} else {
+				for (auto &pr: s.get_p_mode_probs()) {
+					std::cout << "(" << pr.first->get_name() << " " << pr.second << ") ";
+				};
+				std::cout << std::endl;
+			};
+		};
+	};
+
+	/********************
+	Helpers to setup all sites - Add possible species to all sites
+	********************/
+
+	void Lattice::all_units_v_add_possible_species(Sptr species) {
+		if (!species) {
+			std::cerr << ">>> Error: Lattice::all_units_v_add_possible_species <<< nullptr is not allowed!" << std::endl;
+			exit(EXIT_FAILURE);
+		};
+
+		for (auto &s: _latt_v) {
+			s.add_possible_species(species);
+		};
+	};
+
+	void Lattice::all_units_h_add_possible_species(Sptr species) {
+		if (!species) {
+			std::cerr << ">>> Error: Lattice::all_units_h_add_possible_species <<< nullptr is not allowed!" << std::endl;
+			exit(EXIT_FAILURE);
+		};
+
+		for (auto &s: _latt_h) {
+			s.add_possible_species(species);
+		};	
+	};
+
+	/********************
+	Helpers to setup all sites - Biases
+	********************/
+
+	void Lattice::all_units_v_set_bias_dict(std::shared_ptr<BiasDict> bias_dict) {
+		for (auto &s: _latt_v) {
+			s.set_bias_dict(bias_dict);
+		};
+	};
+
+	void Lattice::all_units_h_set_bias_dict(std::shared_ptr<BiasDict> bias_dict) {
+		for (auto &s: _latt_h) {
+			s.set_bias_dict(bias_dict);
+		};
+	};
+
+	/********************
+	Helpers to setup all sites - Visible-Visible ixns
+	********************/
+
+	void Lattice::all_conns_vv_init() {
+		all_conns_vv_init(nullptr);
+	};
+	void Lattice::all_conns_vv_init(std::shared_ptr<O2IxnDict> ixn_dict) {
+
+		auto lit = _latt_v.begin();
+		UnitVisible *nbr = nullptr;
+		while (lit != _latt_v.end()) {
+			// Only connect to "plus one" (not minus one) => no duplicates!
+
+			// Dim 1,2,3
+			if (lit->x()+1 <= _box_length) {
+				if (_dim == 1) {
+					nbr = _look_up_unit_v(lit->x()+1);
+				} else if (_dim == 2) {
+					nbr = _look_up_unit_v(lit->x()+1,lit->y());
+				} else if (_dim == 3) {
+					nbr = _look_up_unit_v(lit->x()+1,lit->y(),lit->z());
+				};
+				add_conn_vv(&*lit,nbr,ixn_dict);
+			};
+
+			// Dim 2,3
+			if (_dim == 2 || _dim == 3) {
+				if (lit->y()+1 <= _box_length) {
+					if (_dim == 2) {
+						nbr = _look_up_unit_v(lit->x(),lit->y()+1);
+					} else if (_dim == 3) {
+						nbr = _look_up_unit_v(lit->x(),lit->y()+1,lit->z());
+					};
+					add_conn_vv(&*lit,nbr,ixn_dict);
+				};
+			};
+
+			// Dim 3
+			if (_dim == 3) {
+				if (lit->z()+1 <= _box_length) {
+					if (_dim == 3) {
+						nbr = _look_up_unit_v(lit->x(),lit->y(),lit->z()+1);
+					};
+					add_conn_vv(&*lit,nbr,ixn_dict);
+				};
+			};
+
+			// Next
+			lit++;
+		};
+	};
+
+	void Lattice::all_conns_vvv_init() {
+		all_conns_vvv_init(nullptr);
+	};
+
+	void Lattice::all_conns_vvv_init(std::shared_ptr<O3IxnDict> ixn_dict) {
+
+		auto lit = _latt_v.begin();
+		UnitVisible *nbr1 = nullptr, *nbr2 = nullptr;
+		while (lit != _latt_v.end()) {
+			// Only connect to "plus one/two" (not minus one/two) => no duplicates!
+
+			// Dim 1,2,3
+			// Right 1, Right 1
+			if (lit->x()+2 <= _box_length) {
+				if (_dim == 1) {
+					nbr1 = _look_up_unit_v(lit->x()+1);
+					nbr2 = _look_up_unit_v(lit->x()+2);
+				} else if (_dim == 2) {
+					nbr1 = _look_up_unit_v(lit->x()+1,lit->y());
+					nbr2 = _look_up_unit_v(lit->x()+2,lit->y());
+				} else if (_dim == 3) {
+					nbr1 = _look_up_unit_v(lit->x()+1,lit->y(),lit->z());
+					nbr2 = _look_up_unit_v(lit->x()+2,lit->y(),lit->z());
+				};
+				add_conn_vvv(&*lit,nbr1,nbr2,ixn_dict);
+			};
+
+			// Dim 2,3
+			if (_dim == 2 || _dim == 3) {
+				// Up 1, up 1
+				if (lit->y()+2 <= _box_length) {
+					if (_dim == 2) {
+						nbr1 = _look_up_unit_v(lit->x(),lit->y()+1);
+						nbr2 = _look_up_unit_v(lit->x(),lit->y()+2);
+					} else if (_dim == 3) {
+						nbr1 = _look_up_unit_v(lit->x(),lit->y()+1,lit->z());
+						nbr2 = _look_up_unit_v(lit->x(),lit->y()+2,lit->z());
+					};
+					add_conn_vvv(&*lit,nbr1,nbr2,ixn_dict);
+				};
+				// Up 1, right 1
+				if (lit->x()+1 <= _box_length && lit->y()+1 <= _box_length) {
+					if (_dim == 2) {
+						nbr1 = _look_up_unit_v(lit->x(),lit->y()+1);
+						nbr2 = _look_up_unit_v(lit->x()+1,lit->y()+1);
+					} else if (_dim == 3) {
+						nbr1 = _look_up_unit_v(lit->x(),lit->y()+1,lit->z());
+						nbr2 = _look_up_unit_v(lit->x()+1,lit->y()+1,lit->z());
+					};
+					add_conn_vvv(&*lit,nbr1,nbr2,ixn_dict);
+				};
+				// Right 1, up 1
+				if (lit->x()+1 <= _box_length && lit->y()+1 <= _box_length) {
+					if (_dim == 2) {
+						nbr1 = _look_up_unit_v(lit->x()+1,lit->y());
+						nbr2 = _look_up_unit_v(lit->x()+1,lit->y()+1);
+					} else if (_dim == 3) {
+						nbr1 = _look_up_unit_v(lit->x()+1,lit->y(),lit->z());
+						nbr2 = _look_up_unit_v(lit->x()+1,lit->y()+1,lit->z());
+					};
+					add_conn_vvv(&*lit,nbr1,nbr2,ixn_dict);
+				};
+			};
+
+			// Dim 3
+			if (_dim == 3) {
+				// Forward 1, forward 1
+				if (lit->z()+2 <= _box_length) {
+					if (_dim == 3) {
+						nbr1 = _look_up_unit_v(lit->x(),lit->y(),lit->z()+1);
+						nbr2 = _look_up_unit_v(lit->x(),lit->y(),lit->z()+2);
+					};
+					add_conn_vvv(&*lit,nbr1,nbr2,ixn_dict);
+				};
+				// Forward 1, right 1
+				if (lit->x()+1 <= _box_length && lit->z()+1 <= _box_length) {
+					if (_dim == 3) {
+						nbr1 = _look_up_unit_v(lit->x(),lit->y(),lit->z()+1);
+						nbr2 = _look_up_unit_v(lit->x()+1,lit->y(),lit->z()+1);
+					};
+					add_conn_vvv(&*lit,nbr1,nbr2,ixn_dict);
+				};
+				// Right 1, forward 1
+				if (lit->x()+1 <= _box_length && lit->z()+1 <= _box_length) {
+					if (_dim == 3) {
+						nbr1 = _look_up_unit_v(lit->x()+1,lit->y(),lit->z());
+						nbr2 = _look_up_unit_v(lit->x()+1,lit->y(),lit->z()+1);
+					};
+					add_conn_vvv(&*lit,nbr1,nbr2,ixn_dict);
+				};
+				// Forward 1, up 1
+				if (lit->y()+1 <= _box_length && lit->z()+1 <= _box_length) {
+					if (_dim == 3) {
+						nbr1 = _look_up_unit_v(lit->x(),lit->y(),lit->z()+1);
+						nbr2 = _look_up_unit_v(lit->x(),lit->y()+1,lit->z()+1);
+					};
+					add_conn_vvv(&*lit,nbr1,nbr2,ixn_dict);
+				};
+				// Up 1, forward 1
+				if (lit->y()+1 <= _box_length && lit->z()+1 <= _box_length) {
+					if (_dim == 3) {
+						nbr1 = _look_up_unit_v(lit->x(),lit->y()+1,lit->z());
+						nbr2 = _look_up_unit_v(lit->x(),lit->y()+1,lit->z()+1);
+					};
+					add_conn_vvv(&*lit,nbr1,nbr2,ixn_dict);
+				};
+			};
+
+			// Next
+			lit++;
+		};
+	};
+
+	/********************
+	Helpers to setup all sites - Set ixn dicts of connections
+	********************/
+
+	void Lattice::all_conns_vv_set_ixn_dict(std::shared_ptr<O2IxnDict> ixn_dict) {
+		for (auto &conn: _conns_vv) {
+			conn.set_ixn_dict(ixn_dict);
+		};
+	};
+	void Lattice::all_conns_vvv_set_ixn_dict(std::shared_ptr<O3IxnDict> ixn_dict) {
+		for (auto &conn: _conns_vvv) {
+			conn.set_ixn_dict(ixn_dict);
+		};
+	};
+	void Lattice::all_conns_vh_set_ixn_dict(std::shared_ptr<O2IxnDict> ixn_dict) {
+		for (auto &conn: _conns_vh) {
+			conn.set_ixn_dict(ixn_dict);
+		};
+	};
+
+	/********************
+	Helpers to setup all sites - Link units to moments
+	********************/
+
+	void Lattice::all_units_v_add_to_moment_h(std::shared_ptr<Moment> moment) {
+		for (auto &s: _latt_v) {
+			moment->add_unit_to_monitor_h(&s);
+		};
+	};
+	void Lattice::all_units_h_add_to_moment_b(std::shared_ptr<Moment> moment) {
+		for (auto &s: _latt_h) {
+			moment->add_unit_to_monitor_b(&s);
+		};
+	};
+	void Lattice::all_conns_vv_add_to_moment_j(std::shared_ptr<Moment> moment) {
+		for (auto &c: _conns_vv) {
+			moment->add_conn_to_monitor_j(&c);
+		};
+	};
+	void Lattice::all_conns_vvv_add_to_moment_k(std::shared_ptr<Moment> moment) {
+		for (auto &c: _conns_vvv) {
+			moment->add_conn_to_monitor_k(&c);
+		};
+	};
+	void Lattice::all_conns_vh_add_to_moment_w(std::shared_ptr<Moment> moment) {
+		for (auto &c: _conns_vh) {
+			moment->add_conn_to_monitor_w(&c);
+		};
+	};
+
+	/********************
+	Add visible-visible connections
+	********************/
+
+	void Lattice::add_conn_vv(UnitVisible *uv1, UnitVisible *uv2) {
+		_conns_vv.push_back(ConnVV(uv1,uv2));
+		uv1->add_conn(&_conns_vv.back(),0);
+		uv2->add_conn(&_conns_vv.back(),1);
+	};
+	void Lattice::add_conn_vv(UnitVisible *uv1, UnitVisible *uv2, std::shared_ptr<O2IxnDict> ixn_dict) {
+		add_conn_vv(uv1,uv2);
+		if (ixn_dict) {
+			_conns_vv.back().set_ixn_dict(ixn_dict);
+		};
+	};
+	void Lattice::add_conn_vvv(UnitVisible *uv1, UnitVisible *uv2, UnitVisible *uv3) {
+		_conns_vvv.push_back(ConnVVV(uv1,uv2,uv3));
+		uv1->add_conn(&_conns_vvv.back(),0);
+		uv2->add_conn(&_conns_vvv.back(),1);
+		uv3->add_conn(&_conns_vvv.back(),2);
+	};
+	void Lattice::add_conn_vvv(UnitVisible *uv1, UnitVisible *uv2, UnitVisible *uv3, std::shared_ptr<O3IxnDict> ixn_dict) {
+		add_conn_vvv(uv1,uv2,uv3);
+		if (ixn_dict) {
+			_conns_vvv.back().set_ixn_dict(ixn_dict);
+		};
+	};
+
+	/********************
+	Add hidden units
+	********************/
+
+	void Lattice::add_hidden_unit(int layer, int x) {
+		_latt_h.push_back(UnitHidden(layer,x));
+		_latt_h_map_dim_1[layer][x] = &_latt_h.back();
+	};
+	void Lattice::add_hidden_unit(int layer, int x, int y) {
+		_latt_h.push_back(UnitHidden(layer,x,y));
+		_latt_h_map_dim_2[layer][x][y] = &_latt_h.back();
+	};
+	void Lattice::add_hidden_unit(int layer, int x, int y, int z) {
+		_latt_h.push_back(UnitHidden(layer,x,y,z));
+		_latt_h_map_dim_3[layer][x][y][z] = &_latt_h.back();
+	};
+	void Lattice::add_hidden_unit(int layer, int x, std::vector<Sptr> species_possible) {
+		_latt_h.push_back(UnitHidden(layer,x,species_possible));
+		_latt_h_map_dim_1[layer][x] = &_latt_h.back();
+	};
+	void Lattice::add_hidden_unit(int layer, int x, int y, std::vector<Sptr> species_possible) {
+		_latt_h.push_back(UnitHidden(layer,x,y,species_possible));
+		_latt_h_map_dim_2[layer][x][y] = &_latt_h.back();
+	};
+	void Lattice::add_hidden_unit(int layer, int x, int y, int z, std::vector<Sptr> species_possible) {
+		_latt_h.push_back(UnitHidden(layer,x,y,z,species_possible));
+		_latt_h_map_dim_3[layer][x][y][z] = &_latt_h.back();
+	};
+
+	/********************
+	Add visible-hidden connections
+	********************/
+
+	void Lattice::add_conn_vh(UnitVisible *uv, UnitHidden *uh) { 
+		_conns_vh.push_back(ConnVH(uv,uh));
+		uv->add_conn(&_conns_vh.back());
+		uh->add_conn(&_conns_vh.back());
+	};
+	void Lattice::add_conn_vh(UnitVisible *uv, UnitHidden *uh, std::shared_ptr<O2IxnDict> ixn_dict) {
+		add_conn_vh(uv,uh);
+		if (ixn_dict) {
+			_conns_vh.back().set_ixn_dict(ixn_dict);
+		};
+	};
+
+	/********************
+	Get unit
+	********************/
+
+	UnitVisible& Lattice::get_unit_v(int x) {
+		_check_dim(1);
+		return *_look_up_unit_v(x);
+	};
+	UnitVisible& Lattice::get_unit_v(int x, int y) {
+		_check_dim(2);
+		return *_look_up_unit_v(x,y);
+	};
+	UnitVisible& Lattice::get_unit_v(int x, int y, int z) {
+		_check_dim(3);
+		return *_look_up_unit_v(x,y,z);
+	};
+
+	UnitHidden& Lattice::get_unit_h(int layer, int x) {
+		_check_dim(1);
+		return *_look_up_unit_h(layer,x);
+	};
+	UnitHidden& Lattice::get_unit_h(int layer, int x, int y) {
+		_check_dim(2);
+		return *_look_up_unit_h(layer,x,y);
+	};
+	UnitHidden& Lattice::get_unit_h(int layer, int x, int y, int z) {
+		_check_dim(3);
+		return *_look_up_unit_h(layer,x,y,z);
+	};
+
+	/********************
+	Get connection
+	********************/
+
+	ConnVV& Lattice::get_conn_vv(int x1, int x2) {
+		_check_dim(1);
+
+		UnitVisible *uv1 = _look_up_unit_v(x1);
+		UnitVisible *uv2 = _look_up_unit_v(x2);
+
+		std::vector<std::pair<ConnVV*,int>> conns = uv1->get_conns_vv();
+		for (auto &conn: conns) {
+			if (conn.first->check_connects_units(uv1,uv2)) {
+				return *(conn.first);
+			};
+		};
+
+		// Never get here
+		std::cerr << ">>> Error: Lattice::get_conn_vv <<< Connection: " << x1 << " to " << x2 << " not found!" << std::endl;
+		exit(EXIT_FAILURE);
+	};
+	ConnVV& Lattice::get_conn_vv(int x1, int y1, int x2, int y2) {
+		_check_dim(2);
+
+		UnitVisible *uv1 = _look_up_unit_v(x1,y1);
+		UnitVisible *uv2 = _look_up_unit_v(x2,y2);
+
+		std::vector<std::pair<ConnVV*,int>> conns = uv1->get_conns_vv();
+		for (auto &conn: conns) {
+			if (conn.first->check_connects_units(uv1,uv2)) {
+				return *(conn.first);
+			};
+		};
+
+		// Never get here
+		std::cerr << ">>> Error: Lattice::get_conn_vv <<< Connection: " << x1 << " " << y1 << " to " << x2 << " " << y2 << " not found!" << std::endl;
+		exit(EXIT_FAILURE);
+	};
+	ConnVV& Lattice::get_conn_vv(int x1, int y1, int z1, int x2, int y2, int z2) {
+		_check_dim(3);
+
+		UnitVisible *uv1 = _look_up_unit_v(x1,y1,z1);
+		UnitVisible *uv2 = _look_up_unit_v(x2,y2,z2);
+
+		std::vector<std::pair<ConnVV*,int>> conns = uv1->get_conns_vv();
+		for (auto &conn: conns) {
+			if (conn.first->check_connects_units(uv1,uv2)) {
+				return *(conn.first);
+			};
+		};
+
+		// Never get here
+		std::cerr << ">>> Error: Lattice::get_conn_vv <<< Connection: " << x1 << " " << y1 << " " << z1 << " to " << x2 << " " << y2 << " " << z2 << " not found!" << std::endl;
+		exit(EXIT_FAILURE);
+	};
+
+	ConnVVV& Lattice::get_conn_vvv(int x1, int x2, int x3) {
+		_check_dim(1);
+
+		UnitVisible *uv1 = _look_up_unit_v(x1);
+		UnitVisible *uv2 = _look_up_unit_v(x2);
+		UnitVisible *uv3 = _look_up_unit_v(x3);
+
+		std::vector<std::pair<ConnVVV*,int>> conns = uv1->get_conns_vvv();
+		for (auto &conn: conns) {
+			if (conn.first->check_connects_units(uv1,uv2,uv3)) {
+				return *(conn.first);
+			};
+		};
+
+		// Never get here
+		std::cerr << ">>> Error: Lattice::get_conn_vvv <<< Connection: " << x1 << " to " << x2 << " to " << x3 << " not found!" << std::endl;
+		exit(EXIT_FAILURE);
+	};
+	ConnVVV& Lattice::get_conn_vvv(int x1, int y1, int x2, int y2, int x3, int y3) {
+		_check_dim(2);
+
+		UnitVisible *uv1 = _look_up_unit_v(x1,y1);
+		UnitVisible *uv2 = _look_up_unit_v(x2,y2);
+		UnitVisible *uv3 = _look_up_unit_v(x3,y3);
+
+		std::vector<std::pair<ConnVVV*,int>> conns = uv1->get_conns_vvv();
+		for (auto &conn: conns) {
+			if (conn.first->check_connects_units(uv1,uv2,uv3)) {
+				return *(conn.first);
+			};
+		};
+
+		// Never get here
+		std::cerr << ">>> Error: Lattice::get_conn_vvv <<< Connection: " << x1 << " " << y1 << " to " << x2 << " " << y2 << " to " << x3 << " " << y3 << " not found!" << std::endl;
+		exit(EXIT_FAILURE);	
+	};
+	ConnVVV& Lattice::get_conn_vvv(int x1, int y1, int z1, int x2, int y2, int z2, int x3, int y3, int z3) {
+		_check_dim(3);
+
+		UnitVisible *uv1 = _look_up_unit_v(x1,y1,z1);
+		UnitVisible *uv2 = _look_up_unit_v(x2,y2,z2);
+		UnitVisible *uv3 = _look_up_unit_v(x3,y3,z3);
+
+		std::vector<std::pair<ConnVVV*,int>> conns = uv1->get_conns_vvv();
+		for (auto &conn: conns) {
+			if (conn.first->check_connects_units(uv1,uv2,uv3)) {
+				return *(conn.first);
+			};
+		};
+
+		// Never get here
+		std::cerr << ">>> Error: Lattice::get_conn_vvv <<< Connection: " << x1 << " " << y1 << " " << z1 << " to " << x2 << " " << y2 << " " << z2 << " to " << x3 << " " << y3 << " " << z3 << " not found!" << std::endl;
+		exit(EXIT_FAILURE);
+	};
+
+	ConnVH& Lattice::get_conn_vh(int x1, int layer2, int x2) {
+		_check_dim(1);
+
+		UnitVisible *uv = _look_up_unit_v(x1);
+		UnitHidden *uh = _look_up_unit_h(layer2,x2);
+
+		std::vector<ConnVH*> conns = uv->get_conns_vh();
+		for (auto &conn: conns) {
+			if (conn->check_connects_units(uv,uh)) {
+				return *conn;
+			};
+		};
+
+		// Never get here
+		std::cerr << ">>> Error: Lattice::get_conn_vh <<< Connection: " << x1 << " to " << layer2 << " " << x2 << " not found!" << std::endl;
+		exit(EXIT_FAILURE);
+	};
+	ConnVH& Lattice::get_conn_vh(int x1, int y1, int layer2, int x2, int y2) {
+		_check_dim(2);
+
+		UnitVisible *uv = _look_up_unit_v(x1,y1);
+		UnitHidden *uh = _look_up_unit_h(layer2,x2,y2);
+
+		std::vector<ConnVH*> conns = uv->get_conns_vh();
+		for (auto &conn: conns) {
+			if (conn->check_connects_units(uv,uh)) {
+				return *conn;
+			};
+		};
+
+		// Never get here
+		std::cerr << ">>> Error: Lattice::get_conn_vh <<< Connection: " << x1 << " " << y1 << " to " << layer2 << " " << x2 << " " << y2 << " not found!" << std::endl;
+		exit(EXIT_FAILURE);
+	};
+	ConnVH& Lattice::get_conn_vh(int x1, int y1, int z1, int layer2, int x2, int y2, int z2) {
+		_check_dim(3);
+
+		UnitVisible *uv = _look_up_unit_v(x1,y1,z1);
+		UnitHidden *uh = _look_up_unit_h(layer2,x2,y2,z2);
+
+		std::vector<ConnVH*> conns = uv->get_conns_vh();
+		for (auto &conn: conns) {
+			if (conn->check_connects_units(uv,uh)) {
+				return *conn;
+			};
+		};
+
+		// Never get here
+		std::cerr << ">>> Error: Lattice::get_conn_vh <<< Connection: " << x1 << " " << y1 << " " << z1 << " to " << layer2 << " " << x2 << " " << y2 << " " << z2<< " not found!" << std::endl;
+		exit(EXIT_FAILURE);
 	};
 
 	/********************
@@ -652,244 +707,79 @@ namespace bmla {
 	int Lattice::dim() const {
 		return _dim;
 	};
-	int Lattice::box_length() const {
-		return _box_length;
+	int Lattice::no_units_v() { 
+		return _latt_v.size(); 
+	};
+	int Lattice::no_units_h() { 
+		return _latt_h.size(); 
 	};
 
 	/********************
-	Add a species
+	Apply funcs to all units
 	********************/
 
-	void Lattice::add_species_possibility(Species *sp) {
-		if (sp) { // not null
-			_sp_map[sp->name()] = sp;
-			_sp_vec.push_back(sp);
-
-			// Add to all the sites
-			for (latt_it lit=_latt.begin(); lit != _latt.end(); lit++) {
-				lit->add_species_possibility(sp);
-			};
+	// Clear the lattice
+	void Lattice::all_units_set_empty() {
+		for (auto &s: _latt_v) {
+			s.set_b_mode_empty();
+			s.set_p_mode_empty();
 		};
 	};
 
-	/********************
-	Initialize structure for NNs, triplets, etc.
-	********************/
-
-	void Lattice::init_nn_structure() {
-		// Check: only do this once!
-		if (!_latt_has_nn_structure) {
-
-			// Set up neighbors
-			std::vector<Site> nbrs;
-			latt_it lit = _latt.begin();
-			while (lit != _latt.end()) {
-				// Neighbors
-				nbrs.clear();
-				if (lit->x()-1 >= 1) {
-					nbrs.push_back(Site(lit->x()-1,lit->y(),lit->z()));
-				};
-				if (lit->x()+1 <= _box_length) {
-					nbrs.push_back(Site(lit->x()+1,lit->y(),lit->z()));
-				};
-				if (_dim == 2 || _dim == 3) {
-					if (lit->y()-1 >= 1) {
-						nbrs.push_back(Site(lit->x(),lit->y()-1,lit->z()));
-					};
-					if (lit->y()+1 <= _box_length) {
-						nbrs.push_back(Site(lit->x(),lit->y()+1,lit->z()));
-					};
-				};
-				if (_dim == 3) {
-					if (lit->z()-1 >= 1) {
-						nbrs.push_back(Site(lit->x(),lit->y(),lit->z()-1));
-					};
-					if (lit->z()+1 <= _box_length) {
-						nbrs.push_back(Site(lit->x(),lit->y(),lit->z()+1));
-					};
-				};
-
-				// Go through neighbors
-				for (auto nbr: nbrs) {
-					// Add as nbr
-					if (_dim == 1) {
-						lit->add_nbr(_look_up(nbr.x()));
-					} else if (_dim == 2) {
-						lit->add_nbr(_look_up(nbr.x(),nbr.y()));
-					} else if (_dim == 3) {
-						lit->add_nbr(_look_up(nbr.x(),nbr.y(),nbr.z()));
-					};
-				};
-
-				// Next
-				lit++;
-			};
-
-			// Now we have the structure
-			_latt_has_nn_structure = true;
+	// Binary/probabilistic
+	void Lattice::all_units_convert_to_b_mode() {
+		for (auto &s: _latt_v) {
+			s.convert_p_to_b_mode();
 		};
 	};
-
-	void Lattice::init_triplet_structure() {
-		// Check: only do this once!
-		if (!_latt_has_triplet_structure) {
-
-			Site *s1,*s2;
-			for (latt_it lit = _latt.begin(); lit != _latt.end(); lit++) {
-				if (lit->x() != 1 && lit->x() != 2) {
-					// Both to the left
-					s1 = _look_up(lit->x()-2);
-					s2 = _look_up(lit->x()-1);
-					lit->add_nbr_triplet(s1,s2);
-				};
-				if (lit->x() != 1 && lit->x() != _box_length) {
-					// One left, one right
-					s1 = _look_up(lit->x()-1);
-					s2 = _look_up(lit->x()+1);
-					lit->add_nbr_triplet(s1,s2);
-				};
-				if (lit->x() != _box_length-1 && lit->x() != _box_length) {
-					// Both to the right
-					s1 = _look_up(lit->x()+1);
-					s2 = _look_up(lit->x()+2);
-					lit->add_nbr_triplet(s1,s2);
-				};
-			};
-
-			// Now we have the structure
-			_latt_has_triplet_structure = true;
-		};
-	};
-
-	void Lattice::init_quartic_structure() {
-		// Check: only do this once!
-		if (!_latt_has_quartic_structure) {
-
-			Site *s1,*s2,*s3;
-			for (latt_it lit = _latt.begin(); lit != _latt.end(); lit++) {
-				if (lit->x() != 1 && lit->x() != 2 && lit->x() != 3) {
-					// Three to the left
-					s1 = _look_up(lit->x()-3);
-					s2 = _look_up(lit->x()-2);
-					s3 = _look_up(lit->x()-1);
-					lit->add_nbr_quartic(s1,s2,s3);
-				};
-				if (lit->x() != 1 && lit->x() != 2 && lit->x() != _box_length) {
-					// Two to the left, one to the right
-					s1 = _look_up(lit->x()-2);
-					s2 = _look_up(lit->x()-1);
-					s3 = _look_up(lit->x()+1);
-					lit->add_nbr_quartic(s1,s2,s3);
-				};
-				if (lit->x() != 1 && lit->x() != _box_length-1 && lit->x() != _box_length) {
-					// One left, two to the right
-					s1 = _look_up(lit->x()-1);
-					s2 = _look_up(lit->x()+1);
-					s3 = _look_up(lit->x()+2);
-					lit->add_nbr_quartic(s1,s2,s3);
-				};
-				if (lit->x() != _box_length-2 && lit->x() != _box_length-1 && lit->x() != _box_length) {
-					// Three to the right
-					s1 = _look_up(lit->x()+1);
-					s2 = _look_up(lit->x()+2);
-					s3 = _look_up(lit->x()+3);
-					lit->add_nbr_quartic(s1,s2,s3);
-				};
-			};
-
-			// Now we have the structure
-			_latt_has_quartic_structure = true;
+	void Lattice::all_units_convert_to_p_mode() {
+		for (auto &s: _latt_v) {
+			s.convert_b_to_p_mode();
 		};
 	};
 
 	/********************
-	Find a pointer to a site by index
+	Write/read Latt to a file
 	********************/
 
-	Site* Lattice::get_site(int x) {
-		if (_dim != 1) {
-			std::cerr << "ERROR: dim wrong in get_site" << std::endl;
-			exit(EXIT_FAILURE);
-		};
-		return _look_up(x);
-	};
-	Site* Lattice::get_site(int x, int y) {
-		if (_dim != 2) {
-			std::cerr << "ERROR: dim wrong in get_site" << std::endl;
-			exit(EXIT_FAILURE);
-		};
-		return _look_up(x,y);
-	};
-	Site* Lattice::get_site(int x, int y, int z) {
-		if (_dim != 3) {
-			std::cerr << "ERROR: dim wrong in get_site" << std::endl;
-			exit(EXIT_FAILURE);
-		};
-		return _look_up(x,y,z);
-	};
-
-	/********************
-	Clear, size
-	********************/
-
-	void Lattice::clear() { 
-		// Clear the lattice
-		for (auto it = _latt.begin(); it != _latt.end(); it++) {
-			it->set_site_empty();
-		};
-
-		// Reset the counts and nns
-		for (auto sp: _sp_vec) {
-			sp->reset_counts();
-		};
-	};
-	int Lattice::size() { return _latt.size(); };
-
-	/********************
-	Binarize
-	********************/
-
-	void Lattice::binarize() {
-		for (latt_it lit=_latt.begin(); lit != _latt.end(); lit++) {
-			lit->binarize();
-		};
-	};
-
-	/********************
-	Write lattice to a file
-	********************/
-
-	void Lattice::write_to_file(std::string fname) 
+	void Lattice::write_to_file(std::string fname, bool binary) 
 	{
 		std::ofstream f;
 		f.open (fname);
-		for (auto l = _latt.begin(); l != _latt.end(); l++) {
-			const std::map<Species*, double> probs = l->get_probs();
-			for (auto sp: probs) {
-				//std::cout << "Checkinng " << sp.second << std::endl;
-				if (sp.second>0.99) {
+		for (auto const &l: _latt_v) {
+			if (binary) {
+				if (!l.check_b_mode_is_empty()) {
 					if (_dim == 1) {
-						f << l->x() << " " << sp.first->name() << "\n";
+						f << l.x();
 					} else if (_dim == 2) {
-						f << l->x() << " " << l->y() << " " << sp.first->name() << "\n";
+						f << l.x() << " " << l.y();
 					} else if (_dim == 3) {
-						f << l->x() << " " << l->y() << " " << l->z() << " " << sp.first->name() << "\n";
+						f << l.x() << " " << l.y() << " " << l.z();
 					};
-					break;
+					f << " " << l.get_b_mode_species()->get_name() << "\n";
+				};
+			} else {
+				if (!l.check_p_mode_is_empty()) {
+					if (_dim == 1) {
+						f << l.x();
+					} else if (_dim == 2) {
+						f << l.x() << " " << l.y();
+					} else if (_dim == 3) {
+						f << l.x() << " " << l.y() << " " << l.z();
+					};
+					for (auto const &pr: l.get_p_mode_probs()) {
+						f << " " << pr.first->get_name() << " " << pr.second;
+					};
+					f << "\n";
 				};
 			};
 		};
 		f.close();
 	};
-
-	/********************
-	Read lattice from a file
-	********************/
-
 	void Lattice::read_from_file(std::string fname, bool binary)
 	{
 		// Clear the current lattice
-		clear();
+		all_units_set_empty();
 
 		std::ifstream f;
 		f.open(fname);
@@ -897,7 +787,7 @@ namespace bmla {
 		std::string sp="";
 		std::string line;
 		std::istringstream iss;
-		Site* s;
+		UnitVisible* s;
 		std::string prob="";
 		double prob_val;
 		if (f.is_open()) { // make sure we found it
@@ -916,20 +806,20 @@ namespace bmla {
 			    	// Read the prob
 			    	iss >> prob;
 			    };
-		    	// Add to lattice
+		    	// Add to Latt
 		    	if (_dim == 1) {
-		    		s = _look_up(atoi(x.c_str()));
+		    		s = _look_up_unit_v(atoi(x.c_str()));
 			    } else if (_dim == 2) {
-		    		s = _look_up(atoi(x.c_str()),atoi(y.c_str()));
+		    		s = _look_up_unit_v(atoi(x.c_str()),atoi(y.c_str()));
 			    } else if (_dim == 3) {
-			    	s = _look_up(atoi(x.c_str()),atoi(y.c_str()),atoi(z.c_str()));
+			    	s = _look_up_unit_v(atoi(x.c_str()),atoi(y.c_str()),atoi(z.c_str()));
 			    };
 			    if (binary) {
-		    		s->set_prob(_sp_map[sp],1.0);
+		    		s->set_b_mode_species(sp);
 		    	} else {
 		    		prob_val = atof(prob.c_str());
-		    		s->set_prob(_sp_map[sp],prob_val);
-		    		s->set_prob(nullptr,1.0-prob_val);
+		    		s->set_p_mode_prob(sp,prob_val);
+		    		s->set_p_mode_prob("",1.0-prob_val);
 		    	};
 	    		// Reset
 		    	sp=""; x=""; y=""; z=""; prob="";
@@ -941,83 +831,132 @@ namespace bmla {
 	};
 
 	/********************
-	Populate randomly according to some counts
+	Sample
 	********************/
 
-	void Lattice::populate_randomly() {
-		// Random number of initial particles (min is 1, max is box vol)
-		int n = randI(1, pow(_box_length,_dim));
-
-		// Random initial counts
-		// Don't populate too much, else this is hard to find empty sites to place mols!
-		// At most half the lattice is filled
-		int n_possible = pow(_box_length,_dim) / 2;
-		std::map<Species*,int> counts;
-		for (auto sp: _sp_vec) {
-			counts[sp] = randI(0,n_possible);
-			n_possible -= counts[sp];
-			if (n_possible < 0) { n_possible = 0; };
+	void Lattice::sample_v(bool binary) {
+		for (auto &s: _latt_v) {
+			s.sample(binary);
 		};
-
-		// Populate at random positions
-		populate_randomly(counts);
 	};
-
-	void Lattice::populate_randomly(std::map<Species*, int> counts) {
-		// Clear the current lattice
-		clear();
-
-		bool did_place;
-		int ctr_tries;
-		Site *s;
-
-		// Go through the species
-		for (auto pr: counts) {
-
-			// Go through counts
-			for (int i=0; i<pr.second; i++) {
-				// Try to place
-				did_place = false;
-				ctr_tries = 0;
-				while (did_place == false && ctr_tries < 1000) { // Try 1000 different places
-			    	if (_dim == 1) {
-			    		s = _look_up(randI(1,_box_length));
-				    } else if (_dim == 2) {
-			    		s = _look_up(randI(1,_box_length),randI(1,_box_length));
-				    } else if (_dim == 3) {
-			    		s = _look_up(randI(1,_box_length),randI(1,_box_length),randI(1,_box_length));
-				    };
-				    // Check if empty
-				    if (s->empty()) {
-				    	// Yes, it's empty - place!
-				    	did_place = true;
-				    	s->set_prob(pr.first,1.0);
-				    } else {
-				    	// Try again!
-				    	ctr_tries++;
-				    };
-				};
-				// Check we didn't run out
-				if (ctr_tries >= 1000) {
-					std::cerr << "WARNING! Couldn't place all the mols for species: " << pr.first->name() << " wanted to place: " << pr.second << " mols but only got to: " << i << std::endl;
-					// Don't try to place any more
-					break;
-				};
-			};
+	void Lattice::sample_h(bool binary) {
+		for (auto &s: _latt_h) {
+			s.sample(binary);
 		};
 	};
 
 	/********************
-	Sample
+	Get counts
 	********************/
 
-	void Lattice::sample(bool binary) {
-
-		for (auto it = _latt.begin(); it != _latt.end(); it++) {
-
-			it->sample(binary);
-
+	// 1 particle
+	double Lattice::get_count(Sptr &sp, bool binary) const {
+		double count = 0.0;
+		if (binary) {
+			for (auto const &s: _latt_v) {
+				if (sp == s.get_b_mode_species()) {
+					count += 1.0;
+				};
+			};
+		} else {
+			for (auto const &s: _latt_v) {
+				count += s.get_p_mode_prob(sp);
+			};
 		};
+
+		return count;
+	};
+
+	// 2 particle
+	void Lattice::_get_count(double &count, Sptr &sp1, Sptr &sp2, const UnitVisible &uv1, const UnitVisible *uv2, bool binary, bool reversibly) const {
+		if (binary) {
+			if ((sp1 == uv1.get_b_mode_species()) && (sp2 == uv2->get_b_mode_species())) {
+				count += 1.0;
+			};
+			if (reversibly && sp1 != sp2) {
+				if ((sp1 == uv2->get_b_mode_species()) && (sp2 == uv1.get_b_mode_species())) {
+					count += 1.0;
+				};
+			};
+		} else {
+			count += uv1.get_p_mode_prob(sp1) * uv2->get_p_mode_prob(sp2); 
+			if (reversibly && sp1 != sp2) {
+				count += uv1.get_p_mode_prob(sp2) * uv2->get_p_mode_prob(sp1); 
+			};
+		};
+	};
+	double Lattice::get_count(Sptr &sp1, Sptr &sp2, bool binary, bool reversibly) const {
+		exit(EXIT_FAILURE);
+
+		const UnitVisible *nbr = nullptr;
+		double count = 0.0;
+		for (auto &s: _latt_v) {
+			// Only connect to "plus one" (not minus one) => no duplicates!
+
+			// Dim 1,2,3
+			if (s.x()+1 <= _box_length) {
+				if (_dim == 1) {
+					nbr = _look_up_unit_v_const(s.x()+1);
+				} else if (_dim == 2) {
+					nbr = _look_up_unit_v_const(s.x()+1,s.y());
+				} else if (_dim == 3) {
+					nbr = _look_up_unit_v_const(s.x()+1,s.y(),s.z());
+				};
+
+				_get_count(count, sp1, sp2, s, nbr, binary, reversibly);
+			};
+
+			// Dim 2,3
+			if (s.y()+1 <= _box_length) {
+				if (_dim == 2) {
+					nbr = _look_up_unit_v_const(s.x(),s.y()+1);
+				} else if (_dim == 3) {
+					nbr = _look_up_unit_v_const(s.x(),s.y()+1,s.z());
+				};
+
+				_get_count(count, sp1, sp2, s, nbr, binary, reversibly);
+			};
+
+			// Dim 3
+			if (s.z()+1 <= _box_length) {
+				if (_dim == 3) {
+					nbr = _look_up_unit_v_const(s.x(),s.y(),s.z()+1);
+				};
+
+				_get_count(count, sp1, sp2, s, nbr, binary, reversibly);
+			};
+		};
+
+		return count;
+	};
+
+	// 3 particle
+	void Lattice::_get_count(double &count, Sptr &sp1, Sptr &sp2, Sptr &sp3, const UnitVisible &uv1, const UnitVisible *uv2, const UnitVisible *uv3, bool binary, bool reversibly) const {
+		if (binary) {
+			if ((sp1 == uv1.get_b_mode_species()) && (sp2 == uv2->get_b_mode_species()) && (sp3 == uv3->get_b_mode_species())) {
+				count += 1.0;
+			};
+			if (reversibly && sp1 != sp3) {
+				if ((sp3 == uv1.get_b_mode_species()) && (sp2 == uv2->get_b_mode_species()) && (sp1 == uv3->get_b_mode_species())) {
+					count += 1.0;
+				};
+			};
+		} else {
+			count += uv1.get_p_mode_prob(sp1) * uv2->get_p_mode_prob(sp2) * uv3->get_p_mode_prob(sp3); 
+			if (reversibly && sp1 != sp3) {
+				count += uv1.get_p_mode_prob(sp3) * uv2->get_p_mode_prob(sp2) * uv3->get_p_mode_prob(sp1); 
+			};
+		};
+	};
+
+	double Lattice::get_count(Sptr &sp1, Sptr &sp2, Sptr &sp3, bool binary, bool reversibly) const {
+		exit(EXIT_FAILURE);
+		
+		double count = 0.0;
+		
+		// ugh...
+
+		return count;	
 	};
 
 	/****************************************
@@ -1028,31 +967,187 @@ namespace bmla {
 	Lookup a site iterator from x,y,z
 	********************/
 
-	Site* Lattice::_look_up(int x) {
+	const UnitVisible* Lattice::_look_up_unit_v_const(int x) const {
+		if (x > _box_length || x < 1) {
+			return nullptr;
+		};
+
 		// Figure out index in list
 		int n = x-1;
 
 		// Grab
-		latt_it it = _latt.begin();
+		std::list<UnitVisible>::const_iterator it = _latt_v.begin();
 		std::advance(it,n);
 		return &*it;
 	};
-	Site* Lattice::_look_up(int x, int y) {
+	const UnitVisible* Lattice::_look_up_unit_v_const(int x, int y) const {
+		if (x > _box_length || x < 1 || y > _box_length || y < 1) {
+			return nullptr;
+		};
+
 		// Figure out index in list
 		int n = (x-1)*_box_length + y-1;
 
 		// Grab
-		latt_it it = _latt.begin();
+		std::list<UnitVisible>::const_iterator it = _latt_v.begin();
 		std::advance(it,n);
 		return &*it;
 	};
-	Site* Lattice::_look_up(int x, int y, int z) {
+	const UnitVisible* Lattice::_look_up_unit_v_const(int x, int y, int z) const {
+		if (x > _box_length || x < 1 || y > _box_length || y < 1 || z > _box_length || z < 1) {
+			return nullptr;
+		};
+
 		// Figure out index in list
 		int n = (x-1)*_box_length*_box_length + (y-1)*_box_length + z-1;
 
 		// Grab
-		latt_it it = _latt.begin();
+		std::list<UnitVisible>::const_iterator it = _latt_v.begin();
 		std::advance(it,n);
 		return &*it;
+	};
+	UnitVisible* Lattice::_look_up_unit_v(int x) {
+		if (x > _box_length || x < 1) {
+			return nullptr;
+		};
+
+		// Figure out index in list
+		int n = x-1;
+
+		// Grab
+		auto it = _latt_v.begin();
+		std::advance(it,n);
+		return &*it;
+	};
+	UnitVisible* Lattice::_look_up_unit_v(int x, int y) {
+		if (x > _box_length || x < 1 || y > _box_length || y < 1) {
+			return nullptr;
+		};
+
+		// Figure out index in list
+		int n = (x-1)*_box_length + y-1;
+
+		// Grab
+		auto it = _latt_v.begin();
+		std::advance(it,n);
+		return &*it;
+	};
+	UnitVisible* Lattice::_look_up_unit_v(int x, int y, int z) {
+		if (x > _box_length || x < 1 || y > _box_length || y < 1 || z > _box_length || z < 1) {
+			return nullptr;
+		};
+
+		// Figure out index in list
+		int n = (x-1)*_box_length*_box_length + (y-1)*_box_length + z-1;
+
+		// Grab
+		auto it = _latt_v.begin();
+		std::advance(it,n);
+		return &*it;
+	};
+
+
+
+
+	const UnitHidden* Lattice::_look_up_unit_h_const(int layer, int x) const {
+		auto it1 = _latt_h_map_dim_1.find(layer);
+		if (it1 == _latt_h_map_dim_1.end()) {
+			return nullptr;
+		};
+		auto it2 = it1->second.find(x);
+		if (it2 == it1->second.end()) {
+			return nullptr;
+		};
+		return it2->second;
+	};
+	const UnitHidden* Lattice::_look_up_unit_h_const(int layer, int x, int y) const {
+		auto it1 = _latt_h_map_dim_2.find(layer);
+		if (it1 == _latt_h_map_dim_2.end()) {
+			return nullptr;
+		};
+		auto it2 = it1->second.find(x);
+		if (it2 == it1->second.end()) {
+			return nullptr;
+		};
+		auto it3 = it2->second.find(y);
+		if (it3 == it2->second.end()) {
+			return nullptr;
+		};
+		return it3->second;
+	};
+	const UnitHidden* Lattice::_look_up_unit_h_const(int layer, int x, int y, int z) const {
+		auto it1 = _latt_h_map_dim_3.find(layer);
+		if (it1 == _latt_h_map_dim_3.end()) {
+			return nullptr;
+		};
+		auto it2 = it1->second.find(x);
+		if (it2 == it1->second.end()) {
+			return nullptr;
+		};
+		auto it3 = it2->second.find(y);
+		if (it3 == it2->second.end()) {
+			return nullptr;
+		};
+		auto it4 = it3->second.find(z);
+		if (it4 == it3->second.end()) {
+			return nullptr;
+		};
+		return it4->second;
+	};
+	UnitHidden* Lattice::_look_up_unit_h(int layer, int x) {
+		auto it1 = _latt_h_map_dim_1.find(layer);
+		if (it1 == _latt_h_map_dim_1.end()) {
+			return nullptr;
+		};
+		auto it2 = it1->second.find(x);
+		if (it2 == it1->second.end()) {
+			return nullptr;
+		};
+		return it2->second;
+	};
+	UnitHidden* Lattice::_look_up_unit_h(int layer, int x, int y) {
+		auto it1 = _latt_h_map_dim_2.find(layer);
+		if (it1 == _latt_h_map_dim_2.end()) {
+			return nullptr;
+		};
+		auto it2 = it1->second.find(x);
+		if (it2 == it1->second.end()) {
+			return nullptr;
+		};
+		auto it3 = it2->second.find(y);
+		if (it3 == it2->second.end()) {
+			return nullptr;
+		};
+		return it3->second;
+	};
+	UnitHidden* Lattice::_look_up_unit_h(int layer, int x, int y, int z) {
+		auto it1 = _latt_h_map_dim_3.find(layer);
+		if (it1 == _latt_h_map_dim_3.end()) {
+			return nullptr;
+		};
+		auto it2 = it1->second.find(x);
+		if (it2 == it1->second.end()) {
+			return nullptr;
+		};
+		auto it3 = it2->second.find(y);
+		if (it3 == it2->second.end()) {
+			return nullptr;
+		};
+		auto it4 = it3->second.find(z);
+		if (it4 == it3->second.end()) {
+			return nullptr;
+		};
+		return it4->second;
+	};
+
+	/********************
+	Check dim
+	********************/
+
+	void Lattice::_check_dim(int dim) const {
+		if (_dim != dim) {
+			std::cerr << ">>> Error: Lattice::_check_dim <<< dim is: " << _dim << " but requested: " << dim << std::endl;
+			exit(EXIT_FAILURE);
+		};	
 	};
 };

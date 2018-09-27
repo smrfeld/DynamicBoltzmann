@@ -160,19 +160,28 @@ namespace bmla {
 				std::cout << "." << std::flush;
 			};
 
+			// Convert lattice to binary mode
+			_latt->all_units_convert_to_b_mode();
+
 			// Read latt
 			_latt->read_from_file(fname_coll.get_fname(idx_subset[i_batch]));
+
+			// Sample hidden
+			_latt->sample_h();
 
 			// Reap awake
 			for (auto &ixn_param: _ixn_params) {
 				ixn_param->get_moment()->reap_in_batch(MomentType::AWAKE, i_batch);
 			};
 
-			// Sample
+			// Convert lattice to prob mode
+			_latt->all_units_convert_to_p_mode();
+
+			// Sample vis, hidden
 			for (int i_sampling_step=0; i_sampling_step<no_latt_sampling_steps; i_sampling_step++) 
 			{
-				_latt->sample_h();
-				_latt->sample_v();
+				_latt->sample_v(false);
+				_latt->sample_h(false);
 			};
 
 			// Print
@@ -180,7 +189,7 @@ namespace bmla {
 
 			// Reap asleep
 			for (auto &ixn_param: _ixn_params) {
-				ixn_param->get_moment()->reap_in_batch(MomentType::ASLEEP, i_batch);
+				ixn_param->get_moment()->reap_in_batch(MomentType::ASLEEP, i_batch, false);
 			};
 		};
 		

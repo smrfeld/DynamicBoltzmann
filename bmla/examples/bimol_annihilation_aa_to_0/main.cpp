@@ -25,9 +25,9 @@ int main() {
 
 	cout << "--- Making ixn func ---" << endl;
 
-	auto ixn_hA = make_shared<IxnParam>("hA",IxnParamType::H, 0.0);
-	auto ixn_wAX = make_shared<IxnParam>("wAX",IxnParamType::W, 0.0);
-	auto ixn_bX = make_shared<IxnParam>("bX",IxnParamType::B, 0.0);
+	auto ixn_hA = make_shared<IxnParam>("hA",IxnParamType::H, -0.1);
+	auto ixn_wAX = make_shared<IxnParam>("wAX",IxnParamType::W, 0.1);
+	auto ixn_bX = make_shared<IxnParam>("bX",IxnParamType::B, -0.1);
 
 	cout << "--- [Finished] Making ixn func ---" << endl;
 	cout << endl;
@@ -108,6 +108,49 @@ int main() {
 	cout << endl;
 
 	/****************************************
+	TEMP: TEST HIDDEN LAYER
+	****************************************/
+
+	/*
+	// Convert to binary
+	latt->all_units_convert_to_b_mode();
+
+	// Read in some file
+	latt->read_from_file("stoch_sim/lattice_v000/lattice/0000.txt");
+
+	// Activate hidden
+	latt->sample_h();
+
+	// Print hiddens
+	int ctr_x=0;
+	for (auto i=1; i<1000; i++) { // 999 total
+		Sptr sp = latt->get_unit_h(layer,i).get_b_mode_species();
+		if (sp) {
+			ctr_x++;
+			// cout << i << " " << sp->get_name() << endl;
+		} else {
+			// cout << i << " " << "empty" << endl;
+		};
+	};
+	cout << "X: " << ctr_x << endl;
+
+	// Convert to prob
+	latt->all_units_convert_to_p_mode();
+
+	// Activate visible
+	latt->sample_v(false);
+	latt->sample_h(false);
+	for (auto i=1; i<=1000; i++) {
+		latt->get_unit_v(i).print();
+	};
+	for (auto i=1; i<1000; i++) {
+		latt->get_unit_h(layer,i).print();
+	};
+
+	return 0;
+	*/
+
+	/****************************************
 	Do an iteration of the learning problem
 	****************************************/
 
@@ -123,7 +166,7 @@ int main() {
 	int no_opt_steps = 1000;
 	int no_latt_sampling_steps = 10;
 	int batch_size = 5;
-	double dopt=0.0001;
+	double dopt=0.001;
 
 	// Filenames
 	FNameColl fnames;

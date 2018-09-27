@@ -97,7 +97,7 @@ namespace bmla {
 		Check setup
 		********************/
 
-		void check_setup() const;
+		void print() const;
 		void print_occupancy(bool binary=true) const;
 
 		/********************

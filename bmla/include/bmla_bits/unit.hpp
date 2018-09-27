@@ -51,7 +51,7 @@ namespace bmla {
 		Check setup
 		********************/
 
-		void check_setup() const;
+		void print() const;
 
 		/********************
 		Location

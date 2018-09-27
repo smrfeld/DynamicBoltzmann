@@ -123,10 +123,10 @@ namespace bmla {
 	Check setup
 	********************/
 
-	void Lattice::check_setup() const {
+	void Lattice::print() const {
 		// Go through all sites
 		for (auto const &s: _latt_v) {
-			s.check_setup();
+			s.print();
 		};
 	};
 
@@ -731,9 +731,15 @@ namespace bmla {
 		for (auto &s: _latt_v) {
 			s.convert_p_to_b_mode();
 		};
+		for (auto &s: _latt_h) {
+			s.convert_p_to_b_mode();
+		};
 	};
 	void Lattice::all_units_convert_to_p_mode() {
 		for (auto &s: _latt_v) {
+			s.convert_b_to_p_mode();
+		};
+		for (auto &s: _latt_h) {
 			s.convert_b_to_p_mode();
 		};
 	};

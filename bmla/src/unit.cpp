@@ -81,10 +81,10 @@ namespace bmla {
 		~Impl();
 
 		/********************
-		Check setup
+		Verbose
 		********************/
 
-		void check_setup() const;
+		void print() const;
 
 		/********************
 		Location
@@ -327,8 +327,30 @@ namespace bmla {
 	Print the location and connectivity
 	********************/
 
-	void Unit::Impl::check_setup() const {
-		// std::cout << _x << " " << _y << " " << _z << " hidden nbrs: (" << _hidden_conns.size() << ") visible nbrs: (" << _nbrs.size() << ")" << std::endl;
+	void Unit::Impl::print() const {
+		if (_dim == 1) {
+			std::cout << _x << " " << std::flush;
+		} else if (_dim == 2) {
+			std::cout << _x << " " << _y << " " << std::flush;
+		} else if (_dim == 3) {
+			std::cout << _x << " " << _y << " " << _z << " " << std::flush;
+		};
+
+		if (_b_mode_flag) {
+			// Binary
+			if (!_b_mode_sp) {
+				std::cout << "empty" << std::endl;
+			} else {
+				std::cout << _b_mode_sp->get_name() << std::endl;
+			};
+		} else {
+			// Prob
+			std::cout << "(empty," << _p_mode_prob_empty << ") " << std::flush;
+			for (auto &pr: _p_mode_probs_str) {
+				std::cout << "(" << pr.first << "," << *pr.second << ") " << std::flush;
+			};
+			std::cout << std::endl;
+		};
 	};
 
 	/********************
@@ -514,6 +536,7 @@ namespace bmla {
 		// Occupancy
 		if (_b_mode_sp) {
 			set_p_mode_prob(_b_mode_sp,1.0);
+			_p_mode_prob_empty = 0.0;
 		};
 
 		// Binary mode = false
@@ -629,7 +652,7 @@ namespace bmla {
 		} else {
 
 			// Go through all possible species this could be, calculate propensities
-			_sampling_tot = 0.0;
+			_sampling_tot = 1.0;
 			for (auto i=0; i<activations.size(); i++) {
 				
 				_sampling_prob = exp(activations[i]);
@@ -639,6 +662,14 @@ namespace bmla {
 				_sampling_tot += _sampling_prob;
 			};
 
+			/*
+			std::cout << "Sampling probs: " << std::flush;
+			for (auto &x: _sampling_probs) {
+				std::cout << x / _sampling_tot << " ";
+			};
+			std::cout << std::endl;
+			*/
+			
 			// Write into species
 			Sptr s_empty = nullptr;
 			set_p_mode_prob(s_empty,_sampling_probs[0]/_sampling_tot);
@@ -724,8 +755,8 @@ namespace bmla {
 	Check setup
 	********************/
 
-	void Unit::check_setup() const {
-		_impl->check_setup();
+	void Unit::print() const {
+		_impl->print();
 	};
 
 	/********************

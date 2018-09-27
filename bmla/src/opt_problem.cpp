@@ -164,10 +164,10 @@ namespace bmla {
 			_latt->all_units_convert_to_b_mode();
 
 			// Read latt
-			_latt->read_from_file(fname_coll.get_fname(idx_subset[i_batch]));
+			_latt->read_from_file(fname_coll.get_fname(idx_subset[i_batch])); // binary units
 
 			// Sample hidden
-			_latt->sample_h();
+			_latt->sample_h(); // binary units
 
 			// Reap awake
 			for (auto &ixn_param: _ixn_params) {
@@ -180,8 +180,8 @@ namespace bmla {
 			// Sample vis, hidden
 			for (int i_sampling_step=0; i_sampling_step<no_latt_sampling_steps; i_sampling_step++) 
 			{
-				_latt->sample_v(false);
-				_latt->sample_h(false);
+				_latt->sample_v(false); // prob units
+				_latt->sample_h(false); // prob units
 			};
 
 			// Print

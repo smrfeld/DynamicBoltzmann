@@ -14,9 +14,9 @@ int main() {
 
 	// h dict
 	map<string,double> h_dict;
-	h_dict["A"] = 0.5;
+	h_dict["A"] = 1.0;
 	map<string,map<string,double>> j_dict;
-	j_dict["A"]["A"] = -1.0;
+	j_dict["A"]["A"] = -0.2;
 
 	// Box length
 	int box_length = 1000;

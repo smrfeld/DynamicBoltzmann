@@ -140,14 +140,6 @@ namespace dblz {
 	};
 
 	/********************
-	Check setup
-	********************/
-
-	void Moment::check_setup() const {
-		// ...
-	};
-
-	/********************
 	Verbose
 	********************/
 

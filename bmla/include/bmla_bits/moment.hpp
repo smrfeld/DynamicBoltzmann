@@ -74,12 +74,6 @@ namespace bmla {
 		~Moment();
 
 		/********************
-		Check setup
-		********************/
-
-		void check_setup() const;
-
-		/********************
 		Verbose
 		********************/
 

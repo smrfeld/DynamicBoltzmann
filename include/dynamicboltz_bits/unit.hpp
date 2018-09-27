@@ -51,7 +51,8 @@ namespace dblz {
 		Check setup
 		********************/
 
-		void check_setup() const;
+		virtual void print() const;
+		virtual std::string print_str() const;
 
 		/********************
 		Location
@@ -195,6 +196,13 @@ namespace dblz {
 		~UnitVisible();
 
 		/********************
+		Verbose
+		********************/
+
+		void print() const;
+		std::string print_str() const;
+
+		/********************
 		Add connection
 		********************/
 
@@ -281,6 +289,13 @@ namespace dblz {
 		UnitHidden& operator=(const UnitHidden& other);
 		UnitHidden& operator=(UnitHidden&& other);
 		~UnitHidden();
+
+		/********************
+		Verbose
+		********************/
+
+		void print() const;
+		std::string print_str() const;
 
 		/********************
 		Location

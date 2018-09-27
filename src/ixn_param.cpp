@@ -60,12 +60,6 @@ namespace dblz {
 		~Impl();
 
 		/********************
-		Validate setup
-		********************/
-
-		void check_setup() const;
-
-		/********************
 		Timepoints
 		********************/
 
@@ -247,14 +241,6 @@ namespace dblz {
 	};
 
 	/********************
-	Validate setup
-	********************/
-
-	void IxnParam::Impl::check_setup() const {
-		// ...
-	};
-
-	/********************
 	Timesteps
 	********************/
 
@@ -430,14 +416,6 @@ namespace dblz {
         return *this; 
 	};
 	IxnParam::~IxnParam() = default;
-
-	/********************
-	Validate setup
-	********************/
-
-	void IxnParam::check_setup() const {
-		_impl->check_setup();
-	};
 
 	/********************
 	Timesteps

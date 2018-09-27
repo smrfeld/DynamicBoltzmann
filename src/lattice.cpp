@@ -123,56 +123,13 @@ namespace dblz {
 	Check setup
 	********************/
 
-	void Lattice::check_setup() const {
+	void Lattice::print() const {
 		// Go through all sites
 		for (auto const &s: _latt_v) {
-			s.check_setup();
-		};
-	};
-
-	void Lattice::print_occupancy(bool binary) const {
-		for (auto const &s: _latt_v) {
-			if (_dim == 1) {
-				std::cout << s.x() << " " << std::flush;
-			} else if (_dim == 2) {
-				std::cout << s.x() << " " << s.y() << " " << std::flush;
-			} else if (_dim == 3) {
-				std::cout << s.x() << " " << s.y() << " " << s.z() << " " << std::flush;
-			};
-			if (binary) {
-				if (s.get_b_mode_species()) {
-					std::cout << s.get_b_mode_species()->get_name() << std::endl;
-				} else {
-					std::cout << "EMPTY" << std::endl;
-				};
-			} else {
-				for (auto &pr: s.get_p_mode_probs()) {
-					std::cout << "(" << pr.first->get_name() << " " << pr.second << ") ";
-				};
-				std::cout << std::endl;
-			};
+			s.print();
 		};
 		for (auto const &s: _latt_h) {
-			std::cout << "[Hidden] " << std::flush;
-			if (_dim == 1) {
-				std::cout << s.x() << " " << std::flush;
-			} else if (_dim == 2) {
-				std::cout << s.x() << " " << s.y() << " " << std::flush;
-			} else if (_dim == 3) {
-				std::cout << s.x() << " " << s.y() << " " << s.z() << " " << std::flush;
-			};
-			if (binary) {
-				if (s.get_b_mode_species()) {
-					std::cout << s.get_b_mode_species()->get_name() << std::endl;
-				} else {
-					std::cout << "EMPTY" << std::endl;
-				};
-			} else {
-				for (auto &pr: s.get_p_mode_probs()) {
-					std::cout << "(" << pr.first->get_name() << " " << pr.second << ") ";
-				};
-				std::cout << std::endl;
-			};
+			s.print();
 		};
 	};
 
@@ -731,9 +688,15 @@ namespace dblz {
 		for (auto &s: _latt_v) {
 			s.convert_p_to_b_mode();
 		};
+		for (auto &s: _latt_h) {
+			s.convert_p_to_b_mode();
+		};
 	};
 	void Lattice::all_units_convert_to_p_mode() {
 		for (auto &s: _latt_v) {
+			s.convert_b_to_p_mode();
+		};
+		for (auto &s: _latt_h) {
 			s.convert_b_to_p_mode();
 		};
 	};

@@ -25,9 +25,9 @@ int main() {
 
 	cout << "--- Making ixn func ---" << endl;
 
-	auto ixn_hA = make_shared<IxnParam>("hA",IxnParamType::H, -0.1);
-	auto ixn_wAX = make_shared<IxnParam>("wAX",IxnParamType::W, 0.1);
-	auto ixn_bX = make_shared<IxnParam>("bX",IxnParamType::B, -0.1);
+	auto ixn_hA = make_shared<IxnParam>("hA",IxnParamType::H, 0.0);
+	auto ixn_wAX = make_shared<IxnParam>("wAX",IxnParamType::W, 0.0);
+	auto ixn_bX = make_shared<IxnParam>("bX",IxnParamType::B, 0.0);
 
 	cout << "--- [Finished] Making ixn func ---" << endl;
 	cout << endl;
@@ -164,9 +164,9 @@ int main() {
 
 	// Params
 	int no_opt_steps = 1000;
-	int no_latt_sampling_steps = 10;
+	int no_latt_sampling_steps = 1;
 	int batch_size = 5;
-	double dopt=0.001;
+	double dopt=0.0001;
 
 	// Filenames
 	FNameColl fnames;

@@ -98,7 +98,6 @@ namespace bmla {
 		********************/
 
 		void print() const;
-		void print_occupancy(bool binary=true) const;
 
 		/********************
 		Helpers to setup all sites

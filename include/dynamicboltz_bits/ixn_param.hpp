@@ -48,13 +48,7 @@ namespace dblz {
 		IxnParam& operator=(const IxnParam& other);
 		IxnParam& operator=(IxnParam&& other);
 		~IxnParam();
-
-		/********************
-		Check setup
-		********************/
-
-		void check_setup() const;
-
+		
 		/********************
 		Timesteps
 		********************/

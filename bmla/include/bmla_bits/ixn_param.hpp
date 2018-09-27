@@ -48,12 +48,6 @@ namespace bmla {
 		~IxnParam();
 
 		/********************
-		Check setup
-		********************/
-
-		void check_setup() const;
-
-		/********************
 		Name, type
 		********************/
 

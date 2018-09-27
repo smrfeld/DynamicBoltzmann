@@ -84,7 +84,7 @@ namespace dblz {
 		Check setup
 		********************/
 
-		void check_setup() const;
+		std::string print_str() const;
 
 		/********************
 		Location
@@ -327,8 +327,30 @@ namespace dblz {
 	Print the location and connectivity
 	********************/
 
-	void Unit::Impl::check_setup() const {
-		// std::cout << _x << " " << _y << " " << _z << " hidden nbrs: (" << _hidden_conns.size() << ") visible nbrs: (" << _nbrs.size() << ")" << std::endl;
+	std::string Unit::Impl::print_str() const {
+		std::string s="";
+		if (_dim == 1) {
+			s += _x + " ";
+		} else if (_dim == 2) {
+			s += _x + " " + _y + " ";
+		} else if (_dim == 3) {
+			s += _x + " " + _y + " " + _z + " ";
+		};
+
+		if (_b_mode_flag) {
+			// Binary
+			if (!_b_mode_sp) {
+				s += "empty";
+			} else {
+				s += _b_mode_sp->get_name();
+			};
+		} else {
+			// Prob
+			s += "(empty," << _p_mode_prob_empty << ") ";
+			for (auto &pr: _p_mode_probs_str) {
+				s += "(" << pr.first << "," << *pr.second << ") ";
+			};
+		};	
 	};
 
 	/********************
@@ -514,6 +536,7 @@ namespace dblz {
 		// Occupancy
 		if (_b_mode_sp) {
 			set_p_mode_prob(_b_mode_sp,1.0);
+			_p_mode_prob_empty = 0.0;
 		};
 
 		// Binary mode = false
@@ -629,7 +652,7 @@ namespace dblz {
 		} else {
 
 			// Go through all possible species this could be, calculate propensities
-			_sampling_tot = 0.0;
+			_sampling_tot = 1.0;
 			for (auto i=0; i<activations.size(); i++) {
 				
 				_sampling_prob = exp(activations[i]);
@@ -638,6 +661,15 @@ namespace dblz {
 				_sampling_probs[i+1] = _sampling_prob;
 				_sampling_tot += _sampling_prob;
 			};
+
+
+			/*
+			std::cout << "Sampling probs: " << std::flush;
+			for (auto &x: _sampling_probs) {
+				std::cout << x / _sampling_tot << " ";
+			};
+			std::cout << std::endl;
+			*/
 
 			// Write into species
 			Sptr s_empty = nullptr;
@@ -724,8 +756,11 @@ namespace dblz {
 	Check setup
 	********************/
 
-	void Unit::check_setup() const {
-		_impl->check_setup();
+	void Unit::print() const {
+		std::cout << _impl->print_str() << std::endl;
+	};
+	std::string Unit::print_str() const {
+		_impl->print_str();
 	};
 
 	/********************
@@ -1210,6 +1245,17 @@ namespace dblz {
 	UnitVisible::~UnitVisible() = default;
 
 	/********************
+	Verbose
+	********************/
+
+	virtual void UnitVisible::print() const {
+		std::cout << print_str() << std::endl;
+	};
+	virtual std::string UnitVisible::print_str() const {
+		return "[Visible] " + Unit::print_str();
+	};
+
+	/********************
 	Add connection
 	********************/
 
@@ -1582,6 +1628,17 @@ namespace dblz {
         return *this; 
 	};
 	UnitHidden::~UnitHidden() = default;
+
+	/********************
+	Verbose
+	********************/
+
+	virtual void UnitHidden::print() const {
+		std::cout << print_str() << std::endl;
+	};
+	virtual std::string UnitHidden::print_str() const {
+		return "[Hidden: layer: " + layer() + "] " + Unit::print_str();
+	};
 
 	/********************
 	Location

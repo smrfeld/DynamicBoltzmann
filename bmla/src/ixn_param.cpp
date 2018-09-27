@@ -49,12 +49,6 @@ namespace bmla {
 		~Impl();
 
 		/********************
-		Validate setup
-		********************/
-
-		void check_setup() const;
-
-		/********************
 		Name, type
 		********************/
 
@@ -189,14 +183,6 @@ namespace bmla {
 	};
 
 	/********************
-	Validate setup
-	********************/
-
-	void IxnParam::Impl::check_setup() const {
-		// ...
-	};
-
-	/********************
 	Name, type
 	********************/
 
@@ -309,14 +295,6 @@ namespace bmla {
         return *this; 
 	};
 	IxnParam::~IxnParam() = default;
-
-	/********************
-	Validate setup
-	********************/
-
-	void IxnParam::check_setup() const {
-		_impl->check_setup();
-	};
 
 	/********************
 	Name, type

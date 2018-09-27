@@ -79,12 +79,6 @@ namespace dblz {
 		~Moment();
 
 		/********************
-		Check setup
-		********************/
-
-		void check_setup() const;
-
-		/********************
 		Verbose
 		********************/
 

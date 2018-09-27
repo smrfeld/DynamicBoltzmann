@@ -84,7 +84,7 @@ namespace bmla {
 		Verbose
 		********************/
 
-		void print() const;
+		std::string print_str() const;
 
 		/********************
 		Location
@@ -327,30 +327,31 @@ namespace bmla {
 	Print the location and connectivity
 	********************/
 
-	void Unit::Impl::print() const {
+	std::string Unit::Impl::print_str() const {
+		std::ostringstream s;
 		if (_dim == 1) {
-			std::cout << _x << " " << std::flush;
+			s << _x << " ";
 		} else if (_dim == 2) {
-			std::cout << _x << " " << _y << " " << std::flush;
+			s << _x << " " << _y << " ";
 		} else if (_dim == 3) {
-			std::cout << _x << " " << _y << " " << _z << " " << std::flush;
+			s << _x << " " << _y << " " << _z << " ";
 		};
 
 		if (_b_mode_flag) {
 			// Binary
 			if (!_b_mode_sp) {
-				std::cout << "empty" << std::endl;
+				s << "empty";
 			} else {
-				std::cout << _b_mode_sp->get_name() << std::endl;
+				s << _b_mode_sp->get_name();
 			};
 		} else {
 			// Prob
-			std::cout << "(empty," << _p_mode_prob_empty << ") " << std::flush;
+			s << "(empty," << _p_mode_prob_empty << ") ";
 			for (auto &pr: _p_mode_probs_str) {
-				std::cout << "(" << pr.first << "," << *pr.second << ") " << std::flush;
+				s << "(" << pr.first << "," << *pr.second << ") ";
 			};
-			std::cout << std::endl;
-		};
+		};	
+		return s.str();
 	};
 
 	/********************
@@ -756,7 +757,10 @@ namespace bmla {
 	********************/
 
 	void Unit::print() const {
-		_impl->print();
+		std::cout << _impl->print_str() << std::endl;
+	};
+	std::string Unit::print_str() const {
+		return _impl->print_str();
 	};
 
 	/********************
@@ -1241,6 +1245,17 @@ namespace bmla {
 	UnitVisible::~UnitVisible() = default;
 
 	/********************
+	Verbose
+	********************/
+
+	void UnitVisible::print() const {
+		std::cout << print_str() << std::endl;
+	};
+	std::string UnitVisible::print_str() const {
+		return "[Visible] " + Unit::print_str();
+	};
+
+	/********************
 	Add connection
 	********************/
 
@@ -1613,6 +1628,19 @@ namespace bmla {
         return *this; 
 	};
 	UnitHidden::~UnitHidden() = default;
+	
+	/********************
+	Verbose
+	********************/
+
+	void UnitHidden::print() const {
+		std::cout << print_str() << std::endl;
+	};
+	std::string UnitHidden::print_str() const {
+		std::ostringstream s;
+		s << "[Hidden: layer: " << layer() << "] " << Unit::print_str();
+		return s.str();
+	};
 
 	/********************
 	Location

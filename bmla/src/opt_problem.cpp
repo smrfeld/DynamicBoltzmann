@@ -171,8 +171,8 @@ namespace bmla {
 			// Sample
 			for (int i_sampling_step=0; i_sampling_step<no_latt_sampling_steps; i_sampling_step++) 
 			{
-				_latt->sample_v();
 				_latt->sample_h();
+				_latt->sample_v();
 			};
 
 			// Print

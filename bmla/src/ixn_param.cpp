@@ -41,7 +41,7 @@ namespace bmla {
 		Constructor
 		********************/
 
-		Impl(std::string name, IxnParamType type); 
+		Impl(std::string name, IxnParamType type, double init_guess); 
 		Impl(const Impl& other);
 		Impl(Impl&& other);
 		Impl& operator=(const Impl& other);
@@ -136,9 +136,9 @@ namespace bmla {
 	Constructor
 	********************/
 
-	IxnParam::Impl::Impl(std::string name, IxnParamType type) {
+	IxnParam::Impl::Impl(std::string name, IxnParamType type, double init_guess) {
 
-		_val = 0.0;
+		_val = init_guess;
 		_update = 0.0;
 
 		// Moment
@@ -297,7 +297,7 @@ namespace bmla {
 	Constructor
 	********************/
 
-	IxnParam::IxnParam(std::string name, IxnParamType type) : _impl(new Impl(name,type)) {};
+	IxnParam::IxnParam(std::string name, IxnParamType type, double init_guess) : _impl(new Impl(name,type,init_guess)) {};
 	IxnParam::IxnParam(const IxnParam& other) : _impl(new Impl(*other._impl)) {};
 	IxnParam::IxnParam(IxnParam&& other) : _impl(std::move(other._impl)) {};
 	IxnParam& IxnParam::operator=(const IxnParam &other) {

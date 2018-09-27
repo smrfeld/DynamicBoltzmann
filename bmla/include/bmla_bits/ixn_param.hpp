@@ -40,7 +40,7 @@ namespace bmla {
 		Constructor
 		********************/
 
-		IxnParam(std::string name, IxnParamType type); 
+		IxnParam(std::string name, IxnParamType type, double init_guess); 
 		IxnParam(const IxnParam& other);
 		IxnParam(IxnParam&& other);
 		IxnParam& operator=(const IxnParam& other);

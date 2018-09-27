@@ -258,16 +258,10 @@ namespace dblz {
 		*****/
 
 		if (options.nesterov) {
-			// If first opt step, do nothing, but set the "prev" point to the current to initialize
-			if (i_opt_step == 0) {
-				for (auto &ixn_param: _ixn_params) {
-					ixn_param->get_diff_eq_rhs()->nesterov_set_prev_equal_curr();
-				};
-			} else {
-				// Move to the intermediate point
-				for (auto &ixn_param: _ixn_params) {
-					ixn_param->get_diff_eq_rhs()->nesterov_move_to_intermediate_pt(i_opt_step);
-				};
+			// Move to intermediate point
+			// Note: does nothing unless i_opt_step >= 2
+			for (auto &ixn_param: _ixn_params) {
+				ixn_param->get_diff_eq_rhs()->nesterov_move_to_intermediate_pt(i_opt_step);
 			};
 		};
 

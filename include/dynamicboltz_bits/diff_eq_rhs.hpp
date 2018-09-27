@@ -175,7 +175,6 @@ namespace dblz {
 
 		// Updates
 		std::map<dcu::GridPtKey, double> _updates;
-		dcu::Grid *_nesterov_prev_pt;
 
 		// Internal
 		void _form_abscissas(int timepoint);
@@ -225,9 +224,6 @@ namespace dblz {
 		// Move to the nesterov intermediate point
 		void nesterov_move_to_intermediate_pt(int i_opt_step);
 
-		// Set prev nesterov
-		void nesterov_set_prev_equal_curr();
-
 		/********************
 		Update
 		********************/
@@ -242,14 +238,6 @@ namespace dblz {
 
 		// Committ the update
 		void update_committ_stored();
-
-		// Calculate the new basis function
-		// t_start (inclusive) to end (non-inclusive)
-		/*
-		void update(int t_start, int t_end, double dt, double dopt, bool exp_decay, double exp_decay_t0, double exp_decay_lambda, bool l2_reg_params_mode, std::map<IxnParam*,double> &l2_lambda_params, std::map<IxnParam*,double> &l2_reg_centers); 
-		void update_gather(int t_start, int t_end, double dt, double dopt, bool exp_decay, double exp_decay_t0, double exp_decay_lambda, bool l2_reg_params_mode, std::map<IxnParam*,double> &l2_lambda_params, std::map<IxnParam*,double> &l2_reg_centers);
-		void update_committ_gathered();
-		*/
 	};
 
 };

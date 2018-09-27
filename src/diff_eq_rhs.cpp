@@ -231,7 +231,6 @@ namespace dblz {
 		_domain = domain.get_domain();
 		_dimensions = domain.get_dimensions();
 		_parent_ixn_param = parent_ixn_param;
-		_nesterov_prev_pt = nullptr;
 
 		// Init structures for evaluating
 		for (auto dim=0; dim<_domain.size(); dim++) {
@@ -278,11 +277,6 @@ namespace dblz {
 		_abscissas = other._abscissas;
 		_parent_ixn_param = other._parent_ixn_param;
 		_updates = other._updates;
-		if (other._nesterov_prev_pt) {
-			_nesterov_prev_pt = new Grid(*other._nesterov_prev_pt);
-		} else {
-			_nesterov_prev_pt = nullptr;
-		};
 	};
 	void DiffEqRHS::_move(DiffEqRHS& other) {
 		_name = other._name;
@@ -291,44 +285,28 @@ namespace dblz {
 		_abscissas = other._abscissas;
 		_parent_ixn_param = other._parent_ixn_param;
 		_updates = other._updates;
-		_nesterov_prev_pt = other._nesterov_prev_pt;
 	};
 
-	void DiffEqRHS::_clean_up() {
-		if (_nesterov_prev_pt) {
-			delete _nesterov_prev_pt;
-			_nesterov_prev_pt = nullptr;
-		};
-	};
+	void DiffEqRHS::_clean_up() {};
 
 	/********************
 	Nesterov
 	********************/
 
-	// Nesterov func
-	double f_nesterov(const double& curr_grid_pt, const double& prev_grid_pt, const int& i_opt_step) {
-		return curr_grid_pt + (i_opt_step - 1.0) / (i_opt_step + 2.0) * (curr_grid_pt - prev_grid_pt);
-	};
-
 	// Move to the nesterov intermediate point
 	void DiffEqRHS::nesterov_move_to_intermediate_pt(int i_opt_step) {
-		if (!_nesterov_prev_pt) {
-			std::cerr << ">>> Error: DiffEqRHS::nesterov_move_to_intermediate_pt <<< No prev nesterov pt exists in diff eq rhs " << _name << std::endl;
-			exit(EXIT_FAILURE);
+		// Only start at step 2; else intermediate pt is current
+		if (i_opt_step <= 1) {
+			return;
 		};
 
-		// Move to the intermediate point
-		transform(f_nesterov, _nesterov_prev_pt, i_opt_step);
-	};
-	
-	// Set prev nesterov
-	void DiffEqRHS::nesterov_set_prev_equal_curr() {
-		if (!_nesterov_prev_pt) {
-			// Make
-			_nesterov_prev_pt = new dcu::Grid(_dimensions);
+		// Go through updates of prev step
+		// current - prev = current - (current - update) = update
+		for (auto &pr: _updates) {
+			get_grid_point_ref(pr.first).increment_ordinate(
+				(i_opt_step - 1.0) / (i_opt_step + 2.0) * pr.second
+				);
 		};
-		// Copy
-		_nesterov_prev_pt->copy_ordinates(this);
 	};
 	
 	/********************
@@ -386,8 +364,7 @@ namespace dblz {
 			_updates.clear();
 		};
 
-		// Get the adjoint
-		std::shared_ptr<Adjoint> adjoint = _parent_ixn_param->get_adjoint();
+		// Adjoint
 		double adjoint_val;
 
 		// Init idxs set
@@ -402,7 +379,7 @@ namespace dblz {
 		for (auto timepoint=timepoint_start; timepoint<timepoint_end; timepoint++) {
 
 			// Adjoint
-			adjoint_val = adjoint->get_val_at_timepoint(timepoint);
+			adjoint_val = _parent_ixn_param->get_adjoint()->get_val_at_timepoint(timepoint);
 
 			// Form abscissas
 			_form_abscissas(timepoint);
@@ -448,148 +425,9 @@ namespace dblz {
 		for (auto const &pr: _updates) {
 
 			// Increment
-			get_grid_point_ref(pr.first.get_idx_set()).increment_ordinate(pr.second);
+			get_grid_point_ref(pr.first).increment_ordinate(pr.second);
 
 		};
 
 	};
-
-	/********************
-	Calculate the new basis function
-	********************/
-
-
-	/*
-	void DiffEqRHS::update(int t_start, int t_end, double dt, double dopt, bool exp_decay, double exp_decay_t0, double exp_decay_lambda, bool l2_reg_params_mode, std::map<IxnParam*,double> &l2_lambda_params, std::map<IxnParam*,double> &l2_reg_centers) 
-	{
-		int *idxs;
-		double *nu_vals;
-		double decay = 1.0;
-
-		// Go through all idxs
-		double up1, up2, l2_center;
-		for (int i=0; i<_val_len; i++) {
-
-			// Go through all times
-			for (int t=t_start; t<t_end; t++) {
-
-				// Exp decay
-				if (exp_decay) {
-					decay = exp(-exp_decay_lambda*abs(t - exp_decay_t0));
-				};
-	*/
-				// Go through all updating terms
-				/*
-				for (auto p: _update_ptrs) {
-					up1 = dopt * dt * p.first->moments_diff_at_time(t) * p.second->get_val_at_timepoint_by_idx(t, i) * decay;
-					_vals[i] += up1;
-
-					// L2
-					if (l2_reg_params_mode) {
-						// Get numerator of var term
-						IxnParam* num = p.second->get_numerator_ixn_param_traj();
-
-						// Lookup l2 lambda
-						auto it = l2_lambda_params.find(num);
-						if (it != l2_lambda_params.end()) {
-							// Lookup center if it exists, else 0
-							auto it2 = l2_reg_centers.find(num);
-							if (it2 != l2_reg_centers.end()) {
-								l2_center = it2->second;
-							} else {
-								l2_center = 0.;
-							};
-							up2 = dopt * it->second * dt * sgn(num->get_val_at_timepoint(t) - l2_center) * abs(num->get_val_at_timepoint(t) - l2_center) * p.second->get_val_at_timepoint_by_idx(t, i) * decay;
-
-							_vals[i] -= up2;
-							// std::cout << up1 << " " << up2 << std::endl;
-						};
-					};
-				};
-				*/
-	/*
-			};
-		};
-	};
-	*/
-
-	/*
-	void DiffEqRHS::update_gather(int t_start, int t_end, double dt, double dopt, bool exp_decay, double exp_decay_t0, double exp_decay_lambda, bool l2_reg_params_mode, std::map<IxnParam*,double> &l2_lambda_params, std::map<IxnParam*,double> &l2_reg_centers) 
-	{
-		if (!_update_gathered) {
-			// alloc
-			_update_gathered = new double[_val_len];
-			std::fill_n(_update_gathered,_val_len,0.);
-		};
-
-		int *idxs;
-		double *nu_vals;
-		double decay = 1.0;
-		double up1,up2,l2_center;
-		IxnParam* num;
-
-		// Go through all idxs
-		for (int i=0; i<_val_len; i++) {
-
-			// Go through all times
-			for (int t=t_start; t<t_end; t++) {
-
-				// Exp decay
-				if (exp_decay) {
-					decay = exp(-exp_decay_lambda*abs(t - exp_decay_t0));
-				};
-	*/
-				// Go through all updating terms
-				/*
-				for (auto p: _update_ptrs) {
-					up1 = p.first->moments_diff_at_time(t);
-
-					// L2
-					if (l2_reg_params_mode) {
-						// Get numerator of var term
-						num = p.second->get_numerator_ixn_param_traj();
-
-						// Lookup l2 lambda
-						auto it = l2_lambda_params.find(num);
-						if (it != l2_lambda_params.end()) {
-							// Lookup center if it exists, else 0
-							auto it2 = l2_reg_centers.find(num);
-							if (it2 != l2_reg_centers.end()) {
-								l2_center = it2->second;
-							} else {
-								l2_center = 0.;
-							};
-							up2 = it->second * sgn(num->get_val_at_timepoint(t) - l2_center) * abs(num->get_val_at_timepoint(t) - l2_center);
-
-							// Subtract from up1
-							up1 -= up2;
-						};
-					};
-
-					_update_gathered[i] += dopt * dt * up1 * p.second->get_val_at_timepoint_by_idx(t, i) * decay / (t_end - t_start);
-				};
-				*/
-	/*
-			};
-		};
-	};
-
-	void DiffEqRHS::update_committ_gathered() 
-	{
-		if (!_update_gathered) {
-			std::cerr << "ERROR! No update allocated." << std::endl;
-			exit(EXIT_FAILURE);
-		};
-
-		// Go through all idxs
-		for (int i=0; i<_val_len; i++) {
-			_vals[i] += _update_gathered[i];
-		};
-
-		// Reset to 0
-		std::fill_n(_update_gathered,_val_len,0.);
-	};
-	*/
-
-
 };

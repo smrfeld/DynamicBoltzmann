@@ -167,7 +167,7 @@ int main() {
 	double dt=0.1;
 	int no_latt_sampling_steps = 10;
 	int batch_size = 5;
-	double dopt=0.002;
+	double dopt=0.001;
 
 	// Filenames
 	FNameSeriesColl fnames;
@@ -214,7 +214,7 @@ int main() {
 		*/
 
 		// Take a step
-		opt.solve_one_step(no_timesteps,batch_size,dt,dopt,no_latt_sampling_steps,fnames,options);
+		opt.solve_one_step(opt_step,no_timesteps,batch_size,dt,dopt,no_latt_sampling_steps,fnames,options);
 
 		// Sample moments (whole trajectory)
 		if (opt_step==no_opt_steps) {

@@ -180,7 +180,7 @@ namespace dblz {
 				_latt->read_from_file(fname_coll.get_fname_series(idx_subset[i_batch]).fnames[timepoint]); // binary units
 
 				// Sample hidden
-				_latt->sample_h(); // binary units
+				_latt->sample_h_at_timepoint(timepoint); // binary units
 
 				// Reap awake
 				for (auto &ixn_param: _ixn_params) {

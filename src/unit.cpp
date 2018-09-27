@@ -328,29 +328,30 @@ namespace dblz {
 	********************/
 
 	std::string Unit::Impl::print_str() const {
-		std::string s="";
+		std::ostringstream s;
 		if (_dim == 1) {
-			s += _x + " ";
+			s << _x << " ";
 		} else if (_dim == 2) {
-			s += _x + " " + _y + " ";
+			s << _x << " " << _y << " ";
 		} else if (_dim == 3) {
-			s += _x + " " + _y + " " + _z + " ";
+			s << _x << " " << _y << " " << _z << " ";
 		};
 
 		if (_b_mode_flag) {
 			// Binary
 			if (!_b_mode_sp) {
-				s += "empty";
+				s << "empty";
 			} else {
-				s += _b_mode_sp->get_name();
+				s << _b_mode_sp->get_name();
 			};
 		} else {
 			// Prob
-			s += "(empty," << _p_mode_prob_empty << ") ";
+			s << "(empty," << _p_mode_prob_empty << ") ";
 			for (auto &pr: _p_mode_probs_str) {
-				s += "(" << pr.first << "," << *pr.second << ") ";
+				s << "(" << pr.first << "," << *pr.second << ") ";
 			};
 		};	
+		return s.str();
 	};
 
 	/********************
@@ -760,7 +761,7 @@ namespace dblz {
 		std::cout << _impl->print_str() << std::endl;
 	};
 	std::string Unit::print_str() const {
-		_impl->print_str();
+		return _impl->print_str();
 	};
 
 	/********************
@@ -1248,10 +1249,10 @@ namespace dblz {
 	Verbose
 	********************/
 
-	virtual void UnitVisible::print() const {
+	void UnitVisible::print() const {
 		std::cout << print_str() << std::endl;
 	};
-	virtual std::string UnitVisible::print_str() const {
+	std::string UnitVisible::print_str() const {
 		return "[Visible] " + Unit::print_str();
 	};
 
@@ -1633,11 +1634,13 @@ namespace dblz {
 	Verbose
 	********************/
 
-	virtual void UnitHidden::print() const {
+	void UnitHidden::print() const {
 		std::cout << print_str() << std::endl;
 	};
-	virtual std::string UnitHidden::print_str() const {
-		return "[Hidden: layer: " + layer() + "] " + Unit::print_str();
+	std::string UnitHidden::print_str() const {
+		std::ostringstream s;
+		s << "[Hidden: layer: " << layer() << "] " << Unit::print_str();
+		return s.str();
 	};
 
 	/********************

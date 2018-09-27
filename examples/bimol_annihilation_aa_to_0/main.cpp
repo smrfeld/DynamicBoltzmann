@@ -41,8 +41,8 @@ int main() {
 
 	// Domain
 	Domain1D domain_1d_hA = Domain1D(ixn_hA,-2.0,2.0,11);
-	Domain1D domain_1d_wAX = Domain1D(ixn_wAX,-4.0,2.0,11);
-	Domain1D domain_1d_bX = Domain1D(ixn_bX,-2.0,2.0,11);
+	Domain1D domain_1d_wAX = Domain1D(ixn_wAX,-5.0,0.5,11);
+	Domain1D domain_1d_bX = Domain1D(ixn_bX,-0.5,2.0,11);
 	Domain domain({domain_1d_hA,domain_1d_wAX,domain_1d_bX});
 
 	// RHS
@@ -162,7 +162,7 @@ int main() {
 	opt.add_ixn_param(ixn_wAX);
 
 	// Params
-	int no_opt_steps = 10;
+	int no_opt_steps = 100;
 	int no_timesteps = 100;
 	double dt=0.1;
 	int no_latt_sampling_steps = 10;
@@ -202,9 +202,8 @@ int main() {
 		std::cout << "Opt step: " << opt_step << " / " << no_opt_steps << std::endl;
 		std::cout << "------------------" << std::endl;
 
-		// Take a step
-		opt.solve_one_step(no_timesteps,batch_size,dt,dopt,no_latt_sampling_steps,fnames,options);
-
+		// Adjust integral range
+		/*
 		if (opt_step <= 50) {
 			options.VAL_random_integral_range_size = 10;
 		} else if (opt_step <= 75) {
@@ -212,6 +211,10 @@ int main() {
 		} else {
 			options.VAL_random_integral_range_size = 50;
 		};
+		*/
+
+		// Take a step
+		opt.solve_one_step(no_timesteps,batch_size,dt,dopt,no_latt_sampling_steps,fnames,options);
 
 		// Sample moments (whole trajectory)
 		if (opt_step==no_opt_steps) {

@@ -70,6 +70,9 @@ namespace dblz {
 		// Random integral
 		bool MODE_random_integral_range = false;
 		int VAL_random_integral_range_size = 10;
+
+		// Nesterov
+		bool nesterov = true;
 	};
 
 	/****************************************
@@ -132,7 +135,7 @@ namespace dblz {
 		void check_options(int no_timesteps, int batch_size, double dt, double dopt, int no_latt_sampling_steps, OptionsSolve options);
 
 		// One step
-		void solve_one_step(int no_timesteps, int batch_size, double dt, double dopt, int no_latt_sampling_steps, FNameSeriesColl &fname_coll, OptionsSolve options = OptionsSolve(), bool should_check_options=true);
+		void solve_one_step(int i_opt_step, int no_timesteps, int batch_size, double dt, double dopt, int no_latt_sampling_steps, FNameSeriesColl &fname_coll, OptionsSolve options = OptionsSolve(), bool should_check_options=true);
 
 		// Many steps
 		void solve(int no_opt_steps, int no_timesteps, int batch_size, double dt, double dopt, int no_latt_sampling_steps, FNameSeriesColl &fname_coll, OptionsSolve options = OptionsSolve());

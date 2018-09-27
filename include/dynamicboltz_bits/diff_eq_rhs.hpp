@@ -175,12 +175,7 @@ namespace dblz {
 
 		// Updates
 		std::map<dcu::GridPtKey, double> _updates;
-
-		// Update, if needed
-		// double *_update_gathered;
-
-		// Stored update for nesterov
-		// Array *_nesterov_prev_pt;
+		dcu::Grid *_nesterov_prev_pt;
 
 		// Internal
 		void _form_abscissas(int timepoint);
@@ -227,13 +222,11 @@ namespace dblz {
 		Nesterov
 		********************/
 
-		/*
 		// Move to the nesterov intermediate point
-		void nesterov_move_to_intermediate_pt(int opt_step);
+		void nesterov_move_to_intermediate_pt(int i_opt_step);
 
 		// Set prev nesterov
 		void nesterov_set_prev_equal_curr();
-		*/
 
 		/********************
 		Update

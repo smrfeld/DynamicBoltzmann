@@ -241,7 +241,7 @@ namespace dblz {
 	};
 
 	// One step
-	void OptProblem::solve_one_step(int no_timesteps, int batch_size, double dt, double dopt, int no_latt_sampling_steps, FNameSeriesColl &fname_coll, OptionsSolve options, bool should_check_options) {
+	void OptProblem::solve_one_step(int i_opt_step, int no_timesteps, int batch_size, double dt, double dopt, int no_latt_sampling_steps, FNameSeriesColl &fname_coll, OptionsSolve options, bool should_check_options) {
 
 		int no_timepoints = no_timesteps + 1;
 
@@ -251,6 +251,24 @@ namespace dblz {
 
 		if (should_check_options) {
 			check_options(no_timesteps,batch_size,dt,dopt,no_latt_sampling_steps,options);
+		};
+
+		/*****
+		Option: Nesterov mode
+		*****/
+
+		if (options.nesterov) {
+			// If first opt step, do nothing, but set the "prev" point to the current to initialize
+			if (i_opt_step == 0) {
+				for (auto &ixn_param: _ixn_params) {
+					ixn_param->get_diff_eq_rhs()->nesterov_set_prev_equal_curr();
+				};
+			} else {
+				// Move to the intermediate point
+				for (auto &ixn_param: _ixn_params) {
+					ixn_param->get_diff_eq_rhs()->nesterov_move_to_intermediate_pt(i_opt_step);
+				};
+			};
 		};
 
 		/*****
@@ -378,7 +396,7 @@ namespace dblz {
 			std::cout << "------------------" << std::endl;
 
 			// Solve
-			solve_one_step(no_timesteps,batch_size,dt,dopt,no_latt_sampling_steps,fname_coll,options);
+			solve_one_step(i_opt_step, no_timesteps,batch_size,dt,dopt,no_latt_sampling_steps,fname_coll,options);
 		};
 
 	};

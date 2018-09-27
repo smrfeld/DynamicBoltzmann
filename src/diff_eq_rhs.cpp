@@ -231,6 +231,7 @@ namespace dblz {
 		_domain = domain.get_domain();
 		_dimensions = domain.get_dimensions();
 		_parent_ixn_param = parent_ixn_param;
+		_nesterov_prev_pt = nullptr;
 
 		// Init structures for evaluating
 		for (auto dim=0; dim<_domain.size(); dim++) {
@@ -276,6 +277,12 @@ namespace dblz {
 		_dimensions = other._dimensions;
 		_abscissas = other._abscissas;
 		_parent_ixn_param = other._parent_ixn_param;
+		_updates = other._updates;
+		if (other._nesterov_prev_pt) {
+			_nesterov_prev_pt = new Grid(*other._nesterov_prev_pt);
+		} else {
+			_nesterov_prev_pt = nullptr;
+		};
 	};
 	void DiffEqRHS::_move(DiffEqRHS& other) {
 		_name = other._name;
@@ -283,52 +290,47 @@ namespace dblz {
 		_dimensions = other._dimensions;
 		_abscissas = other._abscissas;
 		_parent_ixn_param = other._parent_ixn_param;
+		_updates = other._updates;
+		_nesterov_prev_pt = other._nesterov_prev_pt;
 	};
 
-	void DiffEqRHS::_clean_up() {};
+	void DiffEqRHS::_clean_up() {
+		if (_nesterov_prev_pt) {
+			delete _nesterov_prev_pt;
+			_nesterov_prev_pt = nullptr;
+		};
+	};
 
 	/********************
-	Move to the nesterov intermediate point
+	Nesterov
 	********************/
-	/*
-	void DiffEqRHS::nesterov_move_to_intermediate_pt(int opt_step) {
+
+	// Nesterov func
+	double f_nesterov(const double& curr_grid_pt, const double& prev_grid_pt, const int& i_opt_step) {
+		return curr_grid_pt + (i_opt_step - 1.0) / (i_opt_step + 2.0) * (curr_grid_pt - prev_grid_pt);
+	};
+
+	// Move to the nesterov intermediate point
+	void DiffEqRHS::nesterov_move_to_intermediate_pt(int i_opt_step) {
 		if (!_nesterov_prev_pt) {
-			std::cerr << "Error! No prev nesterov pt exists in basis func " << _name << std::endl;
+			std::cerr << ">>> Error: DiffEqRHS::nesterov_move_to_intermediate_pt <<< No prev nesterov pt exists in diff eq rhs " << _name << std::endl;
 			exit(EXIT_FAILURE);
 		};
 
 		// Move to the intermediate point
-		double curr;
-		for (int i=0; i<_val_len; i++) {
-			// Tem store the old
-			curr = _vals[i];
-
-			// Move
-			_vals[i] = curr + (opt_step - 1.0) / (opt_step + 2.0) * (curr - _nesterov_prev_pt->get_by_idx(i));
-
-			// The current point will next be the old
-			_nesterov_prev_pt->set_by_idx(i, curr);
-		};
+		transform(f_nesterov, _nesterov_prev_pt, i_opt_step);
 	};
-	*/
 	
-	/********************
-	Set prev nesterov
-	********************/
-
-	/*
+	// Set prev nesterov
 	void DiffEqRHS::nesterov_set_prev_equal_curr() {
 		if (!_nesterov_prev_pt) {
 			// Make
-			_nesterov_prev_pt = new Array(_domain);
+			_nesterov_prev_pt = new dcu::Grid(_dimensions);
 		};
 		// Copy
-		for (int i=0; i<_val_len; i++) {
-			_nesterov_prev_pt->set_by_idx(i, _vals[i]);
-		};
+		_nesterov_prev_pt->copy_ordinates(this);
 	};
-	*/
-
+	
 	/********************
 	Validate
 	********************/

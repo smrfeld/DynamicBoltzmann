@@ -162,10 +162,10 @@ int main() {
 	opt.add_ixn_param(ixn_wAX);
 
 	// Params
-	int no_opt_steps = 100;
+	int no_opt_steps = 200;
 	int no_timesteps = 100;
 	double dt=0.1;
-	int no_latt_sampling_steps = 10;
+	int no_latt_sampling_steps = 5;
 	int batch_size = 5;
 	double dopt=0.001;
 
@@ -206,7 +206,7 @@ int main() {
 		/*
 		if (opt_step <= 50) {
 			options.VAL_random_integral_range_size = 10;
-		} else if (opt_step <= 75) {
+		} else if (opt_step <= 100) {
 			options.VAL_random_integral_range_size = 25;
 		} else {
 			options.VAL_random_integral_range_size = 50;

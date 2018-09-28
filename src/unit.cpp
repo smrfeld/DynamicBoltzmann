@@ -982,7 +982,7 @@ namespace dblz {
 		Sample
 		********************/
 
-		void form_activations_vector_at_timepoint(const std::shared_ptr<BiasDict>& bias_dict, const std::vector<Sptr>& species, int timepoint);
+		void form_activations_vector_at_timepoint(const std::shared_ptr<BiasDict>& bias_dict, const std::vector<Sptr>& species_possible, int timepoint);
 		const std::vector<double>& get_activations_vector() const;
 	};
 
@@ -1545,18 +1545,18 @@ namespace dblz {
 	Sample
 	********************/
 
-	void UnitHidden::Impl::form_activations_vector_at_timepoint(const std::shared_ptr<BiasDict>& bias_dict, const std::vector<Sptr>& species, int timepoint) {
+	void UnitHidden::Impl::form_activations_vector_at_timepoint(const std::shared_ptr<BiasDict>& bias_dict, const std::vector<Sptr>& species_possible, int timepoint) {
 		// Check size
-		if (_activations.size() != species.size()) {
+		if (_activations.size() != species_possible.size()) {
 			_activations.clear();
-			for (auto i=0; i<species.size(); i++) {
+			for (auto i=0; i<species_possible.size(); i++) {
 				_activations.push_back(0.0);
 			};
 		};
 
 		// Form the vector of activations
 		int i=0;
-		for (auto const &sp: species) {
+		for (auto const &sp: species_possible) {
 			_activations[i] = get_activation_for_species_at_timepoint(bias_dict,sp,timepoint);
 			i++;
 		};

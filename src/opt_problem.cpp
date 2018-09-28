@@ -174,7 +174,7 @@ namespace dblz {
 				};
 
 				// Convert lattice to binary mode
-				_latt->all_units_convert_to_b_mode();
+				// _latt->all_units_convert_to_b_mode();
 
 				// Read latt
 				_latt->read_from_file(fname_coll.get_fname_series(idx_subset[i_batch]).fnames[timepoint]); // binary units
@@ -188,21 +188,27 @@ namespace dblz {
 				};
 
 				// Convert lattice to prob mode
-				_latt->all_units_convert_to_p_mode();
+				// _latt->all_units_convert_to_p_mode();
 
 				// Sample
 				for (int i_sampling_step=0; i_sampling_step<no_latt_sampling_steps; i_sampling_step++) 
 				{
-					_latt->sample_v_at_timepoint(timepoint,false); // prob units
-					_latt->sample_h_at_timepoint(timepoint,false); // prob units
+					// _latt->sample_v_at_timepoint(timepoint,false); // prob units
+					// _latt->sample_h_at_timepoint(timepoint,fase); // prob units
+					_latt->sample_v_at_timepoint(timepoint); // binary units
+					_latt->sample_h_at_timepoint(timepoint); // binary units
 				};
+
+				// Convert lattice to binary mode to evaluate the asleep phase moments!
+				// _latt->all_units_convert_to_b_mode();
 
 				// Print
 				// latt.print_occupancy();
 
 				// Reap asleep
 				for (auto &ixn_param: _ixn_params) {
-					ixn_param->get_moment()->reap_as_timepoint_in_batch(MomentType::ASLEEP, timepoint, i_batch, false);
+					// ixn_param->get_moment()->reap_as_timepoint_in_batch(MomentType::ASLEEP, timepoint, i_batch, false); // reap prob
+					ixn_param->get_moment()->reap_as_timepoint_in_batch(MomentType::ASLEEP, timepoint, i_batch); // reap binary
 				};
 			};
 			

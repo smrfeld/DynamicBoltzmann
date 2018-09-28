@@ -355,7 +355,7 @@ namespace dblz {
 			// Get ixn
 			ixn = _ixn_dict->get_ixn_at_timepoint(sp_to_place,sp_other,timepoint);
 			// Add
-			act += ixn; // * 1.0 * 1.0
+			act += ixn;
 		} else {
 			////////////////
 			// Probabilistic
@@ -367,7 +367,7 @@ namespace dblz {
 				// Get ixn
 				ixn = _ixn_dict->get_ixn_at_timepoint(sp_to_place,pr.first,timepoint);
 				// Add
-				act += ixn * pr.second; // * 1.0
+				act += ixn * pr.second;
 			};
 		};
 
@@ -392,7 +392,7 @@ namespace dblz {
 			// Get ixn
 			ixn = _ixn_dict->get_ixn_at_timepoint(sp_other,sp_to_place,timepoint);
 			// Add
-			act += ixn; // * 1.0 * 1.0
+			act += ixn;
 		} else {
 			////////////////
 			// Probabilistic
@@ -404,7 +404,7 @@ namespace dblz {
 				// Get ixn
 				ixn = _ixn_dict->get_ixn_at_timepoint(pr.first,sp_to_place,timepoint);
 				// Add
-				act += ixn * pr.second; // * 1.0
+				act += ixn * pr.second;
 			};
 		};
 

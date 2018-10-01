@@ -55,6 +55,9 @@ namespace bmla {
 		double _val_awake_averaged;
 		double _val_asleep_averaged;
 	
+		// If the awake moment is fixed
+		bool _is_awake_moment_fixed;
+
 		// Constructor helpers
 		void _clean_up();
 		void _move(Moment &other);
@@ -108,7 +111,14 @@ namespace bmla {
 		Reset
 		********************/
 
-		void reset_to_zero();
+		void reset_to_zero(MomentType type);
+
+		/********************
+		Fixed awake
+		********************/
+
+		void set_is_awake_moment_fixed(bool flag);
+		bool get_is_awake_moment_fixed() const;
 
 		/********************
 		Get/set moment
@@ -137,7 +147,7 @@ namespace bmla {
 		Write
 		********************/
 
-		void write_to_file(std::string fname) const;
+		void write_to_file(std::string fname, bool append=false) const;
 
 	};
 

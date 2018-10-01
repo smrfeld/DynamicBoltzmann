@@ -78,7 +78,7 @@ namespace bmla {
 		Write to file
 		********************/
 
-		void write_to_file(std::string fname) const;
+		void write_to_file(std::string fname, bool append=false) const;
 	};
 
 };

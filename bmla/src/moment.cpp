@@ -40,6 +40,9 @@ namespace bmla {
 		// averaged
 		_val_awake_averaged = 0.0;
 		_val_asleep_averaged = 0.0;
+
+		// Fixed awake moment
+		_is_awake_moment_fixed = false;
 	};
 	Moment::Moment(const Moment& other) {
 		_copy(other);
@@ -86,6 +89,8 @@ namespace bmla {
 		_val_awake_averaged = other._val_awake_averaged;
 		_val_asleep_averaged = other._val_asleep_averaged;
 		
+		_is_awake_moment_fixed = other._is_awake_moment_fixed;
+
 		// Reset the other
 		other._name = "";
 
@@ -102,6 +107,8 @@ namespace bmla {
 
 		other._val_awake_averaged = 0.0;
 		other._val_asleep_averaged = 0.0;
+
+		other._is_awake_moment_fixed = false;
 	};
 	void Moment::_copy(const Moment& other) {
 		_name = other._name;
@@ -124,6 +131,8 @@ namespace bmla {
 		// averaged
 		_val_awake_averaged = other._val_awake_averaged;
 		_val_asleep_averaged = other._val_asleep_averaged;
+
+		_is_awake_moment_fixed = other._is_awake_moment_fixed;
 	};
 
 	/********************
@@ -219,13 +228,29 @@ namespace bmla {
 	Reset
 	********************/
 
-	void Moment::reset_to_zero() {
-		for (auto i_batch=0; i_batch<_batch_size; i_batch++) {
-			set_moment_in_batch(MomentType::AWAKE, i_batch, 0.0);
-			set_moment_in_batch(MomentType::ASLEEP, i_batch, 0.0);
+	void Moment::reset_to_zero(MomentType type) {
+		if (type == MomentType::AWAKE) {
+			for (auto i_batch=0; i_batch<_batch_size; i_batch++) {
+				set_moment_in_batch(MomentType::AWAKE, i_batch, 0.0);
+			};
+			set_moment(MomentType::AWAKE, 0.0);
+		} else {
+			for (auto i_batch=0; i_batch<_batch_size; i_batch++) {
+				set_moment_in_batch(MomentType::ASLEEP, i_batch, 0.0);
+			};
+			set_moment(MomentType::ASLEEP, 0.0);
 		};
-		set_moment(MomentType::AWAKE, 0.0);
-		set_moment(MomentType::ASLEEP, 0.0);
+	};
+
+	/********************
+	Fixed awake
+	********************/
+
+	void Moment::set_is_awake_moment_fixed(bool flag) {
+		_is_awake_moment_fixed = flag;
+	};
+	bool Moment::get_is_awake_moment_fixed() const {
+		return _is_awake_moment_fixed;
 	};
 
 	/********************
@@ -337,11 +362,15 @@ namespace bmla {
 	Write
 	********************/
 
-	void Moment::write_to_file(std::string fname) const {
+	void Moment::write_to_file(std::string fname, bool append) const {
 		std::ofstream f;
 
 		// Open
-		f.open(fname);
+		if (append) {
+			f.open(fname, std::ofstream::out | std::ofstream::app);
+		} else {
+			f.open(fname);
+		};
 
 		// Make sure we found it
 		if (!f.is_open()) {

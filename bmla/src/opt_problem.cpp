@@ -139,17 +139,23 @@ namespace bmla {
 	Wake/asleep loop
 	********************/
 
-	void OptProblem::wake_sleep_loop(int batch_size, int no_latt_sampling_steps, FNameColl &fname_coll, bool verbose) {
+	void OptProblem::wake_sleep_loop(int batch_size, int no_latt_sampling_steps, FNameColl &fname_coll, bool verbose, bool start_with_random_lattice) {
 		if (verbose) {
 			std::cout << "--- Sampling lattice ---" << std::endl;
 		};
 
 		// Make a subset
-		std::vector<int> idx_subset = fname_coll.get_random_subset(batch_size);
+		std::vector<int> idx_subset;
+		if (!start_with_random_lattice) {
+			idx_subset = fname_coll.get_random_subset(batch_size);
+		};
 
 		// Reset all moments
 		for (auto &ixn_param: _ixn_params) {
-			ixn_param->get_moment()->reset_to_zero();
+			if (!ixn_param->get_moment()->get_is_awake_moment_fixed()) {
+				ixn_param->get_moment()->reset_to_zero(MomentType::AWAKE);
+			};
+			ixn_param->get_moment()->reset_to_zero(MomentType::ASLEEP);
 		};
 
 		// Iterate over the batch
@@ -161,27 +167,37 @@ namespace bmla {
 			};
 
 			// Convert lattice to binary mode
-			_latt->all_units_convert_to_b_mode();
+			// _latt->all_units_convert_to_b_mode();
 
 			// Read latt
-			_latt->read_from_file(fname_coll.get_fname(idx_subset[i_batch])); // binary units
+			if (!start_with_random_lattice) {
+				_latt->read_from_file(fname_coll.get_fname(idx_subset[i_batch])); // binary units
+			} else {
+				// Random lattice...
+				// TBD!!!
+				_latt->sample_v();
+			};
 
 			// Sample hidden
 			_latt->sample_h(); // binary units
 
 			// Reap awake
 			for (auto &ixn_param: _ixn_params) {
-				ixn_param->get_moment()->reap_in_batch(MomentType::AWAKE, i_batch);
+				if (!ixn_param->get_moment()->get_is_awake_moment_fixed()) {
+					ixn_param->get_moment()->reap_in_batch(MomentType::AWAKE, i_batch);
+				};
 			};
 
 			// Convert lattice to prob mode
-			_latt->all_units_convert_to_p_mode();
+			// _latt->all_units_convert_to_p_mode();
 
 			// Sample vis, hidden
 			for (int i_sampling_step=0; i_sampling_step<no_latt_sampling_steps; i_sampling_step++) 
 			{
-				_latt->sample_v(false); // prob units
-				_latt->sample_h(false); // prob units
+				_latt->sample_v(); // binary units
+				_latt->sample_h(); // binary units
+				// _latt->sample_v(false); // prob units
+				// _latt->sample_h(false); // prob units
 			};
 
 			// Print
@@ -189,13 +205,16 @@ namespace bmla {
 
 			// Reap asleep
 			for (auto &ixn_param: _ixn_params) {
-				ixn_param->get_moment()->reap_in_batch(MomentType::ASLEEP, i_batch, false);
+				ixn_param->get_moment()->reap_in_batch(MomentType::ASLEEP, i_batch); // binary
+				// ixn_param->get_moment()->reap_in_batch(MomentType::ASLEEP, i_batch, false); // prob
 			};
 		};
 		
 		// Average moments
 		for (auto &ixn_param: _ixn_params) {
-			ixn_param->get_moment()->average_reaps(MomentType::AWAKE);
+			if (!ixn_param->get_moment()->get_is_awake_moment_fixed()) {
+				ixn_param->get_moment()->average_reaps(MomentType::AWAKE);
+			};
 			ixn_param->get_moment()->average_reaps(MomentType::ASLEEP);
 		};
 
@@ -234,7 +253,7 @@ namespace bmla {
 		Wake/asleep loop
 		*****/
 
-		wake_sleep_loop(batch_size,no_latt_sampling_steps,fname_coll,options.VERBOSE_WAKE_ASLEEP);
+		wake_sleep_loop(batch_size,no_latt_sampling_steps,fname_coll,options.VERBOSE_WAKE_ASLEEP,options.start_with_random_lattice);
 
 		if (options.VERBOSE_MOMENT) {
 			for (auto &ixn_param: _ixn_params) {

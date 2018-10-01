@@ -79,7 +79,7 @@ namespace bmla {
 		Write to file
 		********************/
 
-		void write_to_file(std::string fname) const;
+		void write_to_file(std::string fname, bool append=false) const;
 
 	};
 
@@ -225,11 +225,15 @@ namespace bmla {
 	Write to file
 	********************/
 
-	void IxnParam::Impl::write_to_file(std::string fname) const {
+	void IxnParam::Impl::write_to_file(std::string fname, bool append) const {
 		std::ofstream f;
 
 		// Open
-		f.open(fname);
+		if (append) {
+			f.open(fname, std::ofstream::out | std::ofstream::app);
+		} else {
+			f.open(fname);
+		};
 
 		// Make sure we found it
 		if (!f.is_open()) {
@@ -339,8 +343,8 @@ namespace bmla {
 	Write to file
 	********************/
 
-	void IxnParam::write_to_file(std::string fname) const {
-		_impl->write_to_file(fname);
+	void IxnParam::write_to_file(std::string fname, bool append) const {
+		_impl->write_to_file(fname, append);
 	};
 
 };

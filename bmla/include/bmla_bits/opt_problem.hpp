@@ -54,6 +54,9 @@ namespace bmla {
 		bool VERBOSE_UPDATE = false;
 		bool VERBOSE_WAKE_ASLEEP = false;
 		bool VERBOSE_MOMENT = true;
+
+		// Start with random lattice
+		bool start_with_random_lattice = false;
 	};
 
 	/****************************************
@@ -105,7 +108,7 @@ namespace bmla {
 		Wake/asleep loop
 		********************/
 
-		void wake_sleep_loop(int batch_size, int no_latt_sampling_steps, FNameColl &fname_coll, bool verbose=false);
+		void wake_sleep_loop(int batch_size, int no_latt_sampling_steps, FNameColl &fname_coll, bool verbose=false, bool start_with_random_lattice=false);
 
 		/********************
 		Solve

@@ -13,6 +13,10 @@
 #include <iterator>
 #include <iostream>
 
+// Timing only
+//#include <cstdio>
+//#include <ctime>
+
 /************************************
 * Namespace for dblz
 ************************************/
@@ -41,6 +45,10 @@ namespace dblz {
 	void FNameSeriesColl::add_fname_series(FNameSeries fname_series) {
 		_fnames.push_back(fname_series);
 		_idxs.push_back(_fnames.size()-1);
+	};
+	void FNameSeriesColl::clear() {
+		_fnames.clear();
+		_idxs.clear();
 	};
 
 	/********************
@@ -151,7 +159,7 @@ namespace dblz {
 		};
 
 		// Make a subset
-		std::vector<int> idx_subset = fname_coll.get_random_subset(batch_size);
+		std::vector<int> batch_idx_subset = fname_coll.get_random_subset(batch_size);
 
 		// Reset all moments
 		for (auto &ixn_param: _ixn_params) {
@@ -177,7 +185,7 @@ namespace dblz {
 				// _latt->all_units_convert_to_b_mode();
 
 				// Read latt
-				_latt->read_from_file(fname_coll.get_fname_series(idx_subset[i_batch]).fnames[timepoint]); // binary units
+				_latt->read_from_file(fname_coll.get_fname_series(batch_idx_subset[i_batch]).fnames[timepoint]); // binary units
 
 				// Sample hidden
 				_latt->sample_h_at_timepoint(timepoint); // binary units
@@ -260,20 +268,10 @@ namespace dblz {
 		};
 
 		/*****
-		Option: Nesterov mode
-		*****/
-
-		if (options.nesterov) {
-			// Move to intermediate point
-			// Note: does nothing unless i_opt_step >= 2
-			for (auto &ixn_param: _ixn_params) {
-				ixn_param->get_diff_eq_rhs()->nesterov_move_to_intermediate_pt(i_opt_step);
-			};
-		};
-
-		/*****
 		Option: random integrand range mode
 		*****/
+
+		// clock_t t1 = clock();    
 
 		int timepoint_integral_start=0;
 		int timepoint_integral_end=no_timesteps;
@@ -282,6 +280,9 @@ namespace dblz {
 			timepoint_integral_start = randI(0,no_timesteps-options.VAL_random_integral_range_size);
 			timepoint_integral_end = timepoint_integral_start+options.VAL_random_integral_range_size;
 		};
+
+		// clock_t t2 = clock();    
+		// std::cout << ( t2 - t1 ) / (double) CLOCKS_PER_SEC << std::endl;
 
 		/*****
 		Solve diff eq for F
@@ -303,6 +304,9 @@ namespace dblz {
 			std::cout << std::endl;
 		};
 
+		// clock_t t3 = clock();    
+		// std::cout << ( t3 - t2 ) / (double) CLOCKS_PER_SEC << std::endl;
+
 		/*****
 		Wake/asleep loop
 		*****/
@@ -315,6 +319,9 @@ namespace dblz {
 				ixn_param->get_moment()->print_moment_comparison();
 			};
 		};
+
+		// clock_t t4 = clock();    
+		// std::cout << ( t4 - t3 ) / (double) CLOCKS_PER_SEC << std::endl;
 
 		/********************
 		Solve diff eq for adjoint
@@ -340,6 +347,9 @@ namespace dblz {
 			std::cout << std::endl;
 		};
 
+		// clock_t t5 = clock();    
+		// std::cout << ( t5 - t4 ) / (double) CLOCKS_PER_SEC << std::endl;
+
 		/********************
 		Form the update
 		********************/
@@ -357,6 +367,9 @@ namespace dblz {
 			std::cout << std::endl;
 		};
 
+		// clock_t t6 = clock();    
+		// std::cout << ( t6 - t5 ) / (double) CLOCKS_PER_SEC << std::endl;
+
 		/********************
 		Committ the update
 		********************/
@@ -366,13 +379,17 @@ namespace dblz {
 		};
 
 		for (auto &ixn_param: _ixn_params) {
-			ixn_param->get_diff_eq_rhs()->update_committ_stored();
+			ixn_param->get_diff_eq_rhs()->update_committ_stored(i_opt_step,options.nesterov);
 		};
 
 		if (options.VERBOSE_UPDATE) {
 			std::cout << "--- [Finished] Committing update ---" << std::endl;
 			std::cout << std::endl;
 		};
+
+		// clock_t t7 = clock();    
+		// std::cout << ( t7 - t6 ) / (double) CLOCKS_PER_SEC << std::endl;
+
 	};
 
 	// Many steps

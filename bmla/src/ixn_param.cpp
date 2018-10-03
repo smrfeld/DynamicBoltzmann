@@ -61,6 +61,7 @@ namespace bmla {
 		********************/
 
 		double get_val() const;
+		void set_val(double val);
 
 		/********************
 		Moment
@@ -201,6 +202,9 @@ namespace bmla {
 	double IxnParam::Impl::get_val() const {
 		return _val;
 	};
+	void IxnParam::Impl::set_val(double val) {
+		_val = val;
+	};
 
 	/********************
 	Moment
@@ -318,6 +322,9 @@ namespace bmla {
 
 	double IxnParam::get_val() const {
 		return _impl->get_val();
+	};
+	void IxnParam::set_val(double val) {
+		_impl->set_val(val);
 	};
 
 	/********************

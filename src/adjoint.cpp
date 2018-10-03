@@ -183,7 +183,7 @@ namespace dblz {
 		int i_dim = 0;
 		for (auto const &domain: diff_eq_rhs->get_domain()) {
 			// Get ixn param
-			auto ixn_param_in_deriv = domain.get_ixn_param();
+			auto ixn_param_in_deriv = domain->get_ixn_param();
 
 			// Get adjoint
 			auto adjoint_in_deriv = ixn_param_in_deriv->get_adjoint();

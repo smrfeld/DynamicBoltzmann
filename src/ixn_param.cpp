@@ -224,8 +224,7 @@ namespace dblz {
 	void IxnParam::Impl::_move(Impl& other) {
 		_no_timesteps = other._no_timesteps;
 		_no_timepoints = other._no_timepoints;
-		_vals = new double[_no_timepoints];
-		std::copy(other._vals,other._vals+_no_timepoints,_vals);
+		_vals = other._vals;
 		_init_cond = other._init_cond;
 
 		_diff_eq = std::move(other._diff_eq);
@@ -234,7 +233,7 @@ namespace dblz {
 		// Reset the other
 		other._no_timesteps = 0;
 		other._no_timepoints = 0;
-		safeDelArr(other._vals);
+		other._vals = nullptr;
 		other._init_cond = 0.0;
 
 		_adjoint = std::move(other._adjoint);

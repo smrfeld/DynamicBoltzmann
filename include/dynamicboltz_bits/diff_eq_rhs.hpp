@@ -76,76 +76,6 @@ namespace dblz {
 
 
 
-	/****************************************
-	Domain
-	****************************************/
-
-	class Domain {
-
-	private:
-
-		std::vector<dcu::Dimension1D> _dimensions;
-		std::vector<Domain1D> _domain;
-
-		// Internal copy func/clean up
-		void _clean_up();
-		void _reset();
-		void _copy(const Domain& other);
-
-	public:
-
-		/********************
-		Constructor
-		********************/
-
-		Domain();
-		Domain(std::vector<Domain1D> domain);
-		Domain(const Domain& other);
-		Domain& operator=(const Domain& other);
-		Domain(Domain&& other);
-		Domain& operator=(Domain&& other);
-		~Domain();
-
-		/********************
-		Setters
-		********************/
-
-		void add_dimension(Domain1D domain);
-
-		/********************
-		Getters
-		********************/
-
-		int size() const;
-		std::vector<dcu::Dimension1D> get_dimensions() const;
-		std::vector<Domain1D> get_domain() const;
-	};
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -162,19 +92,21 @@ namespace dblz {
 		// Name
 		std::string _name;
 
+		// No dims
+		int _no_dims;
+
 		// Domain - the domain in dcu::Grid does not store the ixn funcs
-		std::vector<Domain1D> _domain;
-		std::vector<dcu::Dimension1D> _dimensions;
+		std::vector<Domain1D*> _domain;
 
 		// Helper structures for evaluating
-		std::vector<double> _abscissas;
-		dcu::IdxSet4 _idxs_k;
+		double* _abscissas;
+		dcu::IdxSet _idxs_k;
 
 		// Parent ixn param
 		Iptr _parent_ixn_param;
 
 		// Updates
-		std::map<dcu::GridPtKey, double> _updates;
+		std::map<dcu::GridPtIn*,double> _updates;
 
 		// Internal
 		void _form_abscissas(int timepoint);
@@ -190,7 +122,8 @@ namespace dblz {
 		Constructor
 		********************/
 
-		DiffEqRHS(std::string name, Iptr parent_ixn_param, Domain domain);
+		// Note: ownership of domain is NOT transferred
+		DiffEqRHS(std::string name, Iptr parent_ixn_param, std::vector<Domain1D*> domain);
 		DiffEqRHS(const DiffEqRHS& other);
 		DiffEqRHS(DiffEqRHS&& other);
 		DiffEqRHS& operator=(const DiffEqRHS& other);
@@ -211,18 +144,11 @@ namespace dblz {
 
 		Iptr get_parent_ixn_param() const;
 
-		const std::vector<Domain1D>& get_domain() const;
+		const std::vector<Domain1D*>& get_domain() const;
 
 		double get_val_at_timepoint(int timepoint);
-		double get_deriv_wrt_u_at_timepoint(int timepoint, dcu::IdxSet4 idxs_k);
+		double get_deriv_wrt_u_at_timepoint(int timepoint, dcu::IdxSet idxs_k);
 		double get_deriv_wrt_nu_at_timepoint(int timepoint, int k);
-
-		/********************
-		Nesterov
-		********************/
-
-		// Move to the nesterov intermediate point
-		void nesterov_move_to_intermediate_pt(int i_opt_step);
 
 		/********************
 		Update
@@ -231,13 +157,13 @@ namespace dblz {
 		// Calculate the update
 		// t_start = inclusive
 		// t_end = non-inclusive
-		void update_calculate_and_store(int timepoint_start, int timepoint_end, double dt, double dopt, bool clear_existing_updates=true);
+		void update_calculate_and_store(int timepoint_start, int timepoint_end, double dt, double dopt);
 
 		// Verbose
 		void print_update_stored() const;
 
 		// Committ the update
-		void update_committ_stored();
+		void update_committ_stored(int opt_step, bool nesterov_mode=true);
 	};
 
 };

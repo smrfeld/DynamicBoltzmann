@@ -1,6 +1,11 @@
 #include <string>
 #include <vector>
 
+#ifndef FWDS_IXN_PARAM_H
+#define FWDS_IXN_PARAM_H
+#include "fwds/fwds_ixn_param.hpp"
+#endif
+
 /************************************
 * Namespace for dblz
 ************************************/
@@ -47,6 +52,7 @@ namespace dblz {
 		********************/
 
 		void add_fname_series(FNameSeries fname_series);
+		void clear();
 
 		/********************
 		Get random subset

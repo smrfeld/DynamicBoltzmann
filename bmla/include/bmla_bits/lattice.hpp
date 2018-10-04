@@ -207,6 +207,8 @@ namespace bmla {
 
 		double get_count(Sptr &sp, bool binary=true) const;
 		double get_count(Sptr &sp1, Sptr &sp2, bool binary=true, bool reversibly=true) const;
+		double get_count(Sptr &sp1, Sptr &sp2, Sptr &sp3, bool binary=true, bool reversibly=true) const;
+		double get_count(Sptr &sp1, Sptr &sp2, Sptr &sp3, Sptr &sp4, bool binary=true, bool reversibly=true) const;
 	};
 
 };

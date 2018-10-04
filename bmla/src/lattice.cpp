@@ -871,62 +871,38 @@ namespace bmla {
 	};
 
 	// 2 particle
-	void Lattice::_get_count(double &count, Sptr &sp1, Sptr &sp2, const UnitVisible *uv1, const UnitVisible *uv2, bool binary, bool reversibly) const {
-		if (binary) {
-			if ((sp1 == uv1->get_b_mode_species()) && (sp2 == uv2->get_b_mode_species())) {
-				count += 1.0;
-			};
-			if (reversibly && sp1 != sp2) {
-				if ((sp1 == uv2->get_b_mode_species()) && (sp2 == uv1->get_b_mode_species())) {
-					count += 1.0;
-				};
-			};
-		} else {
-			count += uv1->get_p_mode_prob(sp1) * uv2->get_p_mode_prob(sp2); 
-			if (reversibly && sp1 != sp2) {
-				count += uv1->get_p_mode_prob(sp2) * uv2->get_p_mode_prob(sp1); 
-			};
-		};
-	};
 	double Lattice::get_count(Sptr &sp1, Sptr &sp2, bool binary, bool reversibly) const {
-		exit(EXIT_FAILURE);
+		// Only dim=1 for now
+		if (_no_dims != 1) {
+			std::cerr << ">>> Error: Lattice::get_count <<< only supported for dim 1." << std::endl;
+			exit(EXIT_FAILURE);
+		};
 
-		const UnitVisible *nbr = nullptr;
+		UnitVisible *nbr = nullptr;
 		double count = 0.0;
 		for (auto &s: _latt_v) {
 			// Only connect to "plus one" (not minus one) => no duplicates!
 
-			// Dim 1,2,3
 			if (s->x()+1 <= _box_length) {
-				if (_no_dims == 1) {
-					nbr = _look_up_unit_v(s->x()+1);
-				} else if (_no_dims == 2) {
-					nbr = _look_up_unit_v(s->x()+1,s->y());
-				} else if (_no_dims == 3) {
-					nbr = _look_up_unit_v(s->x()+1,s->y(),s->z());
+				// Get neighbor
+				nbr = _look_up_unit_v(s->x()+1);
+
+				// Count
+				if (binary) {
+					if ((sp1 == s->get_b_mode_species()) && (sp2 == nbr->get_b_mode_species())) {
+						count += 1.0;
+					};
+					if (reversibly && sp1 != sp2) {
+						if ((sp1 == nbr->get_b_mode_species()) && (sp2 == s->get_b_mode_species())) {
+							count += 1.0;
+						};
+					};
+				} else {
+					count += s->get_p_mode_prob(sp1) * nbr->get_p_mode_prob(sp2); 
+					if (reversibly && sp1 != sp2) {
+						count += nbr->get_p_mode_prob(sp1) * s->get_p_mode_prob(sp2); 
+					};
 				};
-
-				_get_count(count, sp1, sp2, s, nbr, binary, reversibly);
-			};
-
-			// Dim 2,3
-			if (s->y()+1 <= _box_length) {
-				if (_no_dims == 2) {
-					nbr = _look_up_unit_v(s->x(),s->y()+1);
-				} else if (_no_dims == 3) {
-					nbr = _look_up_unit_v(s->x(),s->y()+1,s->z());
-				};
-
-				_get_count(count, sp1, sp2, s, nbr, binary, reversibly);
-			};
-
-			// Dim 3
-			if (s->z()+1 <= _box_length) {
-				if (_no_dims == 3) {
-					nbr = _look_up_unit_v(s->x(),s->y(),s->z()+1);
-				};
-
-				_get_count(count, sp1, sp2, s, nbr, binary, reversibly);
 			};
 		};
 
@@ -934,22 +910,84 @@ namespace bmla {
 	};
 
 	// 3 particle
-	void Lattice::_get_count(double &count, Sptr &sp1, Sptr &sp2, Sptr &sp3, const UnitVisible *uv1, const UnitVisible *uv2, const UnitVisible *uv3, bool binary, bool reversibly) const {
-		if (binary) {
-			if ((sp1 == uv1->get_b_mode_species()) && (sp2 == uv2->get_b_mode_species()) && (sp3 == uv3->get_b_mode_species())) {
-				count += 1.0;
-			};
-			if (reversibly && sp1 != sp3) {
-				if ((sp3 == uv1->get_b_mode_species()) && (sp2 == uv2->get_b_mode_species()) && (sp1 == uv3->get_b_mode_species())) {
-					count += 1.0;
+	double Lattice::get_count(Sptr &sp1, Sptr &sp2, Sptr &sp3, bool binary, bool reversibly) const {
+		// Only dim=1 for now
+		if (_no_dims != 1) {
+			std::cerr << ">>> Error: Lattice::get_count <<< only supported for dim 1." << std::endl;
+			exit(EXIT_FAILURE);
+		};
+
+		UnitVisible *nbr1 = nullptr, *nbr2 = nullptr;
+		double count = 0.0;
+		for (auto &s: _latt_v) {
+			// Only connect to "plus one" (not minus one) => no duplicates!
+
+			if (s->x()+2 <= _box_length) {
+				// Get neighbors
+				nbr1 = _look_up_unit_v(s->x()+1);
+				nbr2 = _look_up_unit_v(s->x()+2);
+
+				// Count
+				if (binary) {
+					if ((sp1 == s->get_b_mode_species()) && (sp2 == nbr1->get_b_mode_species()) && (sp3 == nbr2->get_b_mode_species())) {
+						count += 1.0;
+					};
+					if (reversibly && sp1 != sp3) {
+						if ((sp1 == nbr2->get_b_mode_species()) && (sp2 == nbr1->get_b_mode_species()) && (sp3 == s->get_b_mode_species())) {
+							count += 1.0;
+						};
+					};
+				} else {
+					count += s->get_p_mode_prob(sp1) * nbr1->get_p_mode_prob(sp2) * nbr2->get_p_mode_prob(sp3); 
+					if (reversibly && sp1 != sp3) {
+						count += nbr2->get_p_mode_prob(sp1) * nbr1->get_p_mode_prob(sp2) * s->get_p_mode_prob(sp3); 
+					};
 				};
 			};
-		} else {
-			count += uv1->get_p_mode_prob(sp1) * uv2->get_p_mode_prob(sp2) * uv3->get_p_mode_prob(sp3); 
-			if (reversibly && sp1 != sp3) {
-				count += uv1->get_p_mode_prob(sp3) * uv2->get_p_mode_prob(sp2) * uv3->get_p_mode_prob(sp1); 
+		};
+
+		return count;
+	};
+
+	// 4 particle
+	double Lattice::get_count(Sptr &sp1, Sptr &sp2, Sptr &sp3, Sptr &sp4, bool binary, bool reversibly) const {
+		// Only dim=1 for now
+		if (_no_dims != 1) {
+			std::cerr << ">>> Error: Lattice::get_count <<< only supported for dim 1." << std::endl;
+			exit(EXIT_FAILURE);
+		};
+
+		UnitVisible *nbr1 = nullptr, *nbr2 = nullptr, *nbr3 = nullptr;
+		double count = 0.0;
+		for (auto &s: _latt_v) {
+			// Only connect to "plus one" (not minus one) => no duplicates!
+
+			if (s->x()+3 <= _box_length) {
+				// Get neighbors
+				nbr1 = _look_up_unit_v(s->x()+1);
+				nbr2 = _look_up_unit_v(s->x()+2);
+				nbr3 = _look_up_unit_v(s->x()+3);
+
+				// Count
+				if (binary) {
+					if ((sp1 == s->get_b_mode_species()) && (sp2 == nbr1->get_b_mode_species()) && (sp3 == nbr2->get_b_mode_species()) && (sp4 == nbr3->get_b_mode_species())) {
+						count += 1.0;
+					};
+					if (reversibly && !(sp1 == sp4 && sp2 == sp3)) {
+						if ((sp1 == nbr3->get_b_mode_species()) && (sp2 == nbr2->get_b_mode_species()) && (sp3 == nbr1->get_b_mode_species()) && (sp4 == s->get_b_mode_species())) {
+							count += 1.0;
+						};
+					};
+				} else {
+					count += s->get_p_mode_prob(sp1) * nbr1->get_p_mode_prob(sp2) * nbr2->get_p_mode_prob(sp3) * nbr3->get_p_mode_prob(sp4); 
+					if (reversibly && !(sp1 == sp4 && sp2 == sp3)) {
+						count += nbr3->get_p_mode_prob(sp1) * nbr2->get_p_mode_prob(sp2) * nbr1->get_p_mode_prob(sp3) * s->get_p_mode_prob(sp4); 
+					};
+				};
 			};
 		};
+
+		return count;
 	};
 
 	/****************************************

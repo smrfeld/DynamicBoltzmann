@@ -1,7 +1,6 @@
 #include <string>
 #include <vector>
-#include <list>
-#include <unordered_map>
+#include <map>
 
 #ifndef FWDS_SPECIES_H
 #define FWDS_SPECIES_H
@@ -34,49 +33,38 @@ namespace dblz {
 	private:
 
 		// Dimensionality
-		int _dim;
+		int _no_dims;
 
 		// Size
 		int _box_length;
 
-		// Visible/hidden units
-		std::list<UnitVisible> _latt_v;
-		std::list<UnitHidden> _latt_h;
+		// Visible layer
+		std::vector<UnitVisible*> _latt_v;
 
-		// Index for the hidden layer
-		std::unordered_map<int,std::unordered_map<int,UnitHidden*>> _latt_h_map_dim_1;
-		std::unordered_map<int,std::unordered_map<int,std::unordered_map<int,UnitHidden*>>> _latt_h_map_dim_2;
-		std::unordered_map<int,std::unordered_map<int,std::unordered_map<int,std::unordered_map<int,UnitHidden*>>>> _latt_h_map_dim_3;
+		// Hidden layers
+		std::map<int,std::vector<UnitHidden*>> _latt_h;
 
 		// Connections
-		std::list<ConnVV> _conns_vv;
-		std::list<ConnVVV> _conns_vvv;
-		std::list<ConnVH> _conns_vh;
+		std::vector<ConnVV*> _conns_vv;
+		std::vector<ConnVVV*> _conns_vvv;
+		std::vector<ConnVH*> _conns_vh;
 
 		// Lookup a site iterator from x,y,z
-		const UnitVisible* _look_up_unit_v_const(int x) const;
-		const UnitVisible* _look_up_unit_v_const(int x, int y) const;
-		const UnitVisible* _look_up_unit_v_const(int x, int y, int z) const;
-		UnitVisible* _look_up_unit_v(int x);
-		UnitVisible* _look_up_unit_v(int x, int y);
-		UnitVisible* _look_up_unit_v(int x, int y, int z);
-		const UnitHidden* _look_up_unit_h_const(int layer, int x) const;
-		const UnitHidden* _look_up_unit_h_const(int layer, int x, int y) const;
-		const UnitHidden* _look_up_unit_h_const(int layer, int x, int y, int z) const;
-		UnitHidden* _look_up_unit_h(int layer, int x);
-		UnitHidden* _look_up_unit_h(int layer, int x, int y);
-		UnitHidden* _look_up_unit_h(int layer, int x, int y, int z);
+		UnitVisible* _look_up_unit_v(int x) const;
+		UnitVisible* _look_up_unit_v(int x, int y) const;
+		UnitVisible* _look_up_unit_v(int x, int y, int z) const;
+		UnitHidden* _look_up_unit_h(int layer, int idx) const;
 
 		// Check dim
 		void _check_dim(int dim) const;
 
 		// Count helpers
-		void _get_count(double &count, Sptr &sp1, Sptr &sp2, const UnitVisible &uv1, const UnitVisible *uv2, bool binary, bool reversibly) const;
-		void _get_count(double &count, Sptr &sp1, Sptr &sp2, Sptr &sp3, const UnitVisible &uv1, const UnitVisible *uv2, const UnitVisible *uv3, bool binary, bool reversibly) const;
+		void _get_count(double &count, Sptr &sp1, Sptr &sp2, const UnitVisible *uv1, const UnitVisible *uv2, bool binary, bool reversibly) const;
+		void _get_count(double &count, Sptr &sp1, Sptr &sp2, Sptr &sp3, const UnitVisible *uv1, const UnitVisible *uv2, const UnitVisible *uv3, bool binary, bool reversibly) const;
 
 		// Contructor helpers
 		void _clean_up();
-		void _reset();
+		void _move(Lattice& other);
 		void _copy(const Lattice& other);
 
 	public:
@@ -86,7 +74,6 @@ namespace dblz {
 		********************/
 
 		Lattice(int dim, int box_length);
-		Lattice(int dim, int box_length, std::vector<Sptr> possible_species_of_all_units_vis);
 		Lattice(const Lattice& other);
 		Lattice(Lattice&& other);
 		Lattice& operator=(const Lattice& other);
@@ -142,12 +129,9 @@ namespace dblz {
 		Add hidden units
 		********************/
 
-		void add_hidden_unit(int layer, int x);
-		void add_hidden_unit(int layer, int x, int y);
-		void add_hidden_unit(int layer, int x, int y, int z);
-		void add_hidden_unit(int layer, int x, std::vector<Sptr> species_possible);
-		void add_hidden_unit(int layer, int x, int y, std::vector<Sptr> species_possible);
-		void add_hidden_unit(int layer, int x, int y, int z, std::vector<Sptr> species_possible);
+		// Returns the idx of this unit
+		int add_hidden_unit(int layer);
+		int add_hidden_unit(int layer, std::vector<Sptr> species_possible);
 
 		/********************
 		Add visible-hidden connections
@@ -160,43 +144,43 @@ namespace dblz {
 		Get unit
 		********************/
 
-		UnitVisible& get_unit_v(int x);
-		UnitVisible& get_unit_v(int x, int y);
-		UnitVisible& get_unit_v(int x, int y, int z);
+		UnitVisible* get_unit_v(int x) const;
+		UnitVisible* get_unit_v(int x, int y) const;
+		UnitVisible* get_unit_v(int x, int y, int z) const;
 
-		UnitHidden& get_unit_h(int layer, int x);
-		UnitHidden& get_unit_h(int layer, int x, int y);
-		UnitHidden& get_unit_h(int layer, int x, int y, int z);
+		UnitHidden* get_unit_h(int layer, int idx) const;
 
 		/********************
 		Get connection
 		********************/
 
-		ConnVV& get_conn_vv(int x1, int x2);
-		ConnVV& get_conn_vv(int x1, int y1, int x2, int y2);
-		ConnVV& get_conn_vv(int x1, int y1, int z1, int x2, int y2, int z2);
+		ConnVV* get_conn_vv(int x1, int x2) const;
+		ConnVV* get_conn_vv(int x1, int y1, int x2, int y2) const;
+		ConnVV* get_conn_vv(int x1, int y1, int z1, int x2, int y2, int z2) const;
 
-		ConnVVV& get_conn_vvv(int x1, int x2, int x3);
-		ConnVVV& get_conn_vvv(int x1, int y1, int x2, int y2, int x3, int y3);
-		ConnVVV& get_conn_vvv(int x1, int y1, int z1, int x2, int y2, int z2, int x3, int y3, int z3);
+		ConnVVV* get_conn_vvv(int x1, int x2, int x3) const;
+		ConnVVV* get_conn_vvv(int x1, int y1, int x2, int y2, int x3, int y3) const;
+		ConnVVV* get_conn_vvv(int x1, int y1, int z1, int x2, int y2, int z2, int x3, int y3, int z3) const;
 
-		ConnVH& get_conn_vh(int x1, int layer2, int x2);
-		ConnVH& get_conn_vh(int x1, int y1, int layer2, int x2, int y2);
-		ConnVH& get_conn_vh(int x1, int y1, int z1, int layer2, int x2, int y2, int z2);
+		ConnVH* get_conn_vh(int x, int layer, int idx) const;
+		ConnVH* get_conn_vh(int x, int y, int layer, int idx) const;
+		ConnVH* get_conn_vh(int x, int y, int z, int layer, int idx) const;
 
 		/********************
 		Getters (general)
 		********************/
 
-		int dim() const;
-		int no_units_v();
-		int no_units_h();
+		int get_no_dims() const;
+		int get_no_units_v();
+		int get_no_units_h();
 
 		/********************
 		Apply funcs to all units
 		********************/
 
 		// Clear the lattice
+		void all_units_v_set_empty();
+		void all_units_h_set_empty();
 		void all_units_set_empty();
 
 		// Binary/probabilistic
@@ -223,7 +207,6 @@ namespace dblz {
 
 		double get_count(Sptr &sp, bool binary=true) const;
 		double get_count(Sptr &sp1, Sptr &sp2, bool binary=true, bool reversibly=true) const;
-		double get_count(Sptr &sp1, Sptr &sp2, Sptr &sp3, bool binary=true, bool reversibly=true) const;
 	};
 
 };

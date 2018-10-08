@@ -99,26 +99,23 @@ namespace dblz {
 			exit(EXIT_FAILURE);
 		};
 
-		double count = 0.0;
-
-		std::vector<Sptr2> species = _ixn_dict->get_species_from_ixn(ixn_param_name);
-		for (auto &sp: species) {
-
-			if (binary) {
-
-				// Binary
-				if (_uv1->get_b_mode_species() == sp.s1 && _uv2->get_b_mode_species() == sp.s2) {
-					count += 1.0;
+		if (binary) {
+			// Binary
+			int count = 0;
+			for (auto const &sp: _ixn_dict->get_species_from_ixn(ixn_param_name)) {
+				if (_uv1->check_is_b_mode_species(sp.s1) && _uv2->check_is_b_mode_species(sp.s2)) {
+					count++;
 				};
-
-			} else {
-
-				// Prob
+			};
+			return count;
+		} else {
+			// Prob
+			double count = 0.0;
+			for (auto const &sp: _ixn_dict->get_species_from_ixn(ixn_param_name)) {
 				count += _uv1->get_p_mode_prob(sp.s1) * _uv2->get_p_mode_prob(sp.s2);
 			};
+			return count;
 		};
-
-		return count;
 	};
 
 	/********************
@@ -303,26 +300,23 @@ namespace dblz {
 			exit(EXIT_FAILURE);
 		};
 
-		double count = 0.0;
-
-		std::vector<Sptr2> species = _ixn_dict->get_species_from_ixn(ixn_param_name);
-		for (auto &sp: species) {
-
-			if (binary) {
-
-				// Binary
-				if (_uv->get_b_mode_species() == sp.s1 && _uh->get_b_mode_species() == sp.s2) {
-					count += 1.0;
+		if (binary) {
+			// Binary
+			int count = 0;
+			for (auto const &sp: _ixn_dict->get_species_from_ixn(ixn_param_name)) {
+				if (_uv->check_is_b_mode_species(sp.s1) && _uh->check_is_b_mode_species(sp.s2)) {
+					count++;
 				};
-
-			} else {
-
-				// Prob
+			};
+			return count;
+		} else {
+			// Prob
+			double count = 0.0;
+			for (auto const &sp: _ixn_dict->get_species_from_ixn(ixn_param_name)) {
 				count += _uv->get_p_mode_prob(sp.s1) * _uh->get_p_mode_prob(sp.s2);
 			};
+			return count;
 		};
-
-		return count;
 	};
 
 	/********************
@@ -542,24 +536,23 @@ namespace dblz {
 
 		double count = 0.0;
 
-		std::vector<Sptr3> species = _ixn_dict->get_species_from_ixn(ixn_param_name);
-		for (auto &sp: species) {
-
-			if (binary) {
-
-				// Binary
-				if (_uv1->get_b_mode_species() == sp.s1 && _uv2->get_b_mode_species() == sp.s2 && _uv3->get_b_mode_species() == sp.s3) {
-					count += 1.0;
+		if (binary) {
+			// Binary
+			int count = 0;
+			for (auto const &sp: _ixn_dict->get_species_from_ixn(ixn_param_name)) {
+				if (_uv1->check_is_b_mode_species(sp.s1) && _uv2->check_is_b_mode_species(sp.s2) && _uv3->check_is_b_mode_species(sp.s3)) {
+					count++;
 				};
-
-			} else {
-
-				// Prob
+			};
+			return count;
+		} else {
+			// Prob
+			double count = 0.0;
+			for (auto const &sp: _ixn_dict->get_species_from_ixn(ixn_param_name)) {
 				count += _uv1->get_p_mode_prob(sp.s1) * _uv2->get_p_mode_prob(sp.s2) * _uv3->get_p_mode_prob(sp.s3);
 			};
+			return count;
 		};
-
-		return count;
 	};
 
 	/********************

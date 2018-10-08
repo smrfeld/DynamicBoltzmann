@@ -121,6 +121,7 @@ namespace dblz {
 
 		// Binary
 		Sptr get_b_mode_species() const; // nullptr for empty
+		bool check_is_b_mode_species(const Sptr &sp) const;
 		void set_b_mode_species(Sptr sp);
 		void set_b_mode_species(std::string sp);
 		void set_b_mode_empty();
@@ -458,6 +459,13 @@ namespace dblz {
 	Sptr Unit::Impl::get_b_mode_species() const {
 		return _b_mode_sp;
 	};
+	bool Unit::Impl::check_is_b_mode_species(const Sptr &sp) const {
+		if (sp == _b_mode_sp) {
+			return true;
+		} else {
+			return false;
+		};
+	};
 	void Unit::Impl::set_b_mode_species(Sptr sp) {
 		_b_mode_sp = sp;
 	};
@@ -625,10 +633,8 @@ namespace dblz {
 			// Go through all possible species this could be, calculate propensities
 			for (auto i=0; i<activations.size(); i++) {
 				
-				_sampling_prob = exp(activations[i]);
-
 				// Append prop
-				_sampling_props[i+2] = _sampling_props[i+1] + _sampling_prob;
+				_sampling_props[i+2] = _sampling_props[i+1] + exp(activations[i]);
 			};
 
 			/*
@@ -824,6 +830,9 @@ namespace dblz {
 	// Binary
 	Sptr Unit::get_b_mode_species() const { // nullptr for empty
 		return _impl->get_b_mode_species();
+	};
+	bool Unit::check_is_b_mode_species(const Sptr &sp) const {
+		return _impl->check_is_b_mode_species(sp);
 	};
 	void Unit::set_b_mode_species(Sptr sp) {
 		_impl->set_b_mode_species(sp);
@@ -1555,10 +1564,8 @@ namespace dblz {
 		};
 
 		// Form the vector of activations
-		int i=0;
-		for (auto const &sp: species_possible) {
-			_activations[i] = get_activation_for_species_at_timepoint(bias_dict,sp,timepoint);
-			i++;
+		for (auto i=0; i<species_possible.size(); i++) {
+			_activations[i] = get_activation_for_species_at_timepoint(bias_dict,species_possible[i],timepoint);
 		};
 	};
 

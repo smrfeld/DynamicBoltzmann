@@ -89,6 +89,7 @@ namespace dblz {
 
 		// Binary
 		Sptr get_b_mode_species() const; // nullptr for empty
+		bool check_is_b_mode_species(const Sptr &sp) const;
 		void set_b_mode_species(Sptr sp);
 		void set_b_mode_species(std::string sp);
 		void set_b_mode_empty();

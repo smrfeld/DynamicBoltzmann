@@ -15,6 +15,7 @@ namespace dblz {
 	// Forwards
 	class IxnParam;
 	class Lattice;
+	class Moment;
 
 	/****************************************
 	Filename timeseries
@@ -76,6 +77,7 @@ namespace dblz {
 		// Random integral
 		bool MODE_random_integral_range = false;
 		int VAL_random_integral_range_size = 10;
+		int VAL_random_integral_range_start = 0;
 
 		// Nesterov
 		bool nesterov = true;
@@ -91,6 +93,7 @@ namespace dblz {
 
 		// Ixn params
 		std::vector<std::shared_ptr<IxnParam>> _ixn_params;
+		std::vector<std::shared_ptr<Moment>> _moments;
 
 		// Lattice
 		std::shared_ptr<Lattice> _latt;

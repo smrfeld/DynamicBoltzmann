@@ -331,6 +331,7 @@ namespace dblz {
 
 	void Moment::reap_as_timepoint_in_batch(MomentType type, int timepoint, int i_batch, bool binary) {
 
+		/*
 		if (timepoint >= _no_timepoints) {
 			std::cerr << ">>> Error Moment::reap_as_timepoint <<< Max timepoint for moment is: " << _no_timepoints << " but tried: " << timepoint << std::endl;
 			exit(EXIT_FAILURE);
@@ -339,6 +340,7 @@ namespace dblz {
 			std::cerr << ">>> Error Moment::reap_as_timepoint <<< Batch size for moment is: " << _batch_size << " but tried: " << i_batch << std::endl;
 			exit(EXIT_FAILURE);
 		};
+		*/
 
 		// Get all counts
 		double count = 0.0;

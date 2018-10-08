@@ -122,6 +122,7 @@ namespace dblz {
 
 	void OptProblem::add_ixn_param(std::shared_ptr<IxnParam> ixn_param) {
 		_ixn_params.push_back(ixn_param);
+		_moments.push_back(ixn_param->get_moment());
 	};
 	void OptProblem::set_lattice(std::shared_ptr<Lattice> latt) {
 		_latt = latt;
@@ -167,8 +168,8 @@ namespace dblz {
 		// std::cout << ( t1 - t0 ) / (double) CLOCKS_PER_SEC << std::endl;
 
 		// Reset all moments
-		for (auto &ixn_param: _ixn_params) {
-			ixn_param->get_moment()->reset_to_zero();
+		for (auto &moment: _moments) {
+			moment->reset_to_zero();
 		};
 
 		// clock_t t2 = clock();    
@@ -207,12 +208,12 @@ namespace dblz {
 				// std::cout << "sample h " << ( t5 - t4 ) / (double) CLOCKS_PER_SEC << std::endl;
 
 				// Reap awake
-				for (auto &ixn_param: _ixn_params) {
-					ixn_param->get_moment()->reap_as_timepoint_in_batch(MomentType::AWAKE, timepoint, i_batch);
+				for (auto &moment: _moments) {
+					moment->reap_as_timepoint_in_batch(MomentType::AWAKE, timepoint, i_batch);
 				};
 
 				// clock_t t6 = clock();    
-				// std::cout << "awake " << ( t6 - t5 ) / (double) CLOCKS_PER_SEC << std::endl;
+				// std::cout << "reaped awake " << ( t6 - t5 ) / (double) CLOCKS_PER_SEC << std::endl;
 
 				// Convert lattice to prob mode
 				// _latt->all_units_convert_to_p_mode();
@@ -236,9 +237,9 @@ namespace dblz {
 				// latt.print_occupancy();
 
 				// Reap asleep
-				for (auto &ixn_param: _ixn_params) {
-					// ixn_param->get_moment()->reap_as_timepoint_in_batch(MomentType::ASLEEP, timepoint, i_batch, false); // reap prob
-					ixn_param->get_moment()->reap_as_timepoint_in_batch(MomentType::ASLEEP, timepoint, i_batch); // reap binary
+				for (auto &moment: _moments) {
+					// moment->reap_as_timepoint_in_batch(MomentType::ASLEEP, timepoint, i_batch, false); // reap prob
+					moment->reap_as_timepoint_in_batch(MomentType::ASLEEP, timepoint, i_batch); // reap binary
 				};
 
 				// clock_t t8 = clock();    
@@ -247,9 +248,9 @@ namespace dblz {
 			};
 			
 			// Average moments at this timepoint
-			for (auto &ixn_param: _ixn_params) {
-				ixn_param->get_moment()->average_reaps_as_timepoint(MomentType::AWAKE, timepoint);
-				ixn_param->get_moment()->average_reaps_as_timepoint(MomentType::ASLEEP, timepoint);
+			for (auto &moment: _moments) {
+				moment->average_reaps_as_timepoint(MomentType::AWAKE, timepoint);
+				moment->average_reaps_as_timepoint(MomentType::ASLEEP, timepoint);
 			};
 
 			if (verbose) {
@@ -276,8 +277,11 @@ namespace dblz {
 				std::cerr << ">>> Error: OptProblem::check_options <<< options must satisfy: VAL_random_integral_range_size <= no timesteps!" << std::endl;
 				exit(EXIT_FAILURE);
 			};
+			if (options.VAL_random_integral_range_start + options.VAL_random_integral_range_size > no_timesteps) {
+				std::cerr << ">>> Error: OptProblem::check_options <<< options must satisfy: VAL_random_integral_range_start + VAL_random_integral_range_size <= no_timesteps!" << std::endl;
+				exit(EXIT_FAILURE);
+			};
 		};
-
 	};
 
 	// One step
@@ -297,18 +301,18 @@ namespace dblz {
 		Option: random integrand range mode
 		*****/
 
-		// clock_t t1 = clock();    
+		clock_t t1 = clock();    
 
 		int timepoint_integral_start=0;
 		int timepoint_integral_end=no_timesteps;
 
 		if (options.MODE_random_integral_range) {
-			timepoint_integral_start = randI(0,no_timesteps-options.VAL_random_integral_range_size);
+			timepoint_integral_start = randI(options.VAL_random_integral_range_start,no_timesteps-options.VAL_random_integral_range_size);
 			timepoint_integral_end = timepoint_integral_start+options.VAL_random_integral_range_size;
 		};
 
-		// clock_t t2 = clock();    
-		// std::cout << ( t2 - t1 ) / (double) CLOCKS_PER_SEC << std::endl;
+		clock_t t2 = clock();    
+		std::cout << "options: " << ( t2 - t1 ) / (double) CLOCKS_PER_SEC << std::endl;
 
 		/*****
 		Solve diff eq for F
@@ -330,8 +334,8 @@ namespace dblz {
 			std::cout << std::endl;
 		};
 
-		// clock_t t3 = clock();    
-		// std::cout << ( t3 - t2 ) / (double) CLOCKS_PER_SEC << std::endl;
+		clock_t t3 = clock();    
+		std::cout << "diff eq F " << ( t3 - t2 ) / (double) CLOCKS_PER_SEC << std::endl;
 
 		/*****
 		Wake/asleep loop
@@ -339,17 +343,17 @@ namespace dblz {
 
 		// clock_t t3 = clock();    
 
-		wake_sleep_loop(timepoint_integral_start,timepoint_integral_end,batch_size,no_latt_sampling_steps,fname_coll,options.VERBOSE_WAKE_ASLEEP);
+		wake_sleep_loop(timepoint_integral_start,timepoint_integral_end,batch_size,no_latt_sampling_steps,fname_coll,true);// options.VERBOSE_WAKE_ASLEEP);
 
 		if (options.VERBOSE_MOMENT) {
-			for (auto &ixn_param: _ixn_params) {
-				std::cout << ixn_param->get_name() << " " << std::flush;
-				ixn_param->get_moment()->print_moment_comparison();
+			for (auto &moment: _moments) {
+				std::cout << moment->get_name() << " " << std::flush;
+				moment->print_moment_comparison();
 			};
 		};
 
-		// clock_t t4 = clock();    
-		// std::cout << ( t4 - t3 ) / (double) CLOCKS_PER_SEC << std::endl;
+		clock_t t4 = clock();    
+		std::cout << "wake sleep " << ( t4 - t3 ) / (double) CLOCKS_PER_SEC << std::endl;
 
 		/********************
 		Solve diff eq for adjoint
@@ -375,8 +379,8 @@ namespace dblz {
 			std::cout << std::endl;
 		};
 
-		// clock_t t5 = clock();    
-		// std::cout << ( t5 - t4 ) / (double) CLOCKS_PER_SEC << std::endl;
+		clock_t t5 = clock();    
+		std::cout << "adjoint " << ( t5 - t4 ) / (double) CLOCKS_PER_SEC << std::endl;
 
 		/********************
 		Form the update
@@ -395,8 +399,8 @@ namespace dblz {
 			std::cout << std::endl;
 		};
 
-		// clock_t t6 = clock();    
-		// std::cout << ( t6 - t5 ) / (double) CLOCKS_PER_SEC << std::endl;
+		clock_t t6 = clock();    
+		std::cout << "form update " << ( t6 - t5 ) / (double) CLOCKS_PER_SEC << std::endl;
 
 		/********************
 		Committ the update
@@ -415,8 +419,8 @@ namespace dblz {
 			std::cout << std::endl;
 		};
 
-		// clock_t t7 = clock();    
-		// std::cout << ( t7 - t6 ) / (double) CLOCKS_PER_SEC << std::endl;
+		clock_t t7 = clock();    
+		std::cout << "committ update " << ( t7 - t6 ) / (double) CLOCKS_PER_SEC << std::endl;
 
 	};
 

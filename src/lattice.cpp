@@ -777,6 +777,8 @@ namespace dblz {
 		};
 		f.close();
 	};
+
+
 	void Lattice::read_from_file(std::string fname, bool binary)
 	{
 		// Clear the current lattice
@@ -794,34 +796,41 @@ namespace dblz {
 		if (f.is_open()) { // make sure we found it
 			while (getline(f,line)) {
 				if (line == "") { continue; };
+
 				iss = std::istringstream(line);
-			    iss >> x;
-			    if (_no_dims == 2 || _no_dims == 3) {
-				    iss >> y;
-			    };
-			    if (_no_dims == 3) {
-				    iss >> z;
-			    };
-			    iss >> sp;
-			    if (!binary) {
-			    	// Read the prob
-			    	iss >> prob;
-			    };
-		    	// Add to Latt
-		    	if (_no_dims == 1) {
+				
+				if (_no_dims == 1 && binary) {
+					iss >> x >> sp;
 		    		s = _look_up_unit_v(atoi(x.c_str()));
-			    } else if (_no_dims == 2) {
-		    		s = _look_up_unit_v(atoi(x.c_str()),atoi(y.c_str()));
-			    } else if (_no_dims == 3) {
-			    	s = _look_up_unit_v(atoi(x.c_str()),atoi(y.c_str()),atoi(z.c_str()));
-			    };
-			    if (binary) {
 		    		s->set_b_mode_species(sp);
-		    	} else {
+				} else if (_no_dims == 1 && !binary) {
+					iss >> x >> sp >> prob;
+		    		s = _look_up_unit_v(atoi(x.c_str()));
 		    		prob_val = atof(prob.c_str());
 		    		s->set_p_mode_prob(sp,prob_val);
 		    		s->set_p_mode_prob("",1.0-prob_val);
-		    	};
+				}else if (_no_dims == 2 && binary) {
+					iss >> x >> y >> sp;
+		    		s = _look_up_unit_v(atoi(x.c_str()),atoi(y.c_str()));
+	    			s->set_b_mode_species(sp);
+				} else if (_no_dims == 2 && !binary) {
+					iss >> x >> y >> sp >> prob;
+		    		s = _look_up_unit_v(atoi(x.c_str()),atoi(y.c_str()));				
+		    		prob_val = atof(prob.c_str());
+		    		s->set_p_mode_prob(sp,prob_val);
+		    		s->set_p_mode_prob("",1.0-prob_val);
+				} else if (_no_dims == 3 && binary) {
+					iss >> x >> y >> z >> sp;
+			    	s = _look_up_unit_v(atoi(x.c_str()),atoi(y.c_str()),atoi(z.c_str()));
+			    	s->set_b_mode_species(sp);
+				} else if (_no_dims == 3 && !binary) {
+					iss >> x >> y >> z >> sp >> prob;
+			    	s = _look_up_unit_v(atoi(x.c_str()),atoi(y.c_str()),atoi(z.c_str()));
+			    	prob_val = atof(prob.c_str());
+		    		s->set_p_mode_prob(sp,prob_val);
+		    		s->set_p_mode_prob("",1.0-prob_val);
+				};
+
 	    		// Reset
 		    	sp=""; x=""; y=""; z=""; prob="";
 			};

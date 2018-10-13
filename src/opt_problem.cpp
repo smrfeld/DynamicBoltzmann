@@ -277,8 +277,8 @@ namespace dblz {
 				std::cerr << ">>> Error: OptProblem::check_options <<< options must satisfy: VAL_random_integral_range_size <= no timesteps!" << std::endl;
 				exit(EXIT_FAILURE);
 			};
-			if (options.VAL_random_integral_range_start + options.VAL_random_integral_range_size > no_timesteps) {
-				std::cerr << ">>> Error: OptProblem::check_options <<< options must satisfy: VAL_random_integral_range_start + VAL_random_integral_range_size <= no_timesteps!" << std::endl;
+			if (options.VAL_random_integral_range_end > no_timesteps) {
+				std::cerr << ">>> Error: OptProblem::check_options <<< options must satisfy: VAL_random_integral_range_end <= no_timesteps!" << std::endl;
 				exit(EXIT_FAILURE);
 			};
 		};
@@ -301,18 +301,18 @@ namespace dblz {
 		Option: random integrand range mode
 		*****/
 
-		clock_t t1 = clock();    
+		// clock_t t1 = clock();    
 
 		int timepoint_integral_start=0;
 		int timepoint_integral_end=no_timesteps;
 
 		if (options.MODE_random_integral_range) {
-			timepoint_integral_start = randI(options.VAL_random_integral_range_start,no_timesteps-options.VAL_random_integral_range_size);
+			timepoint_integral_start = randI(options.VAL_random_integral_range_start,options.VAL_random_integral_range_end);
 			timepoint_integral_end = timepoint_integral_start+options.VAL_random_integral_range_size;
 		};
 
-		clock_t t2 = clock();    
-		std::cout << "options: " << ( t2 - t1 ) / (double) CLOCKS_PER_SEC << std::endl;
+		// clock_t t2 = clock();    
+		// std::cout << "options: " << ( t2 - t1 ) / (double) CLOCKS_PER_SEC << std::endl;
 
 		/*****
 		Solve diff eq for F
@@ -334,8 +334,8 @@ namespace dblz {
 			std::cout << std::endl;
 		};
 
-		clock_t t3 = clock();    
-		std::cout << "diff eq F " << ( t3 - t2 ) / (double) CLOCKS_PER_SEC << std::endl;
+		// clock_t t3 = clock();    
+		// std::cout << "diff eq F " << ( t3 - t2 ) / (double) CLOCKS_PER_SEC << std::endl;
 
 		/*****
 		Wake/asleep loop
@@ -343,7 +343,7 @@ namespace dblz {
 
 		// clock_t t3 = clock();    
 
-		wake_sleep_loop(timepoint_integral_start,timepoint_integral_end,batch_size,no_latt_sampling_steps,fname_coll,true);// options.VERBOSE_WAKE_ASLEEP);
+		wake_sleep_loop(timepoint_integral_start,timepoint_integral_end,batch_size,no_latt_sampling_steps,fname_coll, options.VERBOSE_WAKE_ASLEEP);
 
 		if (options.VERBOSE_MOMENT) {
 			for (auto &moment: _moments) {
@@ -352,8 +352,8 @@ namespace dblz {
 			};
 		};
 
-		clock_t t4 = clock();    
-		std::cout << "wake sleep " << ( t4 - t3 ) / (double) CLOCKS_PER_SEC << std::endl;
+		// clock_t t4 = clock();    
+		// std::cout << "wake sleep " << ( t4 - t3 ) / (double) CLOCKS_PER_SEC << std::endl;
 
 		/********************
 		Solve diff eq for adjoint
@@ -379,8 +379,8 @@ namespace dblz {
 			std::cout << std::endl;
 		};
 
-		clock_t t5 = clock();    
-		std::cout << "adjoint " << ( t5 - t4 ) / (double) CLOCKS_PER_SEC << std::endl;
+		// clock_t t5 = clock();    
+		// std::cout << "adjoint " << ( t5 - t4 ) / (double) CLOCKS_PER_SEC << std::endl;
 
 		/********************
 		Form the update
@@ -399,8 +399,8 @@ namespace dblz {
 			std::cout << std::endl;
 		};
 
-		clock_t t6 = clock();    
-		std::cout << "form update " << ( t6 - t5 ) / (double) CLOCKS_PER_SEC << std::endl;
+		// clock_t t6 = clock();    
+		// std::cout << "form update " << ( t6 - t5 ) / (double) CLOCKS_PER_SEC << std::endl;
 
 		/********************
 		Committ the update
@@ -419,8 +419,8 @@ namespace dblz {
 			std::cout << std::endl;
 		};
 
-		clock_t t7 = clock();    
-		std::cout << "committ update " << ( t7 - t6 ) / (double) CLOCKS_PER_SEC << std::endl;
+		// clock_t t7 = clock();    
+		// std::cout << "committ update " << ( t7 - t6 ) / (double) CLOCKS_PER_SEC << std::endl;
 
 	};
 

@@ -78,6 +78,7 @@ namespace dblz {
 		bool MODE_random_integral_range = false;
 		int VAL_random_integral_range_size = 10;
 		int VAL_random_integral_range_start = 0;
+		int VAL_random_integral_range_end = 0;
 
 		// Nesterov
 		bool nesterov = true;

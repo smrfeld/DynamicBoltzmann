@@ -794,45 +794,73 @@ namespace dblz {
 		std::string prob="";
 		double prob_val;
 		if (f.is_open()) { // make sure we found it
-			while (getline(f,line)) {
-				if (line == "") { continue; };
 
-				iss = std::istringstream(line);
-				
-				if (_no_dims == 1 && binary) {
+			if (_no_dims == 1 && binary) {
+				while (getline(f,line)) {
+					if (line == "") { continue; };
+					iss = std::istringstream(line);				
 					iss >> x >> sp;
 		    		s = _look_up_unit_v(atoi(x.c_str()));
 		    		s->set_b_mode_species(sp);
-				} else if (_no_dims == 1 && !binary) {
+		    		// Reset
+			    	sp=""; x="";
+			    };
+			} else if (_no_dims == 1 && !binary) {
+				while (getline(f,line)) {
+					if (line == "") { continue; };
+					iss = std::istringstream(line);		
 					iss >> x >> sp >> prob;
 		    		s = _look_up_unit_v(atoi(x.c_str()));
 		    		prob_val = atof(prob.c_str());
 		    		s->set_p_mode_prob(sp,prob_val);
 		    		s->set_p_mode_prob("",1.0-prob_val);
-				}else if (_no_dims == 2 && binary) {
+		    		// Reset
+			    	sp=""; x=""; prob="";
+			    };
+			} else if (_no_dims == 2 && binary) {
+				while (getline(f,line)) {
+					if (line == "") { continue; };
+					iss = std::istringstream(line);				
 					iss >> x >> y >> sp;
 		    		s = _look_up_unit_v(atoi(x.c_str()),atoi(y.c_str()));
 	    			s->set_b_mode_species(sp);
-				} else if (_no_dims == 2 && !binary) {
+		    		// Reset
+			    	sp=""; x=""; y="";
+			    };
+			} else if (_no_dims == 2 && !binary) {
+				while (getline(f,line)) {
+					if (line == "") { continue; };
+					iss = std::istringstream(line);				
 					iss >> x >> y >> sp >> prob;
 		    		s = _look_up_unit_v(atoi(x.c_str()),atoi(y.c_str()));				
 		    		prob_val = atof(prob.c_str());
 		    		s->set_p_mode_prob(sp,prob_val);
 		    		s->set_p_mode_prob("",1.0-prob_val);
-				} else if (_no_dims == 3 && binary) {
+		    		// Reset
+			    	sp=""; x=""; y=""; prob="";
+			    };
+			} else if (_no_dims == 3 && binary) {
+				while (getline(f,line)) {
+					if (line == "") { continue; };
+					iss = std::istringstream(line);				
 					iss >> x >> y >> z >> sp;
 			    	s = _look_up_unit_v(atoi(x.c_str()),atoi(y.c_str()),atoi(z.c_str()));
 			    	s->set_b_mode_species(sp);
-				} else if (_no_dims == 3 && !binary) {
+		    		// Reset
+			    	sp=""; x=""; y=""; z="";
+			    };
+			} else if (_no_dims == 3 && !binary) {
+				while (getline(f,line)) {
+					if (line == "") { continue; };
+					iss = std::istringstream(line);				
 					iss >> x >> y >> z >> sp >> prob;
 			    	s = _look_up_unit_v(atoi(x.c_str()),atoi(y.c_str()),atoi(z.c_str()));
 			    	prob_val = atof(prob.c_str());
 		    		s->set_p_mode_prob(sp,prob_val);
 		    		s->set_p_mode_prob("",1.0-prob_val);
+		    		// Reset
+			    	sp=""; x=""; y=""; z=""; prob="";
 				};
-
-	    		// Reset
-		    	sp=""; x=""; y=""; z=""; prob="";
 			};
 		};
 		f.close();

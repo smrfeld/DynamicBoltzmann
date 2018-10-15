@@ -7,7 +7,7 @@
 #include "fwds/fwds_ixn_param.hpp"
 #endif
 
-#include <dcubic> // guard is built-in
+#include <q3c1> // guard is built-in
 
 /************************************
 * Namespace for dblz
@@ -19,7 +19,7 @@ namespace dblz {
 	Domain1D
 	****************************************/
 
-	class Domain1D : public dcu::Dimension1D {
+	class Domain1D : public q3c1::Dimension1D {
 
 	private:
 
@@ -85,7 +85,7 @@ namespace dblz {
 	DiffEqRHS
 	****************************************/
 
-	class DiffEqRHS : public dcu::Grid {
+	class DiffEqRHS : public q3c1::Grid {
 
 	private:
 
@@ -98,18 +98,14 @@ namespace dblz {
 		// Domain - the domain in dcu::Grid does not store the ixn funcs
 		std::vector<Domain1D*> _domain;
 
-		// Helper structures for evaluating
-		double* _abscissas;
-		dcu::IdxSet _idxs_k;
-
 		// Parent ixn param
 		Iptr _parent_ixn_param;
 
 		// Updates
-		std::map<dcu::GridPtIn*,double> _updates;
+		std::map<q3c1::Vertex*,std::vector<double>> _updates;
 
 		// Internal
-		void _form_abscissas(int timepoint);
+		std::vector<double> _form_abscissas(int timepoint) const;
 
 		// Internal copy/clean up function
 		void _copy(const DiffEqRHS& other);
@@ -147,8 +143,12 @@ namespace dblz {
 		const std::vector<Domain1D*>& get_domain() const;
 
 		double get_val_at_timepoint(int timepoint);
-		double get_deriv_wrt_u_at_timepoint(int timepoint, dcu::IdxSet idxs_k);
-		double get_deriv_wrt_nu_at_timepoint(int timepoint, int k);
+
+		// Deriv wrt specific coefficient of some basis
+		double get_deriv_wrt_u_at_timepoint(int timepoint, q3c1::IdxSet global_vertex_idxs, std::vector<q3c1::DimType> dim_types);
+
+		// Spatial deriv
+		double get_deriv_wrt_nu_at_timepoint(int timepoint, int deriv_dim);
 
 		/********************
 		Update

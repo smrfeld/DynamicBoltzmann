@@ -125,20 +125,21 @@ namespace dblz {
 	Constructor
 	********************/
 
-	DiffEqRHS::DiffEqRHS(std::string name, Iptr parent_ixn_param, std::vector<Domain1D*> domain) : dcu::Grid(std::vector<dcu::Dimension1D*>(domain.begin(),domain.end())), _idxs_k(domain.size()) {
+	DiffEqRHS::DiffEqRHS(std::string name, Iptr parent_ixn_param, std::vector<Domain1D*> domain) : q3c1::Grid(std::vector<q3c1::Dimension1D*>(domain.begin(),domain.end())) {
 		_name = name;
 		_domain = domain;
 		_no_dims = _domain.size();
 		_parent_ixn_param = parent_ixn_param;
 
-		// Init structures for evaluating
-		_abscissas = new double[_no_dims];
-		std::fill_n(_abscissas,_no_dims,0.0);
+		if (_no_dims == 0 || _no_dims > 3) {
+			std::cerr << ">>> Error: DiffEqRHS::DiffEqRHS <<< Only dims 1,2,3 are supported" << std::endl;
+			exit(EXIT_FAILURE);
+		};
 	};
-	DiffEqRHS::DiffEqRHS(const DiffEqRHS& other) : Grid(other), _idxs_k(other._idxs_k) {
+	DiffEqRHS::DiffEqRHS(const DiffEqRHS& other) : Grid(other) {
 		_copy(other);
 	};
-	DiffEqRHS::DiffEqRHS(DiffEqRHS&& other) : Grid(std::move(other)), _idxs_k(std::move(other._idxs_k)) {
+	DiffEqRHS::DiffEqRHS(DiffEqRHS&& other) : Grid(std::move(other)) {
 		_move(other);
 	};
 
@@ -148,7 +149,6 @@ namespace dblz {
 			_clean_up();
 
 			Grid::operator=(other);
-			_idxs_k = other._idxs_k;
 			_copy(other);
 		};
 		return *this;
@@ -157,9 +157,7 @@ namespace dblz {
 		if (this != &other)
 		{
 			_clean_up();
-
 			Grid::operator=(other);
-			_idxs_k = std::move(other._idxs_k);
 			_move(other);
 		};
 		return *this;
@@ -172,9 +170,6 @@ namespace dblz {
 		_name = other._name;
 		_no_dims = other._no_dims;
 		_domain = other._domain;
-		_abscissas = new double[_no_dims];
-		std::copy(other._abscissas,other._abscissas+_no_dims,_abscissas);
-		_idxs_k = other._idxs_k;
 		_parent_ixn_param = other._parent_ixn_param;
 		_updates = other._updates;
 	};
@@ -182,8 +177,6 @@ namespace dblz {
 		_name = other._name;
 		_no_dims = other._no_dims;
 		_domain = other._domain;
-		_abscissas = other._abscissas;
-		_idxs_k = other._idxs_k;
 		_parent_ixn_param = other._parent_ixn_param;
 		_updates = other._updates;
 
@@ -191,18 +184,12 @@ namespace dblz {
 		other._name = "";
 		other._no_dims = 0;
 		other._domain.clear();
-		other._abscissas = nullptr;
 		other._parent_ixn_param = nullptr;
 		other._updates.clear();
 	};
 
 	void DiffEqRHS::_clean_up() {
-		// Domain is not owned
-
-		if (_abscissas) {
-			delete[] _abscissas;
-			_abscissas = nullptr;
-		};
+		// Note: Domain is not owned => do not delete
 	};
 
 	/********************
@@ -230,23 +217,22 @@ namespace dblz {
 		return _domain;
 	};
 
-	void DiffEqRHS::_form_abscissas(int timepoint) {
+	std::vector<double> DiffEqRHS::_form_abscissas(int timepoint) const {
+		std::vector<double> abscissas;
 		for (auto dim=0; dim<_domain.size(); dim++) {
-			_abscissas[dim] = _domain[dim]->get_ixn_param()->get_val_at_timepoint(timepoint);
+			abscissas.push_back(_domain[dim]->get_ixn_param()->get_val_at_timepoint(timepoint));
 		};
+		return abscissas;
 	};
 
 	double DiffEqRHS::get_val_at_timepoint(int timepoint) {
-		_form_abscissas(timepoint);
-		return get_val(_abscissas);
+		return Grid::get_val(_form_abscissas(timepoint));
 	};
-	double DiffEqRHS::get_deriv_wrt_u_at_timepoint(int timepoint, dcu::IdxSet idxs_k) {
-		_form_abscissas(timepoint);
-		return get_deriv_wrt_pt_value(_abscissas, idxs_k);
+	double DiffEqRHS::get_deriv_wrt_u_at_timepoint(int timepoint, q3c1::IdxSet global_vertex_idxs, std::vector<q3c1::DimType> dim_types) {
+		return Grid::get_deriv_wrt_coeff(_form_abscissas(timepoint), global_vertex_idxs, dim_types);
 	};
-	double DiffEqRHS::get_deriv_wrt_nu_at_timepoint(int timepoint, int k) {
-		_form_abscissas(timepoint);
-		return get_deriv_wrt_x(_abscissas, k);
+	double DiffEqRHS::get_deriv_wrt_nu_at_timepoint(int timepoint, int deriv_dim) {
+		return Grid::get_deriv_wrt_abscissa(_form_abscissas(timepoint), deriv_dim);
 	};
 
 	/********************
@@ -258,21 +244,11 @@ namespace dblz {
 		// Adjoint
 		double adjoint_val;
 
-		// Init idxs set
-		dcu::IdxSet tmp(_no_dims);
-		dcu::Nbr4 nbr4(tmp);
+		// Abscissas
+		std::vector<double> abscissas;
 
-		// Derivative of F
-		double f_deriv;
-
-		// The update
-		double update;
-
-		// Gridptin
-		dcu::GridPtIn* grid_pt=nullptr;
-
-		// Iterator
-		std::map<dcu::GridPtIn*,double>::iterator it;
+		// Updates
+		std::map<q3c1::Vertex*,std::vector<double>> updates;
 
 		// Go through all times
 		for (auto timepoint=timepoint_start; timepoint<timepoint_end; timepoint++) {
@@ -281,32 +257,29 @@ namespace dblz {
 			adjoint_val = _parent_ixn_param->get_adjoint()->get_val_at_timepoint(timepoint);
 
 			// Form abscissas
-			_form_abscissas(timepoint);
+			abscissas = _form_abscissas(timepoint);
 
-			// Get surrounding nbrs
-			nbr4 = get_surrounding_4_grid_pts(_abscissas);
+			// Get updates for verts
+			updates = Grid::get_deriv_wrt_coeffs_for_all_surrounding_verts(abscissas);
 
-			// Go through nbrs
-			for (auto i=0; i<nbr4.get_no_grid_pts(); i++) {
+			// Multiply
+			for (auto &pr: updates) {
+				for (auto i=0; i<pr.second.size(); i++) {
+					pr.second[i] *= dt * dopt * adjoint_val;
+				};
+			};
 
-				// Only update for grid pts that are inside!
-				if (nbr4.get_grid_point(i)->get_type() == dcu::GridPtType::INSIDE) {
 
-					// Get deriv
-					f_deriv = get_deriv_wrt_pt_value(nbr4, nbr4.convert_idx_set(i));
-
-					// The update
-					update = dt * dopt * f_deriv * adjoint_val;
-
-					// Grid pt
-					grid_pt = nbr4.get_grid_point_inside(i);
-
-					// Store
-					it = _updates.find(grid_pt);
-					if (it != _updates.end()) {
-						_updates[grid_pt] -= update;
-					} else {
-						_updates[grid_pt] = -1.0 * update;
+			// Append to any existing
+			for (auto &pr: updates) {
+				auto it = _updates.find(pr.first);
+				if (it == _updates.end()) {
+					// new
+					_updates[pr.first] = pr.second;
+				} else {
+					// append
+					for (auto i=0; i<pr.second.size(); i++) {
+						_updates[pr.first][i] += pr.second[i];
 					};
 				};
 			};
@@ -316,7 +289,11 @@ namespace dblz {
 	// Verbose
 	void DiffEqRHS::print_update_stored() const {
 		for (auto const &pr: _updates) {
-			std::cout << *pr.first << ": " << pr.second << std::endl;
+			std::cout << pr.first << ": " << std::flush;
+			for (auto x: pr.second) {
+				std::cout << x << " " << std::flush;
+			};
+			std::cout << std::endl;
 		};
 	};
 
@@ -324,14 +301,100 @@ namespace dblz {
 	void DiffEqRHS::update_committ_stored(int opt_step, bool nesterov_mode) {
 
 		// Go through stored updates
-		for (auto const &pr: _updates) {
+		if (nesterov_mode && opt_step > 1) {
 
-			// If nesterov, move a bit further
-			if (nesterov_mode && opt_step > 1) { // only start at opt step 2
-				pr.first->increment_ordinate((1.0 + (
-					opt_step - 1.0) / (opt_step + 2.0)) * pr.second);
-			} else {
-				pr.first->increment_ordinate(pr.second);
+			if (_no_dims == 1) {
+				for (auto const &pr: _updates) {
+					// Val
+					pr.first->get_bf({q3c1::DimType::VAL})->increment_coeff((1.0 + (
+						opt_step - 1.0) / (opt_step + 2.0)) * pr.second[0]);
+					// Deriv
+					pr.first->get_bf({q3c1::DimType::DERIV})->increment_coeff((1.0 + (
+						opt_step - 1.0) / (opt_step + 2.0)) * pr.second[1]);
+				};
+			} else if (_no_dims == 2) {
+				for (auto const &pr: _updates) {
+					// Val-val
+					pr.first->get_bf({q3c1::DimType::VAL,q3c1::DimType::VAL})->increment_coeff((1.0 + (
+						opt_step - 1.0) / (opt_step + 2.0)) * pr.second[0]);
+					// Val-Deriv
+					pr.first->get_bf({q3c1::DimType::VAL,q3c1::DimType::DERIV})->increment_coeff((1.0 + (
+						opt_step - 1.0) / (opt_step + 2.0)) * pr.second[1]);
+					// Deriv-val
+					pr.first->get_bf({q3c1::DimType::DERIV,q3c1::DimType::VAL})->increment_coeff((1.0 + (
+						opt_step - 1.0) / (opt_step + 2.0)) * pr.second[2]);
+					// Deriv-deriv
+					pr.first->get_bf({q3c1::DimType::DERIV,q3c1::DimType::DERIV})->increment_coeff((1.0 + (
+						opt_step - 1.0) / (opt_step + 2.0)) * pr.second[3]);
+				};
+			} else if (_no_dims == 3) {
+				for (auto const &pr: _updates) {
+					// Val-val-val
+					pr.first->get_bf({q3c1::DimType::VAL,q3c1::DimType::VAL,q3c1::DimType::VAL})->increment_coeff((1.0 + (
+						opt_step - 1.0) / (opt_step + 2.0)) * pr.second[0]);
+					// Val-val-deriv
+					pr.first->get_bf({q3c1::DimType::VAL,q3c1::DimType::VAL,q3c1::DimType::DERIV})->increment_coeff((1.0 + (
+						opt_step - 1.0) / (opt_step + 2.0)) * pr.second[1]);
+					// Val-deriv-val
+					pr.first->get_bf({q3c1::DimType::VAL,q3c1::DimType::DERIV,q3c1::DimType::VAL})->increment_coeff((1.0 + (
+						opt_step - 1.0) / (opt_step + 2.0)) * pr.second[2]);
+					// Deriv-val-val
+					pr.first->get_bf({q3c1::DimType::DERIV,q3c1::DimType::VAL,q3c1::DimType::VAL})->increment_coeff((1.0 + (
+						opt_step - 1.0) / (opt_step + 2.0)) * pr.second[3]);
+					// Val-deriv-deriv
+					pr.first->get_bf({q3c1::DimType::VAL,q3c1::DimType::DERIV,q3c1::DimType::DERIV})->increment_coeff((1.0 + (
+						opt_step - 1.0) / (opt_step + 2.0)) * pr.second[4]);
+					// Deriv-val-deriv
+					pr.first->get_bf({q3c1::DimType::DERIV,q3c1::DimType::VAL,q3c1::DimType::DERIV})->increment_coeff((1.0 + (
+						opt_step - 1.0) / (opt_step + 2.0)) * pr.second[5]);
+					// Deriv-deriv-val
+					pr.first->get_bf({q3c1::DimType::DERIV,q3c1::DimType::DERIV,q3c1::DimType::VAL})->increment_coeff((1.0 + (
+						opt_step - 1.0) / (opt_step + 2.0)) * pr.second[6]);
+					// Deriv-deriv-deriv
+					pr.first->get_bf({q3c1::DimType::DERIV,q3c1::DimType::DERIV,q3c1::DimType::DERIV})->increment_coeff((1.0 + (
+						opt_step - 1.0) / (opt_step + 2.0)) * pr.second[7]);
+				};
+			};
+			
+		} else {
+
+			if (_no_dims == 1) {
+				for (auto const &pr: _updates) {
+					// Val
+					pr.first->get_bf({q3c1::DimType::VAL})->increment_coeff(pr.second[0]);
+					// Deriv
+					pr.first->get_bf({q3c1::DimType::DERIV})->increment_coeff(pr.second[1]);
+				};
+			} else if (_no_dims == 2) {
+				for (auto const &pr: _updates) {
+					// Val-val
+					pr.first->get_bf({q3c1::DimType::VAL,q3c1::DimType::VAL})->increment_coeff(pr.second[0]);
+					// Val-Deriv
+					pr.first->get_bf({q3c1::DimType::VAL,q3c1::DimType::DERIV})->increment_coeff(pr.second[1]);
+					// Deriv-val
+					pr.first->get_bf({q3c1::DimType::DERIV,q3c1::DimType::VAL})->increment_coeff(pr.second[2]);
+					// Deriv-deriv
+					pr.first->get_bf({q3c1::DimType::DERIV,q3c1::DimType::DERIV})->increment_coeff(pr.second[3]);
+				};
+			} else if (_no_dims == 3) {
+				for (auto const &pr: _updates) {
+					// Val-val-val
+					pr.first->get_bf({q3c1::DimType::VAL,q3c1::DimType::VAL,q3c1::DimType::VAL})->increment_coeff(pr.second[0]);
+					// Val-val-deriv
+					pr.first->get_bf({q3c1::DimType::VAL,q3c1::DimType::VAL,q3c1::DimType::DERIV})->increment_coeff(pr.second[1]);
+					// Val-deriv-val
+					pr.first->get_bf({q3c1::DimType::VAL,q3c1::DimType::DERIV,q3c1::DimType::VAL})->increment_coeff(pr.second[2]);
+					// Deriv-val-val
+					pr.first->get_bf({q3c1::DimType::DERIV,q3c1::DimType::VAL,q3c1::DimType::VAL})->increment_coeff(pr.second[3]);
+					// Val-deriv-deriv
+					pr.first->get_bf({q3c1::DimType::VAL,q3c1::DimType::DERIV,q3c1::DimType::DERIV})->increment_coeff(pr.second[4]);
+					// Deriv-val-deriv
+					pr.first->get_bf({q3c1::DimType::DERIV,q3c1::DimType::VAL,q3c1::DimType::DERIV})->increment_coeff(pr.second[5]);
+					// Deriv-deriv-val
+					pr.first->get_bf({q3c1::DimType::DERIV,q3c1::DimType::DERIV,q3c1::DimType::VAL})->increment_coeff(pr.second[6]);
+					// Deriv-deriv-deriv
+					pr.first->get_bf({q3c1::DimType::DERIV,q3c1::DimType::DERIV,q3c1::DimType::DERIV})->increment_coeff(pr.second[7]);
+				};
 			};
 		};
 

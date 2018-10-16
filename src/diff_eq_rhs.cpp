@@ -265,10 +265,9 @@ namespace dblz {
 			// Multiply
 			for (auto &pr: updates) {
 				for (auto i=0; i<pr.second.size(); i++) {
-					pr.second[i] *= dt * dopt * adjoint_val;
+					pr.second[i] *= -1.0 * dt * dopt * adjoint_val;
 				};
 			};
-
 
 			// Append to any existing
 			for (auto &pr: updates) {
@@ -355,7 +354,7 @@ namespace dblz {
 						opt_step - 1.0) / (opt_step + 2.0)) * pr.second[7]);
 				};
 			};
-			
+
 		} else {
 
 			if (_no_dims == 1) {

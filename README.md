@@ -2,9 +2,9 @@
 
 ## Dependencies
 
-d-Cubic library for doing cubic interpolation and derivatives of the interpolation in d dimensions.
+q3c1 library for the Q3 C1 finite elements.
 
-Get it from [here](https://github.com/smrfeld/d-Cubic).
+Get it from [here](https://github.com/smrfeld/Q3-C1-Finite-Elements).
 
 ## Installation
 
@@ -28,9 +28,9 @@ To access the headers, simply use: `include <dynamicboltz>`.
 
 Link your program using:
 ```
-g++ -std=c++14 -O3 -ldynamicboltz -ldcubic myprogram.cpp -o myprogram.o
+g++ -std=c++14 -O3 -ldynamicboltz -lq3c1 myprogram.cpp -o myprogram.o
 ```
-(this assumes you have install `-ldcubic`).
+(this assumes you have install `-lq3c1`).
 
 ## Namespace
 

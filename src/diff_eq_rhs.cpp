@@ -262,23 +262,19 @@ namespace dblz {
 			// Get updates for verts
 			updates = Grid::get_deriv_wrt_coeffs_for_all_surrounding_verts(abscissas);
 
-			// Multiply
-			for (auto &pr: updates) {
-				for (auto i=0; i<pr.second.size(); i++) {
-					pr.second[i] *= -1.0 * dt * dopt * adjoint_val;
-				};
-			};
-
 			// Append to any existing
 			for (auto &pr: updates) {
 				auto it = _updates.find(pr.first);
 				if (it == _updates.end()) {
 					// new
 					_updates[pr.first] = pr.second;
+					for (auto i=0; i<pr.second.size(); i++) {
+						_updates[pr.first][i] *= -1.0 * dt * dopt * adjoint_val;
+					};
 				} else {
 					// append
 					for (auto i=0; i<pr.second.size(); i++) {
-						_updates[pr.first][i] += pr.second[i];
+						_updates[pr.first][i] += -1.0 * dt * dopt * adjoint_val * pr.second[i];
 					};
 				};
 			};

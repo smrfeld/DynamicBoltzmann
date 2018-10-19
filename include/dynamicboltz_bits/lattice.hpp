@@ -40,9 +40,11 @@ namespace dblz {
 
 		// Visible layer
 		std::vector<UnitVisible*> _latt_v;
+		std::vector<int> _latt_v_idxs;
 
 		// Hidden layers
 		std::map<int,std::vector<UnitHidden*>> _latt_h;
+		std::map<int,std::vector<int>> _latt_h_idxs;
 
 		// Connections
 		std::vector<ConnVV*> _conns_vv;

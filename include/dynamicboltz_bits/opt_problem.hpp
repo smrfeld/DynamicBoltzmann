@@ -1,5 +1,6 @@
 #include <string>
 #include <vector>
+#include <map>
 
 #ifndef FWDS_IXN_PARAM_H
 #define FWDS_IXN_PARAM_H
@@ -79,6 +80,11 @@ namespace dblz {
 		int VAL_random_integral_range_size = 10;
 		int VAL_random_integral_range_start = 0;
 		int VAL_random_integral_range_end = 0;
+
+		// L2 Reg mode
+		bool MODE_l2_reg = false;
+		std::map<Iptr,double> VAL_l2_lambda;
+		std::map<Iptr,double> VAL_l2_center;
 
 		// Nesterov
 		bool nesterov = true;

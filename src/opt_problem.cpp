@@ -368,9 +368,17 @@ namespace dblz {
 			ixn_param->get_adjoint()->reset_to_zero();
 		};
 
-		for (auto t=timepoint_integral_end; t>=timepoint_integral_start+1; t--) {
-			for (auto &ixn_param: _ixn_params) {
-				ixn_param->get_adjoint()->solve_diff_eq_at_timepoint_to_minus_one(t,dt);
+		if (options.MODE_l2_reg) {
+			for (auto t=timepoint_integral_end; t>=timepoint_integral_start+1; t--) {
+				for (auto &ixn_param: _ixn_params) {
+					ixn_param->get_adjoint()->solve_diff_eq_at_timepoint_to_minus_one(t,dt,true,options.VAL_l2_lambda,options.VAL_l2_center);
+				};
+			};
+		} else {
+			for (auto t=timepoint_integral_end; t>=timepoint_integral_start+1; t--) {
+				for (auto &ixn_param: _ixn_params) {
+					ixn_param->get_adjoint()->solve_diff_eq_at_timepoint_to_minus_one(t,dt);
+				};
 			};
 		};
 

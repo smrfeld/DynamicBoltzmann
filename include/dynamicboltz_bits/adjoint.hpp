@@ -1,4 +1,5 @@
 #include <string>
+#include <map>
 
 #ifndef FWDS_IXN_PARAM_H
 #define FWDS_IXN_PARAM_H
@@ -87,7 +88,7 @@ namespace dblz {
 		Solve diff eq
 		********************/
 
-		void solve_diff_eq_at_timepoint_to_minus_one(int timepoint, double dt);
+		void solve_diff_eq_at_timepoint_to_minus_one(int timepoint, double dt, bool l2_mode=false, const std::map<Iptr,double> &l2_lambda = std::map<Iptr,double>(), const std::map<Iptr,double> &l2_center = std::map<Iptr,double>());
 
 		/********************
 		Reset to zero

@@ -93,6 +93,7 @@ namespace bmla {
 		void set_b_mode_species(std::string sp);
 		void set_b_mode_empty();
 		bool check_b_mode_is_empty() const;
+		void set_b_mode_random();
 
 		// Probabilistic
 		double get_p_mode_prob(Sptr sp) const; // nullptr for empty

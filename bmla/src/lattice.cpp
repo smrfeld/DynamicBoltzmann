@@ -42,19 +42,22 @@ namespace bmla {
 		// Make a fully linked list of sites
 		if (dim == 1) {
 			for (int x=1; x<=box_length; x++) {
-				_latt_v.push_back(new UnitVisible(x));					
+				_latt_v.push_back(new UnitVisible(x));
+				_latt_v_idxs.push_back(_latt_v.size()-1);					
 			};
 		} else if (dim == 2) {
 			for (int x=1; x<=box_length; x++) {
 				for (int y=1; y<=box_length; y++) {
-					_latt_v.push_back(new UnitVisible(x,y));					
+					_latt_v.push_back(new UnitVisible(x,y));
+					_latt_v_idxs.push_back(_latt_v.size()-1);									
 				};
 			};
 		} else if (dim == 3) {
 			for (int x=1; x<=box_length; x++) {
 				for (int y=1; y<=box_length; y++) {
 					for (int z=1; z<=box_length; z++) {
-						_latt_v.push_back(new UnitVisible(x,y,z));					
+						_latt_v.push_back(new UnitVisible(x,y,z));		
+						_latt_v_idxs.push_back(_latt_v.size()-1);								
 					};
 				};
 			};
@@ -119,6 +122,9 @@ namespace bmla {
 				_latt_h[pr.first].push_back(new UnitHidden(*pr.second[i]));
 			};
 		};
+		_latt_v_idxs = other._latt_v_idxs;
+		_latt_h_idxs = other._latt_h_idxs;
+
 		for (auto i=0; i<other._conns_vv.size(); i++) {
 			_conns_vv.push_back(new ConnVV(*other._conns_vv[i]));
 		};
@@ -137,15 +143,19 @@ namespace bmla {
 		_conns_vv = other._conns_vv;
 		_conns_vvv = other._conns_vvv;
 		_conns_vh = other._conns_vh;
+		_latt_v_idxs = other._latt_v_idxs;
+		_latt_h_idxs = other._latt_h_idxs;
 
 		// Reset other
-		_no_dims = 0;
-		_box_length = 0;
-		_latt_v.clear();
-		_latt_h.clear();
-		_conns_vv.clear();
-		_conns_vvv.clear();
-		_conns_vh.clear();
+		other._no_dims = 0;
+		other._box_length = 0;
+		other._latt_v.clear();
+		other._latt_h.clear();
+		other._conns_vv.clear();
+		other._conns_vvv.clear();
+		other._conns_vh.clear();
+		other._latt_v_idxs.clear();
+		other._latt_h_idxs.clear();
 	};
 
 	/********************
@@ -472,6 +482,7 @@ namespace bmla {
 			idx = 0;
 		};
 		_latt_h[layer].push_back(new UnitHidden(layer,idx,species_possible));
+		_latt_h_idxs[layer].push_back(_latt_h[layer].size()-1);
 		return idx;
 	};
 
@@ -717,6 +728,15 @@ namespace bmla {
 		all_units_h_set_empty();
 	};
 
+	// Random
+	void Lattice::all_units_v_random() {
+		all_units_set_empty();
+
+		for (auto &ptr: _latt_v) {
+			ptr->set_b_mode_random();
+		};
+	};
+
 	// Binary/probabilistic
 	void Lattice::all_units_convert_to_b_mode() {
 		for (auto &s: _latt_v) {
@@ -836,14 +856,22 @@ namespace bmla {
 	********************/
 
 	void Lattice::sample_v(bool binary) {
-		for (auto &s: _latt_v) {
-			s->sample(binary);
+		
+		// Shuffle
+		std::random_shuffle ( _latt_v_idxs.begin(), _latt_v_idxs.end() );		
+
+		// Sample
+		for (auto const &idx: _latt_v_idxs) {
+			_latt_v[idx]->sample(binary);
 		};
 	};
 	void Lattice::sample_h(bool binary) {
 		for (auto &pr: _latt_h) { // automatically low to high layers
-			for (auto &s: pr.second) {
-				s->sample(binary);
+			// Shuffle
+			std::random_shuffle ( _latt_h_idxs[pr.first].begin(), _latt_h_idxs[pr.first].end() );
+
+			for (auto const &idx: _latt_h_idxs[pr.first]) {
+				pr.second[idx]->sample(binary);
 			};
 		};
 	};

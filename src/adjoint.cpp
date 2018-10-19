@@ -160,7 +160,7 @@ namespace dblz {
 	Diff eq
 	********************/
 
-	void Adjoint::solve_diff_eq_at_timepoint_to_minus_one(int timepoint, double dt) {
+	void Adjoint::solve_diff_eq_at_timepoint_to_minus_one(int timepoint, double dt, bool l2_mode, const std::map<Iptr,double> &l2_lambda, const std::map<Iptr,double> &l2_center) {
 		if (timepoint >= _no_timepoints) {
 			std::cerr << ">>> Error: Adjoint::solve_diff_eq_at_timepoint_to_minus_one <<< " << timepoint << " is out of bounds: " << _no_timepoints << std::endl;
 			exit(EXIT_FAILURE);
@@ -202,8 +202,22 @@ namespace dblz {
 		// Difference in moments
 		double moment_delta = _ixn_param->get_moment()->get_moment_at_timepoint(MomentType::ASLEEP, timepoint) - _ixn_param->get_moment()->get_moment_at_timepoint(MomentType::AWAKE, timepoint);
 
-		// Step
-		_vals[timepoint-1] = _vals[timepoint] - dt * (deriv - moment_delta);
+		// L2 reg
+		if (l2_mode) {
+			// L2 mode
+
+			double ixn_param_val = _ixn_param->get_val_at_timepoint(timepoint);
+			double l2_term = 2.0 * l2_lambda.at(_ixn_param) * (ixn_param_val-l2_center.at(_ixn_param)) * sgn(ixn_param_val-l2_center.at(_ixn_param));
+
+			// Step
+			_vals[timepoint-1] = _vals[timepoint] - dt * (deriv - moment_delta - l2_term);
+
+		} else {
+			// Not L2 mode
+
+			// Step
+			_vals[timepoint-1] = _vals[timepoint] - dt * (deriv - moment_delta);
+		};
 	};
 
 	/********************

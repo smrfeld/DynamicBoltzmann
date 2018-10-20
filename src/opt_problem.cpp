@@ -325,7 +325,9 @@ namespace dblz {
 		// Solve over all time
 		for (auto t=0; t<no_timesteps; t++) {
 			for (auto &ixn_param: _ixn_params) {
-				ixn_param->solve_diff_eq_at_timepoint_to_plus_one(t,dt);
+				if (!ixn_param->get_is_val_fixed()) {
+					ixn_param->solve_diff_eq_at_timepoint_to_plus_one(t,dt);
+				};
 			};
 		};
 
@@ -365,19 +367,25 @@ namespace dblz {
 
 		// Reset
 		for (auto &ixn_param: _ixn_params) {
-			ixn_param->get_adjoint()->reset_to_zero();
+			if (!ixn_param->get_is_val_fixed()) {
+				ixn_param->get_adjoint()->reset_to_zero();
+			};
 		};
 
 		if (options.MODE_l2_reg) {
 			for (auto t=timepoint_integral_end; t>=timepoint_integral_start+1; t--) {
 				for (auto &ixn_param: _ixn_params) {
-					ixn_param->get_adjoint()->solve_diff_eq_at_timepoint_to_minus_one(t,dt,true,options.VAL_l2_lambda,options.VAL_l2_center);
+					if (!ixn_param->get_is_val_fixed()) {
+						ixn_param->get_adjoint()->solve_diff_eq_at_timepoint_to_minus_one(t,dt,true,options.VAL_l2_lambda,options.VAL_l2_center);
+					};
 				};
 			};
 		} else {
 			for (auto t=timepoint_integral_end; t>=timepoint_integral_start+1; t--) {
 				for (auto &ixn_param: _ixn_params) {
-					ixn_param->get_adjoint()->solve_diff_eq_at_timepoint_to_minus_one(t,dt);
+					if (!ixn_param->get_is_val_fixed()) {
+						ixn_param->get_adjoint()->solve_diff_eq_at_timepoint_to_minus_one(t,dt);
+					};
 				};
 			};
 		};
@@ -399,7 +407,9 @@ namespace dblz {
 		};
 
 		for (auto &ixn_param: _ixn_params) {
-			ixn_param->get_diff_eq_rhs()->update_calculate_and_store(timepoint_integral_start,timepoint_integral_end,dt,dopt);
+			if (!ixn_param->get_is_val_fixed()) {
+				ixn_param->get_diff_eq_rhs()->update_calculate_and_store(timepoint_integral_start,timepoint_integral_end,dt,dopt);
+			};
 		};
 
 		if (options.VERBOSE_UPDATE) {
@@ -419,7 +429,9 @@ namespace dblz {
 		};
 
 		for (auto &ixn_param: _ixn_params) {
-			ixn_param->get_diff_eq_rhs()->update_committ_stored(i_opt_step,options.nesterov);
+			if (!ixn_param->get_is_val_fixed()) {
+				ixn_param->get_diff_eq_rhs()->update_committ_stored(i_opt_step,options.nesterov);
+			};
 		};
 
 		if (options.VERBOSE_UPDATE) {

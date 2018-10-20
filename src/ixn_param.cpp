@@ -35,6 +35,9 @@ namespace dblz {
 		double *_vals;
 		double _init_cond;
 
+		// Fixed value at the init cond
+		bool _is_val_fixed;
+
 		// Diff eq RHS
 		std::shared_ptr<DiffEqRHS> _diff_eq;
 
@@ -73,7 +76,12 @@ namespace dblz {
 		double get_init_cond() const;
 		void set_init_cond(double init_cond);
 
-		// void set_fixed_awake_moment(std::vector<double> vals);
+		/********************
+		Fixed value to IC
+		********************/
+
+		void set_fix_value_to_init_cond(bool fixed);
+		bool get_is_val_fixed() const;
 
 		/********************
 		Name, type
@@ -182,6 +190,8 @@ namespace dblz {
 
 		// Adjoint
 		_adjoint = nullptr;
+
+		_is_val_fixed = false;
 	};
 	IxnParam::Impl::Impl(const Impl& other) {
 		_copy(other);
@@ -220,6 +230,7 @@ namespace dblz {
 		_diff_eq = other._diff_eq;
 		_moment = other._moment;
 		_adjoint = other._adjoint;
+		_is_val_fixed = other._is_val_fixed;
 	};
 	void IxnParam::Impl::_move(Impl& other) {
 		_no_timesteps = other._no_timesteps;
@@ -229,12 +240,14 @@ namespace dblz {
 
 		_diff_eq = std::move(other._diff_eq);
 		_moment = std::move(other._moment);
+		_is_val_fixed = other._is_val_fixed;
 
 		// Reset the other
 		other._no_timesteps = 0;
 		other._no_timepoints = 0;
 		other._vals = nullptr;
 		other._init_cond = 0.0;
+		other._is_val_fixed = false;
 
 		_adjoint = std::move(other._adjoint);
 	};
@@ -255,6 +268,9 @@ namespace dblz {
 		std::fill_n(_vals,_no_timepoints,0.0);
 		_vals[0] = _init_cond;
 
+		// If fixed, fill with IC
+		set_fix_value_to_init_cond(_is_val_fixed);
+
 		// Set for moment
 		_moment->set_no_timesteps(_no_timesteps);
 	};
@@ -270,6 +286,23 @@ namespace dblz {
 	void IxnParam::Impl::set_init_cond(double init_cond) {
 		_init_cond = init_cond;
 		_vals[0] = _init_cond;
+
+		// update if fixed
+		set_fix_value_to_init_cond(_is_val_fixed);
+	};
+
+	/********************
+	Fixed value to IC
+	********************/
+
+	void IxnParam::Impl::set_fix_value_to_init_cond(bool fixed) {
+		_is_val_fixed = fixed;
+		if (_is_val_fixed) {
+			std::fill_n(_vals,_no_timepoints,_init_cond);
+		};
+	};
+	bool IxnParam::Impl::get_is_val_fixed() const {
+		return _is_val_fixed;
 	};
 
 	/********************
@@ -308,6 +341,10 @@ namespace dblz {
 	};
 
 	void IxnParam::Impl::solve_diff_eq_at_timepoint_to_plus_one(int timepoint, double dt) {
+		if (_is_val_fixed) { // Do nothing if val is fixed
+			return;
+		};
+
 		if (timepoint >= _no_timepoints) {
 			std::cerr << ">>> Error: IxnParam::Impl::solve_diff_eq_at_timepoint_to_plus_one <<< " << timepoint << " is out of bounds: " << _no_timepoints << std::endl;
 			exit(EXIT_FAILURE);
@@ -436,6 +473,17 @@ namespace dblz {
 	};
 	void IxnParam::set_init_cond(double init_cond) {
 		_impl->set_init_cond(init_cond);
+	};
+
+	/********************
+	Fixed value to IC
+	********************/
+
+	void IxnParam::set_fix_value_to_init_cond(bool fixed) {
+		return _impl->set_fix_value_to_init_cond(fixed);
+	};
+	bool IxnParam::get_is_val_fixed() const {
+		return _impl->get_is_val_fixed();
 	};
 
 	/********************

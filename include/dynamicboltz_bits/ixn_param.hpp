@@ -63,7 +63,12 @@ namespace dblz {
 		double get_init_cond() const;
 		void set_init_cond(double init_cond);
 
-		// void set_fixed_awake_moment(std::vector<double> vals);
+		/********************
+		Fixed value to IC
+		********************/
+
+		void set_fix_value_to_init_cond(bool fixed);
+		bool get_is_val_fixed() const;
 
 		/********************
 		Name, type

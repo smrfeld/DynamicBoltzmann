@@ -80,6 +80,7 @@ namespace dblz {
 		_monitor_j = other._monitor_j; 
 		_monitor_k = other._monitor_k; 
 		_monitor_w = other._monitor_w; 
+		_monitor_x = other._monitor_x; 
 
 		_no_timesteps = other._no_timesteps;
 		_no_timepoints = other._no_timepoints;
@@ -101,6 +102,7 @@ namespace dblz {
 		other._monitor_j.clear(); 
 		other._monitor_k.clear(); 
 		other._monitor_w.clear(); 
+		other._monitor_x.clear(); 
 
 		other._no_timesteps = 0;
 		other._no_timepoints = 0;
@@ -121,6 +123,7 @@ namespace dblz {
 		_monitor_j = other._monitor_j; 
 		_monitor_k = other._monitor_k; 
 		_monitor_w = other._monitor_w; 
+		_monitor_x = other._monitor_x; 
 
 		_no_timesteps = other._no_timesteps;
 		_no_timepoints = other._no_timepoints;
@@ -189,6 +192,13 @@ namespace dblz {
 			exit(EXIT_FAILURE);
 		};
 		_monitor_w.push_back(conn);
+	};
+	void Moment::add_conn_to_monitor_x(ConnHH *conn) {
+		if (_type != IxnParamType::X) {
+			std::cerr << ">>> Error: Moment::add_conn_to_monitor_x <<< tried to add connHH but moment is not of type X" << std::endl;
+			exit(EXIT_FAILURE);
+		};
+		_monitor_x.push_back(conn);
 	};
 
 	/********************
@@ -365,8 +375,13 @@ namespace dblz {
 				count += conn->get_moment(_name,binary);
 			};
 		} else if (_type == IxnParamType::W) {
-			// K
+			// W
 			for (auto const &conn: _monitor_w) {
+				count += conn->get_moment(_name,binary);
+			};
+		} else if (_type == IxnParamType::X) {
+			// X
+			for (auto const &conn: _monitor_x) {
 				count += conn->get_moment(_name,binary);
 			};
 		};

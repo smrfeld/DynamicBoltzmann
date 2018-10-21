@@ -27,7 +27,7 @@ namespace dblz {
 	****************************************/
 
 	// Enumeration of type of dimension
-	enum class IxnParamType: unsigned int { H, J, K, W, B };
+	enum class IxnParamType: unsigned int { H, J, K, W, B, X };
 
 	class IxnParam {
 

@@ -1369,6 +1369,7 @@ namespace dblz {
 
 		// Connections
 		std::vector<ConnVH*> _conns_vh;
+		std::vector<std::pair<ConnHH*,int>> _conns_hh;
 
 		// Activations
 		std::vector<double> _activations;
@@ -1401,8 +1402,13 @@ namespace dblz {
 		Add connection
 		********************/
 
+		// Visible-hidden conns
 		void add_conn(ConnVH *conn);
 		const std::vector<ConnVH*>& get_conns_vh() const;
+
+		// Hidden-hidden conns
+		void add_conn(ConnHH *conn, int idx_of_me);
+		const std::vector<std::pair<ConnHH*,int>>& get_conns_hh() const;
 
 		/********************
 		Get activation
@@ -1504,11 +1510,13 @@ namespace dblz {
 		_layer = 0;
 		_activations.clear();
 		_conns_vh.clear();
+		_conns_hh.clear();
 	};
 	void UnitHidden::Impl::_copy(const Impl& other) {
 		_layer = other._layer;
 		_activations = other._activations;
 		_conns_vh = other._conns_vh;
+		_conns_hh = other._conns_hh;
 	};
 
 	/********************
@@ -1523,11 +1531,28 @@ namespace dblz {
 	Add connection
 	********************/
 
+	// Visible-hidden conns
 	void UnitHidden::Impl::add_conn(ConnVH *conn) {
 		_conns_vh.push_back(conn);
 	};
 	const std::vector<ConnVH*>& UnitHidden::Impl::get_conns_vh() const {
 		return _conns_vh;
+	};
+
+	// Hidden-hidden conns
+	void UnitHidden::Impl::add_conn(ConnHH *conn, int idx_of_me) {
+
+		// Check it does not exist - conns are unique!
+		auto pr = std::make_pair(conn,idx_of_me);
+		auto it = std::find(_conns_hh.begin(), _conns_hh.end(), pr);
+		if (it != _conns_hh.end()) {
+			std::cerr << ">>> Error: UnitHidden::Impl::add_conn <<< connection already exists!" << std::endl;
+			exit(EXIT_FAILURE);
+		};
+		_conns_hh.push_back(pr);
+	};
+	const std::vector<std::pair<ConnHH*,int>>& UnitHidden::Impl::get_conns_hh() const {
+		return _conns_hh;
 	};
 
 	/********************
@@ -1545,6 +1570,11 @@ namespace dblz {
 		// VH conns
 		for (auto const &conn_vh: _conns_vh) {
 			act += conn_vh->get_act_for_species_at_unit_h_at_timepoint(species,timepoint);
+		};
+
+		// HH conns
+		for (auto const &conn_hh: _conns_hh) {
+			act += conn_hh.first->get_act_for_species_at_unit_at_timepoint(species,conn_hh.second,timepoint);
 		};
 
 		return act;
@@ -1662,11 +1692,20 @@ namespace dblz {
 	Add connection
 	********************/
 
+	// Visible-hidden conns
 	void UnitHidden::add_conn(ConnVH *conn) {
 		_impl->add_conn(conn);
 	};
 	const std::vector<ConnVH*>& UnitHidden::get_conns_vh() const {
 		return _impl->get_conns_vh();
+	};
+
+	// Hidden-hidden conns
+	void UnitHidden::add_conn(ConnHH *conn, int idx_of_me) {
+		_impl->add_conn(conn,idx_of_me);
+	};
+	const std::vector<std::pair<ConnHH*,int>>& UnitHidden::get_conns_hh() const {
+		return _impl->get_conns_hh();
 	};
 
 	/********************

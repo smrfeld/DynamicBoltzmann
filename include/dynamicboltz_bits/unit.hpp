@@ -16,6 +16,7 @@ namespace dblz {
 	class ConnVV;
 	class ConnVVV;
 	class ConnVH;
+	class ConnHH;
 
 	/****************************************
 	Class to hold a lattice site
@@ -308,8 +309,13 @@ namespace dblz {
 		Finish setup in lattice
 		********************/
 
+		// Visible-hidden conns
 		void add_conn(ConnVH *conn);
 		const std::vector<ConnVH*>& get_conns_vh() const;
+
+		// Hidden-hidden conns
+		void add_conn(ConnHH *conn, int idx_of_me);
+		const std::vector<std::pair<ConnHH*,int>>& get_conns_hh() const;
 
 		/********************
 		Get activation

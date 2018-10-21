@@ -190,6 +190,84 @@ namespace dblz {
 
 
 
+	/****************************************
+	ConnHH
+	****************************************/
+
+	class ConnHH {
+	private:
+
+		UnitHidden *_uh1;
+		UnitHidden *_uh2;
+
+		std::shared_ptr<O2IxnDict> _ixn_dict;
+
+		// Constructor helpers
+		void _clean_up();
+		void _copy(const ConnHH& other);
+		void _move(ConnHH& other);
+		
+	public:
+
+		/********************
+		Constructor
+		********************/
+
+		ConnHH(UnitHidden *uh_1, UnitHidden* uh_2);
+		ConnHH(const ConnHH& other);
+		ConnHH(ConnHH&& other);
+		ConnHH& operator=(const ConnHH& other);
+		ConnHH& operator=(ConnHH&& other);
+		~ConnHH();
+
+		/********************
+		Check units involved
+		********************/
+
+		bool check_connects_unit(UnitHidden *uh) const;
+		bool check_connects_units(UnitHidden *uh1, UnitHidden *uh2, bool this_order=false) const;
+
+		/********************
+		Get count
+		********************/
+
+		double get_moment(std::string ixn_param_name, bool binary=true) const;
+
+		/********************
+		Set ixns
+		********************/
+
+		void set_ixn_dict(std::shared_ptr<O2IxnDict> &ixn_dict);
+
+		/********************
+		Get activation on site
+		********************/
+
+		// Idx = 1,2
+		double get_act_for_species_at_unit_at_timepoint(const Sptr &sp_to_place, int idx, int timepoint);
+	};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

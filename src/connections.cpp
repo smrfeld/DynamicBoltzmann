@@ -424,6 +424,202 @@ namespace dblz {
 
 
 
+	/****************************************
+	Class to hold a connection
+	****************************************/
+
+	// Constructor
+	ConnHH::ConnHH(UnitHidden *uh1, UnitHidden *uh2) {
+		_uh1 = uh1;
+		_uh2 = uh2;
+	};
+	ConnHH::ConnHH(const ConnHH& other) {
+		_copy(other);
+	};
+	ConnHH::ConnHH(ConnHH&& other) {
+		_move(other);
+	};
+	ConnHH& ConnHH::operator=(const ConnHH& other) {
+		if (this != &other) {
+			_clean_up();
+			_copy(other);
+		};
+		return *this;
+	};
+	ConnHH& ConnHH::operator=(ConnHH&& other) {
+		if (this != &other) {
+			_clean_up();
+			_move(other);
+		};
+		return *this;
+	};
+	ConnHH::~ConnHH() {
+		_clean_up();
+	};
+	void ConnHH::_clean_up() {
+		// Nothing....
+	};
+	void ConnHH::_move(ConnHH& other) {
+		_uh1 = std::move(other._uh1);
+		_uh2 = std::move(other._uh2);
+		_ixn_dict = std::move(other._ixn_dict);
+	};
+	void ConnHH::_copy(const ConnHH& other) {
+		_uh1 = other._uh1;
+		_uh2 = other._uh2;
+		_ixn_dict = other._ixn_dict;
+	};
+
+	/********************
+	Check units involved
+	********************/
+
+	bool ConnHH::check_connects_unit(UnitHidden *uh) const {
+		if (_uh1 == uh || _uh2 == uh) {
+			return true;
+		};
+		return false;
+	};
+	bool ConnHH::check_connects_units(UnitHidden *uh1, UnitHidden *uh2, bool this_order) const {
+		if (this_order) {
+			if (_uh1 == uh1 && _uh2 == uh2) {
+				return true;
+			};
+		} else {
+			if ((_uh1 == uh1 && _uh2 == uh2) || (_uh1 == uh2 && _uh2 == uh1)) {
+				return true;
+			};
+		};
+		return false;
+	};
+
+	/********************
+	Get count
+	********************/
+
+	double ConnHH::get_moment(std::string ixn_param_name, bool binary) const {
+		if (!_ixn_dict) {
+			std::cerr << ">>> Error: ConnHH::get_moment <<< no ixn dict exists on this conn" << std::endl;
+			exit(EXIT_FAILURE);
+		};
+
+		if (binary) {
+			// Binary
+			int count = 0;
+			for (auto const &sp: _ixn_dict->get_species_from_ixn(ixn_param_name)) {
+				if (_uh1->check_is_b_mode_species(sp.s1) && _uh2->check_is_b_mode_species(sp.s2)) {
+					count++;
+				};
+			};
+			return count;
+		} else {
+			// Prob
+			double count = 0.0;
+			for (auto const &sp: _ixn_dict->get_species_from_ixn(ixn_param_name)) {
+				count += _uh1->get_p_mode_prob(sp.s1) * _uh2->get_p_mode_prob(sp.s2);
+			};
+			return count;
+		};
+	};
+
+	/********************
+	Set ixns
+	********************/
+
+	void ConnHH::set_ixn_dict(std::shared_ptr<O2IxnDict> &ixn_dict) {
+		_ixn_dict = ixn_dict;
+	};
+
+	/********************
+	Get activation on site
+	********************/
+
+	double ConnHH::get_act_for_species_at_unit_at_timepoint(const Sptr &sp_to_place, int idx, int timepoint) {
+		double act=0.0;
+
+		// 0 if no ixn dict
+		if (!_ixn_dict) {
+			return act;
+		};
+
+		UnitHidden *h_other=nullptr;
+		if (idx==0) {
+			h_other = _uh2;
+		} else if (idx==1) {
+			h_other = _uh1;
+		};
+
+		double ixn;
+		// Go through species of other site
+		if (h_other->check_is_b_mode()) {
+			//////////
+			// Binary
+			/////////
+			Sptr sp_other = h_other->get_b_mode_species();
+			// Get ixn
+			if (idx==0) {
+				ixn = _ixn_dict->get_ixn_at_timepoint(sp_to_place,sp_other,timepoint);
+			} else if (idx==1) {
+				ixn = _ixn_dict->get_ixn_at_timepoint(sp_other,sp_to_place,timepoint);
+			};
+			// Add
+			act += ixn; // * 1.0 * 1.0
+		} else {
+			////////////////
+			// Probabilistic
+			////////////////
+			for (auto const &pr: h_other->get_p_mode_probs()) {
+				if (pr.second == 0.0) {
+					continue;
+				};
+				// Get ixn
+				if (idx==0) {
+					ixn = _ixn_dict->get_ixn_at_timepoint(sp_to_place,pr.first,timepoint);
+				} else if (idx==1) {
+					ixn = _ixn_dict->get_ixn_at_timepoint(pr.first,sp_to_place,timepoint);
+				};
+				// Add
+				act += ixn * pr.second; // * 1.0
+			};
+		};
+
+		return act;
+	};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

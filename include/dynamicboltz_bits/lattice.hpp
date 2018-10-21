@@ -20,6 +20,7 @@ namespace dblz {
 	class ConnVH;
 	class ConnVV;
 	class ConnVVV;
+	class ConnHH;
 	class O2IxnDict;
 	class O3IxnDict;
 	class Moment;
@@ -167,6 +168,8 @@ namespace dblz {
 		ConnVH* get_conn_vh(int x, int layer, int idx) const;
 		ConnVH* get_conn_vh(int x, int y, int layer, int idx) const;
 		ConnVH* get_conn_vh(int x, int y, int z, int layer, int idx) const;
+
+		ConnHH* get_conn_hh(int layer1, int idx1, int layer2, int idx2) const;
 
 		/********************
 		Getters (general)

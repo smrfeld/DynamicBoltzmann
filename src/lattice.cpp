@@ -685,6 +685,22 @@ namespace dblz {
 		exit(EXIT_FAILURE);
 	};
 
+	ConnHH* Lattice::get_conn_hh(int layer1, int idx1, int layer2, int idx2) const {
+		UnitHidden *uh1 = _look_up_unit_h(layer1,idx1);
+		UnitHidden *uh2 = _look_up_unit_h(layer2,idx2);
+
+		std::vector<std::pair<ConnHH*,int>> conns = uh1->get_conns_hh();
+		for (auto &conn: conns) {
+			if (conn.first->check_connects_units(uh1,uh2)) {
+				return conn.first;
+			};
+		};
+
+		// Never get here
+		std::cerr << ">>> Error: Lattice::get_conn_hh <<< Connection: " << layer1 << " " << idx1 << " to " << layer2 << " " << idx2 << " not found!" << std::endl;
+		exit(EXIT_FAILURE);
+	};
+
 	/********************
 	Getters
 	********************/

@@ -46,6 +46,13 @@ namespace dblz {
 		~ConnVV();
 
 		/********************
+		Getters
+		********************/
+
+		// Idx = 1 or 2
+		UnitVisible* get_unit_v(int idx) const;
+
+		/********************
 		Check units involved
 		********************/
 
@@ -136,6 +143,13 @@ namespace dblz {
 		~ConnVH();
 
 		/********************
+		Getters
+		********************/
+
+		UnitVisible* get_unit_v() const;
+		UnitHidden* get_unit_h() const;
+
+		/********************
 		Check units involved
 		********************/
 
@@ -219,6 +233,12 @@ namespace dblz {
 		ConnHH& operator=(const ConnHH& other);
 		ConnHH& operator=(ConnHH&& other);
 		~ConnHH();
+
+		/********************
+		Getters
+		********************/
+
+		UnitHidden* get_unit_h(int idx) const;
 
 		/********************
 		Check units involved
@@ -305,6 +325,12 @@ namespace dblz {
 		ConnVVV& operator=(const ConnVVV& other);
 		ConnVVV& operator=(ConnVVV&& other);
 		~ConnVVV();
+
+		/********************
+		Getters
+		********************/
+
+		UnitVisible* get_unit_v(int idx) const;
 
 		/********************
 		Check units involved

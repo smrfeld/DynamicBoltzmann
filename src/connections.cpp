@@ -67,6 +67,18 @@ namespace dblz {
 	};
 
 	/********************
+	Getters
+	********************/
+
+	UnitVisible* ConnVV::get_unit_v(int idx) const {
+		if (idx == 1) {
+			return _uv1;
+		} else {
+			return _uv2;
+		};
+	};
+
+	/********************
 	Check units involved
 	********************/
 
@@ -265,6 +277,17 @@ namespace dblz {
 		_uv = other._uv;
 		_uh = other._uh;
 		_ixn_dict = other._ixn_dict;
+	};
+
+	/********************
+	Getters
+	********************/
+
+	UnitVisible* ConnVH::get_unit_v() const {
+		return _uv;
+	};
+	UnitHidden* ConnVH::get_unit_h() const {
+		return _uh;
 	};
 
 	/********************
@@ -468,6 +491,18 @@ namespace dblz {
 		_uh1 = other._uh1;
 		_uh2 = other._uh2;
 		_ixn_dict = other._ixn_dict;
+	};
+
+	/********************
+	Getters
+	********************/
+
+	UnitHidden* ConnHH::get_unit_h(int idx) const {
+		if (idx == 1) {
+			return _uh1;
+		} else {
+			return _uh2;
+		};
 	};
 
 	/********************
@@ -683,6 +718,20 @@ namespace dblz {
 		_uv2 = other._uv2;
 		_uv3 = other._uv3;
 		_ixn_dict = other._ixn_dict;
+	};
+
+	/********************
+	Getters
+	********************/
+
+	UnitVisible* ConnVVV::get_unit_v(int idx) const {
+		if (idx == 1) {
+			return _uv1;
+		} else if (idx == 2) {
+			return _uv2;
+		} else {
+			return _uv3;
+		};
 	};
 
 	/********************

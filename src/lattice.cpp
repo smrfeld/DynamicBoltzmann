@@ -98,6 +98,10 @@ namespace dblz {
 				pr.second[i] = nullptr;
 			};
 		};
+		for (auto i=0; i<_conns_hh.size(); i++) {
+			delete _conns_hh[i];
+			_conns_hh[i] = nullptr;
+		};
 		for (auto i=0; i<_conns_vv.size(); i++) {
 			delete _conns_vv[i];
 			_conns_vv[i] = nullptr;
@@ -124,6 +128,9 @@ namespace dblz {
 		};
 		_latt_v_idxs = other._latt_v_idxs;
 		_latt_h_idxs = other._latt_h_idxs;
+		for (auto i=0; i<other._conns_hh.size(); i++) {
+			_conns_hh.push_back(new ConnHH(*other._conns_hh[i]));
+		};
 		for (auto i=0; i<other._conns_vv.size(); i++) {
 			_conns_vv.push_back(new ConnVV(*other._conns_vv[i]));
 		};
@@ -141,6 +148,7 @@ namespace dblz {
 		_latt_h = other._latt_h;
 		_latt_v_idxs = other._latt_v_idxs;
 		_latt_h_idxs = other._latt_h_idxs;
+		_conns_hh = other._conns_hh;
 		_conns_vv = other._conns_vv;
 		_conns_vvv = other._conns_vvv;
 		_conns_vh = other._conns_vh;
@@ -152,6 +160,7 @@ namespace dblz {
 		other._latt_h.clear();
 		other._latt_v_idxs.clear();
 		other._latt_h_idxs.clear();
+		other._conns_hh.clear();
 		other._conns_vv.clear();
 		other._conns_vvv.clear();
 		other._conns_vh.clear();
@@ -441,29 +450,47 @@ namespace dblz {
 	Add visible-visible connections
 	********************/
 
-	void Lattice::add_conn_vv(UnitVisible *uv1, UnitVisible *uv2) {
+	ConnVV* Lattice::add_conn_vv(UnitVisible *uv1, UnitVisible *uv2) {
 		_conns_vv.push_back(new ConnVV(uv1,uv2));
 		uv1->add_conn(_conns_vv.back(),0);
 		uv2->add_conn(_conns_vv.back(),1);
+		return _conns_vv.back();
 	};
-	void Lattice::add_conn_vv(UnitVisible *uv1, UnitVisible *uv2, std::shared_ptr<O2IxnDict> ixn_dict) {
+	ConnVV* Lattice::add_conn_vv(UnitVisible *uv1, UnitVisible *uv2, std::shared_ptr<O2IxnDict> ixn_dict) {
 		add_conn_vv(uv1,uv2);
 		if (ixn_dict) {
 			_conns_vv.back()->set_ixn_dict(ixn_dict);
 		};
+		return _conns_vv.back();
 	};
-	void Lattice::add_conn_vvv(UnitVisible *uv1, UnitVisible *uv2, UnitVisible *uv3) {
+	ConnVVV* Lattice::add_conn_vvv(UnitVisible *uv1, UnitVisible *uv2, UnitVisible *uv3) {
 		_conns_vvv.push_back(new ConnVVV(uv1,uv2,uv3));
 		uv1->add_conn(_conns_vvv.back(),0);
 		uv2->add_conn(_conns_vvv.back(),1);
 		uv3->add_conn(_conns_vvv.back(),2);
+		return _conns_vvv.back();
 	};
-	void Lattice::add_conn_vvv(UnitVisible *uv1, UnitVisible *uv2, UnitVisible *uv3, std::shared_ptr<O3IxnDict> ixn_dict) {
+	ConnVVV* Lattice::add_conn_vvv(UnitVisible *uv1, UnitVisible *uv2, UnitVisible *uv3, std::shared_ptr<O3IxnDict> ixn_dict) {
 		add_conn_vvv(uv1,uv2,uv3);
 		if (ixn_dict) {
 			_conns_vvv.back()->set_ixn_dict(ixn_dict);
 		};
+		return _conns_vvv.back();
 	};
+	ConnHH* Lattice::add_conn_hh(UnitHidden *uh1, UnitHidden *uh2) {
+		_conns_hh.push_back(new ConnHH(uh1,uh2));
+		uh1->add_conn(_conns_hh.back(),0);
+		uh2->add_conn(_conns_hh.back(),1);
+		return _conns_hh.back();
+	};
+	ConnHH* Lattice::add_conn_hh(UnitHidden *uh1, UnitHidden *uh2, std::shared_ptr<O2IxnDict> ixn_dict) {
+		add_conn_hh(uh1,uh2);
+		if (ixn_dict) {
+			_conns_hh.back()->set_ixn_dict(ixn_dict);
+		};
+		return _conns_hh.back();
+	};
+
 
 	/********************
 	Add hidden units
@@ -489,16 +516,18 @@ namespace dblz {
 	Add visible-hidden connections
 	********************/
 
-	void Lattice::add_conn_vh(UnitVisible *uv, UnitHidden *uh) { 
+	ConnVH* Lattice::add_conn_vh(UnitVisible *uv, UnitHidden *uh) { 
 		_conns_vh.push_back(new ConnVH(uv,uh));
 		uv->add_conn(_conns_vh.back());
 		uh->add_conn(_conns_vh.back());
+		return _conns_vh.back();
 	};
-	void Lattice::add_conn_vh(UnitVisible *uv, UnitHidden *uh, std::shared_ptr<O2IxnDict> ixn_dict) {
+	ConnVH* Lattice::add_conn_vh(UnitVisible *uv, UnitHidden *uh, std::shared_ptr<O2IxnDict> ixn_dict) {
 		add_conn_vh(uv,uh);
 		if (ixn_dict) {
 			_conns_vh.back()->set_ixn_dict(ixn_dict);
 		};
+		return _conns_vh.back();
 	};
 
 	/********************

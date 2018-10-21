@@ -48,6 +48,7 @@ namespace dblz {
 		std::map<int,std::vector<int>> _latt_h_idxs;
 
 		// Connections
+		std::vector<ConnHH*> _conns_hh;
 		std::vector<ConnVV*> _conns_vv;
 		std::vector<ConnVVV*> _conns_vvv;
 		std::vector<ConnVH*> _conns_vh;
@@ -123,10 +124,12 @@ namespace dblz {
 		Add visible-visible connections
 		********************/
 
-		void add_conn_vv(UnitVisible *uv1, UnitVisible *uv2);
-		void add_conn_vv(UnitVisible *uv1, UnitVisible *uv2, std::shared_ptr<O2IxnDict> ixn_dict);
-		void add_conn_vvv(UnitVisible *uv1, UnitVisible *uv2, UnitVisible *uv3);
-		void add_conn_vvv(UnitVisible *uv1, UnitVisible *uv2, UnitVisible *uv3, std::shared_ptr<O3IxnDict> ixn_dict);
+		ConnVV* add_conn_vv(UnitVisible *uv1, UnitVisible *uv2);
+		ConnVV* add_conn_vv(UnitVisible *uv1, UnitVisible *uv2, std::shared_ptr<O2IxnDict> ixn_dict);
+		ConnVVV* add_conn_vvv(UnitVisible *uv1, UnitVisible *uv2, UnitVisible *uv3);
+		ConnVVV* add_conn_vvv(UnitVisible *uv1, UnitVisible *uv2, UnitVisible *uv3, std::shared_ptr<O3IxnDict> ixn_dict);
+		ConnHH* add_conn_hh(UnitHidden *uh1, UnitHidden *uh2);
+		ConnHH* add_conn_hh(UnitHidden *uh1, UnitHidden *uh2, std::shared_ptr<O2IxnDict> ixn_dict);
 
 		/********************
 		Add hidden units
@@ -140,8 +143,8 @@ namespace dblz {
 		Add visible-hidden connections
 		********************/
 
-		void add_conn_vh(UnitVisible *uv, UnitHidden *uh);
-		void add_conn_vh(UnitVisible *uv, UnitHidden *uh, std::shared_ptr<O2IxnDict> ixn_dict);
+		ConnVH* add_conn_vh(UnitVisible *uv, UnitHidden *uh);
+		ConnVH* add_conn_vh(UnitVisible *uv, UnitHidden *uh, std::shared_ptr<O2IxnDict> ixn_dict);
 
 		/********************
 		Get unit

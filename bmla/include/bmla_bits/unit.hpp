@@ -1,4 +1,5 @@
 #include <unordered_map>
+#include <map>
 
 #ifndef FWDS_SPECIES_H
 #define FWDS_SPECIES_H
@@ -20,7 +21,6 @@ namespace bmla {
 
 	/****************************************
 	Class to hold a lattice site
-	--- CAUTION : abstract base! ---
 	***************************************/
 
 	class Unit {
@@ -116,18 +116,8 @@ namespace bmla {
 		double get_moment(std::string ixn_param_name, bool binary=true) const;
 
 		/********************
-		Get activation
-		--- CAUTION: pure virtual ---
-		********************/
-
-		virtual double get_activation_for_species(Sptr &species) const = 0;
-
-		/********************
 		Sample
-		--- CAUTION: pure virtual ---
 		********************/
-
-		virtual void sample(bool binary=true) = 0;
 
 		// Sample given activation for every species
 		void sample_given_activations(const std::vector<double>& activations, bool binary=true);
@@ -314,20 +304,20 @@ namespace bmla {
 		const std::vector<ConnVH*>& get_conns_vh() const;
 
 		// Hidden-hidden conns
-		void add_conn(ConnHH *conn, int idx_of_me);
-		const std::vector<std::pair<ConnHH*,int>>& get_conns_hh() const;
+		void add_conn(ConnHH *conn, int idx_of_me, int from_layer);
+		const std::map<int,std::vector<std::pair<ConnHH*,int>>>& get_conns_hh() const;
 
 		/********************
 		Get activation
 		********************/
 
-		double get_activation_for_species(Sptr &species) const;
+		double get_activation_for_species(Sptr &species, int given_layer) const;
 
 		/********************
 		Sample
 		********************/
 
-		void sample(bool binary=true);
+		void sample(int given_layer, bool binary=true);
 	};
 
 

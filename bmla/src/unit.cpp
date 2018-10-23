@@ -1382,7 +1382,8 @@ namespace bmla {
 
 		// Connections
 		std::vector<ConnVH*> _conns_vh;
-		std::vector<std::pair<ConnHH*,int>> _conns_hh;
+		// Layer -> conns -> (conn,idx of me in conn)
+		std::map<int,std::vector<std::pair<ConnHH*,int>>> _conns_hh;
 
 		// Activations
 		std::vector<double> _activations;
@@ -1419,20 +1420,20 @@ namespace bmla {
 		const std::vector<ConnVH*>& get_conns_vh() const;
 
 		// Hidden-hidden conns
-		void add_conn(ConnHH *conn, int idx_of_me);
-		const std::vector<std::pair<ConnHH*,int>>& get_conns_hh() const;
+		void add_conn(ConnHH *conn, int idx_of_me, int from_layer);
+		const std::map<int,std::vector<std::pair<ConnHH*,int>>>& get_conns_hh() const;
 
 		/********************
 		Get activation
 		********************/
 
-		double get_activation_for_species(const std::shared_ptr<BiasDict>& bias_dict, const Sptr &species) const;
+		double get_activation_for_species(const std::shared_ptr<BiasDict>& bias_dict, const Sptr &species, int given_layer) const;
 
 		/********************
 		Sample
 		********************/
 
-		void form_activations_vector(const std::shared_ptr<BiasDict>& bias_dict, const std::vector<Sptr>& species);
+		void form_activations_vector(const std::shared_ptr<BiasDict>& bias_dict, const std::vector<Sptr>& species, int given_layer);
 		const std::vector<double>& get_activations_vector() const;
 	};
 
@@ -1551,18 +1552,29 @@ namespace bmla {
 	};
 
 	// Hidden-hidden conns
-	void UnitHidden::Impl::add_conn(ConnHH *conn, int idx_of_me) {
+	void UnitHidden::Impl::add_conn(ConnHH *conn, int idx_of_me, int from_layer) {
 
-		// Check it does not exist - conns are unique!
+		// Pair
 		auto pr = std::make_pair(conn,idx_of_me);
-		auto it = std::find(_conns_hh.begin(), _conns_hh.end(), pr);
-		if (it != _conns_hh.end()) {
-			std::cerr << ">>> Error: UnitHidden::Impl::add_conn <<< connection already exists!" << std::endl;
-			exit(EXIT_FAILURE);
+
+		// Find layer
+		auto it = _conns_hh.find(from_layer);
+		if (it == _conns_hh.end()) {
+			// Add
+			_conns_hh[from_layer].push_back(pr);
+		} else {
+			// Check it does not already exist - conns are unique!
+			auto it2 = std::find(_conns_hh[from_layer].begin(), _conns_hh[from_layer].end(), pr);
+			if (it2 != _conns_hh[from_layer].end()) {
+				std::cerr << ">>> Error: UnitHidden::Impl::add_conn <<< connection already exists!" << std::endl;
+				exit(EXIT_FAILURE);	
+			} else {
+				// Add
+				_conns_hh[from_layer].push_back(pr);
+			};
 		};
-		_conns_hh.push_back(pr);
 	};
-	const std::vector<std::pair<ConnHH*,int>>& UnitHidden::Impl::get_conns_hh() const {
+	const std::map<int,std::vector<std::pair<ConnHH*,int>>>& UnitHidden::Impl::get_conns_hh() const {
 		return _conns_hh;
 	};
 
@@ -1570,7 +1582,7 @@ namespace bmla {
 	Get activation
 	********************/
 
-	double UnitHidden::Impl::get_activation_for_species(const std::shared_ptr<BiasDict>& bias_dict, const Sptr &species) const {
+	double UnitHidden::Impl::get_activation_for_species(const std::shared_ptr<BiasDict>& bias_dict, const Sptr &species, int given_layer) const {
 		double act = 0.0;
 
 		// Bias
@@ -1579,13 +1591,19 @@ namespace bmla {
 		};
 
 		// VH conns
-		for (auto const &conn_vh: _conns_vh) {
-			act += conn_vh->get_act_for_species_at_unit_h(species);
+		if (given_layer == 0) {
+			for (auto const &conn_vh: _conns_vh) {
+				act += conn_vh->get_act_for_species_at_unit_h(species);
+			};
 		};
 
 		// HH conns
-		for (auto const &conn_hh: _conns_hh) {
-			act += conn_hh.first->get_act_for_species_at_unit(species,conn_hh.second);
+		auto layer = _conns_hh.find(given_layer);
+		if (layer != _conns_hh.end()) {
+			// Go through conns
+			for (auto const &conn_hh: layer->second) {
+				act += conn_hh.first->get_act_for_species_at_unit(species,conn_hh.second);
+			};
 		};
 
 		return act;
@@ -1595,7 +1613,7 @@ namespace bmla {
 	Sample
 	********************/
 
-	void UnitHidden::Impl::form_activations_vector(const std::shared_ptr<BiasDict>& bias_dict, const std::vector<Sptr>& species) {
+	void UnitHidden::Impl::form_activations_vector(const std::shared_ptr<BiasDict>& bias_dict, const std::vector<Sptr>& species, int given_layer) {
 		// Check size
 		if (_activations.size() != species.size()) {
 			_activations.clear();
@@ -1607,7 +1625,7 @@ namespace bmla {
 		// Form the vector of activations
 		int i=0;
 		for (auto const &sp: species) {
-			_activations[i] = get_activation_for_species(bias_dict,sp);
+			_activations[i] = get_activation_for_species(bias_dict,sp, given_layer);
 			i++;
 		};
 	};
@@ -1713,10 +1731,10 @@ namespace bmla {
 	};
 
 	// Hidden-hidden conns
-	void UnitHidden::add_conn(ConnHH *conn, int idx_of_me) {
-		_impl->add_conn(conn,idx_of_me);
+	void UnitHidden::add_conn(ConnHH *conn, int idx_of_me, int from_layer) {
+		_impl->add_conn(conn,idx_of_me,from_layer);
 	};
-	const std::vector<std::pair<ConnHH*,int>>& UnitHidden::get_conns_hh() const {
+	const std::map<int,std::vector<std::pair<ConnHH*,int>>>& UnitHidden::get_conns_hh() const {
 		return _impl->get_conns_hh();
 	};
 
@@ -1724,16 +1742,16 @@ namespace bmla {
 	Get activation
 	********************/
 
-	double UnitHidden::get_activation_for_species(Sptr &species) const {
-		return _impl->get_activation_for_species(get_bias_dict(),species);
+	double UnitHidden::get_activation_for_species(Sptr &species, int given_layer) const {
+		return _impl->get_activation_for_species(get_bias_dict(),species, given_layer);
 	};
 
 	/********************
 	Sample
 	********************/
 
-	void UnitHidden::sample(bool binary) {
-		_impl->form_activations_vector(get_bias_dict(),get_possible_species());
+	void UnitHidden::sample(int given_layer, bool binary) {
+		_impl->form_activations_vector(get_bias_dict(),get_possible_species(), given_layer);
 
 		// Parent sampler
 		sample_given_activations(_impl->get_activations_vector(),binary);

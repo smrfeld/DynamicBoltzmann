@@ -18,6 +18,7 @@ namespace bmla {
 	class ConnVV;
 	class ConnVVV;
 	class ConnVH;
+	class ConnHH;
 	enum class IxnParamType: unsigned int;
 
 	/****************************************
@@ -42,6 +43,7 @@ namespace bmla {
 		std::vector<ConnVV*> _monitor_j;
 		std::vector<ConnVVV*> _monitor_k;
 		std::vector<ConnVH*> _monitor_w;
+		std::vector<ConnHH*> _monitor_x;
 
 		// Batch size
 		int _batch_size;
@@ -92,6 +94,7 @@ namespace bmla {
 		void add_conn_to_monitor_j(ConnVV *conn);
 		void add_conn_to_monitor_k(ConnVVV *conn);
 		void add_conn_to_monitor_w(ConnVH *conn);
+		void add_conn_to_monitor_x(ConnHH *conn);
 
 		/********************
 		Name, type

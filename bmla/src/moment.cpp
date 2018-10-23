@@ -78,6 +78,7 @@ namespace bmla {
 		_monitor_j = other._monitor_j; 
 		_monitor_k = other._monitor_k; 
 		_monitor_w = other._monitor_w; 
+		_monitor_x = other._monitor_x; 
 
 		_batch_size = other._batch_size;
 
@@ -99,6 +100,7 @@ namespace bmla {
 		other._monitor_j.clear(); 
 		other._monitor_k.clear(); 
 		other._monitor_w.clear(); 
+		other._monitor_x.clear();
 
 		other._batch_size = 0;
 
@@ -119,6 +121,7 @@ namespace bmla {
 		_monitor_j = other._monitor_j; 
 		_monitor_k = other._monitor_k; 
 		_monitor_w = other._monitor_w; 
+		_monitor_x = other._monitor_x; 
 
 		_batch_size = other._batch_size;
 
@@ -181,6 +184,13 @@ namespace bmla {
 			exit(EXIT_FAILURE);
 		};
 		_monitor_w.push_back(conn);
+	};
+	void Moment::add_conn_to_monitor_x(ConnHH *conn) {
+		if (_type != IxnParamType::X) {
+			std::cerr << ">>> Error: Moment::add_conn_to_monitor_x <<< tried to add connHH but moment is not of type X" << std::endl;
+			exit(EXIT_FAILURE);
+		};
+		_monitor_x.push_back(conn);
 	};
 
 	/********************
@@ -324,6 +334,11 @@ namespace bmla {
 		} else if (_type == IxnParamType::W) {
 			// K
 			for (auto const &conn: _monitor_w) {
+				count += conn->get_moment(_name,binary);
+			};
+		} else if (_type == IxnParamType::X) {
+			// K
+			for (auto const &conn: _monitor_x) {
 				count += conn->get_moment(_name,binary);
 			};
 		};

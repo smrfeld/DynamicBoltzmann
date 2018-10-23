@@ -294,6 +294,17 @@ namespace bmla {
 	};
 
 	/********************
+	Get units
+	********************/
+
+	UnitVisible* ConnVH::get_unit_v() const {
+		return _uv;
+	};
+	UnitHidden* ConnVH::get_unit_h() const {
+		return _uh;
+	};
+
+	/********************
 	Get count
 	********************/
 

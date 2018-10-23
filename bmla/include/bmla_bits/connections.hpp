@@ -144,6 +144,13 @@ namespace bmla {
 		bool check_connects_units(UnitVisible *uv, UnitHidden *uh) const;
 
 		/********************
+		Get units
+		********************/
+
+		UnitVisible* get_unit_v() const;
+		UnitHidden* get_unit_h() const;
+
+		/********************
 		Get count
 		********************/
 

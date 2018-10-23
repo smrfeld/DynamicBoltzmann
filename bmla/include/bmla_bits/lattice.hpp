@@ -20,6 +20,7 @@ namespace bmla {
 	class ConnVH;
 	class ConnVV;
 	class ConnVVV;
+	class ConnHH;
 	class O2IxnDict;
 	class O3IxnDict;
 	class Moment;
@@ -47,6 +48,7 @@ namespace bmla {
 		std::map<int,std::vector<int>> _latt_h_idxs;
 
 		// Connections
+		std::vector<ConnHH*> _conns_hh;
 		std::vector<ConnVV*> _conns_vv;
 		std::vector<ConnVVV*> _conns_vvv;
 		std::vector<ConnVH*> _conns_vh;
@@ -126,6 +128,8 @@ namespace bmla {
 		void add_conn_vv(UnitVisible *uv1, UnitVisible *uv2, std::shared_ptr<O2IxnDict> ixn_dict);
 		void add_conn_vvv(UnitVisible *uv1, UnitVisible *uv2, UnitVisible *uv3);
 		void add_conn_vvv(UnitVisible *uv1, UnitVisible *uv2, UnitVisible *uv3, std::shared_ptr<O3IxnDict> ixn_dict);
+		ConnHH* add_conn_hh(UnitHidden *uh1, UnitHidden *uh2);
+		ConnHH* add_conn_hh(UnitHidden *uh1, UnitHidden *uh2, std::shared_ptr<O2IxnDict> ixn_dict);
 
 		/********************
 		Add hidden units
@@ -167,6 +171,8 @@ namespace bmla {
 		ConnVH* get_conn_vh(int x, int layer, int idx) const;
 		ConnVH* get_conn_vh(int x, int y, int layer, int idx) const;
 		ConnVH* get_conn_vh(int x, int y, int z, int layer, int idx) const;
+
+		ConnHH* get_conn_hh(int layer1, int idx1, int layer2, int idx2) const;
 
 		/********************
 		Getters (general)

@@ -271,7 +271,9 @@ namespace bmla {
 		};
 
 		for (auto &ixn_param: _ixn_params) {
-			ixn_param->update_calculate_and_store(dopt);
+			if (!ixn_param->get_is_val_fixed()) {
+				ixn_param->update_calculate_and_store(dopt);
+			};
 		};
 
 		if (options.VERBOSE_UPDATE) {
@@ -288,7 +290,9 @@ namespace bmla {
 		};
 
 		for (auto &ixn_param: _ixn_params) {
-			ixn_param->update_committ_stored();
+			if (!ixn_param->get_is_val_fixed()) {
+				ixn_param->update_committ_stored();
+			};
 		};
 
 		if (options.VERBOSE_UPDATE) {

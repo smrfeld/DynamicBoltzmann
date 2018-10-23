@@ -122,6 +122,7 @@ namespace bmla {
 		// Binary
 		Sptr get_b_mode_species() const; // nullptr for empty
 		void set_b_mode_species(Sptr sp);
+		bool check_is_b_mode_species(Sptr sp) const;
 		void set_b_mode_species(std::string sp);
 		void set_b_mode_empty();
 		bool check_b_mode_is_empty() const;
@@ -461,6 +462,13 @@ namespace bmla {
 	};
 	void Unit::Impl::set_b_mode_species(Sptr sp) {
 		_b_mode_sp = sp;
+	};
+	bool Unit::Impl::check_is_b_mode_species(Sptr sp) const {
+		if (_b_mode_sp == sp) {
+			return true;
+		} else {
+			return false;
+		};
 	};
 	void Unit::Impl::set_b_mode_species(std::string sp) {
 		_b_mode_sp = _sp_str_map[sp];
@@ -835,6 +843,9 @@ namespace bmla {
 	};
 	void Unit::set_b_mode_species(Sptr sp) {
 		_impl->set_b_mode_species(sp);
+	};
+	bool Unit::check_is_b_mode_species(Sptr sp) const {
+		return _impl->check_is_b_mode_species(sp);
 	};
 	void Unit::set_b_mode_species(std::string sp) {
 		_impl->set_b_mode_species(sp);
@@ -1371,6 +1382,7 @@ namespace bmla {
 
 		// Connections
 		std::vector<ConnVH*> _conns_vh;
+		std::vector<std::pair<ConnHH*,int>> _conns_hh;
 
 		// Activations
 		std::vector<double> _activations;
@@ -1405,6 +1417,10 @@ namespace bmla {
 
 		void add_conn(ConnVH *conn);
 		const std::vector<ConnVH*>& get_conns_vh() const;
+
+		// Hidden-hidden conns
+		void add_conn(ConnHH *conn, int idx_of_me);
+		const std::vector<std::pair<ConnHH*,int>>& get_conns_hh() const;
 
 		/********************
 		Get activation
@@ -1506,11 +1522,13 @@ namespace bmla {
 		_layer = 0;
 		_activations.clear();
 		_conns_vh.clear();
+		_conns_hh.clear();
 	};
 	void UnitHidden::Impl::_copy(const Impl& other) {
 		_layer = other._layer;
 		_activations = other._activations;
 		_conns_vh = other._conns_vh;
+		_conns_hh = other._conns_hh;
 	};
 
 	/********************
@@ -1532,6 +1550,22 @@ namespace bmla {
 		return _conns_vh;
 	};
 
+	// Hidden-hidden conns
+	void UnitHidden::Impl::add_conn(ConnHH *conn, int idx_of_me) {
+
+		// Check it does not exist - conns are unique!
+		auto pr = std::make_pair(conn,idx_of_me);
+		auto it = std::find(_conns_hh.begin(), _conns_hh.end(), pr);
+		if (it != _conns_hh.end()) {
+			std::cerr << ">>> Error: UnitHidden::Impl::add_conn <<< connection already exists!" << std::endl;
+			exit(EXIT_FAILURE);
+		};
+		_conns_hh.push_back(pr);
+	};
+	const std::vector<std::pair<ConnHH*,int>>& UnitHidden::Impl::get_conns_hh() const {
+		return _conns_hh;
+	};
+
 	/********************
 	Get activation
 	********************/
@@ -1547,6 +1581,11 @@ namespace bmla {
 		// VH conns
 		for (auto const &conn_vh: _conns_vh) {
 			act += conn_vh->get_act_for_species_at_unit_h(species);
+		};
+
+		// HH conns
+		for (auto const &conn_hh: _conns_hh) {
+			act += conn_hh.first->get_act_for_species_at_unit(species,conn_hh.second);
 		};
 
 		return act;
@@ -1671,6 +1710,14 @@ namespace bmla {
 	};
 	const std::vector<ConnVH*>& UnitHidden::get_conns_vh() const {
 		return _impl->get_conns_vh();
+	};
+
+	// Hidden-hidden conns
+	void UnitHidden::add_conn(ConnHH *conn, int idx_of_me) {
+		_impl->add_conn(conn,idx_of_me);
+	};
+	const std::vector<std::pair<ConnHH*,int>>& UnitHidden::get_conns_hh() const {
+		return _impl->get_conns_hh();
 	};
 
 	/********************

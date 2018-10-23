@@ -16,6 +16,7 @@ namespace bmla {
 	class ConnVV;
 	class ConnVVV;
 	class ConnVH;
+	class ConnHH;
 
 	/****************************************
 	Class to hold a lattice site
@@ -90,6 +91,7 @@ namespace bmla {
 		// Binary
 		Sptr get_b_mode_species() const; // nullptr for empty
 		void set_b_mode_species(Sptr sp);
+		bool check_is_b_mode_species(Sptr sp) const;
 		void set_b_mode_species(std::string sp);
 		void set_b_mode_empty();
 		bool check_b_mode_is_empty() const;
@@ -310,6 +312,10 @@ namespace bmla {
 
 		void add_conn(ConnVH *conn);
 		const std::vector<ConnVH*>& get_conns_vh() const;
+
+		// Hidden-hidden conns
+		void add_conn(ConnHH *conn, int idx_of_me);
+		const std::vector<std::pair<ConnHH*,int>>& get_conns_hh() const;
 
 		/********************
 		Get activation

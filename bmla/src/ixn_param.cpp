@@ -27,6 +27,9 @@ namespace bmla {
 		double _val;
 		double _update;
 
+		// Fixed value
+		bool _is_val_fixed;
+
 		// Moment
 		std::shared_ptr<Moment> _moment;
 
@@ -62,6 +65,13 @@ namespace bmla {
 
 		double get_val() const;
 		void set_val(double val);
+
+		/********************
+		Fixed value
+		********************/
+
+		void set_fix_value(bool fixed);
+		bool get_is_val_fixed() const;
 
 		/********************
 		Moment
@@ -138,6 +148,8 @@ namespace bmla {
 
 		// Moment
 		_moment = std::make_unique<Moment>(name, type);
+
+		_is_val_fixed = false;
 	};
 	IxnParam::Impl::Impl(const Impl& other) {
 		_copy(other);
@@ -171,6 +183,8 @@ namespace bmla {
 		_update = other._update;
 
 		_moment = other._moment;
+
+		_is_val_fixed = other._is_val_fixed;
 	};
 	void IxnParam::Impl::_move(Impl& other) {
 		_val = other._val;
@@ -178,9 +192,12 @@ namespace bmla {
 
 		_moment = std::move(other._moment);
 
+		_is_val_fixed = other._is_val_fixed;
+
 		// Reset the other
 		other._val = 0.0;
 		other._update = 0.0;
+		other._is_val_fixed = false;
 	};
 
 	/********************
@@ -204,6 +221,17 @@ namespace bmla {
 	};
 	void IxnParam::Impl::set_val(double val) {
 		_val = val;
+	};
+
+	/********************
+	Fixed value
+	********************/
+
+	void IxnParam::Impl::set_fix_value(bool fixed) {
+		_is_val_fixed = fixed;
+	};
+	bool IxnParam::Impl::get_is_val_fixed() const {
+		return _is_val_fixed;
 	};
 
 	/********************
@@ -314,6 +342,17 @@ namespace bmla {
 
 	IxnParamType IxnParam::get_type() const {
 		return _impl->get_type();
+	};
+
+	/********************
+	Fixed value
+	********************/
+
+	void IxnParam::set_fix_value(bool fixed) {
+		_impl->set_fix_value(fixed);
+	};
+	bool IxnParam::get_is_val_fixed() const {
+		return _impl->get_is_val_fixed();
 	};
 
 	/********************

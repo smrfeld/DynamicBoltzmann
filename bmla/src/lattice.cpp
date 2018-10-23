@@ -98,6 +98,10 @@ namespace bmla {
 				pr.second[i] = nullptr;
 			};
 		};
+		for (auto i=0; i<_conns_hh.size(); i++) {
+			delete _conns_hh[i];
+			_conns_hh[i] = nullptr;
+		};
 		for (auto i=0; i<_conns_vv.size(); i++) {
 			delete _conns_vv[i];
 			_conns_vv[i] = nullptr;
@@ -124,7 +128,9 @@ namespace bmla {
 		};
 		_latt_v_idxs = other._latt_v_idxs;
 		_latt_h_idxs = other._latt_h_idxs;
-
+		for (auto i=0; i<other._conns_hh.size(); i++) {
+			_conns_hh.push_back(new ConnHH(*other._conns_hh[i]));
+		};
 		for (auto i=0; i<other._conns_vv.size(); i++) {
 			_conns_vv.push_back(new ConnVV(*other._conns_vv[i]));
 		};
@@ -140,6 +146,7 @@ namespace bmla {
 		_box_length = other._box_length;
 		_latt_v = other._latt_v;
 		_latt_h = other._latt_h;
+		_conns_hh = other._conns_hh;
 		_conns_vv = other._conns_vv;
 		_conns_vvv = other._conns_vvv;
 		_conns_vh = other._conns_vh;
@@ -151,6 +158,7 @@ namespace bmla {
 		other._box_length = 0;
 		other._latt_v.clear();
 		other._latt_h.clear();
+		other._conns_hh.clear();
 		other._conns_vv.clear();
 		other._conns_vvv.clear();
 		other._conns_vh.clear();
@@ -465,6 +473,19 @@ namespace bmla {
 			_conns_vvv.back()->set_ixn_dict(ixn_dict);
 		};
 	};
+	ConnHH* Lattice::add_conn_hh(UnitHidden *uh1, UnitHidden *uh2) {
+		_conns_hh.push_back(new ConnHH(uh1,uh2));
+		uh1->add_conn(_conns_hh.back(),0);
+		uh2->add_conn(_conns_hh.back(),1);
+		return _conns_hh.back();
+	};
+	ConnHH* Lattice::add_conn_hh(UnitHidden *uh1, UnitHidden *uh2, std::shared_ptr<O2IxnDict> ixn_dict) {
+		add_conn_hh(uh1,uh2);
+		if (ixn_dict) {
+			_conns_hh.back()->set_ixn_dict(ixn_dict);
+		};
+		return _conns_hh.back();
+	};
 
 	/********************
 	Add hidden units
@@ -683,6 +704,22 @@ namespace bmla {
 
 		// Never get here
 		std::cerr << ">>> Error: Lattice::get_conn_vh <<< Connection: " << x << " " << y << " " << z << " to " << layer << " " << idx << " not found!" << std::endl;
+		exit(EXIT_FAILURE);
+	};
+
+	ConnHH* Lattice::get_conn_hh(int layer1, int idx1, int layer2, int idx2) const {
+		UnitHidden *uh1 = _look_up_unit_h(layer1,idx1);
+		UnitHidden *uh2 = _look_up_unit_h(layer2,idx2);
+
+		std::vector<std::pair<ConnHH*,int>> conns = uh1->get_conns_hh();
+		for (auto &conn: conns) {
+			if (conn.first->check_connects_units(uh1,uh2)) {
+				return conn.first;
+			};
+		};
+
+		// Never get here
+		std::cerr << ">>> Error: Lattice::get_conn_hh <<< Connection: " << layer1 << " " << idx1 << " to " << layer2 << " " << idx2 << " not found!" << std::endl;
 		exit(EXIT_FAILURE);
 	};
 

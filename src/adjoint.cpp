@@ -208,6 +208,7 @@ namespace dblz {
 
 			double ixn_param_val = _ixn_param->get_val_at_timepoint(timepoint);
 			double l2_term = 2.0 * l2_lambda.at(_ixn_param) * (ixn_param_val-l2_center.at(_ixn_param)) * sgn(ixn_param_val-l2_center.at(_ixn_param));
+			std::cout << _name << " " << timepoint << " " << moment_delta << " " << l2_term << std::endl;
 
 			// Step
 			_vals[timepoint-1] = _vals[timepoint] - dt * (deriv - moment_delta - l2_term);

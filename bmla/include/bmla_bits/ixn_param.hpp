@@ -25,7 +25,7 @@ namespace bmla {
 	****************************************/
 
 	// Enumeration of type of dimension
-	enum class IxnParamType: unsigned int { H, J, K, W, B };
+	enum class IxnParamType: unsigned int { H, J, K, W, B, X };
 
 	class IxnParam {
 
@@ -61,6 +61,13 @@ namespace bmla {
 
 		double get_val() const;
 		void set_val(double val);
+
+		/********************
+		Fixed value
+		********************/
+
+		void set_fix_value(bool fixed);
+		bool get_is_val_fixed() const;
 
 		/********************
 		Moment

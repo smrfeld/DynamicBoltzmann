@@ -1416,6 +1416,7 @@ namespace bmla {
 		Add connection
 		********************/
 
+		// Visible-hidden conns
 		void add_conn(ConnVH *conn);
 		const std::vector<ConnVH*>& get_conns_vh() const;
 
@@ -1623,10 +1624,8 @@ namespace bmla {
 		};
 
 		// Form the vector of activations
-		int i=0;
-		for (auto const &sp: species) {
-			_activations[i] = get_activation_for_species(bias_dict,sp, given_layer);
-			i++;
+		for (auto i=0; i<species.size(); i++) {
+			_activations[i] = get_activation_for_species(bias_dict,species[i], given_layer);
 		};
 	};
 
@@ -1678,9 +1677,9 @@ namespace bmla {
 	Constructor
 	********************/
 
-	UnitHidden::UnitHidden(int layer, int x) : Unit(x), _impl(new Impl(layer)) {};
+	UnitHidden::UnitHidden(int layer, int idx) : Unit(idx), _impl(new Impl(layer)) {};
 
-	UnitHidden::UnitHidden(int layer, int x, std::vector<Sptr> species_possible) : Unit(x,species_possible), _impl(new Impl(layer)) {};
+	UnitHidden::UnitHidden(int layer, int idx, std::vector<Sptr> species_possible) : Unit(idx,species_possible), _impl(new Impl(layer)) {};
 
 	UnitHidden::UnitHidden(const UnitHidden& other) : Unit(other), _impl(new Impl(*other._impl)) {};
 	UnitHidden::UnitHidden(UnitHidden&& other) : Unit(other), _impl(std::move(other._impl)) {};

@@ -1,4 +1,5 @@
 #include <unordered_map>
+#include <map>
 
 #ifndef FWDS_SPECIES_H
 #define FWDS_SPECIES_H
@@ -115,18 +116,8 @@ namespace dblz {
 		double get_moment(std::string ixn_param_name, bool binary=true) const;
 
 		/********************
-		Get activation
-		--- CAUTION: pure virtual ---
-		********************/
-
-		virtual double get_activation_for_species_at_timepoint(Sptr &species, int timepoint) const = 0;
-
-		/********************
 		Sample
-		--- CAUTION: pure virtual ---
 		********************/
-
-		virtual void sample_at_timepoint(int timepoint, bool binary=true) = 0;
 
 		// Sample given activation for every species
 		void sample_given_activations(const std::vector<double>& activations, bool binary=true);
@@ -280,12 +271,8 @@ namespace dblz {
 		Constructor
 		********************/
 
-		UnitHidden(int layer, int x);
-		UnitHidden(int layer, int x, int y);
-		UnitHidden(int layer, int x, int y, int z);
-		UnitHidden(int layer, int x, std::vector<Sptr> species_possible);
-		UnitHidden(int layer, int x, int y, std::vector<Sptr> species_possible);
-		UnitHidden(int layer, int x, int y, int z, std::vector<Sptr> species_possible);
+		UnitHidden(int layer, int idx);
+		UnitHidden(int layer, int idx, std::vector<Sptr> species_possible);
 		UnitHidden(const UnitHidden& other);
 		UnitHidden(UnitHidden&& other);
 		UnitHidden& operator=(const UnitHidden& other);
@@ -304,6 +291,7 @@ namespace dblz {
 		********************/
 
 		int layer() const;
+		int idx() const;
 
 		/********************
 		Finish setup in lattice
@@ -314,20 +302,20 @@ namespace dblz {
 		const std::vector<ConnVH*>& get_conns_vh() const;
 
 		// Hidden-hidden conns
-		void add_conn(ConnHH *conn, int idx_of_me);
-		const std::vector<std::pair<ConnHH*,int>>& get_conns_hh() const;
+		void add_conn(ConnHH *conn, int idx_of_me, int from_layer);
+		const std::map<int,std::vector<std::pair<ConnHH*,int>>>& get_conns_hh() const;
 
 		/********************
 		Get activation
 		********************/
 
-		double get_activation_for_species_at_timepoint(Sptr &species, int timepoint) const;
+		double get_activation_for_species_at_timepoint(Sptr &species, int timepoint, int given_layer) const;
 
 		/********************
 		Sample
 		********************/
 
-		void sample_at_timepoint(int timepoint, bool binary=true);
+		void sample_at_timepoint(int timepoint, int given_layer, bool binary=true);
 	};
 
 

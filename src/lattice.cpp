@@ -477,29 +477,15 @@ namespace dblz {
 		};
 		return _conns_vvv.back();
 	};
-	ConnHH* Lattice::add_conn_hh(UnitHidden *uh1, UnitHidden *uh2) {
-		_conns_hh.push_back(new ConnHH(uh1,uh2));
-		uh1->add_conn(_conns_hh.back(),0);
-		uh2->add_conn(_conns_hh.back(),1);
-		return _conns_hh.back();
-	};
-	ConnHH* Lattice::add_conn_hh(UnitHidden *uh1, UnitHidden *uh2, std::shared_ptr<O2IxnDict> ixn_dict) {
-		add_conn_hh(uh1,uh2);
-		if (ixn_dict) {
-			_conns_hh.back()->set_ixn_dict(ixn_dict);
-		};
-		return _conns_hh.back();
-	};
-
 
 	/********************
 	Add hidden units
 	********************/
 
-	int Lattice::add_hidden_unit(int layer) {
+	UnitHidden* Lattice::add_hidden_unit(int layer) {
 		return add_hidden_unit(layer,{});
 	};
-	int Lattice::add_hidden_unit(int layer, std::vector<Sptr> species_possible) {
+	UnitHidden* Lattice::add_hidden_unit(int layer, std::vector<Sptr> species_possible) {
 		auto it = _latt_h.find(layer);
 		int idx;
 		if (it != _latt_h.end()) {
@@ -509,7 +495,7 @@ namespace dblz {
 		};
 		_latt_h[layer].push_back(new UnitHidden(layer,idx,species_possible));
 		_latt_h_idxs[layer].push_back(_latt_h[layer].size()-1);
-		return idx;
+		return _latt_h[layer].back();
 	};
 
 	/********************
@@ -530,6 +516,24 @@ namespace dblz {
 		return _conns_vh.back();
 	};
 
+	/********************
+	Add hidden-hidden connections
+	********************/
+
+	ConnHH* Lattice::add_conn_hh(UnitHidden *uh1, int layer_1, UnitHidden *uh2, int layer_2) {
+		_conns_hh.push_back(new ConnHH(uh1,uh2));
+		uh1->add_conn(_conns_hh.back(),0,layer_2);
+		uh2->add_conn(_conns_hh.back(),1,layer_1);
+		return _conns_hh.back();
+	};
+	ConnHH* Lattice::add_conn_hh(UnitHidden *uh1, int layer_1, UnitHidden *uh2, int layer_2, std::shared_ptr<O2IxnDict> ixn_dict) {
+		add_conn_hh(uh1,layer_1,uh2,layer_2);
+		if (ixn_dict) {
+			_conns_hh.back()->set_ixn_dict(ixn_dict);
+		};
+		return _conns_hh.back();
+	};
+	
 	/********************
 	Get unit
 	********************/
@@ -718,10 +722,13 @@ namespace dblz {
 		UnitHidden *uh1 = _look_up_unit_h(layer1,idx1);
 		UnitHidden *uh2 = _look_up_unit_h(layer2,idx2);
 
-		std::vector<std::pair<ConnHH*,int>> conns = uh1->get_conns_hh();
-		for (auto &conn: conns) {
-			if (conn.first->check_connects_units(uh1,uh2)) {
-				return conn.first;
+		std::map<int,std::vector<std::pair<ConnHH*,int>>> conns = uh1->get_conns_hh();
+		auto it = conns.find(layer1);
+		if (it != conns.end()) {
+			for (auto &conn: it->second) {
+				if (conn.first->check_connects_units(uh1,uh2)) {
+					return conn.first;
+				};
 			};
 		};
 
@@ -928,21 +935,43 @@ namespace dblz {
 	********************/
 
 	void Lattice::sample_v_at_timepoint(int timepoint, bool binary) {
+
+		// Go through hidden layers top to bottom (reverse)
+		auto rit_begin = _latt_h.rbegin();
+		rit_begin++; // Skip the first
+		for (auto rit=rit_begin; rit!=_latt_h.rend(); ++rit)
+		{
+			// Shuffle
+			std::random_shuffle ( _latt_h_idxs[rit->first].begin(), _latt_h_idxs[rit->first].end() );
+
+			for (auto const &idx: _latt_h_idxs[rit->first]) 
+			{
+				// Sample, given input from a layer higher
+				rit->second[idx]->sample_at_timepoint(timepoint,rit->first+1, binary);
+			};
+		};
+
+		// Finally, sample the visible layer
+
 		// Shuffle
 		std::random_shuffle ( _latt_v_idxs.begin(), _latt_v_idxs.end() );		
 
 		// Sample
-		for (auto const &idx: _latt_v_idxs) {
-			_latt_v[idx]->sample_at_timepoint(timepoint, binary);
+		for (auto const &idx: _latt_v_idxs) 
+		{
+			_latt_v[idx]->sample_at_timepoint(timepoint,binary);
 		};
 	};
 	void Lattice::sample_h_at_timepoint(int timepoint, bool binary) {
-		for (auto &pr: _latt_h) { // automatically low to high layers
+		for (auto it=_latt_h.begin(); it!=_latt_h.end(); it++) 
+		{
 			// Shuffle
-			std::random_shuffle ( _latt_h_idxs[pr.first].begin(), _latt_h_idxs[pr.first].end() );
+			std::random_shuffle ( _latt_h_idxs[it->first].begin(), _latt_h_idxs[it->first].end() );
 
-			for (auto const &idx: _latt_h_idxs[pr.first]) {
-				pr.second[idx]->sample_at_timepoint(timepoint,binary);
+			for (auto const &idx: _latt_h_idxs[it->first]) 
+			{
+				// Sample, given input from a layer lower
+				it->second[idx]->sample_at_timepoint(timepoint,it->first-1,binary);
 			};
 		};
 	};

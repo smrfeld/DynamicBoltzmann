@@ -1369,7 +1369,8 @@ namespace dblz {
 
 		// Connections
 		std::vector<ConnVH*> _conns_vh;
-		std::vector<std::pair<ConnHH*,int>> _conns_hh;
+		// Layer -> conns -> (conn,idx of me in conn)
+		std::map<int,std::vector<std::pair<ConnHH*,int>>> _conns_hh;
 
 		// Activations
 		std::vector<double> _activations;
@@ -1407,20 +1408,20 @@ namespace dblz {
 		const std::vector<ConnVH*>& get_conns_vh() const;
 
 		// Hidden-hidden conns
-		void add_conn(ConnHH *conn, int idx_of_me);
-		const std::vector<std::pair<ConnHH*,int>>& get_conns_hh() const;
+		void add_conn(ConnHH *conn, int idx_of_me, int from_layer);
+		const std::map<int,std::vector<std::pair<ConnHH*,int>>>& get_conns_hh() const;
 
 		/********************
 		Get activation
 		********************/
 
-		double get_activation_for_species_at_timepoint(const std::shared_ptr<BiasDict>& bias_dict, const Sptr &species, int timepoint) const;
+		double get_activation_for_species_at_timepoint(const std::shared_ptr<BiasDict>& bias_dict, const Sptr &species, int timepoint, int given_layer) const;
 
 		/********************
 		Sample
 		********************/
 
-		void form_activations_vector_at_timepoint(const std::shared_ptr<BiasDict>& bias_dict, const std::vector<Sptr>& species, int timepoint);
+		void form_activations_vector_at_timepoint(const std::shared_ptr<BiasDict>& bias_dict, const std::vector<Sptr>& species, int timepoint, int given_layer);
 		const std::vector<double>& get_activations_vector() const;
 	};
 
@@ -1540,18 +1541,29 @@ namespace dblz {
 	};
 
 	// Hidden-hidden conns
-	void UnitHidden::Impl::add_conn(ConnHH *conn, int idx_of_me) {
+	void UnitHidden::Impl::add_conn(ConnHH *conn, int idx_of_me, int from_layer) {
 
-		// Check it does not exist - conns are unique!
+		// Pair
 		auto pr = std::make_pair(conn,idx_of_me);
-		auto it = std::find(_conns_hh.begin(), _conns_hh.end(), pr);
-		if (it != _conns_hh.end()) {
-			std::cerr << ">>> Error: UnitHidden::Impl::add_conn <<< connection already exists!" << std::endl;
-			exit(EXIT_FAILURE);
+
+		// Find layer
+		auto it = _conns_hh.find(from_layer);
+		if (it == _conns_hh.end()) {
+			// Add
+			_conns_hh[from_layer].push_back(pr);
+		} else {
+			// Check it does not already exist - conns are unique!
+			auto it2 = std::find(_conns_hh[from_layer].begin(), _conns_hh[from_layer].end(), pr);
+			if (it2 != _conns_hh[from_layer].end()) {
+				std::cerr << ">>> Error: UnitHidden::Impl::add_conn <<< connection already exists!" << std::endl;
+				exit(EXIT_FAILURE);	
+			} else {
+				// Add
+				_conns_hh[from_layer].push_back(pr);
+			};
 		};
-		_conns_hh.push_back(pr);
 	};
-	const std::vector<std::pair<ConnHH*,int>>& UnitHidden::Impl::get_conns_hh() const {
+	const std::map<int,std::vector<std::pair<ConnHH*,int>>>& UnitHidden::Impl::get_conns_hh() const {
 		return _conns_hh;
 	};
 
@@ -1559,7 +1571,7 @@ namespace dblz {
 	Get activation
 	********************/
 
-	double UnitHidden::Impl::get_activation_for_species_at_timepoint(const std::shared_ptr<BiasDict>& bias_dict, const Sptr &species, int timepoint) const {
+	double UnitHidden::Impl::get_activation_for_species_at_timepoint(const std::shared_ptr<BiasDict>& bias_dict, const Sptr &species, int timepoint, int given_layer) const {
 		double act = 0.0;
 
 		// Bias
@@ -1568,13 +1580,19 @@ namespace dblz {
 		};
 
 		// VH conns
-		for (auto const &conn_vh: _conns_vh) {
-			act += conn_vh->get_act_for_species_at_unit_h_at_timepoint(species,timepoint);
+		if (given_layer == 0) {
+			for (auto const &conn_vh: _conns_vh) {
+				act += conn_vh->get_act_for_species_at_unit_h_at_timepoint(species,timepoint);
+			};
 		};
 
 		// HH conns
-		for (auto const &conn_hh: _conns_hh) {
-			act += conn_hh.first->get_act_for_species_at_unit_at_timepoint(species,conn_hh.second,timepoint);
+		auto layer = _conns_hh.find(given_layer);
+		if (layer != _conns_hh.end()) {
+			// Go through conns
+			for (auto const &conn_hh: layer->second) {
+				act += conn_hh.first->get_act_for_species_at_unit_at_timepoint(species,conn_hh.second,timepoint);
+			};
 		};
 
 		return act;
@@ -1584,7 +1602,7 @@ namespace dblz {
 	Sample
 	********************/
 
-	void UnitHidden::Impl::form_activations_vector_at_timepoint(const std::shared_ptr<BiasDict>& bias_dict, const std::vector<Sptr>& species_possible, int timepoint) {
+	void UnitHidden::Impl::form_activations_vector_at_timepoint(const std::shared_ptr<BiasDict>& bias_dict, const std::vector<Sptr>& species_possible, int timepoint, int given_layer) {
 		// Check size
 		if (_activations.size() != species_possible.size()) {
 			_activations.clear();
@@ -1595,7 +1613,7 @@ namespace dblz {
 
 		// Form the vector of activations
 		for (auto i=0; i<species_possible.size(); i++) {
-			_activations[i] = get_activation_for_species_at_timepoint(bias_dict,species_possible[i],timepoint);
+			_activations[i] = get_activation_for_species_at_timepoint(bias_dict,species_possible[i],timepoint,given_layer);
 		};
 	};
 
@@ -1647,14 +1665,8 @@ namespace dblz {
 	Constructor
 	********************/
 
-	UnitHidden::UnitHidden(int layer, int x) : Unit(x), _impl(new Impl(layer)) {};
-	UnitHidden::UnitHidden(int layer, int x, int y) : Unit(x,y), _impl(new Impl(layer)) {};
-	UnitHidden::UnitHidden(int layer, int x, int y, int z) : Unit(x,y,z), _impl(new Impl(layer)) {};
-
-	UnitHidden::UnitHidden(int layer, int x, std::vector<Sptr> species_possible) : Unit(x,species_possible), _impl(new Impl(layer)) {};
-	UnitHidden::UnitHidden(int layer, int x, int y, std::vector<Sptr> species_possible) : Unit(x,y,species_possible), _impl(new Impl(layer)) {};
-	UnitHidden::UnitHidden(int layer, int x, int y, int z, std::vector<Sptr> species_possible) : Unit(x,y,z,species_possible), _impl(new Impl(layer)) {};
-
+	UnitHidden::UnitHidden(int layer, int idx) : Unit(idx), _impl(new Impl(layer)) {};
+	UnitHidden::UnitHidden(int layer, int idx, std::vector<Sptr> species_possible) : Unit(idx,species_possible), _impl(new Impl(layer)) {};
 	UnitHidden::UnitHidden(const UnitHidden& other) : Unit(other), _impl(new Impl(*other._impl)) {};
 	UnitHidden::UnitHidden(UnitHidden&& other) : Unit(other), _impl(std::move(other._impl)) {};
 	UnitHidden& UnitHidden::operator=(const UnitHidden& other) {
@@ -1687,6 +1699,9 @@ namespace dblz {
 	int UnitHidden::layer() const {
 		return _impl->layer();
 	};
+	int UnitHidden::idx() const {
+		return Unit::x();
+	};
 
 	/********************
 	Add connection
@@ -1701,10 +1716,10 @@ namespace dblz {
 	};
 
 	// Hidden-hidden conns
-	void UnitHidden::add_conn(ConnHH *conn, int idx_of_me) {
-		_impl->add_conn(conn,idx_of_me);
+	void UnitHidden::add_conn(ConnHH *conn, int idx_of_me, int from_layer) {
+		_impl->add_conn(conn,idx_of_me,from_layer);
 	};
-	const std::vector<std::pair<ConnHH*,int>>& UnitHidden::get_conns_hh() const {
+	const std::map<int,std::vector<std::pair<ConnHH*,int>>>& UnitHidden::get_conns_hh() const {
 		return _impl->get_conns_hh();
 	};
 
@@ -1712,16 +1727,16 @@ namespace dblz {
 	Get activation
 	********************/
 
-	double UnitHidden::get_activation_for_species_at_timepoint(Sptr &species, int timepoint) const {
-		return _impl->get_activation_for_species_at_timepoint(get_bias_dict(),species,timepoint);
+	double UnitHidden::get_activation_for_species_at_timepoint(Sptr &species, int timepoint, int given_layer) const {
+		return _impl->get_activation_for_species_at_timepoint(get_bias_dict(),species,timepoint,given_layer);
 	};
 
 	/********************
 	Sample
 	********************/
 
-	void UnitHidden::sample_at_timepoint(int timepoint, bool binary) {
-		_impl->form_activations_vector_at_timepoint(get_bias_dict(),get_possible_species(),timepoint);
+	void UnitHidden::sample_at_timepoint(int timepoint, int given_layer, bool binary) {
+		_impl->form_activations_vector_at_timepoint(get_bias_dict(),get_possible_species(),timepoint,given_layer);
 
 		// Parent sampler
 		sample_given_activations(_impl->get_activations_vector(),binary);

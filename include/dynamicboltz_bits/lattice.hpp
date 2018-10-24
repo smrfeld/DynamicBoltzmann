@@ -155,6 +155,10 @@ namespace dblz {
 		Get unit
 		********************/
 
+		const std::vector<UnitVisible*>& get_all_units_v() const;
+		const std::vector<UnitHidden*>& get_all_units_h(int layer) const;
+		const std::map<int,std::vector<UnitHidden*>>& get_all_units_h() const;
+
 		UnitVisible* get_unit_v(int x) const;
 		UnitVisible* get_unit_v(int x, int y) const;
 		UnitVisible* get_unit_v(int x, int y, int z) const;

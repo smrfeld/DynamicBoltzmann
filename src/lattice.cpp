@@ -533,10 +533,27 @@ namespace dblz {
 		};
 		return _conns_hh.back();
 	};
-	
+
 	/********************
 	Get unit
 	********************/
+
+	const std::vector<UnitVisible*>& Lattice::get_all_units_v() const {
+		return _latt_v;
+	};
+	const std::vector<UnitHidden*>& Lattice::get_all_units_h(int layer) const {
+		auto it = _latt_h.find(layer);
+		if (it != _latt_h.end()) {
+			return it->second;
+		};
+
+		// Never get here
+		std::cerr << ">>> Error: Lattice::get_all_units_h <<< no units in layer: " << layer << std::endl;
+		exit(EXIT_FAILURE);
+	};
+	const std::map<int,std::vector<UnitHidden*>>& Lattice::get_all_units_h() const {
+		return _latt_h;
+	};
 
 	UnitVisible* Lattice::get_unit_v(int x) const {
 		_check_dim(1);

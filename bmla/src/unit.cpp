@@ -1679,12 +1679,8 @@ namespace bmla {
 	********************/
 
 	UnitHidden::UnitHidden(int layer, int x) : Unit(x), _impl(new Impl(layer)) {};
-	UnitHidden::UnitHidden(int layer, int x, int y) : Unit(x,y), _impl(new Impl(layer)) {};
-	UnitHidden::UnitHidden(int layer, int x, int y, int z) : Unit(x,y,z), _impl(new Impl(layer)) {};
 
 	UnitHidden::UnitHidden(int layer, int x, std::vector<Sptr> species_possible) : Unit(x,species_possible), _impl(new Impl(layer)) {};
-	UnitHidden::UnitHidden(int layer, int x, int y, std::vector<Sptr> species_possible) : Unit(x,y,species_possible), _impl(new Impl(layer)) {};
-	UnitHidden::UnitHidden(int layer, int x, int y, int z, std::vector<Sptr> species_possible) : Unit(x,y,z,species_possible), _impl(new Impl(layer)) {};
 
 	UnitHidden::UnitHidden(const UnitHidden& other) : Unit(other), _impl(new Impl(*other._impl)) {};
 	UnitHidden::UnitHidden(UnitHidden&& other) : Unit(other), _impl(std::move(other._impl)) {};
@@ -1717,6 +1713,9 @@ namespace bmla {
 
 	int UnitHidden::layer() const {
 		return _impl->layer();
+	};
+	int UnitHidden::idx() const {
+		return Unit::x();
 	};
 
 	/********************

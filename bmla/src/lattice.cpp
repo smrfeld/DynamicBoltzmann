@@ -450,29 +450,76 @@ namespace bmla {
 	Add visible-visible connections
 	********************/
 
-	void Lattice::add_conn_vv(UnitVisible *uv1, UnitVisible *uv2) {
+	ConnVV* Lattice::add_conn_vv(UnitVisible *uv1, UnitVisible *uv2) {
 		_conns_vv.push_back(new ConnVV(uv1,uv2));
 		uv1->add_conn(_conns_vv.back(),0);
 		uv2->add_conn(_conns_vv.back(),1);
+		return _conns_vv.back();
 	};
-	void Lattice::add_conn_vv(UnitVisible *uv1, UnitVisible *uv2, std::shared_ptr<O2IxnDict> ixn_dict) {
+	ConnVV* Lattice::add_conn_vv(UnitVisible *uv1, UnitVisible *uv2, std::shared_ptr<O2IxnDict> ixn_dict) {
 		add_conn_vv(uv1,uv2);
 		if (ixn_dict) {
 			_conns_vv.back()->set_ixn_dict(ixn_dict);
 		};
+		return _conns_vv.back();
 	};
-	void Lattice::add_conn_vvv(UnitVisible *uv1, UnitVisible *uv2, UnitVisible *uv3) {
+	ConnVVV* Lattice::add_conn_vvv(UnitVisible *uv1, UnitVisible *uv2, UnitVisible *uv3) {
 		_conns_vvv.push_back(new ConnVVV(uv1,uv2,uv3));
 		uv1->add_conn(_conns_vvv.back(),0);
 		uv2->add_conn(_conns_vvv.back(),1);
 		uv3->add_conn(_conns_vvv.back(),2);
+		return _conns_vvv.back();
 	};
-	void Lattice::add_conn_vvv(UnitVisible *uv1, UnitVisible *uv2, UnitVisible *uv3, std::shared_ptr<O3IxnDict> ixn_dict) {
+	ConnVVV* Lattice::add_conn_vvv(UnitVisible *uv1, UnitVisible *uv2, UnitVisible *uv3, std::shared_ptr<O3IxnDict> ixn_dict) {
 		add_conn_vvv(uv1,uv2,uv3);
 		if (ixn_dict) {
 			_conns_vvv.back()->set_ixn_dict(ixn_dict);
 		};
+		return _conns_vvv.back();
 	};
+
+	/********************
+	Add hidden units
+	********************/
+
+	UnitHidden* Lattice::add_hidden_unit(int layer) {
+		return add_hidden_unit(layer,{});
+	};
+	UnitHidden* Lattice::add_hidden_unit(int layer, std::vector<Sptr> species_possible) {
+		auto it = _latt_h.find(layer);
+		int idx;
+		if (it != _latt_h.end()) {
+			idx = it->second.size();
+		} else {
+			idx = 0;
+		};
+		_latt_h[layer].push_back(new UnitHidden(layer,idx,species_possible));
+		_latt_h_idxs[layer].push_back(_latt_h[layer].size()-1);
+		return _latt_h[layer].back();
+	};
+
+	/********************
+	Add visible-hidden connections
+	********************/
+
+	ConnVH* Lattice::add_conn_vh(UnitVisible *uv, UnitHidden *uh) { 
+		_conns_vh.push_back(new ConnVH(uv,uh));
+		uv->add_conn(_conns_vh.back());
+		uh->add_conn(_conns_vh.back());
+		return _conns_vh.back();
+	};
+	ConnVH* Lattice::add_conn_vh(UnitVisible *uv, UnitHidden *uh, std::shared_ptr<O2IxnDict> ixn_dict) {
+		add_conn_vh(uv,uh);
+		if (ixn_dict) {
+			_conns_vh.back()->set_ixn_dict(ixn_dict);
+		};
+		return _conns_vh.back();
+	};
+
+	/********************
+	Add hidden-hidden connections
+	********************/
+
 	ConnHH* Lattice::add_conn_hh(UnitHidden *uh1, int layer_1, UnitHidden *uh2, int layer_2) {
 		_conns_hh.push_back(new ConnHH(uh1,uh2));
 		uh1->add_conn(_conns_hh.back(),0,layer_2);
@@ -485,42 +532,6 @@ namespace bmla {
 			_conns_hh.back()->set_ixn_dict(ixn_dict);
 		};
 		return _conns_hh.back();
-	};
-
-	/********************
-	Add hidden units
-	********************/
-
-	int Lattice::add_hidden_unit(int layer) {
-		return add_hidden_unit(layer,{});
-	};
-	int Lattice::add_hidden_unit(int layer, std::vector<Sptr> species_possible) {
-		auto it = _latt_h.find(layer);
-		int idx;
-		if (it != _latt_h.end()) {
-			idx = it->second.size();
-		} else {
-			idx = 0;
-		};
-		_latt_h[layer].push_back(new UnitHidden(layer,idx,species_possible));
-		_latt_h_idxs[layer].push_back(_latt_h[layer].size()-1);
-		return idx;
-	};
-
-	/********************
-	Add visible-hidden connections
-	********************/
-
-	void Lattice::add_conn_vh(UnitVisible *uv, UnitHidden *uh) { 
-		_conns_vh.push_back(new ConnVH(uv,uh));
-		uv->add_conn(_conns_vh.back());
-		uh->add_conn(_conns_vh.back());
-	};
-	void Lattice::add_conn_vh(UnitVisible *uv, UnitHidden *uh, std::shared_ptr<O2IxnDict> ixn_dict) {
-		add_conn_vh(uv,uh);
-		if (ixn_dict) {
-			_conns_vh.back()->set_ixn_dict(ixn_dict);
-		};
 	};
 
 	/********************

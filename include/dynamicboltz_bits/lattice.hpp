@@ -128,14 +128,14 @@ namespace dblz {
 		ConnVV* add_conn_vv(UnitVisible *uv1, UnitVisible *uv2, std::shared_ptr<O2IxnDict> ixn_dict);
 		ConnVVV* add_conn_vvv(UnitVisible *uv1, UnitVisible *uv2, UnitVisible *uv3);
 		ConnVVV* add_conn_vvv(UnitVisible *uv1, UnitVisible *uv2, UnitVisible *uv3, std::shared_ptr<O3IxnDict> ixn_dict);
-		ConnHH* add_conn_hh(UnitHidden *uh1, UnitHidden *uh2);
-		ConnHH* add_conn_hh(UnitHidden *uh1, UnitHidden *uh2, std::shared_ptr<O2IxnDict> ixn_dict);
+		ConnHH* add_conn_hh(UnitHidden *uh1, int layer_1, UnitHidden *uh2, int layer_2);
+		ConnHH* add_conn_hh(UnitHidden *uh1, int layer_1, UnitHidden *uh2, int layer_2, std::shared_ptr<O2IxnDict> ixn_dict);
 
 		/********************
 		Add hidden units
 		********************/
 
-		// Returns the idx of this unit
+		// Returns this unit
 		int add_hidden_unit(int layer);
 		int add_hidden_unit(int layer, std::vector<Sptr> species_possible);
 

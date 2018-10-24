@@ -124,27 +124,31 @@ namespace bmla {
 		Add visible-visible connections
 		********************/
 
-		void add_conn_vv(UnitVisible *uv1, UnitVisible *uv2);
-		void add_conn_vv(UnitVisible *uv1, UnitVisible *uv2, std::shared_ptr<O2IxnDict> ixn_dict);
-		void add_conn_vvv(UnitVisible *uv1, UnitVisible *uv2, UnitVisible *uv3);
-		void add_conn_vvv(UnitVisible *uv1, UnitVisible *uv2, UnitVisible *uv3, std::shared_ptr<O3IxnDict> ixn_dict);
-		ConnHH* add_conn_hh(UnitHidden *uh1, int layer_1, UnitHidden *uh2, int layer_2);
-		ConnHH* add_conn_hh(UnitHidden *uh1, int layer_1, UnitHidden *uh2, int layer_2, std::shared_ptr<O2IxnDict> ixn_dict);
+		ConnVV* add_conn_vv(UnitVisible *uv1, UnitVisible *uv2);
+		ConnVV* add_conn_vv(UnitVisible *uv1, UnitVisible *uv2, std::shared_ptr<O2IxnDict> ixn_dict);
+		ConnVVV* add_conn_vvv(UnitVisible *uv1, UnitVisible *uv2, UnitVisible *uv3);
+		ConnVVV* add_conn_vvv(UnitVisible *uv1, UnitVisible *uv2, UnitVisible *uv3, std::shared_ptr<O3IxnDict> ixn_dict);
 
 		/********************
 		Add hidden units
 		********************/
 
-		// Returns the idx of this unit
-		int add_hidden_unit(int layer);
-		int add_hidden_unit(int layer, std::vector<Sptr> species_possible);
+		UnitHidden* add_hidden_unit(int layer);
+		UnitHidden* add_hidden_unit(int layer, std::vector<Sptr> species_possible);
 
 		/********************
 		Add visible-hidden connections
 		********************/
 
-		void add_conn_vh(UnitVisible *uv, UnitHidden *uh);
-		void add_conn_vh(UnitVisible *uv, UnitHidden *uh, std::shared_ptr<O2IxnDict> ixn_dict);
+		ConnVH* add_conn_vh(UnitVisible *uv, UnitHidden *uh);
+		ConnVH* add_conn_vh(UnitVisible *uv, UnitHidden *uh, std::shared_ptr<O2IxnDict> ixn_dict);
+
+		/********************
+		Add hidden-hidden connections
+		********************/
+
+		ConnHH* add_conn_hh(UnitHidden *uh1, int layer_1, UnitHidden *uh2, int layer_2);
+		ConnHH* add_conn_hh(UnitHidden *uh1, int layer_1, UnitHidden *uh2, int layer_2, std::shared_ptr<O2IxnDict> ixn_dict);
 
 		/********************
 		Get unit

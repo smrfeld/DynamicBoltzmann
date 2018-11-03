@@ -835,6 +835,12 @@ namespace bmla {
 	{
 		std::ofstream f;
 		f.open (fname);
+
+		if (!f.is_open()) {
+			std::cerr << ">>> Error: Lattice::write_to_file <<< could not open file: " << fname << " for writing." << std::endl;
+			exit(EXIT_FAILURE);
+		};
+
 		for (auto const &l: _latt_v) {
 			if (binary) {
 				if (!l->check_b_mode_is_empty()) {
@@ -872,6 +878,12 @@ namespace bmla {
 
 		std::ifstream f;
 		f.open(fname);
+
+		if (!f.is_open()) {
+			std::cerr << ">>> Error: Lattice::read_from_file <<< could not open file: " << fname << " for reading." << std::endl;
+			exit(EXIT_FAILURE);
+		};
+
 		std::string x="",y="",z="";
 		std::string sp="";
 		std::string line;
@@ -879,41 +891,41 @@ namespace bmla {
 		UnitVisible* s;
 		std::string prob="";
 		double prob_val;
-		if (f.is_open()) { // make sure we found it
-			while (getline(f,line)) {
-				if (line == "") { continue; };
-				iss = std::istringstream(line);
-			    iss >> x;
-			    if (_no_dims == 2 || _no_dims == 3) {
-				    iss >> y;
-			    };
-			    if (_no_dims == 3) {
-				    iss >> z;
-			    };
-			    iss >> sp;
-			    if (!binary) {
-			    	// Read the prob
-			    	iss >> prob;
-			    };
-		    	// Add to Latt
-		    	if (_no_dims == 1) {
-		    		s = _look_up_unit_v(atoi(x.c_str()));
-			    } else if (_no_dims == 2) {
-		    		s = _look_up_unit_v(atoi(x.c_str()),atoi(y.c_str()));
-			    } else if (_no_dims == 3) {
-			    	s = _look_up_unit_v(atoi(x.c_str()),atoi(y.c_str()),atoi(z.c_str()));
-			    };
-			    if (binary) {
-		    		s->set_b_mode_species(sp);
-		    	} else {
-		    		prob_val = atof(prob.c_str());
-		    		s->set_p_mode_prob(sp,prob_val);
-		    		s->set_p_mode_prob("",1.0-prob_val);
-		    	};
-	    		// Reset
-		    	sp=""; x=""; y=""; z=""; prob="";
-			};
+
+		while (getline(f,line)) {
+			if (line == "") { continue; };
+			iss = std::istringstream(line);
+		    iss >> x;
+		    if (_no_dims == 2 || _no_dims == 3) {
+			    iss >> y;
+		    };
+		    if (_no_dims == 3) {
+			    iss >> z;
+		    };
+		    iss >> sp;
+		    if (!binary) {
+		    	// Read the prob
+		    	iss >> prob;
+		    };
+	    	// Add to Latt
+	    	if (_no_dims == 1) {
+	    		s = _look_up_unit_v(atoi(x.c_str()));
+		    } else if (_no_dims == 2) {
+	    		s = _look_up_unit_v(atoi(x.c_str()),atoi(y.c_str()));
+		    } else if (_no_dims == 3) {
+		    	s = _look_up_unit_v(atoi(x.c_str()),atoi(y.c_str()),atoi(z.c_str()));
+		    };
+		    if (binary) {
+	    		s->set_b_mode_species(sp);
+	    	} else {
+	    		prob_val = atof(prob.c_str());
+	    		s->set_p_mode_prob(sp,prob_val);
+	    		s->set_p_mode_prob("",1.0-prob_val);
+	    	};
+    		// Reset
+	    	sp=""; x=""; y=""; z=""; prob="";
 		};
+
 		f.close();
 
 		// std::cout << "Read: " << fname << std::endl;

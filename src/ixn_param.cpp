@@ -342,7 +342,8 @@ namespace dblz {
 
 	void IxnParam::Impl::solve_diff_eq_at_timepoint_to_plus_one(int timepoint, double dt) {
 		if (_is_val_fixed) { // Do nothing if val is fixed
-			return;
+			std::cerr << ">>> Error: IxnParam::Impl::solve_diff_eq_at_timepoint_to_plus_one <<< ixn param: " << get_name() << " is fixed!" << std::endl;
+			exit(EXIT_FAILURE);
 		};
 
 		if (timepoint >= _no_timepoints) {
@@ -354,7 +355,17 @@ namespace dblz {
 			exit(EXIT_FAILURE);
 		};
 
-		_vals[timepoint+1] = _vals[timepoint] + dt * _diff_eq->get_val_at_timepoint(timepoint);
+		// Check in domain
+		if (!_diff_eq->check_val_is_in_domain_at_timepoint(timepoint)) {
+			// std::cerr << ">>> Error: IxnParam::Impl::solve_diff_eq_at_timepoint_to_plus_one <<< outside of domain of ixn param: " << get_name() << std::endl;
+			// exit(EXIT_FAILURE);
+
+			// Keep at same point
+			_vals[timepoint+1] = _vals[timepoint];
+
+		} else {
+			_vals[timepoint+1] = _vals[timepoint] + dt * _diff_eq->get_val_at_timepoint(timepoint);
+		};
 	};
 
 	/********************

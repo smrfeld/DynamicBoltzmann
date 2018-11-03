@@ -1,5 +1,6 @@
 #include <vector>
 #include <string>
+#include <map>
 
 #ifndef FWDS_SPECIES_H
 #define FWDS_SPECIES_H
@@ -62,6 +63,9 @@ namespace dblz {
 		double *_vals_awake_averaged;
 		double *_vals_asleep_averaged;
 	
+		// Fixed awake
+		std::map<int,double> _vals_awake_fixed;
+
 		// Constructor helpers
 		void _clean_up();
 		void _move(Moment &other);
@@ -135,6 +139,9 @@ namespace dblz {
 		// Batch
 		double get_moment_at_timepoint_in_batch(MomentType type, int timepoint, int i_batch) const;
 		void set_moment_at_timepoint_in_batch(MomentType type, int timepoint, int i_batch, double val);
+
+		// Fix
+		void set_fixed_awake_moment_at_timepoint(int timepoint, double val);
 
 		/********************
 		Reap from lattice

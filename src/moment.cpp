@@ -94,6 +94,8 @@ namespace dblz {
 		_vals_awake_averaged = other._vals_awake_averaged;
 		_vals_asleep_averaged = other._vals_asleep_averaged;
 		
+		_vals_awake_fixed = other._vals_awake_fixed;
+
 		// Reset the other
 		other._name = "";
 
@@ -113,6 +115,8 @@ namespace dblz {
 
 		other._vals_awake_averaged = nullptr;
 		other._vals_asleep_averaged = nullptr;
+
+		other._vals_awake_fixed.clear();
 	};
 	void Moment::_copy(const Moment& other) {
 		_name = other._name;
@@ -140,6 +144,8 @@ namespace dblz {
 		std::copy( other._vals_awake_averaged, other._vals_awake_averaged + _no_timepoints, _vals_awake_averaged );
 		_vals_asleep_averaged = new double[_no_timepoints];
 		std::copy( other._vals_asleep_averaged, other._vals_asleep_averaged + _no_timepoints, _vals_asleep_averaged );
+
+		_vals_awake_fixed = other._vals_awake_fixed;
 	};
 
 	/********************
@@ -306,10 +312,16 @@ namespace dblz {
 
 	double Moment::get_moment_at_timepoint(MomentType type, int timepoint) const {
 		if (type == MomentType::AWAKE) {
-			return _vals_awake_averaged[timepoint];
+			auto it = _vals_awake_fixed.find(timepoint);
+			if (it == _vals_awake_fixed.end()) {
+				return _vals_awake_averaged[timepoint];
+			} else {
+				return it->second;
+			};
 		} else {
 			return _vals_asleep_averaged[timepoint];
 		};
+
 	};
 	void Moment::set_moment_at_timepoint(MomentType type, int timepoint, double val) {
 		if (type == MomentType::AWAKE) {
@@ -333,6 +345,11 @@ namespace dblz {
 		} else {
 			_vals_asleep_reaped[timepoint*_batch_size + i_batch] = val;
 		};
+	};
+
+	// Fix
+	void Moment::set_fixed_awake_moment_at_timepoint(int timepoint, double val) {
+		_vals_awake_fixed[timepoint] = val;
 	};
 
 	/********************

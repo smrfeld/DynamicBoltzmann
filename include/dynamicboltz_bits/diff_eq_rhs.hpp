@@ -142,13 +142,15 @@ namespace dblz {
 
 		const std::vector<Domain1D*>& get_domain() const;
 
-		double get_val_at_timepoint(int timepoint);
+		bool check_val_is_in_domain_at_timepoint(int timepoint) const;
+
+		double get_val_at_timepoint(int timepoint) const;
 
 		// Deriv wrt specific coefficient of some basis
-		double get_deriv_wrt_u_at_timepoint(int timepoint, q3c1::IdxSet global_vertex_idxs, std::vector<q3c1::DimType> dim_types);
+		double get_deriv_wrt_u_at_timepoint(int timepoint, q3c1::IdxSet global_vertex_idxs, std::vector<q3c1::DimType> dim_types) const;
 
 		// Spatial deriv
-		double get_deriv_wrt_nu_at_timepoint(int timepoint, int deriv_dim);
+		double get_deriv_wrt_nu_at_timepoint(int timepoint, int deriv_dim) const;
 
 		/********************
 		Update

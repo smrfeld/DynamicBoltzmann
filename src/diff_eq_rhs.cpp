@@ -225,13 +225,16 @@ namespace dblz {
 		return abscissas;
 	};
 
-	double DiffEqRHS::get_val_at_timepoint(int timepoint) {
+	bool DiffEqRHS::check_val_is_in_domain_at_timepoint(int timepoint) const {
+		return Grid::check_in_domain(_form_abscissas(timepoint));
+	};
+	double DiffEqRHS::get_val_at_timepoint(int timepoint) const {
 		return Grid::get_val(_form_abscissas(timepoint));
 	};
-	double DiffEqRHS::get_deriv_wrt_u_at_timepoint(int timepoint, q3c1::IdxSet global_vertex_idxs, std::vector<q3c1::DimType> dim_types) {
+	double DiffEqRHS::get_deriv_wrt_u_at_timepoint(int timepoint, q3c1::IdxSet global_vertex_idxs, std::vector<q3c1::DimType> dim_types) const {
 		return Grid::get_deriv_wrt_coeff(_form_abscissas(timepoint), global_vertex_idxs, dim_types);
 	};
-	double DiffEqRHS::get_deriv_wrt_nu_at_timepoint(int timepoint, int deriv_dim) {
+	double DiffEqRHS::get_deriv_wrt_nu_at_timepoint(int timepoint, int deriv_dim) const {
 		return Grid::get_deriv_wrt_abscissa(_form_abscissas(timepoint), deriv_dim);
 	};
 
@@ -269,12 +272,12 @@ namespace dblz {
 					// new
 					_updates[pr.first] = pr.second;
 					for (auto i=0; i<pr.second.size(); i++) {
-						_updates[pr.first][i] *= -1.0 * dt * dopt * adjoint_val;
+						_updates[pr.first][i] *= dt * dopt * adjoint_val;
 					};
 				} else {
 					// append
 					for (auto i=0; i<pr.second.size(); i++) {
-						_updates[pr.first][i] += -1.0 * dt * dopt * adjoint_val * pr.second[i];
+						_updates[pr.first][i] += dt * dopt * adjoint_val * pr.second[i];
 					};
 				};
 			};

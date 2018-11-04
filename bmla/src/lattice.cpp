@@ -15,6 +15,7 @@
 #include <ctime>
 #include <sstream>
 #include <random>
+#include <algorithm>
 
 /************************************
 * Namespace for bmla

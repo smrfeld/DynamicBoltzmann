@@ -5,6 +5,7 @@
 #include "../include/bmla_bits/ixn_param.hpp"
 
 #include <iostream>
+#include <algorithm>
 
 /************************************
 * Namespace for bmla

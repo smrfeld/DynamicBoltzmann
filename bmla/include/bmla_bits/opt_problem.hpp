@@ -1,5 +1,6 @@
 #include <string>
 #include <vector>
+#include <memory>
 
 /************************************
 * Namespace for bmla

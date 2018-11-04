@@ -1,5 +1,6 @@
 #include <unordered_map>
 #include <map>
+#include <vector>
 
 #ifndef FWDS_SPECIES_H
 #define FWDS_SPECIES_H

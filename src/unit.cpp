@@ -14,6 +14,7 @@
 #include <sstream>
 #include <random>
 #include <vector>
+#include <algorithm>
 
 /************************************
 * Namespace for dblz

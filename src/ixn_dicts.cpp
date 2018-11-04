@@ -5,6 +5,7 @@
 #include "../include/dynamicboltz_bits/ixn_param.hpp"
 
 #include <iostream>
+#include <algorithm>
 
 /************************************
 * Namespace for dblz

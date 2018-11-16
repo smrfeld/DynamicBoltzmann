@@ -270,9 +270,20 @@ namespace bmla {
 			std::cout << "--- Calculating update ---" << std::endl;
 		};
 
+		double dopt_use = dopt;
 		for (auto &ixn_param: _ixn_params) {
 			if (!ixn_param->get_is_val_fixed()) {
-				ixn_param->update_calculate_and_store(dopt);
+				// Learning rate
+				if (options.MODE_var_learning_rates) {
+					dopt_use = options.VAL_var_learning_rates[ixn_param];
+				};
+
+				// Update
+				if (options.MODE_l2_reg) {
+					ixn_param->update_calculate_and_store(dopt_use,options.MODE_l2_reg,options.VAL_l2_lambda[ixn_param],options.VAL_l2_center[ixn_param]);
+				} else {
+					ixn_param->update_calculate_and_store(dopt_use);
+				};
 			};
 		};
 

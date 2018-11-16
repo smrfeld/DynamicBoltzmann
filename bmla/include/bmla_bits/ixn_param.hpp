@@ -79,7 +79,7 @@ namespace bmla {
 		Update
 		********************/
 
-		void update_calculate_and_store(double dopt);
+		void update_calculate_and_store(double dopt, bool l2_mode=false, double l2_lambda=0.0, double l2_center=0.0);
 		void update_committ_stored();
 
 		/********************

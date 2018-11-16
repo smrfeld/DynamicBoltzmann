@@ -501,7 +501,7 @@ namespace bmla {
 	********************/
 
 	UnitHidden* ConnHH::get_unit_h(int idx) const {
-		if (idx == 1) {
+		if (idx == 0) {
 			return _uh1;
 		} else {
 			return _uh2;

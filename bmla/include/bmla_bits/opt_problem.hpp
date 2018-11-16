@@ -1,6 +1,7 @@
 #include <string>
 #include <vector>
 #include <memory>
+#include <map>
 
 /************************************
 * Namespace for bmla
@@ -58,6 +59,15 @@ namespace bmla {
 
 		// Start with random lattice
 		bool start_with_random_lattice = false;
+
+		// L2 Reg mode
+		bool MODE_l2_reg = false;
+		std::map<std::shared_ptr<IxnParam>,double> VAL_l2_lambda;
+		std::map<std::shared_ptr<IxnParam>,double> VAL_l2_center;
+
+		// Variable learning rate
+		bool MODE_var_learning_rates = false;
+		std::map<std::shared_ptr<IxnParam>,double> VAL_var_learning_rates;
 	};
 
 	/****************************************

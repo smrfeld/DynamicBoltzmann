@@ -83,7 +83,7 @@ namespace bmla {
 		Update
 		********************/
 
-		void update_calculate_and_store(double dopt, bool l2_mode=false, double l2_lambda=0.0, double l2_center=0.0);
+		void update_calculate_and_store(int opt_step, double dopt, bool nesterov_mode=true, bool l2_mode=false, double l2_lambda=0.0, double l2_center=0.0);
 		void update_committ_stored();
 
 		/********************
@@ -246,10 +246,20 @@ namespace bmla {
 	Update
 	********************/
 
-	void IxnParam::Impl::update_calculate_and_store(double dopt, bool l2_mode, double l2_lambda, double l2_center) {
-		_update = - dopt * (_moment->get_moment(MomentType::ASLEEP) - _moment->get_moment(MomentType::AWAKE));
+	void IxnParam::Impl::update_calculate_and_store(int opt_step, double dopt, bool nesterov_mode, bool l2_mode, double l2_lambda, double l2_center) {
+
+		double update = - dopt * (_moment->get_moment(MomentType::ASLEEP) - _moment->get_moment(MomentType::AWAKE));
 		if (l2_mode) {
-			_update -= 2.0 * l2_lambda * (_val - l2_center);
+			update -= 2.0 * l2_lambda * (_val - l2_center);
+		};
+
+		// Go through stored updates
+		if (nesterov_mode && opt_step > 1) {
+			// Yes nesterov
+			_update = (1.0 + (opt_step - 1.0) / (opt_step + 2.0)) * update;
+		} else {
+			// No nesterov
+			_update = update;
 		};
 	};
 	void IxnParam::Impl::update_committ_stored() {
@@ -381,8 +391,8 @@ namespace bmla {
 	Update
 	********************/
 
-	void IxnParam::update_calculate_and_store(double dopt, bool l2_mode, double l2_lambda, double l2_center) {
-		_impl->update_calculate_and_store(dopt,l2_mode,l2_lambda,l2_center);
+	void IxnParam::update_calculate_and_store(int opt_step, double dopt, bool nesterov_mode, bool l2_mode, double l2_lambda, double l2_center) {
+		_impl->update_calculate_and_store(opt_step, dopt,nesterov_mode,l2_mode,l2_lambda,l2_center);
 	};
 	void IxnParam::update_committ_stored() {
 		_impl->update_committ_stored();

@@ -239,7 +239,7 @@ namespace bmla {
 	};
 
 	// One step
-	void OptProblem::solve_one_step(int batch_size, double dopt, int no_latt_sampling_steps, FNameColl &fname_coll, OptionsSolve options, bool should_check_options) {
+	void OptProblem::solve_one_step(int i_opt_step, int batch_size, double dopt, int no_latt_sampling_steps, FNameColl &fname_coll, OptionsSolve options, bool should_check_options) {
 
 		/*****
 		Check options
@@ -280,9 +280,9 @@ namespace bmla {
 
 				// Update
 				if (options.MODE_l2_reg) {
-					ixn_param->update_calculate_and_store(dopt_use,options.MODE_l2_reg,options.VAL_l2_lambda[ixn_param],options.VAL_l2_center[ixn_param]);
+					ixn_param->update_calculate_and_store(i_opt_step,dopt_use,options.nesterov,options.MODE_l2_reg,options.VAL_l2_lambda[ixn_param],options.VAL_l2_center[ixn_param]);
 				} else {
-					ixn_param->update_calculate_and_store(dopt_use);
+					ixn_param->update_calculate_and_store(i_opt_step,dopt_use,options.nesterov);
 				};
 			};
 		};
@@ -333,7 +333,7 @@ namespace bmla {
 			std::cout << "------------------" << std::endl;
 
 			// Solve
-			solve_one_step(batch_size,dopt,no_latt_sampling_steps,fname_coll,options);
+			solve_one_step(i_opt_step,batch_size,dopt,no_latt_sampling_steps,fname_coll,options);
 		};
 
 	};

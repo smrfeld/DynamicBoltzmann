@@ -68,6 +68,9 @@ namespace bmla {
 		// Variable learning rate
 		bool MODE_var_learning_rates = false;
 		std::map<std::shared_ptr<IxnParam>,double> VAL_var_learning_rates;
+
+		// Nesterov
+		bool nesterov = true;
 	};
 
 	/****************************************
@@ -129,7 +132,7 @@ namespace bmla {
 		void check_options(int batch_size, double dopt, int no_latt_sampling_steps, OptionsSolve options);
 
 		// One step
-		void solve_one_step(int batch_size, double dopt, int no_latt_sampling_steps, FNameColl &fname_coll, OptionsSolve options = OptionsSolve(), bool should_check_options=true);
+		void solve_one_step(int i_opt_step, int batch_size, double dopt, int no_latt_sampling_steps, FNameColl &fname_coll, OptionsSolve options = OptionsSolve(), bool should_check_options=true);
 
 		// Many steps
 		void solve(int no_opt_steps, int batch_size, double dopt, int no_latt_sampling_steps, FNameColl &fname_coll, OptionsSolve options = OptionsSolve());

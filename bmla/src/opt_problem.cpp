@@ -280,9 +280,9 @@ namespace bmla {
 
 				// Update
 				if (options.MODE_l2_reg) {
-					ixn_param->update_calculate_and_store(i_opt_step,dopt_use,options.nesterov,options.MODE_l2_reg,options.VAL_l2_lambda[ixn_param],options.VAL_l2_center[ixn_param]);
+					ixn_param->update_calculate_and_store(dopt_use,options.MODE_l2_reg,options.VAL_l2_lambda[ixn_param],options.VAL_l2_center[ixn_param]);
 				} else {
-					ixn_param->update_calculate_and_store(i_opt_step,dopt_use,options.nesterov);
+					ixn_param->update_calculate_and_store(dopt_use);
 				};
 			};
 		};
@@ -302,7 +302,7 @@ namespace bmla {
 
 		for (auto &ixn_param: _ixn_params) {
 			if (!ixn_param->get_is_val_fixed()) {
-				ixn_param->update_committ_stored();
+				ixn_param->update_committ_stored(options.nesterov);
 			};
 		};
 

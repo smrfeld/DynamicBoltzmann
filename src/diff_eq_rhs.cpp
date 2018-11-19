@@ -135,6 +135,11 @@ namespace dblz {
 			std::cerr << ">>> Error: DiffEqRHS::DiffEqRHS <<< Only dims 1,2,3 are supported" << std::endl;
 			exit(EXIT_FAILURE);
 		};
+
+		// nesterov
+		double lambda_0 = 0.0;
+		_lambda_s = (1.0 + sqrt(1.0 + 4.0 * pow(lambda_0,2))) / 2.0;
+		_lambda_sp1 = (1.0 + sqrt(1.0 + 4.0 * pow(_lambda_s,2))) / 2.0;
 	};
 	DiffEqRHS::DiffEqRHS(const DiffEqRHS& other) : Grid(other) {
 		_copy(other);
@@ -172,6 +177,14 @@ namespace dblz {
 		_domain = other._domain;
 		_parent_ixn_param = other._parent_ixn_param;
 		_updates = other._updates;
+		_lambda_s = other._lambda_s;
+		_lambda_sp1 = other._lambda_sp1;
+		if (other._y_s) {
+			_y_s = new std::map<q3c1::Vertex*,std::vector<double>>(*other._y_s);
+		};
+		if (other._y_sp1) {
+			_y_sp1 = new std::map<q3c1::Vertex*,std::vector<double>>(*other._y_sp1);
+		};
 	};
 	void DiffEqRHS::_move(DiffEqRHS& other) {
 		_name = other._name;
@@ -179,6 +192,10 @@ namespace dblz {
 		_domain = other._domain;
 		_parent_ixn_param = other._parent_ixn_param;
 		_updates = other._updates;
+		_lambda_s = other._lambda_s;
+		_lambda_sp1 = other._lambda_sp1;
+		_y_s = other._y_s;
+		_y_sp1 = other._y_sp1;
 
 		// Reset other
 		other._name = "";
@@ -186,10 +203,22 @@ namespace dblz {
 		other._domain.clear();
 		other._parent_ixn_param = nullptr;
 		other._updates.clear();
+		other._lambda_s = 0.0;
+		other._lambda_sp1 = 0.0;
+		other._y_s = nullptr;
+		other._y_sp1 = nullptr;
 	};
 
 	void DiffEqRHS::_clean_up() {
 		// Note: Domain is not owned => do not delete
+		if (_y_s) {
+			delete _y_s;
+			_y_s = nullptr;
+		};
+		if (_y_sp1) {
+			delete _y_sp1;
+			_y_sp1 = nullptr;
+		};	
 	};
 
 	/********************
@@ -296,63 +325,126 @@ namespace dblz {
 	};
 
 	// Committ the update
-	void DiffEqRHS::update_committ_stored(int opt_step, bool nesterov_mode) {
+	void DiffEqRHS::update_committ_stored(bool nesterov_mode) {
 
-		// Go through stored updates
-		if (nesterov_mode && opt_step > 1) {
+		if (nesterov_mode) {
 
+			// New ysp1
+			if (_y_sp1) {
+				delete _y_sp1;
+				_y_sp1 = nullptr;
+			};
+			_y_sp1 = new std::map<q3c1::Vertex*,std::vector<double>>();
 			if (_no_dims == 1) {
 				for (auto const &pr: _updates) {
 					// Val
-					pr.first->get_bf({q3c1::DimType::VAL})->increment_coeff((1.0 + (
-						opt_step - 1.0) / (opt_step + 2.0)) * pr.second[0]);
+					(*_y_sp1)[pr.first].push_back(pr.first->get_bf({q3c1::DimType::VAL})->get_coeff() + pr.second[0]);
 					// Deriv
-					pr.first->get_bf({q3c1::DimType::DERIV})->increment_coeff((1.0 + (
-						opt_step - 1.0) / (opt_step + 2.0)) * pr.second[1]);
+					(*_y_sp1)[pr.first].push_back(pr.first->get_bf({q3c1::DimType::DERIV})->get_coeff() + pr.second[1]);
 				};
 			} else if (_no_dims == 2) {
 				for (auto const &pr: _updates) {
 					// Val-val
-					pr.first->get_bf({q3c1::DimType::VAL,q3c1::DimType::VAL})->increment_coeff((1.0 + (
-						opt_step - 1.0) / (opt_step + 2.0)) * pr.second[0]);
+					(*_y_sp1)[pr.first].push_back(pr.first->get_bf({q3c1::DimType::VAL,q3c1::DimType::VAL})->get_coeff() + pr.second[0]);
 					// Val-Deriv
-					pr.first->get_bf({q3c1::DimType::VAL,q3c1::DimType::DERIV})->increment_coeff((1.0 + (
-						opt_step - 1.0) / (opt_step + 2.0)) * pr.second[1]);
+					(*_y_sp1)[pr.first].push_back(pr.first->get_bf({q3c1::DimType::VAL,q3c1::DimType::DERIV})->get_coeff() + pr.second[1]);
 					// Deriv-val
-					pr.first->get_bf({q3c1::DimType::DERIV,q3c1::DimType::VAL})->increment_coeff((1.0 + (
-						opt_step - 1.0) / (opt_step + 2.0)) * pr.second[2]);
+					(*_y_sp1)[pr.first].push_back(pr.first->get_bf({q3c1::DimType::DERIV,q3c1::DimType::VAL})->get_coeff() + pr.second[2]);
 					// Deriv-deriv
-					pr.first->get_bf({q3c1::DimType::DERIV,q3c1::DimType::DERIV})->increment_coeff((1.0 + (
-						opt_step - 1.0) / (opt_step + 2.0)) * pr.second[3]);
+					(*_y_sp1)[pr.first].push_back(pr.first->get_bf({q3c1::DimType::DERIV,q3c1::DimType::DERIV})->get_coeff() + pr.second[3]);
 				};
 			} else if (_no_dims == 3) {
 				for (auto const &pr: _updates) {
 					// Val-val-val
-					pr.first->get_bf({q3c1::DimType::VAL,q3c1::DimType::VAL,q3c1::DimType::VAL})->increment_coeff((1.0 + (
-						opt_step - 1.0) / (opt_step + 2.0)) * pr.second[0]);
+					(*_y_sp1)[pr.first].push_back(pr.first->get_bf({q3c1::DimType::VAL,q3c1::DimType::VAL,q3c1::DimType::VAL})->get_coeff() + pr.second[0]);
 					// Val-val-deriv
-					pr.first->get_bf({q3c1::DimType::VAL,q3c1::DimType::VAL,q3c1::DimType::DERIV})->increment_coeff((1.0 + (
-						opt_step - 1.0) / (opt_step + 2.0)) * pr.second[1]);
+					(*_y_sp1)[pr.first].push_back(pr.first->get_bf({q3c1::DimType::VAL,q3c1::DimType::VAL,q3c1::DimType::DERIV})->get_coeff() + pr.second[1]);
 					// Val-deriv-val
-					pr.first->get_bf({q3c1::DimType::VAL,q3c1::DimType::DERIV,q3c1::DimType::VAL})->increment_coeff((1.0 + (
-						opt_step - 1.0) / (opt_step + 2.0)) * pr.second[2]);
+					(*_y_sp1)[pr.first].push_back(pr.first->get_bf({q3c1::DimType::VAL,q3c1::DimType::DERIV,q3c1::DimType::VAL})->get_coeff() + pr.second[2]);
 					// Deriv-val-val
-					pr.first->get_bf({q3c1::DimType::DERIV,q3c1::DimType::VAL,q3c1::DimType::VAL})->increment_coeff((1.0 + (
-						opt_step - 1.0) / (opt_step + 2.0)) * pr.second[3]);
+					(*_y_sp1)[pr.first].push_back(pr.first->get_bf({q3c1::DimType::DERIV,q3c1::DimType::VAL,q3c1::DimType::VAL})->get_coeff() + pr.second[3]);
 					// Val-deriv-deriv
-					pr.first->get_bf({q3c1::DimType::VAL,q3c1::DimType::DERIV,q3c1::DimType::DERIV})->increment_coeff((1.0 + (
-						opt_step - 1.0) / (opt_step + 2.0)) * pr.second[4]);
+					(*_y_sp1)[pr.first].push_back(pr.first->get_bf({q3c1::DimType::VAL,q3c1::DimType::DERIV,q3c1::DimType::DERIV})->get_coeff() + pr.second[4]);
 					// Deriv-val-deriv
-					pr.first->get_bf({q3c1::DimType::DERIV,q3c1::DimType::VAL,q3c1::DimType::DERIV})->increment_coeff((1.0 + (
-						opt_step - 1.0) / (opt_step + 2.0)) * pr.second[5]);
+					(*_y_sp1)[pr.first].push_back(pr.first->get_bf({q3c1::DimType::DERIV,q3c1::DimType::VAL,q3c1::DimType::DERIV})->get_coeff() + pr.second[5]);
 					// Deriv-deriv-val
-					pr.first->get_bf({q3c1::DimType::DERIV,q3c1::DimType::DERIV,q3c1::DimType::VAL})->increment_coeff((1.0 + (
-						opt_step - 1.0) / (opt_step + 2.0)) * pr.second[6]);
+					(*_y_sp1)[pr.first].push_back(pr.first->get_bf({q3c1::DimType::DERIV,q3c1::DimType::DERIV,q3c1::DimType::VAL})->get_coeff() + pr.second[6]);
 					// Deriv-deriv-deriv
-					pr.first->get_bf({q3c1::DimType::DERIV,q3c1::DimType::DERIV,q3c1::DimType::DERIV})->increment_coeff((1.0 + (
-						opt_step - 1.0) / (opt_step + 2.0)) * pr.second[7]);
+					(*_y_sp1)[pr.first].push_back(pr.first->get_bf({q3c1::DimType::DERIV,q3c1::DimType::DERIV,q3c1::DimType::DERIV})->get_coeff() + pr.second[7]);
 				};
 			};
+
+			// New lambda
+			_lambda_sp1 = (1.0 + sqrt(1.0 + 4.0 * pow(_lambda_s,2))) / 2.0;
+
+			// Gamma
+			double gamma_s = (1.0 - _lambda_s) / _lambda_sp1;
+
+			// Check that y_s exists
+			if (!_y_s) {
+				_y_s = new std::map<q3c1::Vertex*,std::vector<double>>();
+			};
+			// All needed values should exist
+			for (auto const &pr: _updates) {
+				auto it = (*_y_s).find(pr.first);
+				if (it == (*_y_s).end()) {
+					// Init to current x = vals
+					for (auto const &bf: pr.first->get_bfs()) {
+						(*_y_s)[pr.first].push_back(bf->get_coeff());
+					};
+				};
+			};			
+
+			// New vals
+			if (_no_dims == 1) {
+				for (auto const &pr: _updates) {
+					// Val
+					pr.first->get_bf({q3c1::DimType::VAL})->set_coeff((1.0 - gamma_s) * (*_y_sp1)[pr.first][0] + gamma_s * (*_y_s)[pr.first][0]);
+					// Deriv
+					pr.first->get_bf({q3c1::DimType::DERIV})->set_coeff((1.0 - gamma_s) * (*_y_sp1)[pr.first][1] + gamma_s * (*_y_s)[pr.first][1]);
+				};
+			} else if (_no_dims == 2) {
+				for (auto const &pr: _updates) {
+					// Val-val
+					pr.first->get_bf({q3c1::DimType::VAL,q3c1::DimType::VAL})->set_coeff((1.0 - gamma_s) * (*_y_sp1)[pr.first][0] + gamma_s * (*_y_s)[pr.first][0]);
+					// Val-Deriv
+					pr.first->get_bf({q3c1::DimType::VAL,q3c1::DimType::DERIV})->set_coeff((1.0 - gamma_s) * (*_y_sp1)[pr.first][1] + gamma_s * (*_y_s)[pr.first][1]);
+					// Deriv-val
+					pr.first->get_bf({q3c1::DimType::DERIV,q3c1::DimType::VAL})->set_coeff((1.0 - gamma_s) * (*_y_sp1)[pr.first][2] + gamma_s * (*_y_s)[pr.first][2]);
+					// Deriv-deriv
+					pr.first->get_bf({q3c1::DimType::DERIV,q3c1::DimType::DERIV})->set_coeff((1.0 - gamma_s) * (*_y_sp1)[pr.first][3] + gamma_s * (*_y_s)[pr.first][3]);
+				};
+			} else if (_no_dims == 3) {
+				for (auto const &pr: _updates) {
+					// Val-val-val
+					pr.first->get_bf({q3c1::DimType::VAL,q3c1::DimType::VAL,q3c1::DimType::VAL})->set_coeff((1.0 - gamma_s) * (*_y_sp1)[pr.first][0] + gamma_s * (*_y_s)[pr.first][0]);
+					// Val-val-deriv
+					pr.first->get_bf({q3c1::DimType::VAL,q3c1::DimType::VAL,q3c1::DimType::DERIV})->set_coeff((1.0 - gamma_s) * (*_y_sp1)[pr.first][1] + gamma_s * (*_y_s)[pr.first][1]);
+					// Val-deriv-val
+					pr.first->get_bf({q3c1::DimType::VAL,q3c1::DimType::DERIV,q3c1::DimType::VAL})->set_coeff((1.0 - gamma_s) * (*_y_sp1)[pr.first][2] + gamma_s * (*_y_s)[pr.first][2]);
+					// Deriv-val-val
+					pr.first->get_bf({q3c1::DimType::DERIV,q3c1::DimType::VAL,q3c1::DimType::VAL})->set_coeff((1.0 - gamma_s) * (*_y_sp1)[pr.first][3] + gamma_s * (*_y_s)[pr.first][3]);
+					// Val-deriv-deriv
+					pr.first->get_bf({q3c1::DimType::VAL,q3c1::DimType::DERIV,q3c1::DimType::DERIV})->set_coeff((1.0 - gamma_s) * (*_y_sp1)[pr.first][4] + gamma_s * (*_y_s)[pr.first][4]);
+					// Deriv-val-deriv
+					pr.first->get_bf({q3c1::DimType::DERIV,q3c1::DimType::VAL,q3c1::DimType::DERIV})->set_coeff((1.0 - gamma_s) * (*_y_sp1)[pr.first][5] + gamma_s * (*_y_s)[pr.first][5]);
+					// Deriv-deriv-val
+					pr.first->get_bf({q3c1::DimType::DERIV,q3c1::DimType::DERIV,q3c1::DimType::VAL})->set_coeff((1.0 - gamma_s) * (*_y_sp1)[pr.first][6] + gamma_s * (*_y_s)[pr.first][6]);
+					// Deriv-deriv-deriv
+					pr.first->get_bf({q3c1::DimType::DERIV,q3c1::DimType::DERIV,q3c1::DimType::DERIV})->set_coeff((1.0 - gamma_s) * (*_y_sp1)[pr.first][7] + gamma_s * (*_y_s)[pr.first][7]);
+				};
+			};
+
+			// Delete old y_s
+			if (_y_s) {
+				delete _y_s;
+				_y_s = nullptr;
+			};
+
+			// Advance y, lambda
+			_y_s = _y_sp1;
+			_y_sp1 = nullptr; // remove ref, i.e. ysp1 was now passed to ys
+			_lambda_s = _lambda_sp1;
 
 		} else {
 

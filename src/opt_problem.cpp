@@ -406,9 +406,16 @@ namespace dblz {
 			std::cout << "--- Calculating update ---" << std::endl;
 		};
 
+		double dopt_use = dopt;
 		for (auto &ixn_param: _ixn_params) {
 			if (!ixn_param->get_is_val_fixed()) {
-				ixn_param->get_diff_eq_rhs()->update_calculate_and_store(timepoint_integral_start,timepoint_integral_end,dt,dopt);
+				// Learning rate
+				if (options.MODE_var_learning_rates) {
+					dopt_use = options.VAL_var_learning_rates[ixn_param];
+				};
+
+				// Update
+				ixn_param->get_diff_eq_rhs()->update_calculate_and_store(timepoint_integral_start,timepoint_integral_end,dt,dopt_use);
 			};
 		};
 

@@ -86,6 +86,10 @@ namespace dblz {
 		std::map<Iptr,double> VAL_l2_lambda;
 		std::map<Iptr,double> VAL_l2_center;
 
+		// Variable learning rate
+		bool MODE_var_learning_rates = false;
+		std::map<std::shared_ptr<IxnParam>,double> VAL_var_learning_rates;
+
 		// Nesterov
 		bool nesterov = true;
 	};

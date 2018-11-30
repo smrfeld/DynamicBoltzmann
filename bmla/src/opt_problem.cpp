@@ -174,8 +174,7 @@ namespace bmla {
 				_latt->read_from_file(fname_coll.get_fname(idx_subset[i_batch])); // binary units
 			} else {
 				// Random lattice...
-				// TBD!!!
-				_latt->sample_v();
+				latt->all_units_v_random();
 			};
 
 			// Sample hidden

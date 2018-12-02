@@ -99,6 +99,7 @@ namespace dblz {
 		Value
 		********************/
 
+		void set_val_at_timepoint(int timepoint, double val);
 		double get_val_at_timepoint(int timepoint) const;
 
 		/********************
@@ -338,6 +339,13 @@ namespace dblz {
 	Value
 	********************/
 
+	void IxnParam::Impl::set_val_at_timepoint(int timepoint, double val) {
+		if (timepoint >= _no_timepoints) {
+			std::cerr << ">>> Error: IxnParam::Impl::set_val_at_timepoint <<< " << timepoint << " is out of bounds: " << _no_timepoints << std::endl;
+			exit(EXIT_FAILURE);
+		};
+		_vals[timepoint] = val;
+	};
 	double IxnParam::Impl::get_val_at_timepoint(int timepoint) const {
 		if (timepoint >= _no_timepoints) {
 			std::cerr << ">>> Error: IxnParam::Impl::get_val_at_timepoint <<< " << timepoint << " is out of bounds: " << _no_timepoints << std::endl;
@@ -537,6 +545,9 @@ namespace dblz {
 	Value
 	********************/
 
+	void IxnParam::set_val_at_timepoint(int timepoint, double val) {
+		_impl->set_val_at_timepoint(timepoint,val);
+	};
 	double IxnParam::get_val_at_timepoint(int timepoint) const {
 		return _impl->get_val_at_timepoint(timepoint);
 	};

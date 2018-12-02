@@ -85,6 +85,7 @@ namespace dblz {
 		Value
 		********************/
 
+		void set_val_at_timepoint(int timepoint, double val);
 		double get_val_at_timepoint(int timepoint) const;
 
 		/********************

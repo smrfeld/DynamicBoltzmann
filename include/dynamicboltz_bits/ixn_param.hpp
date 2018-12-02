@@ -67,8 +67,11 @@ namespace dblz {
 		Fixed value to IC
 		********************/
 
-		void set_fix_value_to_init_cond(bool fixed);
-		bool get_is_val_fixed() const;
+		void set_is_val_fixed_to_init_cond(bool fixed);
+		bool get_is_val_fixed_to_init_cond() const;
+
+		void set_are_vals_fixed(bool fixed);
+		bool get_are_vals_fixed() const;
 
 		/********************
 		Name, type

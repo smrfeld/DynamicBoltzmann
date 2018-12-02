@@ -325,7 +325,7 @@ namespace dblz {
 		// Solve over all time
 		for (auto t=0; t<no_timesteps; t++) {
 			for (auto &ixn_param: _ixn_params) {
-				if (!ixn_param->get_is_val_fixed()) {
+				if (!ixn_param->get_is_val_fixed_to_init_cond() && !ixn_param->get_are_vals_fixed()) {
 					ixn_param->solve_diff_eq_at_timepoint_to_plus_one(t,dt);
 				};
 			};
@@ -367,7 +367,7 @@ namespace dblz {
 
 		// Reset
 		for (auto &ixn_param: _ixn_params) {
-			if (!ixn_param->get_is_val_fixed()) {
+			if (!ixn_param->get_is_val_fixed_to_init_cond() && !ixn_param->get_are_vals_fixed()) {
 				ixn_param->get_adjoint()->reset_to_zero();
 			};
 		};
@@ -375,7 +375,7 @@ namespace dblz {
 		if (options.MODE_l2_reg) {
 			for (auto t=timepoint_integral_end; t>=timepoint_integral_start+1; t--) {
 				for (auto &ixn_param: _ixn_params) {
-					if (!ixn_param->get_is_val_fixed()) {
+					if (!ixn_param->get_is_val_fixed_to_init_cond() && !ixn_param->get_are_vals_fixed()) {
 						ixn_param->get_adjoint()->solve_diff_eq_at_timepoint_to_minus_one(t,dt,true,options.VAL_l2_lambda,options.VAL_l2_center);
 					};
 				};
@@ -383,7 +383,7 @@ namespace dblz {
 		} else {
 			for (auto t=timepoint_integral_end; t>=timepoint_integral_start+1; t--) {
 				for (auto &ixn_param: _ixn_params) {
-					if (!ixn_param->get_is_val_fixed()) {
+					if (!ixn_param->get_is_val_fixed_to_init_cond() && !ixn_param->get_are_vals_fixed()) {
 						ixn_param->get_adjoint()->solve_diff_eq_at_timepoint_to_minus_one(t,dt);
 					};
 				};
@@ -408,7 +408,7 @@ namespace dblz {
 
 		double dopt_use = dopt;
 		for (auto &ixn_param: _ixn_params) {
-			if (!ixn_param->get_is_val_fixed()) {
+			if (!ixn_param->get_is_val_fixed_to_init_cond() && !ixn_param->get_are_vals_fixed()) {
 				// Learning rate
 				if (options.MODE_var_learning_rates) {
 					dopt_use = options.VAL_var_learning_rates[ixn_param];
@@ -436,7 +436,7 @@ namespace dblz {
 		};
 
 		for (auto &ixn_param: _ixn_params) {
-			if (!ixn_param->get_is_val_fixed()) {
+			if (!ixn_param->get_is_val_fixed_to_init_cond() && !ixn_param->get_are_vals_fixed()) {
 				ixn_param->get_diff_eq_rhs()->update_committ_stored(options.nesterov);
 			};
 		};

@@ -50,6 +50,13 @@ namespace dblz {
 		~IxnParam();
 		
 		/********************
+		Diff eq rhs that this ixn param appears in
+		********************/
+
+		void add_diff_eq_dependency(std::shared_ptr<DiffEqRHS> diff_eq, int idx);
+		const std::vector<std::pair<std::shared_ptr<DiffEqRHS>,int>>& get_diff_eq_dependencies() const;
+
+		/********************
 		Timesteps
 		********************/
 

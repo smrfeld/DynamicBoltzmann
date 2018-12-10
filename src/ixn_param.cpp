@@ -45,6 +45,10 @@ namespace dblz {
 		// Moment
 		std::shared_ptr<Moment> _moment;
 
+		// Diff eq rhs that this ixn param appears in
+		// and the corresponding idx in that function (= 0, 1, 2, etc to denote argument order)
+		std::vector<std::pair<std::shared_ptr<DiffEqRHS>,int>> _diff_eq_dependencies;
+
 		// Copy, clean up
 		void _clean_up();
 		void _copy(const Impl& other);
@@ -62,6 +66,13 @@ namespace dblz {
 		Impl& operator=(const Impl& other);
 		Impl& operator=(Impl&& other);
 		~Impl();
+
+		/********************
+		Diff eq rhs that this ixn param appears in
+		********************/
+
+		void add_diff_eq_dependency(std::shared_ptr<DiffEqRHS> diff_eq, int idx);
+		const std::vector<std::pair<std::shared_ptr<DiffEqRHS>,int>>& get_diff_eq_dependencies() const;
 
 		/********************
 		Timepoints
@@ -234,6 +245,7 @@ namespace dblz {
 		_init_cond = other._init_cond;
 
 		_diff_eq = other._diff_eq;
+		_diff_eq_dependencies = other._diff_eq_dependencies;
 		_moment = other._moment;
 		_adjoint = other._adjoint;
 		_is_val_fixed_to_init_cond = other._is_val_fixed_to_init_cond;
@@ -246,11 +258,13 @@ namespace dblz {
 		_init_cond = other._init_cond;
 
 		_diff_eq = std::move(other._diff_eq);
+		_diff_eq_dependencies = other._diff_eq_dependencies;
 		_moment = std::move(other._moment);
 		_is_val_fixed_to_init_cond = other._is_val_fixed_to_init_cond;
 		_are_vals_fixed = other._are_vals_fixed;
 
 		// Reset the other
+		other._diff_eq_dependencies.clear();
 		other._no_timesteps = 0;
 		other._no_timepoints = 0;
 		other._vals = nullptr;
@@ -259,6 +273,17 @@ namespace dblz {
 		other._are_vals_fixed = false;
 
 		_adjoint = std::move(other._adjoint);
+	};
+
+	/********************
+	Diff eq rhs that this ixn param appears in
+	********************/
+
+	void IxnParam::Impl::add_diff_eq_dependency(std::shared_ptr<DiffEqRHS> diff_eq, int idx) {
+		_diff_eq_dependencies.push_back(std::make_pair(diff_eq,idx));
+	};
+	const std::vector<std::pair<std::shared_ptr<DiffEqRHS>,int>>& IxnParam::Impl::get_diff_eq_dependencies() const {
+		return _diff_eq_dependencies;
 	};
 
 	/********************
@@ -488,6 +513,17 @@ namespace dblz {
         return *this; 
 	};
 	IxnParam::~IxnParam() = default;
+
+	/********************
+	Diff eq rhs that this ixn param appears in
+	********************/
+
+	void IxnParam::add_diff_eq_dependency(std::shared_ptr<DiffEqRHS> diff_eq, int idx) {
+		_impl->add_diff_eq_dependency(diff_eq,idx);
+	};
+	const std::vector<std::pair<std::shared_ptr<DiffEqRHS>,int>>& IxnParam::get_diff_eq_dependencies() const {
+		return _impl->get_diff_eq_dependencies();
+	};
 
 	/********************
 	Timesteps

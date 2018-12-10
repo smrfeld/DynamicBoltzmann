@@ -177,9 +177,30 @@ namespace dblz {
 		};
 
 		// Deriv val
-		double deriv=0.0;
+		double deriv_term=0.0;
+		double deriv, adjoint_val;
+
+		// Go through dependencies (numerator F and adjoint)
+		for (auto const dep_pair: _ixn_param->get_diff_eq_dependencies()) {
+
+			// Derivative
+			deriv = dep_pair.first->get_deriv_wrt_nu_at_timepoint(timepoint,dep_pair.second);
+
+			// Adjoint
+			auto adjoint = dep_pair.first->get_parent_ixn_param()->get_adjoint();
+			if (!adjoint) {
+				std::cerr << ">>> Error: Adjoint::solve_diff_eq_at_timepoint_to_minus_one <<< No adjoint for ixn param: " << dep_pair.first->get_parent_ixn_param()->get_name() << std::endl;
+				exit(EXIT_FAILURE);	
+			};
+			adjoint_val = adjoint->get_val_at_timepoint(timepoint);
+
+			// Add
+			deriv_term += deriv * adjoint_val;
+
+		};
 
 		// Get domain
+		/*
 		int i_dim = 0;
 		for (auto const &domain: diff_eq_rhs->get_domain()) {
 			// Get ixn param
@@ -198,6 +219,7 @@ namespace dblz {
 			// Next dim
 			i_dim++;
 		}; 
+		*/
 
 		// Difference in moments
 		double moment_delta = _ixn_param->get_moment()->get_moment_at_timepoint(MomentType::ASLEEP, timepoint) - _ixn_param->get_moment()->get_moment_at_timepoint(MomentType::AWAKE, timepoint);

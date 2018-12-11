@@ -216,15 +216,15 @@ namespace dblz {
 				// std::cout << "reaped awake " << ( t6 - t5 ) / (double) CLOCKS_PER_SEC << std::endl;
 
 				// Convert lattice to prob mode
-				_latt->all_units_convert_to_p_mode();
+				// _latt->all_units_convert_to_p_mode();
 
 				// Sample
 				for (int i_sampling_step=0; i_sampling_step<no_latt_sampling_steps; i_sampling_step++) 
 				{
-					_latt->sample_v_at_timepoint(timepoint,false); // prob units
-					_latt->sample_h_at_timepoint(timepoint,false); // prob units
-					// _latt->sample_v_at_timepoint(timepoint); // binary units
-					// _latt->sample_h_at_timepoint(timepoint); // binary units
+					// _latt->sample_v_at_timepoint(timepoint,false); // prob units
+					// _latt->sample_h_at_timepoint(timepoint,fase); // prob units
+					_latt->sample_v_at_timepoint(timepoint); // binary units
+					_latt->sample_h_at_timepoint(timepoint); // binary units
 				};
 
 				// clock_t t7 = clock();    
@@ -238,8 +238,8 @@ namespace dblz {
 
 				// Reap asleep
 				for (auto &moment: _moments) {
-					moment->reap_as_timepoint_in_batch(MomentType::ASLEEP, timepoint, i_batch, false); // reap prob
-					// moment->reap_as_timepoint_in_batch(MomentType::ASLEEP, timepoint, i_batch); // reap binary
+					// moment->reap_as_timepoint_in_batch(MomentType::ASLEEP, timepoint, i_batch, false); // reap prob
+					moment->reap_as_timepoint_in_batch(MomentType::ASLEEP, timepoint, i_batch); // reap binary
 				};
 
 				// clock_t t8 = clock();    

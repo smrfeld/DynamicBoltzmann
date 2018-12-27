@@ -308,32 +308,47 @@ namespace bmla {
 	Get count
 	********************/
 
-	double ConnVH::get_moment(std::string ixn_param_name, bool binary) const {
+	double ConnVH::get_moment(std::string ixn_param_name, bool binary_visible, bool binary_hidden) const {
 		if (!_ixn_dict) {
 			std::cerr << ">>> Error: ConnVH::get_moment <<< no ixn dict exists on this conn" << std::endl;
 			exit(EXIT_FAILURE);
 		};
 
-		double count = 0.0;
-
-		std::vector<Sptr2> species = _ixn_dict->get_species_from_ixn(ixn_param_name);
-		for (auto &sp: species) {
-
-			if (binary) {
-
-				// Binary
-				if (_uv->get_b_mode_species() == sp.s1 && _uh->get_b_mode_species() == sp.s2) {
-					count += 1.0;
+		if (binary_visible && binary_hidden) {
+			// Binary - binary
+			int count = 0;
+			for (auto const &sp: _ixn_dict->get_species_from_ixn(ixn_param_name)) {
+				if (_uv->check_is_b_mode_species(sp.s1) && _uh->check_is_b_mode_species(sp.s2)) {
+					count++;
 				};
-
-			} else {
-
-				// Prob
+			};
+			return count;
+		} else if (binary_visible && !binary_hidden) {
+			// Binary - prob
+			double count = 0.0;
+			for (auto const &sp: _ixn_dict->get_species_from_ixn(ixn_param_name)) {
+				if (_uv->check_is_b_mode_species(sp.s1)) {
+					count += 1.0 * _uh->get_p_mode_prob(sp.s2);
+				};
+			};
+			return count;
+		} else if (!binary_visible && binary_hidden) {
+			// Prob - binary
+			double count = 0.0;
+			for (auto const &sp: _ixn_dict->get_species_from_ixn(ixn_param_name)) {
+				if (_uh->check_is_b_mode_species(sp.s2)) {
+					count += 1.0 * _uv->get_p_mode_prob(sp.s1);
+				};
+			};
+			return count;
+		} else {
+			// Prob - prob
+			double count = 0.0;
+			for (auto const &sp: _ixn_dict->get_species_from_ixn(ixn_param_name)) {
 				count += _uv->get_p_mode_prob(sp.s1) * _uh->get_p_mode_prob(sp.s2);
 			};
+			return count;
 		};
-
-		return count;
 	};
 
 	/********************

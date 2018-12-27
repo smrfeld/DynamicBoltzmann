@@ -174,16 +174,19 @@ namespace bmla {
 				_latt->read_from_file(fname_coll.get_fname(idx_subset[i_batch])); // binary units
 			} else {
 				// Random lattice...
-				latt->all_units_v_random();
+				_latt->all_units_v_random();
 			};
 
 			// Sample hidden
-			_latt->sample_h(); // binary units
+			// Hidden: binary (= true)
+			_latt->sample_h(true);
 
 			// Reap awake
 			for (auto &ixn_param: _ixn_params) {
 				if (!ixn_param->get_moment()->get_is_awake_moment_fixed()) {
-					ixn_param->get_moment()->reap_in_batch(MomentType::AWAKE, i_batch);
+					// Visible: binary (= true)
+					// Hidden: binary (= true)
+					ixn_param->get_moment()->reap_in_batch(MomentType::AWAKE, i_batch, true, true);
 				};
 			};
 
@@ -193,10 +196,21 @@ namespace bmla {
 			// Sample vis, hidden
 			for (int i_sampling_step=0; i_sampling_step<no_latt_sampling_steps; i_sampling_step++) 
 			{
-				_latt->sample_v(); // binary units
-				_latt->sample_h(); // binary units
-				// _latt->sample_v(false); // prob units
-				// _latt->sample_h(false); // prob units
+				// Sample down (hidden -> visible)
+				// Visible: prob (= false)
+				// Hiddens: binary (= true)
+				_latt->sample_v(false,true);
+
+				// Sample up (visible -> hidden)
+				// If not last step:
+				// Hiddens: binary (= true)
+				// Else:
+				// Hiddens: prob (= false)
+				if (i_sampling_step != no_latt_sampling_steps-1) {
+					_latt->sample_h(true); // binary hiddens
+				} else {
+					_latt->sample_h(false); // prob hiddens
+				};
 			};
 
 			// Print
@@ -204,8 +218,9 @@ namespace bmla {
 
 			// Reap asleep
 			for (auto &ixn_param: _ixn_params) {
-				ixn_param->get_moment()->reap_in_batch(MomentType::ASLEEP, i_batch); // binary
-				// ixn_param->get_moment()->reap_in_batch(MomentType::ASLEEP, i_batch, false); // prob
+				// Visible: prob (= false)
+				// Hiddens: prob (= false)
+				ixn_param->get_moment()->reap_in_batch(MomentType::ASLEEP, i_batch, false, false);
 			};
 		};
 		

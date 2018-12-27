@@ -302,7 +302,7 @@ namespace bmla {
 	Reap from sampler
 	********************/
 
-	void Moment::reap_in_batch(MomentType type, int i_batch, bool binary) {
+	void Moment::reap_in_batch(MomentType type, int i_batch, bool binary_visible, bool binary_hidden) {
 
 		if (i_batch >= _batch_size) {
 			std::cerr << ">>> Error Moment::reap_in_batch <<< Batch size for moment is: " << _batch_size << " but tried: " << i_batch << std::endl;
@@ -314,32 +314,32 @@ namespace bmla {
 		if (_type == IxnParamType::H) {
 			// H
 			for (auto const &unit: _monitor_h) {
-				count += unit->get_moment(_name,binary);
+				count += unit->get_moment(_name,binary_visible);
 			};
 		} else if (_type == IxnParamType::B) {
 			// B
 			for (auto const &unit: _monitor_b) {
-				count += unit->get_moment(_name,binary);
+				count += unit->get_moment(_name,binary_hidden);
 			};
 		} else if (_type == IxnParamType::J) {
 			// J
 			for (auto const &conn: _monitor_j) {
-				count += conn->get_moment(_name,binary);
+				count += conn->get_moment(_name,binary_visible);
 			};
 		} else if (_type == IxnParamType::K) {
 			// K
 			for (auto const &conn: _monitor_k) {
-				count += conn->get_moment(_name,binary);
+				count += conn->get_moment(_name,binary_visible);
 			};
 		} else if (_type == IxnParamType::W) {
 			// K
 			for (auto const &conn: _monitor_w) {
-				count += conn->get_moment(_name,binary);
+				count += conn->get_moment(_name,binary_visible,binary_hidden);
 			};
 		} else if (_type == IxnParamType::X) {
 			// K
 			for (auto const &conn: _monitor_x) {
-				count += conn->get_moment(_name,binary);
+				count += conn->get_moment(_name,binary_hidden);
 			};
 		};
 

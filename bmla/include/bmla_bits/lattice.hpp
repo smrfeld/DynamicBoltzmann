@@ -217,8 +217,8 @@ namespace bmla {
 		Sample
 		********************/
 
-		void sample_v(bool binary=true);
-		void sample_h(bool binary=true);
+		void sample_v(bool binary_visible=true, bool binary_hidden=true);
+		void sample_h(bool binary_hidden=true);
 
 		/********************
 		Get counts

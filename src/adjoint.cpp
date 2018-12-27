@@ -170,12 +170,6 @@ namespace dblz {
 			exit(EXIT_FAILURE);		
 		};
 
-		auto diff_eq_rhs = _ixn_param->get_diff_eq_rhs();
-		if (!diff_eq_rhs) {
-			std::cerr << ">>> Error: Adjoint::solve_diff_eq_at_timepoint_to_minus_one <<< No diff eq rhs for ixn param!" << std::endl;
-			exit(EXIT_FAILURE);	
-		};
-
 		// Deriv val
 		double deriv_term=0.0;
 		double deriv, adjoint_val;
@@ -201,6 +195,12 @@ namespace dblz {
 
 		// Get domain
 		/*
+		auto diff_eq_rhs = _ixn_param->get_diff_eq_rhs();
+		if (!diff_eq_rhs) {
+			std::cerr << ">>> Error: Adjoint::solve_diff_eq_at_timepoint_to_minus_one <<< No diff eq rhs for ixn param!" << std::endl;
+			exit(EXIT_FAILURE);	
+		};
+
 		int i_dim = 0;
 		for (auto const &domain: diff_eq_rhs->get_domain()) {
 			// Get ixn param

@@ -137,9 +137,9 @@ namespace dblz {
 		};
 
 		// nesterov
-		double lambda_0 = 0.0;
-		_lambda_s = (1.0 + sqrt(1.0 + 4.0 * pow(lambda_0,2))) / 2.0;
-		_lambda_sp1 = (1.0 + sqrt(1.0 + 4.0 * pow(_lambda_s,2))) / 2.0;
+		// double lambda_0 = 0.0;
+		// _lambda_s = (1.0 + sqrt(1.0 + 4.0 * pow(lambda_0,2))) / 2.0;
+		// _lambda_sp1 = (1.0 + sqrt(1.0 + 4.0 * pow(_lambda_s,2))) / 2.0;
 	};
 	DiffEqRHS::DiffEqRHS(const DiffEqRHS& other) : Grid(other) {
 		_copy(other);
@@ -177,8 +177,8 @@ namespace dblz {
 		_domain = other._domain;
 		_parent_ixn_param = other._parent_ixn_param;
 		_updates = other._updates;
-		_lambda_s = other._lambda_s;
-		_lambda_sp1 = other._lambda_sp1;
+		// _lambda_s = other._lambda_s;
+		// _lambda_sp1 = other._lambda_sp1;
 		if (other._y_s) {
 			_y_s = new std::map<q3c1::Vertex*,std::vector<double>>(*other._y_s);
 		};
@@ -192,8 +192,8 @@ namespace dblz {
 		_domain = other._domain;
 		_parent_ixn_param = other._parent_ixn_param;
 		_updates = other._updates;
-		_lambda_s = other._lambda_s;
-		_lambda_sp1 = other._lambda_sp1;
+		// _lambda_s = other._lambda_s;
+		// _lambda_sp1 = other._lambda_sp1;
 		_y_s = other._y_s;
 		_y_sp1 = other._y_sp1;
 
@@ -203,8 +203,8 @@ namespace dblz {
 		other._domain.clear();
 		other._parent_ixn_param = nullptr;
 		other._updates.clear();
-		other._lambda_s = 0.0;
-		other._lambda_sp1 = 0.0;
+		// other._lambda_s = 0.0;
+		// other._lambda_sp1 = 0.0;
 		other._y_s = nullptr;
 		other._y_sp1 = nullptr;
 	};
@@ -325,7 +325,7 @@ namespace dblz {
 	};
 
 	// Committ the update
-	void DiffEqRHS::update_committ_stored(bool nesterov_mode) {
+	void DiffEqRHS::update_committ_stored(bool nesterov_mode, double nesterov_acc) {
 
 		if (nesterov_mode) {
 
@@ -375,10 +375,10 @@ namespace dblz {
 			};
 
 			// New lambda
-			_lambda_sp1 = (1.0 + sqrt(1.0 + 4.0 * pow(_lambda_s,2))) / 2.0;
+			// _lambda_sp1 = (1.0 + sqrt(1.0 + 4.0 * pow(_lambda_s,2))) / 2.0;
 
 			// Gamma
-			double gamma_s = (1.0 - _lambda_s) / _lambda_sp1;
+			// double gamma_s = (1.0 - _lambda_s) / _lambda_sp1;
 
 			// Check that y_s exists
 			if (!_y_s) {
@@ -396,6 +396,73 @@ namespace dblz {
 			};			
 
 			// New vals
+			if (_no_dims == 1) {
+				for (auto const &pr: _updates) {
+					// Val
+					pr.first->get_bf({q3c1::DimType::VAL})->set_coeff(
+						(1.0 + nesterov_acc) * (*_y_sp1)[pr.first][0] - nesterov_acc * (*_y_s)[pr.first][0]
+						);
+					// Deriv
+					pr.first->get_bf({q3c1::DimType::DERIV})->set_coeff(
+						(1.0 + nesterov_acc) * (*_y_sp1)[pr.first][1] - nesterov_acc * (*_y_s)[pr.first][1]
+						);
+				};
+			} else if (_no_dims == 2) {
+				for (auto const &pr: _updates) {
+					// Val-val
+					pr.first->get_bf({q3c1::DimType::VAL,q3c1::DimType::VAL})->set_coeff(
+						(1.0 + nesterov_acc) * (*_y_sp1)[pr.first][0] - nesterov_acc * (*_y_s)[pr.first][0]
+						);
+					// Val-Deriv
+					pr.first->get_bf({q3c1::DimType::VAL,q3c1::DimType::DERIV})->set_coeff(
+						(1.0 + nesterov_acc) * (*_y_sp1)[pr.first][1] - nesterov_acc * (*_y_s)[pr.first][1]
+						);
+					// Deriv-val
+					pr.first->get_bf({q3c1::DimType::DERIV,q3c1::DimType::VAL})->set_coeff(
+						(1.0 + nesterov_acc) * (*_y_sp1)[pr.first][2] - nesterov_acc * (*_y_s)[pr.first][2]
+						);
+					// Deriv-deriv
+					pr.first->get_bf({q3c1::DimType::DERIV,q3c1::DimType::DERIV})->set_coeff(
+						(1.0 + nesterov_acc) * (*_y_sp1)[pr.first][3] - nesterov_acc * (*_y_s)[pr.first][3]
+						);
+				};
+			} else if (_no_dims == 3) {
+				for (auto const &pr: _updates) {
+					// Val-val-val
+					pr.first->get_bf({q3c1::DimType::VAL,q3c1::DimType::VAL,q3c1::DimType::VAL})->set_coeff(
+						(1.0 + nesterov_acc) * (*_y_sp1)[pr.first][0] - nesterov_acc * (*_y_s)[pr.first][0]
+						);
+					// Val-val-deriv
+					pr.first->get_bf({q3c1::DimType::VAL,q3c1::DimType::VAL,q3c1::DimType::DERIV})->set_coeff(
+						(1.0 + nesterov_acc) * (*_y_sp1)[pr.first][1] - nesterov_acc * (*_y_s)[pr.first][1]
+						);
+					// Val-deriv-val
+					pr.first->get_bf({q3c1::DimType::VAL,q3c1::DimType::DERIV,q3c1::DimType::VAL})->set_coeff(
+						(1.0 + nesterov_acc) * (*_y_sp1)[pr.first][2] - nesterov_acc * (*_y_s)[pr.first][2]
+						);
+					// Deriv-val-val
+					pr.first->get_bf({q3c1::DimType::DERIV,q3c1::DimType::VAL,q3c1::DimType::VAL})->set_coeff(
+						(1.0 + nesterov_acc) * (*_y_sp1)[pr.first][3] - nesterov_acc * (*_y_s)[pr.first][3]
+						);
+					// Val-deriv-deriv
+					pr.first->get_bf({q3c1::DimType::VAL,q3c1::DimType::DERIV,q3c1::DimType::DERIV})->set_coeff(
+						(1.0 + nesterov_acc) * (*_y_sp1)[pr.first][4] - nesterov_acc * (*_y_s)[pr.first][4]
+						);
+					// Deriv-val-deriv
+					pr.first->get_bf({q3c1::DimType::DERIV,q3c1::DimType::VAL,q3c1::DimType::DERIV})->set_coeff(
+						(1.0 + nesterov_acc) * (*_y_sp1)[pr.first][5] - nesterov_acc * (*_y_s)[pr.first][5]
+						);
+					// Deriv-deriv-val
+					pr.first->get_bf({q3c1::DimType::DERIV,q3c1::DimType::DERIV,q3c1::DimType::VAL})->set_coeff(
+						(1.0 + nesterov_acc) * (*_y_sp1)[pr.first][6] - nesterov_acc * (*_y_s)[pr.first][6]
+						);
+					// Deriv-deriv-deriv
+					pr.first->get_bf({q3c1::DimType::DERIV,q3c1::DimType::DERIV,q3c1::DimType::DERIV})->set_coeff(
+						(1.0 + nesterov_acc) * (*_y_sp1)[pr.first][7] - nesterov_acc * (*_y_s)[pr.first][7]
+						);
+				};
+			};
+			/*
 			if (_no_dims == 1) {
 				for (auto const &pr: _updates) {
 					// Val
@@ -434,6 +501,7 @@ namespace dblz {
 					pr.first->get_bf({q3c1::DimType::DERIV,q3c1::DimType::DERIV,q3c1::DimType::DERIV})->set_coeff((1.0 - gamma_s) * (*_y_sp1)[pr.first][7] + gamma_s * (*_y_s)[pr.first][7]);
 				};
 			};
+			*/
 
 			// Delete old y_s
 			if (_y_s) {
@@ -444,7 +512,7 @@ namespace dblz {
 			// Advance y, lambda
 			_y_s = _y_sp1;
 			_y_sp1 = nullptr; // remove ref, i.e. ysp1 was now passed to ys
-			_lambda_s = _lambda_sp1;
+			// _lambda_s = _lambda_sp1;
 
 		} else {
 

@@ -92,6 +92,7 @@ namespace dblz {
 
 		// Nesterov
 		bool nesterov = true;
+		double nesterov_acc = 0.5;
 	};
 
 	/****************************************

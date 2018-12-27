@@ -437,7 +437,7 @@ namespace dblz {
 
 		for (auto &ixn_param: _ixn_params) {
 			if (!ixn_param->get_is_val_fixed_to_init_cond() && !ixn_param->get_are_vals_fixed()) {
-				ixn_param->get_diff_eq_rhs()->update_committ_stored(options.nesterov);
+				ixn_param->get_diff_eq_rhs()->update_committ_stored(options.nesterov,options.nesterov_acc);
 			};
 		};
 

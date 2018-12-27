@@ -105,7 +105,7 @@ namespace dblz {
 		std::map<q3c1::Vertex*,std::vector<double>> _updates;
 
 		// Nesterov
-		double _lambda_s, _lambda_sp1;
+		// double _lambda_s, _lambda_sp1;
 		std::map<q3c1::Vertex*,std::vector<double>> *_y_s, *_y_sp1;
 
 		// Internal
@@ -169,7 +169,7 @@ namespace dblz {
 		void print_update_stored() const;
 
 		// Committ the update
-		void update_committ_stored(bool nesterov_mode=true);
+		void update_committ_stored(bool nesterov_mode=true, double nesterov_acc=0.5);
 	};
 
 };

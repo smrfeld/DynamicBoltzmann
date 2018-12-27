@@ -356,7 +356,7 @@ namespace dblz {
 	Reap from sampler
 	********************/
 
-	void Moment::reap_as_timepoint_in_batch(MomentType type, int timepoint, int i_batch, bool binary) {
+	void Moment::reap_as_timepoint_in_batch(MomentType type, int timepoint, int i_batch, bool binary_visible, bool binary_hidden) {
 
 		/*
 		if (timepoint >= _no_timepoints) {
@@ -374,32 +374,32 @@ namespace dblz {
 		if (_type == IxnParamType::H) {
 			// H
 			for (auto const &unit: _monitor_h) {
-				count += unit->get_moment(_name,binary);
+				count += unit->get_moment(_name,binary_visible);
 			};
 		} else if (_type == IxnParamType::B) {
 			// B
 			for (auto const &unit: _monitor_b) {
-				count += unit->get_moment(_name,binary);
+				count += unit->get_moment(_name,binary_hidden);
 			};
 		} else if (_type == IxnParamType::J) {
 			// J
 			for (auto const &conn: _monitor_j) {
-				count += conn->get_moment(_name,binary);
+				count += conn->get_moment(_name,binary_visible);
 			};
 		} else if (_type == IxnParamType::K) {
 			// K
 			for (auto const &conn: _monitor_k) {
-				count += conn->get_moment(_name,binary);
+				count += conn->get_moment(_name,binary_visible);
 			};
 		} else if (_type == IxnParamType::W) {
 			// W
 			for (auto const &conn: _monitor_w) {
-				count += conn->get_moment(_name,binary);
+				count += conn->get_moment(_name,binary_visible,binary_hidden);
 			};
 		} else if (_type == IxnParamType::X) {
 			// X
 			for (auto const &conn: _monitor_x) {
-				count += conn->get_moment(_name,binary);
+				count += conn->get_moment(_name,binary_hidden);
 			};
 		};
 

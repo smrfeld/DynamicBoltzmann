@@ -952,7 +952,7 @@ namespace dblz {
 	Sample
 	********************/
 
-	void Lattice::sample_v_at_timepoint(int timepoint, bool binary) {
+	void Lattice::sample_v_at_timepoint(int timepoint, bool binary_visible, bool binary_hidden) {
 
 		// Go through hidden layers top to bottom (reverse)
 		auto rit_begin = _latt_h.rbegin();
@@ -965,7 +965,7 @@ namespace dblz {
 			for (auto const &idx: _latt_h_idxs[rit->first]) 
 			{
 				// Sample, given input from a layer higher
-				rit->second[idx]->sample_at_timepoint(timepoint,rit->first+1, binary);
+				rit->second[idx]->sample_at_timepoint(timepoint,rit->first+1, binary_hidden);
 			};
 		};
 
@@ -977,10 +977,10 @@ namespace dblz {
 		// Sample
 		for (auto const &idx: _latt_v_idxs) 
 		{
-			_latt_v[idx]->sample_at_timepoint(timepoint,binary);
+			_latt_v[idx]->sample_at_timepoint(timepoint,binary_visible);
 		};
 	};
-	void Lattice::sample_h_at_timepoint(int timepoint, bool binary) {
+	void Lattice::sample_h_at_timepoint(int timepoint, bool binary_hidden) {
 		for (auto it=_latt_h.begin(); it!=_latt_h.end(); it++) 
 		{
 			// Shuffle
@@ -989,7 +989,7 @@ namespace dblz {
 			for (auto const &idx: _latt_h_idxs[it->first]) 
 			{
 				// Sample, given input from a layer lower
-				it->second[idx]->sample_at_timepoint(timepoint,it->first-1,binary);
+				it->second[idx]->sample_at_timepoint(timepoint,it->first-1,binary_hidden);
 			};
 		};
 	};

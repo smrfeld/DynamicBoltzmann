@@ -215,8 +215,8 @@ namespace dblz {
 		Sample
 		********************/
 
-		void sample_v_at_timepoint(int timepoint, bool binary=true);
-		void sample_h_at_timepoint(int timepoint, bool binary=true);
+		void sample_v_at_timepoint(int timepoint, bool binary_visible=true, bool binary_hidden=true);
+		void sample_h_at_timepoint(int timepoint, bool binary_hidden=true);
 
 		/********************
 		Get counts

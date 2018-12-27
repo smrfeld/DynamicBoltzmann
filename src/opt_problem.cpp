@@ -202,14 +202,17 @@ namespace dblz {
 				// std::cout << "read " << ( t4 - t3 ) / (double) CLOCKS_PER_SEC << std::endl;
 
 				// Sample hidden
-				_latt->sample_h_at_timepoint(timepoint); // binary units
+				// Hidden: binary (= true)
+				_latt->sample_h_at_timepoint(timepoint,true);
 
 				// clock_t t5 = clock();    
 				// std::cout << "sample h " << ( t5 - t4 ) / (double) CLOCKS_PER_SEC << std::endl;
 
 				// Reap awake
 				for (auto &moment: _moments) {
-					moment->reap_as_timepoint_in_batch(MomentType::AWAKE, timepoint, i_batch);
+					// Visible: binary (= true)
+					// Hidden: binary (= true)
+					moment->reap_as_timepoint_in_batch(MomentType::AWAKE, timepoint, i_batch, true, true);
 				};
 
 				// clock_t t6 = clock();    
@@ -221,10 +224,21 @@ namespace dblz {
 				// Sample
 				for (int i_sampling_step=0; i_sampling_step<no_latt_sampling_steps; i_sampling_step++) 
 				{
-					// _latt->sample_v_at_timepoint(timepoint,false); // prob units
-					// _latt->sample_h_at_timepoint(timepoint,fase); // prob units
-					_latt->sample_v_at_timepoint(timepoint); // binary units
-					_latt->sample_h_at_timepoint(timepoint); // binary units
+					// Sample down (hidden -> visible)
+					// Visible: prob (= false)
+					// Hiddens: binary (= true)
+					_latt->sample_v_at_timepoint(timepoint,false,true);
+
+					// Sample up (visible -> hidden)
+					// If not last step:
+					// Hiddens: binary (= true)
+					// Else:
+					// Hiddens: prob (= false)
+					if (i_sampling_step != no_latt_sampling_steps-1) {
+						_latt->sample_h_at_timepoint(timepoint,true); // binary hiddens
+					} else {
+						_latt->sample_h_at_timepoint(timepoint,false); // prob hiddens
+					};
 				};
 
 				// clock_t t7 = clock();    
@@ -238,13 +252,13 @@ namespace dblz {
 
 				// Reap asleep
 				for (auto &moment: _moments) {
-					// moment->reap_as_timepoint_in_batch(MomentType::ASLEEP, timepoint, i_batch, false); // reap prob
-					moment->reap_as_timepoint_in_batch(MomentType::ASLEEP, timepoint, i_batch); // reap binary
+					// Visible: prob (= false)
+					// Hiddens: prob (= false)
+					moment->reap_as_timepoint_in_batch(MomentType::ASLEEP, timepoint, i_batch, false, false);
 				};
 
 				// clock_t t8 = clock();    
 				// std::cout << "reaped asleep " << ( t8 - t7 ) / (double) CLOCKS_PER_SEC << std::endl;
-
 			};
 			
 			// Average moments at this timepoint

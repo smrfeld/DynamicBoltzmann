@@ -201,8 +201,10 @@ namespace dblz {
 		void all_units_set_empty();
 
 		// Binary/probabilistic
-		void all_units_convert_to_b_mode();
-		void all_units_convert_to_p_mode();
+		void all_units_v_convert_to_b_mode();
+		void all_units_v_convert_to_p_mode();
+		void all_units_h_convert_to_b_mode();
+		void all_units_h_convert_to_p_mode();
 
 		/********************
 		Write/read latt to a file

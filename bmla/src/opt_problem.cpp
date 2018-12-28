@@ -166,8 +166,9 @@ namespace bmla {
 				std::cout << "." << std::flush;
 			};
 
-			// Convert lattice to binary mode
-			// _latt->all_units_convert_to_b_mode();
+			// Convert all units (hidden and visible) to binary mode
+			_latt->all_units_v_convert_to_b_mode();
+			_latt->all_units_h_convert_to_b_mode();
 
 			// Read latt
 			if (!start_with_random_lattice) {
@@ -190,8 +191,9 @@ namespace bmla {
 				};
 			};
 
-			// Convert lattice to prob mode
-			// _latt->all_units_convert_to_p_mode();
+			// Convert visibles to prob mode
+			// Keep hidden units in binary
+			_latt->all_units_v_convert_to_p_mode();
 
 			// Sample vis, hidden
 			for (int i_sampling_step=0; i_sampling_step<no_latt_sampling_steps; i_sampling_step++) 
@@ -209,6 +211,7 @@ namespace bmla {
 				if (i_sampling_step != no_latt_sampling_steps-1) {
 					_latt->sample_h(true); // binary hiddens
 				} else {
+					_latt->all_units_h_convert_to_p_mode();
 					_latt->sample_h(false); // prob hiddens
 				};
 			};
@@ -235,7 +238,6 @@ namespace bmla {
 		if (verbose) {
 			std::cout << std::endl;
 		};
-
 
 		if (verbose) {
 			std::cout << "--- [Finished] Sampled lattice ---" << std::endl;

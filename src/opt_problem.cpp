@@ -192,8 +192,9 @@ namespace dblz {
 
 				// clock_t t3 = clock();    
 
-				// Convert lattice to binary mode
-				// _latt->all_units_convert_to_b_mode();
+				// Convert all units (hidden and visible) to binary mode
+				_latt->all_units_v_convert_to_b_mode();
+				_latt->all_units_h_convert_to_b_mode();
 
 				// Read latt
 				_latt->read_from_file(fname_coll.get_fname_series(batch_idx_subset[i_batch]).fnames[timepoint]); // binary units
@@ -218,8 +219,9 @@ namespace dblz {
 				// clock_t t6 = clock();    
 				// std::cout << "reaped awake " << ( t6 - t5 ) / (double) CLOCKS_PER_SEC << std::endl;
 
-				// Convert lattice to prob mode
-				// _latt->all_units_convert_to_p_mode();
+				// Convert visibles to prob mode
+				// Keep hidden units in binary
+				_latt->all_units_v_convert_to_p_mode();
 
 				// Sample
 				for (int i_sampling_step=0; i_sampling_step<no_latt_sampling_steps; i_sampling_step++) 
@@ -237,6 +239,7 @@ namespace dblz {
 					if (i_sampling_step != no_latt_sampling_steps-1) {
 						_latt->sample_h_at_timepoint(timepoint,true); // binary hiddens
 					} else {
+						_latt->all_units_h_convert_to_p_mode();
 						_latt->sample_h_at_timepoint(timepoint,false); // prob hiddens
 					};
 				};

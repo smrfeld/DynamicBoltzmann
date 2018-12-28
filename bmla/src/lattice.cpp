@@ -807,20 +807,24 @@ namespace bmla {
 	};
 
 	// Binary/probabilistic
-	void Lattice::all_units_convert_to_b_mode() {
+	void Lattice::all_units_v_convert_to_b_mode() {
 		for (auto &s: _latt_v) {
 			s->convert_p_to_b_mode();
 		};
+	};
+	void Lattice::all_units_v_convert_to_p_mode() {
+		for (auto &s: _latt_v) {
+			s->convert_b_to_p_mode();
+		};
+	};
+	void Lattice::all_units_h_convert_to_b_mode() {
 		for (auto &pr: _latt_h) {
 			for (auto &s: pr.second) {
 				s->convert_p_to_b_mode();
 			};
 		};
 	};
-	void Lattice::all_units_convert_to_p_mode() {
-		for (auto &s: _latt_v) {
-			s->convert_b_to_p_mode();
-		};
+	void Lattice::all_units_h_convert_to_p_mode() {
 		for (auto &pr: _latt_h) {
 			for (auto &s: pr.second) {
 				s->convert_b_to_p_mode();

@@ -138,7 +138,7 @@ namespace bmla {
 		Reap from lattice
 		********************/
 
-		void reap_in_batch(MomentType type, int i_batch, bool binary_visible=true, bool binary_hidden=true);
+		void reap_in_batch(MomentType type, int i_batch);
 		
 		/********************
 		Average reaps

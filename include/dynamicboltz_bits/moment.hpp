@@ -147,7 +147,7 @@ namespace dblz {
 		Reap from lattice
 		********************/
 
-		void reap_as_timepoint_in_batch(MomentType type, int timepoint, int i_batch, bool binary_visible=true, bool binary_hidden=true);
+		void reap_as_timepoint_in_batch(MomentType type, int timepoint, int i_batch);
 		
 		/********************
 		Average reaps

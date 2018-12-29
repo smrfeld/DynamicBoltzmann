@@ -202,12 +202,6 @@ namespace bmla {
 		// Random
 		void all_units_v_random();
 
-		// Binary/probabilistic		
-		void all_units_v_convert_to_b_mode();
-		void all_units_v_convert_to_p_mode();
-		void all_units_h_convert_to_b_mode();
-		void all_units_h_convert_to_p_mode();
-
 		/********************
 		Write/read latt to a file
 		********************/
@@ -219,17 +213,17 @@ namespace bmla {
 		Sample
 		********************/
 
-		void sample_v(bool binary_visible=true, bool binary_hidden=true);
-		void sample_h(bool binary_hidden=true);
+		void sample_down_h_to_v(bool layer_wise, bool binary_visible=true, bool binary_hidden=true);
+		void sample_up_v_to_h(bool layer_wise, bool binary_hidden=true);
 
 		/********************
 		Get counts
 		********************/
 
-		double get_count(Sptr &sp, bool binary=true) const;
-		double get_count(Sptr &sp1, Sptr &sp2, bool binary=true, bool reversibly=true) const;
-		double get_count(Sptr &sp1, Sptr &sp2, Sptr &sp3, bool binary=true, bool reversibly=true) const;
-		double get_count(Sptr &sp1, Sptr &sp2, Sptr &sp3, Sptr &sp4, bool binary=true, bool reversibly=true) const;
+		double get_count(Sptr &sp) const;
+		double get_count(Sptr &sp1, Sptr &sp2, bool reversibly=true) const;
+		double get_count(Sptr &sp1, Sptr &sp2, Sptr &sp3, bool reversibly=true) const;
+		double get_count(Sptr &sp1, Sptr &sp2, Sptr &sp3, Sptr &sp4, bool reversibly=true) const;
 	};
 
 };

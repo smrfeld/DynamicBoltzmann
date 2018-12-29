@@ -780,47 +780,19 @@ namespace dblz {
 	// Clear the lattice
 	void Lattice::all_units_v_set_empty() {
 		for (auto &s: _latt_v) {
-			s->set_b_mode_empty();
-			s->set_p_mode_empty();
+			s->set_empty();
 		};
 	};
 	void Lattice::all_units_h_set_empty() {
 		for (auto &pr: _latt_h) {
 			for (auto &s: pr.second) {
-				s->set_b_mode_empty();
-				s->set_p_mode_empty();
+				s->set_empty();
 			};
 		};
 	};
 	void Lattice::all_units_set_empty() {
 		all_units_v_set_empty();
 		all_units_h_set_empty();
-	};
-
-	// Binary/probabilistic
-	void Lattice::all_units_v_convert_to_b_mode() {
-		for (auto &s: _latt_v) {
-			s->convert_p_to_b_mode();
-		};
-	};
-	void Lattice::all_units_v_convert_to_p_mode() {
-		for (auto &s: _latt_v) {
-			s->convert_b_to_p_mode();
-		};
-	};
-	void Lattice::all_units_h_convert_to_b_mode() {
-		for (auto &pr: _latt_h) {
-			for (auto &s: pr.second) {
-				s->convert_p_to_b_mode();
-			};
-		};
-	};
-	void Lattice::all_units_h_convert_to_p_mode() {
-		for (auto &pr: _latt_h) {
-			for (auto &s: pr.second) {
-				s->convert_b_to_p_mode();
-			};
-		};
 	};
 
 	/********************
@@ -832,31 +804,29 @@ namespace dblz {
 		std::ofstream f;
 		f.open (fname);
 		for (auto const &l: _latt_v) {
-			if (binary) {
-				if (!l->check_b_mode_is_empty()) {
-					if (_no_dims == 1) {
-						f << l->x();
-					} else if (_no_dims == 2) {
-						f << l->x() << " " << l->y();
-					} else if (_no_dims == 3) {
-						f << l->x() << " " << l->y() << " " << l->z();
-					};
-					f << " " << l->get_b_mode_species()->get_name() << "\n";
-				};
+			auto nonzero_map = l->get_nonzero_occs();
+			if (nonzero_map.size() == 0) {
+				// empty, skip
 			} else {
-				if (!l->check_p_mode_is_empty()) {
-					if (_no_dims == 1) {
-						f << l->x();
-					} else if (_no_dims == 2) {
-						f << l->x() << " " << l->y();
-					} else if (_no_dims == 3) {
-						f << l->x() << " " << l->y() << " " << l->z();
+				if (_no_dims == 1) {
+					f << l->x();
+				} else if (_no_dims == 2) {
+					f << l->x() << " " << l->y();
+				} else if (_no_dims == 3) {
+					f << l->x() << " " << l->y() << " " << l->z();
+				};
+				if (nonzero_map.size() == 1) {
+					// binary
+					for (auto const &pr: nonzero_map) {
+						f << " " << pr.first->get_name();
 					};
-					for (auto const &pr: l->get_p_mode_probs()) {
+				} else {
+					// multiple
+					for (auto const &pr: nonzero_map) {
 						f << " " << pr.first->get_name() << " " << pr.second;
 					};
-					f << "\n";
 				};
+				f << "\n";
 			};
 		};
 		f.close();
@@ -885,7 +855,7 @@ namespace dblz {
 					iss = std::istringstream(line);				
 					iss >> x >> sp;
 		    		s = _look_up_unit_v(atoi(x.c_str()));
-		    		s->set_b_mode_species(sp);
+		    		s->set_occ(sp,1.0);
 		    		// Reset
 			    	sp=""; x="";
 			    };
@@ -896,8 +866,7 @@ namespace dblz {
 					iss >> x >> sp >> prob;
 		    		s = _look_up_unit_v(atoi(x.c_str()));
 		    		prob_val = atof(prob.c_str());
-		    		s->set_p_mode_prob(sp,prob_val);
-		    		s->set_p_mode_prob("",1.0-prob_val);
+		    		s->set_occ(sp,prob_val);
 		    		// Reset
 			    	sp=""; x=""; prob="";
 			    };
@@ -907,7 +876,7 @@ namespace dblz {
 					iss = std::istringstream(line);				
 					iss >> x >> y >> sp;
 		    		s = _look_up_unit_v(atoi(x.c_str()),atoi(y.c_str()));
-	    			s->set_b_mode_species(sp);
+		    		s->set_occ(sp,1.0);
 		    		// Reset
 			    	sp=""; x=""; y="";
 			    };
@@ -918,8 +887,7 @@ namespace dblz {
 					iss >> x >> y >> sp >> prob;
 		    		s = _look_up_unit_v(atoi(x.c_str()),atoi(y.c_str()));				
 		    		prob_val = atof(prob.c_str());
-		    		s->set_p_mode_prob(sp,prob_val);
-		    		s->set_p_mode_prob("",1.0-prob_val);
+		    		s->set_occ(sp,prob_val);
 		    		// Reset
 			    	sp=""; x=""; y=""; prob="";
 			    };
@@ -929,7 +897,7 @@ namespace dblz {
 					iss = std::istringstream(line);				
 					iss >> x >> y >> z >> sp;
 			    	s = _look_up_unit_v(atoi(x.c_str()),atoi(y.c_str()),atoi(z.c_str()));
-			    	s->set_b_mode_species(sp);
+		    		s->set_occ(sp,1.0);
 		    		// Reset
 			    	sp=""; x=""; y=""; z="";
 			    };
@@ -940,8 +908,7 @@ namespace dblz {
 					iss >> x >> y >> z >> sp >> prob;
 			    	s = _look_up_unit_v(atoi(x.c_str()),atoi(y.c_str()),atoi(z.c_str()));
 			    	prob_val = atof(prob.c_str());
-		    		s->set_p_mode_prob(sp,prob_val);
-		    		s->set_p_mode_prob("",1.0-prob_val);
+		    		s->set_occ(sp,prob_val);
 		    		// Reset
 			    	sp=""; x=""; y=""; z=""; prob="";
 				};
@@ -956,7 +923,7 @@ namespace dblz {
 	Sample
 	********************/
 
-	void Lattice::sample_v_at_timepoint(int timepoint, bool binary_visible, bool binary_hidden) {
+	void Lattice::sample_down_h_to_v_at_timepoint(int timepoint, bool layer_wise, bool binary_visible, bool binary_hidden) {
 
 		// Go through hidden layers top to bottom (reverse)
 		auto rit_begin = _latt_h.rbegin();
@@ -966,10 +933,18 @@ namespace dblz {
 			// Shuffle
 			std::random_shuffle ( _latt_h_idxs[rit->first].begin(), _latt_h_idxs[rit->first].end() );
 
-			for (auto const &idx: _latt_h_idxs[rit->first]) 
-			{
+			if (layer_wise) {
 				// Sample, given input from a layer higher
-				rit->second[idx]->sample_at_timepoint(timepoint,rit->first+1, binary_hidden);
+				for (auto const &idx: _latt_h_idxs[rit->first]) 
+				{
+					rit->second[idx]->sample_at_timepoint(timepoint, binary_hidden, rit->first+1);
+				};
+			} else {
+				// Sample given both layers
+				for (auto const &idx: _latt_h_idxs[rit->first]) 
+				{
+					rit->second[idx]->sample_at_timepoint(timepoint, binary_hidden);
+				};
 			};
 		};
 
@@ -984,16 +959,24 @@ namespace dblz {
 			_latt_v[idx]->sample_at_timepoint(timepoint,binary_visible);
 		};
 	};
-	void Lattice::sample_h_at_timepoint(int timepoint, bool binary_hidden) {
+	void Lattice::sample_up_v_to_h_at_timepoint(int timepoint, bool layer_wise, bool binary_hidden) {
 		for (auto it=_latt_h.begin(); it!=_latt_h.end(); it++) 
 		{
 			// Shuffle
 			std::random_shuffle ( _latt_h_idxs[it->first].begin(), _latt_h_idxs[it->first].end() );
 
-			for (auto const &idx: _latt_h_idxs[it->first]) 
-			{
-				// Sample, given input from a layer lower
-				it->second[idx]->sample_at_timepoint(timepoint,it->first-1,binary_hidden);
+			if (layer_wise) {
+				// Sample, given input from a layer higher
+				for (auto const &idx: _latt_h_idxs[it->first]) 
+				{
+					it->second[idx]->sample_at_timepoint(timepoint, binary_hidden, it->first-1);
+				};
+			} else {
+				// Sample given both layers
+				for (auto const &idx: _latt_h_idxs[it->first]) 
+				{
+					it->second[idx]->sample_at_timepoint(timepoint, binary_hidden);
+				};
 			};
 		};
 	};
@@ -1003,80 +986,37 @@ namespace dblz {
 	********************/
 
 	// 1 particle
-	double Lattice::get_count(Sptr &sp, bool binary) const {
+	double Lattice::get_count(Sptr &sp) const {
 		double count = 0.0;
-		if (binary) {
-			for (auto const &s: _latt_v) {
-				if (sp == s->get_b_mode_species()) {
-					count += 1.0;
-				};
-			};
-		} else {
-			for (auto const &s: _latt_v) {
-				count += s->get_p_mode_prob(sp);
-			};
+		for (auto const &s: _latt_v) {
+			count += s->get_occ(sp);
 		};
 
 		return count;
 	};
 
 	// 2 particle
-	void Lattice::_get_count(double &count, Sptr &sp1, Sptr &sp2, const UnitVisible *uv1, const UnitVisible *uv2, bool binary, bool reversibly) const {
-		if (binary) {
-			if ((sp1 == uv1->get_b_mode_species()) && (sp2 == uv2->get_b_mode_species())) {
-				count += 1.0;
-			};
-			if (reversibly && sp1 != sp2) {
-				if ((sp1 == uv2->get_b_mode_species()) && (sp2 == uv1->get_b_mode_species())) {
-					count += 1.0;
-				};
-			};
-		} else {
-			count += uv1->get_p_mode_prob(sp1) * uv2->get_p_mode_prob(sp2); 
-			if (reversibly && sp1 != sp2) {
-				count += uv1->get_p_mode_prob(sp2) * uv2->get_p_mode_prob(sp1); 
-			};
+	double Lattice::get_count(Sptr &sp1, Sptr &sp2, bool reversibly) const {
+		// Only dim=1 for now
+		if (_no_dims != 1) {
+			std::cerr << ">>> Error: Lattice::get_count <<< only supported for dim 1." << std::endl;
+			exit(EXIT_FAILURE);
 		};
-	};
-	double Lattice::get_count(Sptr &sp1, Sptr &sp2, bool binary, bool reversibly) const {
-		exit(EXIT_FAILURE);
 
-		const UnitVisible *nbr = nullptr;
+		UnitVisible *nbr = nullptr;
 		double count = 0.0;
 		for (auto &s: _latt_v) {
 			// Only connect to "plus one" (not minus one) => no duplicates!
 
-			// Dim 1,2,3
 			if (s->x()+1 <= _box_length) {
-				if (_no_dims == 1) {
-					nbr = _look_up_unit_v(s->x()+1);
-				} else if (_no_dims == 2) {
-					nbr = _look_up_unit_v(s->x()+1,s->y());
-				} else if (_no_dims == 3) {
-					nbr = _look_up_unit_v(s->x()+1,s->y(),s->z());
+				// Get neighbor
+				nbr = _look_up_unit_v(s->x()+1);
+
+				// Count
+				count += s->get_occ(sp1) * nbr->get_occ(sp2); 
+				if (reversibly && sp1 != sp2) {
+					count += nbr->get_occ(sp1) * s->get_occ(sp2); 
 				};
-
-				_get_count(count, sp1, sp2, s, nbr, binary, reversibly);
-			};
-
-			// Dim 2,3
-			if (s->y()+1 <= _box_length) {
-				if (_no_dims == 2) {
-					nbr = _look_up_unit_v(s->x(),s->y()+1);
-				} else if (_no_dims == 3) {
-					nbr = _look_up_unit_v(s->x(),s->y()+1,s->z());
-				};
-
-				_get_count(count, sp1, sp2, s, nbr, binary, reversibly);
-			};
-
-			// Dim 3
-			if (s->z()+1 <= _box_length) {
-				if (_no_dims == 3) {
-					nbr = _look_up_unit_v(s->x(),s->y(),s->z()+1);
-				};
-
-				_get_count(count, sp1, sp2, s, nbr, binary, reversibly);
 			};
 		};
 
@@ -1084,22 +1024,62 @@ namespace dblz {
 	};
 
 	// 3 particle
-	void Lattice::_get_count(double &count, Sptr &sp1, Sptr &sp2, Sptr &sp3, const UnitVisible *uv1, const UnitVisible *uv2, const UnitVisible *uv3, bool binary, bool reversibly) const {
-		if (binary) {
-			if ((sp1 == uv1->get_b_mode_species()) && (sp2 == uv2->get_b_mode_species()) && (sp3 == uv3->get_b_mode_species())) {
-				count += 1.0;
-			};
-			if (reversibly && sp1 != sp3) {
-				if ((sp3 == uv1->get_b_mode_species()) && (sp2 == uv2->get_b_mode_species()) && (sp1 == uv3->get_b_mode_species())) {
-					count += 1.0;
+	double Lattice::get_count(Sptr &sp1, Sptr &sp2, Sptr &sp3, bool reversibly) const {
+		// Only dim=1 for now
+		if (_no_dims != 1) {
+			std::cerr << ">>> Error: Lattice::get_count <<< only supported for dim 1." << std::endl;
+			exit(EXIT_FAILURE);
+		};
+
+		UnitVisible *nbr1 = nullptr, *nbr2 = nullptr;
+		double count = 0.0;
+		for (auto &s: _latt_v) {
+			// Only connect to "plus one" (not minus one) => no duplicates!
+
+			if (s->x()+2 <= _box_length) {
+				// Get neighbors
+				nbr1 = _look_up_unit_v(s->x()+1);
+				nbr2 = _look_up_unit_v(s->x()+2);
+
+				// Count
+				count += s->get_occ(sp1) * nbr1->get_occ(sp2) * nbr2->get_occ(sp3); 
+				if (reversibly && sp1 != sp3) {
+					count += nbr2->get_occ(sp1) * nbr1->get_occ(sp2) * s->get_occ(sp3); 
 				};
 			};
-		} else {
-			count += uv1->get_p_mode_prob(sp1) * uv2->get_p_mode_prob(sp2) * uv3->get_p_mode_prob(sp3); 
-			if (reversibly && sp1 != sp3) {
-				count += uv1->get_p_mode_prob(sp3) * uv2->get_p_mode_prob(sp2) * uv3->get_p_mode_prob(sp1); 
+		};
+
+		return count;
+	};
+
+	// 4 particle
+	double Lattice::get_count(Sptr &sp1, Sptr &sp2, Sptr &sp3, Sptr &sp4, bool reversibly) const {
+		// Only dim=1 for now
+		if (_no_dims != 1) {
+			std::cerr << ">>> Error: Lattice::get_count <<< only supported for dim 1." << std::endl;
+			exit(EXIT_FAILURE);
+		};
+
+		UnitVisible *nbr1 = nullptr, *nbr2 = nullptr, *nbr3 = nullptr;
+		double count = 0.0;
+		for (auto &s: _latt_v) {
+			// Only connect to "plus one" (not minus one) => no duplicates!
+
+			if (s->x()+3 <= _box_length) {
+				// Get neighbors
+				nbr1 = _look_up_unit_v(s->x()+1);
+				nbr2 = _look_up_unit_v(s->x()+2);
+				nbr3 = _look_up_unit_v(s->x()+3);
+
+				// Count
+				count += s->get_occ(sp1) * nbr1->get_occ(sp2) * nbr2->get_occ(sp3) * nbr3->get_occ(sp4); 
+				if (reversibly && !(sp1 == sp4 && sp2 == sp3)) {
+					count += nbr3->get_occ(sp1) * nbr2->get_occ(sp2) * nbr1->get_occ(sp3) * s->get_occ(sp4); 
+				};
 			};
 		};
+
+		return count;
 	};
 
 	/****************************************

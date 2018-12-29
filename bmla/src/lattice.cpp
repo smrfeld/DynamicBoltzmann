@@ -780,15 +780,13 @@ namespace bmla {
 	// Clear the lattice
 	void Lattice::all_units_v_set_empty() {
 		for (auto &s: _latt_v) {
-			s->set_b_mode_empty();
-			s->set_p_mode_empty();
+			s->set_empty();
 		};
 	};
 	void Lattice::all_units_h_set_empty() {
 		for (auto &pr: _latt_h) {
 			for (auto &s: pr.second) {
-				s->set_b_mode_empty();
-				s->set_p_mode_empty();
+				s->set_empty();
 			};
 		};
 	};
@@ -802,33 +800,7 @@ namespace bmla {
 		all_units_set_empty();
 
 		for (auto &ptr: _latt_v) {
-			ptr->set_b_mode_random();
-		};
-	};
-
-	// Binary/probabilistic
-	void Lattice::all_units_v_convert_to_b_mode() {
-		for (auto &s: _latt_v) {
-			s->convert_p_to_b_mode();
-		};
-	};
-	void Lattice::all_units_v_convert_to_p_mode() {
-		for (auto &s: _latt_v) {
-			s->convert_b_to_p_mode();
-		};
-	};
-	void Lattice::all_units_h_convert_to_b_mode() {
-		for (auto &pr: _latt_h) {
-			for (auto &s: pr.second) {
-				s->convert_p_to_b_mode();
-			};
-		};
-	};
-	void Lattice::all_units_h_convert_to_p_mode() {
-		for (auto &pr: _latt_h) {
-			for (auto &s: pr.second) {
-				s->convert_b_to_p_mode();
-			};
+			ptr->set_occ_random();
 		};
 	};
 
@@ -847,31 +819,29 @@ namespace bmla {
 		};
 
 		for (auto const &l: _latt_v) {
-			if (binary) {
-				if (!l->check_b_mode_is_empty()) {
-					if (_no_dims == 1) {
-						f << l->x();
-					} else if (_no_dims == 2) {
-						f << l->x() << " " << l->y();
-					} else if (_no_dims == 3) {
-						f << l->x() << " " << l->y() << " " << l->z();
-					};
-					f << " " << l->get_b_mode_species()->get_name() << "\n";
-				};
+			auto nonzero_map = l->get_nonzero_occs();
+			if (nonzero_map.size() == 0) {
+				// empty, skip
 			} else {
-				if (!l->check_p_mode_is_empty()) {
-					if (_no_dims == 1) {
-						f << l->x();
-					} else if (_no_dims == 2) {
-						f << l->x() << " " << l->y();
-					} else if (_no_dims == 3) {
-						f << l->x() << " " << l->y() << " " << l->z();
+				if (_no_dims == 1) {
+					f << l->x();
+				} else if (_no_dims == 2) {
+					f << l->x() << " " << l->y();
+				} else if (_no_dims == 3) {
+					f << l->x() << " " << l->y() << " " << l->z();
+				};
+				if (nonzero_map.size() == 1) {
+					// binary
+					for (auto const &pr: nonzero_map) {
+						f << " " << pr.first->get_name();
 					};
-					for (auto const &pr: l->get_p_mode_probs()) {
+				} else {
+					// multiple
+					for (auto const &pr: nonzero_map) {
 						f << " " << pr.first->get_name() << " " << pr.second;
 					};
-					f << "\n";
 				};
+				f << "\n";
 			};
 		};
 		f.close();
@@ -921,11 +891,10 @@ namespace bmla {
 		    	s = _look_up_unit_v(atoi(x.c_str()),atoi(y.c_str()),atoi(z.c_str()));
 		    };
 		    if (binary) {
-	    		s->set_b_mode_species(sp);
+	    		s->set_occ(sp,1.0);
 	    	} else {
 	    		prob_val = atof(prob.c_str());
-	    		s->set_p_mode_prob(sp,prob_val);
-	    		s->set_p_mode_prob("",1.0-prob_val);
+	    		s->set_occ(sp,prob_val);
 	    	};
     		// Reset
 	    	sp=""; x=""; y=""; z=""; prob="";
@@ -940,7 +909,7 @@ namespace bmla {
 	Sample
 	********************/
 
-	void Lattice::sample_v(bool binary_visible, bool binary_hidden) {
+	void Lattice::sample_down_h_to_v(bool layer_wise, bool binary_visible, bool binary_hidden) {
 		
 		// Go through hidden layers top to bottom (reverse)
 		auto rit_begin = _latt_h.rbegin();
@@ -950,10 +919,18 @@ namespace bmla {
 			// Shuffle
 			std::random_shuffle ( _latt_h_idxs[rit->first].begin(), _latt_h_idxs[rit->first].end() );
 
-			for (auto const &idx: _latt_h_idxs[rit->first]) 
-			{
+			if (layer_wise) {
 				// Sample, given input from a layer higher
-				rit->second[idx]->sample(rit->first+1, binary_hidden);
+				for (auto const &idx: _latt_h_idxs[rit->first]) 
+				{
+					rit->second[idx]->sample(binary_hidden, rit->first+1);
+				};
+			} else {
+				// Sample given both layers
+				for (auto const &idx: _latt_h_idxs[rit->first]) 
+				{
+					rit->second[idx]->sample(binary_hidden);
+				};
 			};
 		};
 
@@ -968,16 +945,24 @@ namespace bmla {
 			_latt_v[idx]->sample(binary_visible);
 		};
 	};
-	void Lattice::sample_h(bool binary_hidden) {
+	void Lattice::sample_up_v_to_h(bool layer_wise, bool binary_hidden) {
 		for (auto it=_latt_h.begin(); it!=_latt_h.end(); it++) 
 		{
 			// Shuffle
 			std::random_shuffle ( _latt_h_idxs[it->first].begin(), _latt_h_idxs[it->first].end() );
 
-			for (auto const &idx: _latt_h_idxs[it->first]) 
-			{
+			if (layer_wise) {
 				// Sample, given input from a layer lower
-				it->second[idx]->sample(it->first-1,binary_hidden);
+				for (auto const &idx: _latt_h_idxs[it->first]) 
+				{
+					it->second[idx]->sample(binary_hidden, it->first-1);
+				};
+			} else {
+				// Sample given both layers
+				for (auto const &idx: _latt_h_idxs[it->first]) 
+				{
+					it->second[idx]->sample(binary_hidden);
+				};
 			};
 		};
 	};
@@ -987,25 +972,17 @@ namespace bmla {
 	********************/
 
 	// 1 particle
-	double Lattice::get_count(Sptr &sp, bool binary) const {
+	double Lattice::get_count(Sptr &sp) const {
 		double count = 0.0;
-		if (binary) {
-			for (auto const &s: _latt_v) {
-				if (sp == s->get_b_mode_species()) {
-					count += 1.0;
-				};
-			};
-		} else {
-			for (auto const &s: _latt_v) {
-				count += s->get_p_mode_prob(sp);
-			};
+		for (auto const &s: _latt_v) {
+			count += s->get_occ(sp);
 		};
 
 		return count;
 	};
 
 	// 2 particle
-	double Lattice::get_count(Sptr &sp1, Sptr &sp2, bool binary, bool reversibly) const {
+	double Lattice::get_count(Sptr &sp1, Sptr &sp2, bool reversibly) const {
 		// Only dim=1 for now
 		if (_no_dims != 1) {
 			std::cerr << ">>> Error: Lattice::get_count <<< only supported for dim 1." << std::endl;
@@ -1022,20 +999,9 @@ namespace bmla {
 				nbr = _look_up_unit_v(s->x()+1);
 
 				// Count
-				if (binary) {
-					if ((sp1 == s->get_b_mode_species()) && (sp2 == nbr->get_b_mode_species())) {
-						count += 1.0;
-					};
-					if (reversibly && sp1 != sp2) {
-						if ((sp1 == nbr->get_b_mode_species()) && (sp2 == s->get_b_mode_species())) {
-							count += 1.0;
-						};
-					};
-				} else {
-					count += s->get_p_mode_prob(sp1) * nbr->get_p_mode_prob(sp2); 
-					if (reversibly && sp1 != sp2) {
-						count += nbr->get_p_mode_prob(sp1) * s->get_p_mode_prob(sp2); 
-					};
+				count += s->get_occ(sp1) * nbr->get_occ(sp2); 
+				if (reversibly && sp1 != sp2) {
+					count += nbr->get_occ(sp1) * s->get_occ(sp2); 
 				};
 			};
 		};
@@ -1044,7 +1010,7 @@ namespace bmla {
 	};
 
 	// 3 particle
-	double Lattice::get_count(Sptr &sp1, Sptr &sp2, Sptr &sp3, bool binary, bool reversibly) const {
+	double Lattice::get_count(Sptr &sp1, Sptr &sp2, Sptr &sp3, bool reversibly) const {
 		// Only dim=1 for now
 		if (_no_dims != 1) {
 			std::cerr << ">>> Error: Lattice::get_count <<< only supported for dim 1." << std::endl;
@@ -1062,20 +1028,9 @@ namespace bmla {
 				nbr2 = _look_up_unit_v(s->x()+2);
 
 				// Count
-				if (binary) {
-					if ((sp1 == s->get_b_mode_species()) && (sp2 == nbr1->get_b_mode_species()) && (sp3 == nbr2->get_b_mode_species())) {
-						count += 1.0;
-					};
-					if (reversibly && sp1 != sp3) {
-						if ((sp1 == nbr2->get_b_mode_species()) && (sp2 == nbr1->get_b_mode_species()) && (sp3 == s->get_b_mode_species())) {
-							count += 1.0;
-						};
-					};
-				} else {
-					count += s->get_p_mode_prob(sp1) * nbr1->get_p_mode_prob(sp2) * nbr2->get_p_mode_prob(sp3); 
-					if (reversibly && sp1 != sp3) {
-						count += nbr2->get_p_mode_prob(sp1) * nbr1->get_p_mode_prob(sp2) * s->get_p_mode_prob(sp3); 
-					};
+				count += s->get_occ(sp1) * nbr1->get_occ(sp2) * nbr2->get_occ(sp3); 
+				if (reversibly && sp1 != sp3) {
+					count += nbr2->get_occ(sp1) * nbr1->get_occ(sp2) * s->get_occ(sp3); 
 				};
 			};
 		};
@@ -1084,7 +1039,7 @@ namespace bmla {
 	};
 
 	// 4 particle
-	double Lattice::get_count(Sptr &sp1, Sptr &sp2, Sptr &sp3, Sptr &sp4, bool binary, bool reversibly) const {
+	double Lattice::get_count(Sptr &sp1, Sptr &sp2, Sptr &sp3, Sptr &sp4, bool reversibly) const {
 		// Only dim=1 for now
 		if (_no_dims != 1) {
 			std::cerr << ">>> Error: Lattice::get_count <<< only supported for dim 1." << std::endl;
@@ -1103,20 +1058,9 @@ namespace bmla {
 				nbr3 = _look_up_unit_v(s->x()+3);
 
 				// Count
-				if (binary) {
-					if ((sp1 == s->get_b_mode_species()) && (sp2 == nbr1->get_b_mode_species()) && (sp3 == nbr2->get_b_mode_species()) && (sp4 == nbr3->get_b_mode_species())) {
-						count += 1.0;
-					};
-					if (reversibly && !(sp1 == sp4 && sp2 == sp3)) {
-						if ((sp1 == nbr3->get_b_mode_species()) && (sp2 == nbr2->get_b_mode_species()) && (sp3 == nbr1->get_b_mode_species()) && (sp4 == s->get_b_mode_species())) {
-							count += 1.0;
-						};
-					};
-				} else {
-					count += s->get_p_mode_prob(sp1) * nbr1->get_p_mode_prob(sp2) * nbr2->get_p_mode_prob(sp3) * nbr3->get_p_mode_prob(sp4); 
-					if (reversibly && !(sp1 == sp4 && sp2 == sp3)) {
-						count += nbr3->get_p_mode_prob(sp1) * nbr2->get_p_mode_prob(sp2) * nbr1->get_p_mode_prob(sp3) * s->get_p_mode_prob(sp4); 
-					};
+				count += s->get_occ(sp1) * nbr1->get_occ(sp2) * nbr2->get_occ(sp3) * nbr3->get_occ(sp4); 
+				if (reversibly && !(sp1 == sp4 && sp2 == sp3)) {
+					count += nbr3->get_occ(sp1) * nbr2->get_occ(sp2) * nbr1->get_occ(sp3) * s->get_occ(sp4); 
 				};
 			};
 		};

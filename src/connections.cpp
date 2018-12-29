@@ -105,29 +105,20 @@ namespace dblz {
 	Get count
 	********************/
 
-	double ConnVV::get_moment(std::string ixn_param_name, bool binary) const {
+	double ConnVV::get_moment(std::string ixn_param_name) const {
 		if (!_ixn_dict) {
 			std::cerr << ">>> Error: ConnVV::get_moment <<< no ixn dict exists on this conn" << std::endl;
 			exit(EXIT_FAILURE);
 		};
 
-		if (binary) {
-			// Binary
-			int count = 0;
-			for (auto const &sp: _ixn_dict->get_species_from_ixn(ixn_param_name)) {
-				if (_uv1->check_is_b_mode_species(sp.s1) && _uv2->check_is_b_mode_species(sp.s2)) {
-					count++;
-				};
-			};
-			return count;
-		} else {
-			// Prob
-			double count = 0.0;
-			for (auto const &sp: _ixn_dict->get_species_from_ixn(ixn_param_name)) {
-				count += _uv1->get_p_mode_prob(sp.s1) * _uv2->get_p_mode_prob(sp.s2);
-			};
-			return count;
+		double count = 0.0;
+
+		std::vector<Sptr2> species = _ixn_dict->get_species_from_ixn(ixn_param_name);
+		for (auto &sp: species) {
+			count += _uv1->get_occ(sp.s1) * _uv2->get_occ(sp.s2);
 		};
+
+		return count;
 	};
 
 	/********************
@@ -159,36 +150,15 @@ namespace dblz {
 
 		double ixn;
 		// Go through species of other site
-		if (v_other->check_is_b_mode()) {
-			//////////
-			// Binary
-			/////////
-			Sptr sp_other = v_other->get_b_mode_species();
+		for (auto const &pr: v_other->get_nonzero_occs()) {
 			// Get ixn
 			if (idx==0) {
-				ixn = _ixn_dict->get_ixn_at_timepoint(sp_to_place,sp_other,timepoint);
+				ixn = _ixn_dict->get_ixn_at_timepoint(sp_to_place,pr.first,timepoint);
 			} else if (idx==1) {
-				ixn = _ixn_dict->get_ixn_at_timepoint(sp_other,sp_to_place,timepoint);
+				ixn = _ixn_dict->get_ixn_at_timepoint(pr.first,sp_to_place,timepoint);
 			};
 			// Add
-			act += ixn; // * 1.0 * 1.0
-		} else {
-			////////////////
-			// Probabilistic
-			////////////////
-			for (auto const &pr: v_other->get_p_mode_probs()) {
-				if (pr.second == 0.0) {
-					continue;
-				};
-				// Get ixn
-				if (idx==0) {
-					ixn = _ixn_dict->get_ixn_at_timepoint(sp_to_place,pr.first,timepoint);
-				} else if (idx==1) {
-					ixn = _ixn_dict->get_ixn_at_timepoint(pr.first,sp_to_place,timepoint);
-				};
-				// Add
-				act += ixn * pr.second; // * 1.0
-			};
+			act += ixn * pr.second; // * 1.0
 		};
 
 		return act;
@@ -317,47 +287,18 @@ namespace dblz {
 	Get count
 	********************/
 
-	double ConnVH::get_moment(std::string ixn_param_name, bool binary_visible, bool binary_hidden) const {
+	double ConnVH::get_moment(std::string ixn_param_name) const {
 		if (!_ixn_dict) {
 			std::cerr << ">>> Error: ConnVH::get_moment <<< no ixn dict exists on this conn" << std::endl;
 			exit(EXIT_FAILURE);
 		};
 
-		if (binary_visible && binary_hidden) {
-			// Binary - binary
-			int count = 0;
-			for (auto const &sp: _ixn_dict->get_species_from_ixn(ixn_param_name)) {
-				if (_uv->check_is_b_mode_species(sp.s1) && _uh->check_is_b_mode_species(sp.s2)) {
-					count++;
-				};
-			};
-			return count;
-		} else if (binary_visible && !binary_hidden) {
-			// Binary - prob
-			double count = 0.0;
-			for (auto const &sp: _ixn_dict->get_species_from_ixn(ixn_param_name)) {
-				if (_uv->check_is_b_mode_species(sp.s1)) {
-					count += 1.0 * _uh->get_p_mode_prob(sp.s2);
-				};
-			};
-			return count;
-		} else if (!binary_visible && binary_hidden) {
-			// Prob - binary
-			double count = 0.0;
-			for (auto const &sp: _ixn_dict->get_species_from_ixn(ixn_param_name)) {
-				if (_uh->check_is_b_mode_species(sp.s2)) {
-					count += 1.0 * _uv->get_p_mode_prob(sp.s1);
-				};
-			};
-			return count;
-		} else {
-			// Prob - prob
-			double count = 0.0;
-			for (auto const &sp: _ixn_dict->get_species_from_ixn(ixn_param_name)) {
-				count += _uv->get_p_mode_prob(sp.s1) * _uh->get_p_mode_prob(sp.s2);
-			};
-			return count;
+		// Prob - prob
+		double count = 0.0;
+		for (auto const &sp: _ixn_dict->get_species_from_ixn(ixn_param_name)) {
+			count += _uv->get_occ(sp.s1) * _uh->get_occ(sp.s2);
 		};
+		return count;
 	};
 
 	/********************
@@ -382,28 +323,11 @@ namespace dblz {
 
 		double ixn;
 		// Go through species of other site
-		if (_uh->check_is_b_mode()) {
-			//////////
-			// Binary
-			/////////
-			Sptr sp_other = _uh->get_b_mode_species();
+		for (auto const &pr: _uh->get_nonzero_occs()) {
 			// Get ixn
-			ixn = _ixn_dict->get_ixn_at_timepoint(sp_to_place,sp_other,timepoint);
+			ixn = _ixn_dict->get_ixn_at_timepoint(sp_to_place,pr.first,timepoint);
 			// Add
-			act += ixn;
-		} else {
-			////////////////
-			// Probabilistic
-			////////////////
-			for (auto const &pr: _uh->get_p_mode_probs()) {
-				if (pr.second == 0.0) {
-					continue;
-				};
-				// Get ixn
-				ixn = _ixn_dict->get_ixn_at_timepoint(sp_to_place,pr.first,timepoint);
-				// Add
-				act += ixn * pr.second;
-			};
+			act += ixn * pr.second; // * 1.0
 		};
 
 		return act;
@@ -419,28 +343,11 @@ namespace dblz {
 
 		double ixn;
 		// Go through species of other site
-		if (_uv->check_is_b_mode()) {
-			//////////
-			// Binary
-			/////////
-			Sptr sp_other = _uv->get_b_mode_species();
+		for (auto const &pr: _uv->get_nonzero_occs()) {
 			// Get ixn
-			ixn = _ixn_dict->get_ixn_at_timepoint(sp_other,sp_to_place,timepoint);
+			ixn = _ixn_dict->get_ixn_at_timepoint(pr.first,sp_to_place,timepoint);
 			// Add
-			act += ixn;
-		} else {
-			////////////////
-			// Probabilistic
-			////////////////
-			for (auto const &pr: _uv->get_p_mode_probs()) {
-				if (pr.second == 0.0) {
-					continue;
-				};
-				// Get ixn
-				ixn = _ixn_dict->get_ixn_at_timepoint(pr.first,sp_to_place,timepoint);
-				// Add
-				act += ixn * pr.second;
-			};
+			act += ixn * pr.second; // * 1.0
 		};
 
 		return act;
@@ -550,29 +457,18 @@ namespace dblz {
 	Get count
 	********************/
 
-	double ConnHH::get_moment(std::string ixn_param_name, bool binary) const {
+	double ConnHH::get_moment(std::string ixn_param_name) const {
 		if (!_ixn_dict) {
 			std::cerr << ">>> Error: ConnHH::get_moment <<< no ixn dict exists on this conn" << std::endl;
 			exit(EXIT_FAILURE);
 		};
 
-		if (binary) {
-			// Binary
-			int count = 0;
-			for (auto const &sp: _ixn_dict->get_species_from_ixn(ixn_param_name)) {
-				if (_uh1->check_is_b_mode_species(sp.s1) && _uh2->check_is_b_mode_species(sp.s2)) {
-					count++;
-				};
-			};
-			return count;
-		} else {
-			// Prob
-			double count = 0.0;
-			for (auto const &sp: _ixn_dict->get_species_from_ixn(ixn_param_name)) {
-				count += _uh1->get_p_mode_prob(sp.s1) * _uh2->get_p_mode_prob(sp.s2);
-			};
-			return count;
+		// Prob
+		double count = 0.0;
+		for (auto const &sp: _ixn_dict->get_species_from_ixn(ixn_param_name)) {
+			count += _uh1->get_occ(sp.s1) * _uh2->get_occ(sp.s2);
 		};
+		return count;
 	};
 
 	/********************
@@ -604,36 +500,15 @@ namespace dblz {
 
 		double ixn;
 		// Go through species of other site
-		if (h_other->check_is_b_mode()) {
-			//////////
-			// Binary
-			/////////
-			Sptr sp_other = h_other->get_b_mode_species();
+		for (auto const &pr: h_other->get_nonzero_occs()) {
 			// Get ixn
 			if (idx==0) {
-				ixn = _ixn_dict->get_ixn_at_timepoint(sp_to_place,sp_other,timepoint);
+				ixn = _ixn_dict->get_ixn_at_timepoint(sp_to_place,pr.first,timepoint);
 			} else if (idx==1) {
-				ixn = _ixn_dict->get_ixn_at_timepoint(sp_other,sp_to_place,timepoint);
+				ixn = _ixn_dict->get_ixn_at_timepoint(pr.first,sp_to_place,timepoint);
 			};
 			// Add
-			act += ixn; // * 1.0 * 1.0
-		} else {
-			////////////////
-			// Probabilistic
-			////////////////
-			for (auto const &pr: h_other->get_p_mode_probs()) {
-				if (pr.second == 0.0) {
-					continue;
-				};
-				// Get ixn
-				if (idx==0) {
-					ixn = _ixn_dict->get_ixn_at_timepoint(sp_to_place,pr.first,timepoint);
-				} else if (idx==1) {
-					ixn = _ixn_dict->get_ixn_at_timepoint(pr.first,sp_to_place,timepoint);
-				};
-				// Add
-				act += ixn * pr.second; // * 1.0
-			};
+			act += ixn * pr.second; // * 1.0
 		};
 
 		return act;
@@ -791,7 +666,7 @@ namespace dblz {
 	Get count
 	********************/
 
-	double ConnVVV::get_moment(std::string ixn_param_name, bool binary) const {
+	double ConnVVV::get_moment(std::string ixn_param_name) const {
 		if (!_ixn_dict) {
 			std::cerr << ">>> Error: ConnVVV::get_moment <<< no ixn dict exist on this conn" << std::endl;
 			exit(EXIT_FAILURE);
@@ -799,23 +674,13 @@ namespace dblz {
 
 		double count = 0.0;
 
-		if (binary) {
-			// Binary
-			int count = 0;
-			for (auto const &sp: _ixn_dict->get_species_from_ixn(ixn_param_name)) {
-				if (_uv1->check_is_b_mode_species(sp.s1) && _uv2->check_is_b_mode_species(sp.s2) && _uv3->check_is_b_mode_species(sp.s3)) {
-					count++;
-				};
-			};
-			return count;
-		} else {
-			// Prob
-			double count = 0.0;
-			for (auto const &sp: _ixn_dict->get_species_from_ixn(ixn_param_name)) {
-				count += _uv1->get_p_mode_prob(sp.s1) * _uv2->get_p_mode_prob(sp.s2) * _uv3->get_p_mode_prob(sp.s3);
-			};
-			return count;
+		std::vector<Sptr3> species = _ixn_dict->get_species_from_ixn(ixn_param_name);
+
+		for (auto &sp: species) {
+			count += _uv1->get_occ(sp.s1) * _uv2->get_occ(sp.s2) * _uv3->get_occ(sp.s3);
 		};
+
+		return count;
 	};
 
 	/********************
@@ -852,115 +717,19 @@ namespace dblz {
 
 		double ixn;
 		// Go through species of other site #1
-		if (v_other_1->check_is_b_mode()) {
-
-			//////////
-			// Binary
-			/////////
-
-			Sptr sp_other_1 = v_other_1->get_b_mode_species();
-
-			// Go through species of other site #2
-			if (v_other_2->check_is_b_mode()) {
-
-				//////////
-				// Binary - Binary
-				/////////
-
-				Sptr sp_other_2 = v_other_2->get_b_mode_species();
-
+		for (auto const &pr: v_other_1->get_nonzero_occs()) {
+			for (auto const &pr2: v_other_2->get_nonzero_occs()) {
 				// Get ixn
 				if (idx==0) {
-					ixn = _ixn_dict->get_ixn_at_timepoint(sp_to_place,sp_other_1,sp_other_2,timepoint);
+					ixn = _ixn_dict->get_ixn_at_timepoint(sp_to_place,pr.first,pr2.first,timepoint);
 				} else if (idx==1) {
-					ixn = _ixn_dict->get_ixn_at_timepoint(sp_other_1,sp_to_place,sp_other_2,timepoint);
+					ixn = _ixn_dict->get_ixn_at_timepoint(pr.first,sp_to_place,pr2.first,timepoint);
 				} else if (idx==2) {
-					ixn = _ixn_dict->get_ixn_at_timepoint(sp_other_1,sp_other_2,sp_to_place,timepoint);
+					ixn = _ixn_dict->get_ixn_at_timepoint(pr.first,pr2.first,sp_to_place,timepoint);
 				};
 
 				// Add
-				act += ixn;
-
-			} else {
-
-				//////////
-				// Binary - Probabilistic
-				/////////
-
-				for (auto const &pr: v_other_2->get_p_mode_probs()) {
-					if (pr.second == 0.0) {
-						continue;
-					};
-					// Get ixn
-					if (idx==0) {
-						ixn = _ixn_dict->get_ixn_at_timepoint(sp_to_place,sp_other_1,pr.first,timepoint);
-					} else if (idx==1) {
-						ixn = _ixn_dict->get_ixn_at_timepoint(sp_other_1,sp_to_place,pr.first,timepoint);
-					} else if (idx==2) {
-						ixn = _ixn_dict->get_ixn_at_timepoint(sp_other_1,pr.first,sp_to_place,timepoint);
-					};
-
-					// Add
-					act += ixn * pr.second;
-				};
-
-			};
-
-		} else {
-
-			////////////////
-			// Probabilistic
-			////////////////
-
-			for (auto const &pr: v_other_1->get_p_mode_probs()) {
-				if (pr.second == 0.0) {
-					continue;
-				};
-
-				// Go through species of other site #2
-				if (v_other_2->check_is_b_mode()) {
-
-					//////////
-					// Probabilistic - Binary
-					/////////
-
-					Sptr sp_other_2 = v_other_2->get_b_mode_species();
-
-					// Get ixn
-					if (idx==0) {
-						ixn = _ixn_dict->get_ixn_at_timepoint(sp_to_place,pr.first,sp_other_2,timepoint);
-					} else if (idx==1) {
-						ixn = _ixn_dict->get_ixn_at_timepoint(pr.first,sp_to_place,sp_other_2,timepoint);
-					} else if (idx==2) {
-						ixn = _ixn_dict->get_ixn_at_timepoint(pr.first,sp_other_2,sp_to_place,timepoint);
-					};
-				
-					// Add
-					act += ixn * pr.second;
-
-				} else {
-
-					//////////
-					// Probabilistic - Probabilistic
-					/////////
-
-					for (auto const &pr2: v_other_2->get_p_mode_probs()) {
-						if (pr2.second == 0.0) {
-							continue;
-						};
-						// Get ixn
-						if (idx==0) {
-							ixn = _ixn_dict->get_ixn_at_timepoint(sp_to_place,pr.first,pr2.first,timepoint);
-						} else if (idx==1) {
-							ixn = _ixn_dict->get_ixn_at_timepoint(pr.first,sp_to_place,pr2.first,timepoint);
-						} else if (idx==2) {
-							ixn = _ixn_dict->get_ixn_at_timepoint(pr.first,pr2.first,sp_to_place,timepoint);
-						};
-
-						// Add
-						act += ixn * pr.second * pr2.second;
-					};
-				};
+				act += ixn * pr.second * pr2.second;
 			};
 		};
 

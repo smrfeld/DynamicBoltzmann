@@ -71,6 +71,9 @@ namespace bmla {
 
 		// Nesterov
 		bool nesterov = true;
+
+		// Layerwise sampling
+		bool layer_wise = true;
 	};
 
 	/****************************************
@@ -122,7 +125,7 @@ namespace bmla {
 		Wake/asleep loop
 		********************/
 
-		void wake_sleep_loop(int batch_size, int no_latt_sampling_steps, FNameColl &fname_coll, bool verbose=false, bool start_with_random_lattice=false);
+		void wake_sleep_loop(int batch_size, int no_latt_sampling_steps, FNameColl &fname_coll, bool layer_wise, bool verbose=false, bool start_with_random_lattice=false);
 
 		/********************
 		Solve

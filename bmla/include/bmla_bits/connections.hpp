@@ -56,7 +56,7 @@ namespace bmla {
 		Get count
 		********************/
 
-		double get_moment(std::string ixn_param_name, bool binary=true) const;
+		double get_moment(std::string ixn_param_name) const;
 
 		/********************
 		Set ixns
@@ -154,7 +154,7 @@ namespace bmla {
 		Get count
 		********************/
 
-		double get_moment(std::string ixn_param_name, bool binary_visible=true, bool binary_hidden=true) const;
+		double get_moment(std::string ixn_param_name) const;
 
 		/********************
 		Set ixns
@@ -239,7 +239,7 @@ namespace bmla {
 		Get count
 		********************/
 
-		double get_moment(std::string ixn_param_name, bool binary=true) const;
+		double get_moment(std::string ixn_param_name) const;
 
 		/********************
 		Set ixns
@@ -328,7 +328,7 @@ namespace bmla {
 		Get moment
 		********************/
 
-		double get_moment(std::string ixn_param_name, bool binary=true) const;
+		double get_moment(std::string ixn_param_name) const;
 
 		/********************
 		Set ixns

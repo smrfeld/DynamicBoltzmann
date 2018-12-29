@@ -200,12 +200,6 @@ namespace dblz {
 		void all_units_h_set_empty();
 		void all_units_set_empty();
 
-		// Binary/probabilistic
-		void all_units_v_convert_to_b_mode();
-		void all_units_v_convert_to_p_mode();
-		void all_units_h_convert_to_b_mode();
-		void all_units_h_convert_to_p_mode();
-
 		/********************
 		Write/read latt to a file
 		********************/
@@ -217,15 +211,17 @@ namespace dblz {
 		Sample
 		********************/
 
-		void sample_v_at_timepoint(int timepoint, bool binary_visible=true, bool binary_hidden=true);
-		void sample_h_at_timepoint(int timepoint, bool binary_hidden=true);
+		void sample_down_h_to_v_at_timepoint(int timepoint, bool layer_wise, bool binary_visible=true, bool binary_hidden=true);
+		void sample_up_v_to_h_at_timepoint(int timepoint, bool layer_wise, bool binary_hidden=true);
 
 		/********************
 		Get counts
 		********************/
 
-		double get_count(Sptr &sp, bool binary=true) const;
-		double get_count(Sptr &sp1, Sptr &sp2, bool binary=true, bool reversibly=true) const;
+		double get_count(Sptr &sp) const;
+		double get_count(Sptr &sp1, Sptr &sp2, bool reversibly=true) const;
+		double get_count(Sptr &sp1, Sptr &sp2, Sptr &sp3, bool reversibly=true) const;
+		double get_count(Sptr &sp1, Sptr &sp2, Sptr &sp3, Sptr &sp4, bool reversibly=true) const;
 	};
 
 };

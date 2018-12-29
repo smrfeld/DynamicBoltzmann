@@ -154,7 +154,7 @@ namespace dblz {
 	Wake/asleep loop
 	********************/
 
-	void OptProblem::wake_sleep_loop(int timepoint_start, int timepoint_end, int batch_size, int no_latt_sampling_steps, FNameSeriesColl &fname_coll, bool verbose) {
+	void OptProblem::wake_sleep_loop(int timepoint_start, int timepoint_end, int batch_size, int no_latt_sampling_steps, FNameSeriesColl &fname_coll, bool layer_wise, bool verbose) {
 		if (verbose) {
 			std::cout << "--- Sampling lattice ---" << std::endl;
 		};
@@ -192,10 +192,6 @@ namespace dblz {
 
 				// clock_t t3 = clock();    
 
-				// Convert all units (hidden and visible) to binary mode
-				_latt->all_units_v_convert_to_b_mode();
-				_latt->all_units_h_convert_to_b_mode();
-
 				// Read latt
 				_latt->read_from_file(fname_coll.get_fname_series(batch_idx_subset[i_batch]).fnames[timepoint]); // binary units
 
@@ -204,24 +200,18 @@ namespace dblz {
 
 				// Sample hidden
 				// Hidden: binary (= true)
-				_latt->sample_h_at_timepoint(timepoint,true);
+				_latt->sample_up_v_to_h_at_timepoint(timepoint,layer_wise,true);
 
 				// clock_t t5 = clock();    
 				// std::cout << "sample h " << ( t5 - t4 ) / (double) CLOCKS_PER_SEC << std::endl;
 
 				// Reap awake
 				for (auto &moment: _moments) {
-					// Visible: binary (= true)
-					// Hidden: binary (= true)
-					moment->reap_as_timepoint_in_batch(MomentType::AWAKE, timepoint, i_batch, true, true);
+					moment->reap_as_timepoint_in_batch(MomentType::AWAKE, timepoint, i_batch);
 				};
 
 				// clock_t t6 = clock();    
 				// std::cout << "reaped awake " << ( t6 - t5 ) / (double) CLOCKS_PER_SEC << std::endl;
-
-				// Convert visibles to prob mode
-				// Keep hidden units in binary
-				_latt->all_units_v_convert_to_p_mode();
 
 				// Sample
 				for (int i_sampling_step=0; i_sampling_step<no_latt_sampling_steps; i_sampling_step++) 
@@ -229,7 +219,7 @@ namespace dblz {
 					// Sample down (hidden -> visible)
 					// Visible: prob (= false)
 					// Hiddens: binary (= true)
-					_latt->sample_v_at_timepoint(timepoint,false,true);
+					_latt->sample_down_h_to_v_at_timepoint(timepoint,layer_wise,false,true);
 
 					// Sample up (visible -> hidden)
 					// If not last step:
@@ -237,10 +227,9 @@ namespace dblz {
 					// Else:
 					// Hiddens: prob (= false)
 					if (i_sampling_step != no_latt_sampling_steps-1) {
-						_latt->sample_h_at_timepoint(timepoint,true); // binary hiddens
+						_latt->sample_up_v_to_h_at_timepoint(timepoint,layer_wise,true); // binary hiddens
 					} else {
-						_latt->all_units_h_convert_to_p_mode();
-						_latt->sample_h_at_timepoint(timepoint,false); // prob hiddens
+						_latt->sample_up_v_to_h_at_timepoint(timepoint,layer_wise,false); // prob hiddens
 					};
 				};
 
@@ -255,9 +244,7 @@ namespace dblz {
 
 				// Reap asleep
 				for (auto &moment: _moments) {
-					// Visible: prob (= false)
-					// Hiddens: prob (= false)
-					moment->reap_as_timepoint_in_batch(MomentType::ASLEEP, timepoint, i_batch, false, false);
+					moment->reap_as_timepoint_in_batch(MomentType::ASLEEP, timepoint, i_batch);
 				};
 
 				// clock_t t8 = clock();    
@@ -362,7 +349,7 @@ namespace dblz {
 
 		// clock_t t3 = clock();    
 
-		wake_sleep_loop(timepoint_integral_start,timepoint_integral_end,batch_size,no_latt_sampling_steps,fname_coll, options.VERBOSE_WAKE_ASLEEP);
+		wake_sleep_loop(timepoint_integral_start,timepoint_integral_end,batch_size,no_latt_sampling_steps,fname_coll,options.layer_wise,options.VERBOSE_WAKE_ASLEEP);
 
 		if (options.VERBOSE_MOMENT) {
 			for (auto &moment: _moments) {

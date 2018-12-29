@@ -38,14 +38,8 @@ namespace dblz {
 		std::vector<Sptr> _sp_possible;
 		std::unordered_map<std::string, Sptr> _sp_str_map;
 
-		// Binary mode
-		bool _b_mode_flag;
-		Sptr _b_mode_sp; // occupying species
-
 		// Probabilistic mode
-		std::unordered_map<std::string, double*> _p_mode_probs_str;
-		std::unordered_map<Sptr, double> _p_mode_probs;
-		double _p_mode_prob_empty;
+		std::unordered_map<Sptr, double> _nonzero_occs;
 
 		// Bias dict
 		std::shared_ptr<BiasDict> _bias_dict;
@@ -114,37 +108,20 @@ namespace dblz {
 		Get probability
 		********************/
 
-		// Check mode
-		bool check_is_b_mode() const;
+		double get_occ(Sptr sp) const; // nullptr for empty
+		const std::unordered_map<Sptr, double>& get_nonzero_occs() const;
+		void set_occ(Sptr sp, double prob);
+		void set_occ(std::string sp, double prob);
+		void set_occ_random();
 
-		// Flip between the two modes
-		void set_b_mode(bool flag);
-
-		// Binary
-		Sptr get_b_mode_species() const; // nullptr for empty
-		bool check_is_b_mode_species(const Sptr &sp) const;
-		void set_b_mode_species(Sptr sp);
-		void set_b_mode_species(std::string sp);
-		void set_b_mode_empty();
-		bool check_b_mode_is_empty() const;
-
-		// Probabilistic
-		double get_p_mode_prob(Sptr sp) const; // nullptr for empty
-		const std::unordered_map<Sptr, double>& get_p_mode_probs() const;
-		void set_p_mode_prob(Sptr sp, double prob);
-		void set_p_mode_prob(std::string sp, double prob);
-		void set_p_mode_empty();
-		bool check_p_mode_is_empty() const;
-
-		// Convert between the two
-		void convert_b_to_p_mode();
-		void convert_p_to_b_mode();
+		bool get_is_empty() const;
+		void set_empty();
 
 		/********************
 		Get moment
 		********************/
 
-		double get_moment(std::string ixn_param_name, bool binary=true) const;
+		double get_moment(std::string ixn_param_name) const;
 
 		/********************
 		Sample
@@ -212,11 +189,6 @@ namespace dblz {
 		_x = x;
 		_y = y;
 		_z = z;
-		_p_mode_prob_empty = 1.0; // default = empty
-
-		// Default = binary
-		_b_mode_flag = true;
-		_b_mode_sp = nullptr;
 
 		// Setup for sampling
 		_sampling_props.push_back(0.0); // 1st element always 0 for probs
@@ -265,12 +237,7 @@ namespace dblz {
 		_sp_possible.clear();
 		_sp_str_map.clear();
 
-		_b_mode_flag = true;
-		_b_mode_sp = nullptr;
-
-		_p_mode_probs_str.clear();
-		_p_mode_probs.clear();
-		_p_mode_prob_empty = 0.0;
+		_nonzero_occs.clear();
 
 		_bias_dict = nullptr;
 
@@ -290,12 +257,7 @@ namespace dblz {
 		_sp_possible = other._sp_possible;
 		_sp_str_map = other._sp_str_map;
 
-		_b_mode_flag = other._b_mode_flag;
-		_b_mode_sp = other._b_mode_sp;
-
-		_p_mode_probs_str = other._p_mode_probs_str;
-		_p_mode_probs = other._p_mode_probs;
-		_p_mode_prob_empty = other._p_mode_prob_empty;
+		_nonzero_occs = other._nonzero_occs;
 
 		_bias_dict = other._bias_dict;
 
@@ -339,20 +301,13 @@ namespace dblz {
 			s << _x << " " << _y << " " << _z << " ";
 		};
 
-		if (_b_mode_flag) {
-			// Binary
-			if (!_b_mode_sp) {
-				s << "empty";
-			} else {
-				s << _b_mode_sp->get_name();
-			};
+		if (_nonzero_occs.size() == 0) {
+			s << "empty";
 		} else {
-			// Prob
-			s << "(empty," << _p_mode_prob_empty << ") ";
-			for (auto &pr: _p_mode_probs_str) {
-				s << "(" << pr.first << "," << *pr.second << ") ";
+			for (auto pr: _nonzero_occs) {
+				s << "(" << pr.first->get_name() << "," << pr.second << ") ";
 			};
-		};	
+		};
 		return s.str();
 	};
 
@@ -401,16 +356,11 @@ namespace dblz {
 		_sp_possible.push_back(species);
 		_sp_str_map[species->get_name()] = species;
 
-		// Probs
-		_p_mode_probs[species] = 0.0;
-		_p_mode_probs_str[species->get_name()] = &(_p_mode_probs[species]);
-
 		// Sampling
 		_sampling_probs.push_back(0.0);
 		_sampling_props.push_back(0.0);
 	};
 	void Unit::Impl::set_possible_species(std::vector<Sptr> species) {
-		_p_mode_probs.clear();
 		_sp_possible.clear();
 		_sp_str_map.clear();
 
@@ -442,152 +392,64 @@ namespace dblz {
 	Get probability
 	********************/
 
-	// Check mode
-	bool Unit::Impl::check_is_b_mode() const {
-		if (_b_mode_flag) {
-			return true;
+	double Unit::Impl::get_occ(Sptr sp) const {
+		if (!sp) {
+			double ret = 1.0;
+			for (auto pr: _nonzero_occs) {
+				ret -= pr.second;
+			};
+			return ret;
 		} else {
-			return false;
-		};
-	};
-
-	// Flip between the two modes
-	void Unit::Impl::set_b_mode(bool flag) {
-		_b_mode_flag = flag;
-	};
-
-	// Binary
-	Sptr Unit::Impl::get_b_mode_species() const {
-		return _b_mode_sp;
-	};
-	bool Unit::Impl::check_is_b_mode_species(const Sptr &sp) const {
-		if (sp == _b_mode_sp) {
-			return true;
-		} else {
-			return false;
-		};
-	};
-	void Unit::Impl::set_b_mode_species(Sptr sp) {
-		_b_mode_sp = sp;
-	};
-	void Unit::Impl::set_b_mode_species(std::string sp) {
-		_b_mode_sp = _sp_str_map[sp];
-	};
-	void Unit::Impl::set_b_mode_empty() {
-		_b_mode_sp = nullptr;
-	};
-	bool Unit::Impl::check_b_mode_is_empty() const {
-		if (_b_mode_sp) {
-			return false;
-		} else {
-			return true;
-		};
-	};
-
-	// Probabilistic
-	double Unit::Impl::get_p_mode_prob(Sptr sp) const {
-		// nullptr for prob of empty
-		if (sp == nullptr) {
-			return _p_mode_prob_empty;
-		};
-
-		auto it = _p_mode_probs.find(sp);
-		if (it != _p_mode_probs.end()) {
-			return it->second;
-		} else {
-			return 0.0;
-		};
-	};
-	const std::unordered_map<Sptr, double>& Unit::Impl::get_p_mode_probs() const {
-		return _p_mode_probs;
-	};
-	void Unit::Impl::set_p_mode_prob(Sptr sp, double prob) {
-		// nullptr for prob of empty
-		if (sp == nullptr) {
-			_p_mode_prob_empty = prob;
-			return;
-		};
-
-		_p_mode_probs[sp] = prob;
-	};
-	void Unit::Impl::set_p_mode_prob(std::string sp, double prob) {
-		if (sp == "") {
-			_p_mode_prob_empty = prob;
-			return;
-		};
-		
-		*(_p_mode_probs_str[sp]) = prob;
-	};
-	void Unit::Impl::set_p_mode_empty() {
-		// Remove counts on existing species
-		for (auto pr: _p_mode_probs) {
-			if (pr.second > 0.0) {
-				// Clear
-				_p_mode_probs[pr.first] = 0.0;
+			auto it = _nonzero_occs.find(sp);
+			if (it != _nonzero_occs.end()) {
+				return it->second;
+			} else {
+				return 0.0;
 			};
 		};
-
-		// Empty prob = 1
-		_p_mode_prob_empty = 1.0;
 	};
-	bool Unit::Impl::check_p_mode_is_empty() const {
-		if (_p_mode_prob_empty == 1.0) {
+	const std::unordered_map<Sptr, double>& Unit::Impl::get_nonzero_occs() const {
+		return _nonzero_occs;
+	};
+	void Unit::Impl::set_occ(Sptr sp, double prob) {
+		if (prob > 0.0) {
+			_nonzero_occs[sp] = prob;
+		};
+	};
+	void Unit::Impl::set_occ(std::string sp, double prob) {
+		auto it = _sp_str_map.find(sp);
+		if (it == _sp_str_map.end()) {
+			std::cerr << ">>> Unit::Impl::set_occ <<< Error: species: " << sp << " not found!" << std::endl;
+			exit(EXIT_FAILURE);
+		};
+		if (prob > 0.0) {
+			_nonzero_occs[it->second] = prob;
+		};
+	};
+	void Unit::Impl::set_occ_random() {
+		_nonzero_occs.clear();
+		int r = randI(0,_sp_possible.size());
+		if (r != _sp_possible.size()) {
+			_nonzero_occs[_sp_possible[r]] = 1.0;
+		};
+	};
+
+	bool Unit::Impl::get_is_empty() const {
+		if (_nonzero_occs.size() == 0) {
 			return true;
 		} else {
 			return false;
 		};
 	};
-
-	// Convert between the two
-	void Unit::Impl::convert_b_to_p_mode() {
-		// Clear current
-		set_p_mode_empty();
-
-		// Occupancy
-		if (_b_mode_sp) {
-			set_p_mode_prob(_b_mode_sp,1.0);
-			_p_mode_prob_empty = 0.0;
-		};
-
-		// Binary mode = false
-		_b_mode_flag = false;
-	};
-	void Unit::Impl::convert_p_to_b_mode() {
-
-		// 0th element is always 0
-		// _sampling_props.push_back(0.0);
-
-		// 1st element=different; reset at end to 1
-		_sampling_props[1] = _p_mode_prob_empty;
-
-		// Others
-		for (auto i=0; i<_sp_possible.size(); i++) {
-			_sampling_props[i+2] = _sampling_props[i+1] + _p_mode_probs[_sp_possible[i]];
-		};
-
-		// Sample
-		_sample_prop_vec();
-
-		if (_sampling_i_chosen==0) {
-			// Flip down (new spin = 0)
-			set_b_mode_empty();
-		} else {
-			// Make the appropriate species at this site (guaranteed empty)
-			set_b_mode_species(_sp_possible[_sampling_i_chosen-1]);
-		};
-
-		// Reset propensity of empty to 1
-		_sampling_props[1] = 1.0;
-
-		// Binary mode = true
-		_b_mode_flag = true;
+	void Unit::Impl::set_empty() {
+		_nonzero_occs.clear();
 	};
 
 	/********************
 	Get moment
 	********************/
 
-	double Unit::Impl::get_moment(std::string ixn_param_name, bool binary) const {
+	double Unit::Impl::get_moment(std::string ixn_param_name) const {
 		if (!_bias_dict) {
 			std::cerr << ">>> Error: Unit::Impl::get_moment <<< no bias dict exists on this unit" << std::endl;
 			exit(EXIT_FAILURE);
@@ -596,20 +458,9 @@ namespace dblz {
 		double count = 0.0;
 
 		std::vector<Sptr> species = _bias_dict->get_species_from_ixn(ixn_param_name);
+
 		for (auto &sp: species) {
-
-			if (binary) {
-
-				// Binary
-				if (_b_mode_sp == sp) {
-					count += 1.0;
-				};
-
-			} else {
-
-				// Prob
-				count += get_p_mode_prob(sp);
-			};
+			count += get_occ(sp);
 		};
 
 		return count;
@@ -651,10 +502,11 @@ namespace dblz {
 
 			if (_sampling_i_chosen==0) {
 				// Flip down (new spin = 0)
-				set_b_mode_empty();
+				set_empty();
 			} else {
 				// Make the appropriate species at this site (guaranteed empty)
-				set_b_mode_species(_sp_possible[_sampling_i_chosen-1]);
+				set_empty();
+				set_occ(_sp_possible[_sampling_i_chosen-1],1.0);
 			};
 
 		} else {
@@ -680,10 +532,10 @@ namespace dblz {
 			*/
 
 			// Write into species
-			Sptr s_empty = nullptr;
-			set_p_mode_prob(s_empty,_sampling_probs[0]/_sampling_tot);
+			// empty prob = _sampling_probs[0]/_sampling_tot)
+			set_empty();
 			for (int i=0; i<_sp_possible.size(); i++) {
-				set_p_mode_prob(_sp_possible[i],_sampling_probs[i+1]/_sampling_tot);
+				set_occ(_sp_possible[i],_sampling_probs[i+1]/_sampling_tot);
 			};
 		};
 	};
@@ -818,70 +670,35 @@ namespace dblz {
 	Get probability
 	********************/
 
-	// Check mode
-	bool Unit::check_is_b_mode() const {
-		return _impl->check_is_b_mode();
+	double Unit::get_occ(Sptr sp) const {
+		return _impl->get_occ(sp);
+	};
+	const std::unordered_map<Sptr, double>& Unit::get_nonzero_occs() const {
+		return _impl->get_nonzero_occs();
+	};
+	void Unit::set_occ(Sptr sp, double prob) {
+		_impl->set_occ(sp,prob);
+	};
+	void Unit::set_occ(std::string sp, double prob) {
+		_impl->set_occ(sp,prob);
+	};
+	void Unit::set_occ_random() {
+		_impl->set_occ_random();
 	};
 
-	// Flip between the two modes
-	void Unit::set_b_mode(bool flag) {
-		_impl->set_b_mode(flag);
+	bool Unit::get_is_empty() const {
+		return _impl->get_is_empty();
 	};
-
-	// Binary
-	Sptr Unit::get_b_mode_species() const { // nullptr for empty
-		return _impl->get_b_mode_species();
-	};
-	bool Unit::check_is_b_mode_species(const Sptr &sp) const {
-		return _impl->check_is_b_mode_species(sp);
-	};
-	void Unit::set_b_mode_species(Sptr sp) {
-		_impl->set_b_mode_species(sp);
-	};
-	void Unit::set_b_mode_species(std::string sp) {
-		_impl->set_b_mode_species(sp);
-	};
-	void Unit::set_b_mode_empty() {
-		_impl->set_b_mode_empty();
-	};
-	bool Unit::check_b_mode_is_empty() const {
-		return _impl->check_b_mode_is_empty();
-	};
-
-	// Probabilistic
-	double Unit::get_p_mode_prob(Sptr sp) const { // nullptr for empty
-		return _impl->get_p_mode_prob(sp);
-	};
-	const std::unordered_map<Sptr, double>& Unit::get_p_mode_probs() const {
-		return _impl->get_p_mode_probs();
-	};
-	void Unit::set_p_mode_prob(Sptr sp, double prob) {
-		_impl->set_p_mode_prob(sp,prob);
-	};
-	void Unit::set_p_mode_prob(std::string sp, double prob) {
-		_impl->set_p_mode_prob(sp,prob);
-	};
-	void Unit::set_p_mode_empty() {
-		_impl->set_p_mode_empty();
-	};
-	bool Unit::check_p_mode_is_empty() const {
-		return _impl->check_p_mode_is_empty();
-	};
-
-	// Convert between the two
-	void Unit::convert_b_to_p_mode() {
-		_impl->convert_b_to_p_mode();
-	};
-	void Unit::convert_p_to_b_mode() {
-		_impl->convert_p_to_b_mode();
+	void Unit::set_empty() {
+		_impl->set_empty();
 	};
 
 	/********************
 	Get moment
 	********************/
 
-	double Unit::get_moment(std::string ixn_param_name, bool binary) const {
-		return _impl->get_moment(ixn_param_name,binary);
+	double Unit::get_moment(std::string ixn_param_name) const {
+		return _impl->get_moment(ixn_param_name);
 	};
 
 	/********************
@@ -1416,12 +1233,14 @@ namespace dblz {
 		Get activation
 		********************/
 
+		double get_activation_for_species_at_timepoint(const std::shared_ptr<BiasDict>& bias_dict, const Sptr &species, int timepoint) const;
 		double get_activation_for_species_at_timepoint(const std::shared_ptr<BiasDict>& bias_dict, const Sptr &species, int timepoint, int given_layer) const;
 
 		/********************
 		Sample
 		********************/
 
+		void form_activations_vector_at_timepoint(const std::shared_ptr<BiasDict>& bias_dict, const std::vector<Sptr>& species, int timepoint);
 		void form_activations_vector_at_timepoint(const std::shared_ptr<BiasDict>& bias_dict, const std::vector<Sptr>& species, int timepoint, int given_layer);
 		const std::vector<double>& get_activations_vector() const;
 	};
@@ -1572,6 +1391,29 @@ namespace dblz {
 	Get activation
 	********************/
 
+	double UnitHidden::Impl::get_activation_for_species_at_timepoint(const std::shared_ptr<BiasDict>& bias_dict, const Sptr &species, int timepoint) const {
+		double act = 0.0;
+
+		// Bias
+		if (bias_dict) {
+			act += bias_dict->get_ixn_at_timepoint(species,timepoint);
+		};
+
+		// VH conns
+		for (auto const &conn_vh: _conns_vh) {
+			act += conn_vh->get_act_for_species_at_unit_h_at_timepoint(species,timepoint);
+		};
+
+		// HH conns
+		for (auto layer: _conns_hh) {
+			// Go through conns
+			for (auto const &conn_hh: layer.second) {
+				act += conn_hh.first->get_act_for_species_at_unit_at_timepoint(species,conn_hh.second,timepoint);
+			};
+		};
+
+		return act;
+	};
 	double UnitHidden::Impl::get_activation_for_species_at_timepoint(const std::shared_ptr<BiasDict>& bias_dict, const Sptr &species, int timepoint, int given_layer) const {
 		double act = 0.0;
 
@@ -1603,6 +1445,20 @@ namespace dblz {
 	Sample
 	********************/
 
+	void UnitHidden::Impl::form_activations_vector_at_timepoint(const std::shared_ptr<BiasDict>& bias_dict, const std::vector<Sptr>& species_possible, int timepoint) {
+		// Check size
+		if (_activations.size() != species_possible.size()) {
+			_activations.clear();
+			for (auto i=0; i<species_possible.size(); i++) {
+				_activations.push_back(0.0);
+			};
+		};
+
+		// Form the vector of activations
+		for (auto i=0; i<species_possible.size(); i++) {
+			_activations[i] = get_activation_for_species_at_timepoint(bias_dict,species_possible[i],timepoint);
+		};
+	};
 	void UnitHidden::Impl::form_activations_vector_at_timepoint(const std::shared_ptr<BiasDict>& bias_dict, const std::vector<Sptr>& species_possible, int timepoint, int given_layer) {
 		// Check size
 		if (_activations.size() != species_possible.size()) {
@@ -1736,7 +1592,13 @@ namespace dblz {
 	Sample
 	********************/
 
-	void UnitHidden::sample_at_timepoint(int timepoint, int given_layer, bool binary) {
+	void UnitHidden::sample_at_timepoint(int timepoint, bool binary) {
+		_impl->form_activations_vector_at_timepoint(get_bias_dict(),get_possible_species(),timepoint);
+
+		// Parent sampler
+		sample_given_activations(_impl->get_activations_vector(),binary);
+	};
+	void UnitHidden::sample_at_timepoint(int timepoint, bool binary, int given_layer) {
 		_impl->form_activations_vector_at_timepoint(get_bias_dict(),get_possible_species(),timepoint,given_layer);
 
 		// Parent sampler

@@ -93,6 +93,9 @@ namespace dblz {
 		// Nesterov
 		bool nesterov = true;
 		double nesterov_acc = 0.5;
+
+		// Layerwise sampling
+		bool layer_wise = true;
 	};
 
 	/****************************************
@@ -146,7 +149,7 @@ namespace dblz {
 		********************/
 
 		// timepoint_start & timepoint_end = inclusive
-		void wake_sleep_loop(int timepoint_start, int timepoint_end, int batch_size, int no_latt_sampling_steps, FNameSeriesColl &fname_coll, bool verbose=false);
+		void wake_sleep_loop(int timepoint_start, int timepoint_end, int batch_size, int no_latt_sampling_steps, FNameSeriesColl &fname_coll, bool layer_wise, bool verbose=false);
 
 		/********************
 		Solve

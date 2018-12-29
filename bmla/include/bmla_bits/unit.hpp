@@ -83,38 +83,20 @@ namespace bmla {
 		Get/set probability of different species to live on this site
 		********************/
 
-		// Check mode
-		bool check_is_b_mode() const;
+		double get_occ(Sptr sp) const; // nullptr for empty
+		const std::unordered_map<Sptr, double>& get_nonzero_occs() const;
+		void set_occ(Sptr sp, double prob);
+		void set_occ(std::string sp, double prob);
+		void set_occ_random();
 
-		// Flip between the two modes
-		void set_b_mode(bool flag);
-
-		// Binary
-		Sptr get_b_mode_species() const; // nullptr for empty
-		void set_b_mode_species(Sptr sp);
-		bool check_is_b_mode_species(Sptr sp) const;
-		void set_b_mode_species(std::string sp);
-		void set_b_mode_empty();
-		bool check_b_mode_is_empty() const;
-		void set_b_mode_random();
-
-		// Probabilistic
-		double get_p_mode_prob(Sptr sp) const; // nullptr for empty
-		const std::unordered_map<Sptr, double>& get_p_mode_probs() const;
-		void set_p_mode_prob(Sptr sp, double prob);
-		void set_p_mode_prob(std::string sp, double prob);
-		void set_p_mode_empty();
-		bool check_p_mode_is_empty() const;
-
-		// Convert between the two
-		void convert_b_to_p_mode();
-		void convert_p_to_b_mode();
+		bool get_is_empty() const;
+		void set_empty();
 
 		/********************
 		Get moment
 		********************/
 
-		double get_moment(std::string ixn_param_name, bool binary=true) const;
+		double get_moment(std::string ixn_param_name) const;
 
 		/********************
 		Sample
@@ -219,7 +201,7 @@ namespace bmla {
 		Sample
 		********************/
 
-		void sample(bool binary=true);
+		void sample(bool binary);
 
 	};
 
@@ -315,7 +297,8 @@ namespace bmla {
 		Sample
 		********************/
 
-		void sample(int given_layer, bool binary=true);
+		void sample(bool binary, int given_layer);
+		void sample(bool binary);
 	};
 
 

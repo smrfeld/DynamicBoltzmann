@@ -200,6 +200,10 @@ namespace dblz {
 		void all_units_h_set_empty();
 		void all_units_set_empty();
 
+		// Binarize
+		void all_units_v_binarize();
+		void all_units_h_binarize();
+
 		/********************
 		Write/read latt to a file
 		********************/

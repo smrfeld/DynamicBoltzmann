@@ -175,8 +175,8 @@ namespace bmla {
 			};
 
 			// Sample hidden
-			// Hidden: binary (= true)
-			_latt->sample_up_v_to_h(layer_wise, true);
+			// Hidden: prob (= false)
+			_latt->sample_up_v_to_h(layer_wise, false);
 
 			// Reap awake
 			for (auto &ixn_param: _ixn_params) {
@@ -185,13 +185,17 @@ namespace bmla {
 				};
 			};
 
+			// Convert hidden units to be binary
+			_latt->all_units_h_binarize();
+
 			// Sample vis, hidden
 			for (int i_sampling_step=0; i_sampling_step<no_latt_sampling_steps; i_sampling_step++) 
 			{
 				// Sample down (hidden -> visible)
-				// Visible: prob (= false)
+				// Visible: binary (= true)
 				// Hiddens: binary (= true)
-				_latt->sample_down_h_to_v(layer_wise, false,true);
+				// _latt->sample_down_h_to_v(layer_wise, true, true);
+				_latt->sample_down_h_to_v(layer_wise, true, true);
 
 				// Sample up (visible -> hidden)
 				// If not last step:

@@ -202,6 +202,10 @@ namespace bmla {
 		// Random
 		void all_units_v_random();
 
+		// Binarize
+		void all_units_v_binarize();
+		void all_units_h_binarize();
+
 		/********************
 		Write/read latt to a file
 		********************/

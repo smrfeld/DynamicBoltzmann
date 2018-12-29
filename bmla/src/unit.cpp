@@ -114,6 +114,8 @@ namespace bmla {
 		void set_occ(std::string sp, double prob);
 		void set_occ_random();
 
+		void binarize();
+
 		bool get_is_empty() const;
 		void set_empty();
 
@@ -434,6 +436,53 @@ namespace bmla {
 		};
 	};
 
+	void Unit::Impl::binarize() {
+		// Check against empty
+		if (_nonzero_occs.size() == 0) {
+			return; // already binary!
+		};
+
+		// Form the propensity vector
+		std::vector<double> props;
+		std::vector<Sptr> props_sp;
+		props.push_back(0.0);
+		props_sp.push_back(nullptr);
+		// Empty
+		double ptot = 0.0;
+		for (auto pr: _nonzero_occs) {
+			ptot += pr.second;
+		};
+		props.push_back(1.0-ptot);
+		// Others
+		for (auto pr: _nonzero_occs) {
+			props.push_back(props.back() + pr.second);
+			props_sp.push_back(pr.first);
+		};
+
+		// Sample RV
+		double r = randD(0.0,props.back());
+
+		// Find interval
+		for (int i=0; i<props.size()-1; i++) {
+			if (props[i] <= r && r <= props[i+1]) {
+				// i is the chosen one
+				// i = 0 => empty
+				// else i is the species chosen in _nonzero_occs
+				if (i == 0) {
+					set_empty();
+				} else {
+					set_empty();
+					set_occ(props_sp[i],1.0);
+				};
+
+				// Done
+				return;
+			};
+		};
+
+		// Never get here
+	};
+
 	bool Unit::Impl::get_is_empty() const {
 		if (_nonzero_occs.size() == 0) {
 			return true;
@@ -685,6 +734,10 @@ namespace bmla {
 	};
 	void Unit::set_occ_random() {
 		_impl->set_occ_random();
+	};
+
+	void Unit::binarize() {
+		_impl->binarize();
 	};
 
 	bool Unit::get_is_empty() const {

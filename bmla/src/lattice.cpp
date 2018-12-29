@@ -804,6 +804,20 @@ namespace bmla {
 		};
 	};
 
+	// Binarize
+	void Lattice::all_units_v_binarize() {
+		for (auto &ptr: _latt_v) {
+			ptr->binarize();
+		};
+	};
+	void Lattice::all_units_h_binarize() {
+		for (auto &pr: _latt_h) {
+			for (auto &s: pr.second) {
+				s->binarize();
+			};
+		};
+	};
+
 	/********************
 	Write/read Latt to a file
 	********************/

@@ -90,6 +90,8 @@ namespace dblz {
 		void set_occ(std::string sp, double prob);
 		void set_occ_random();
 
+		void binarize();
+
 		bool get_is_empty() const;
 		void set_empty();
 

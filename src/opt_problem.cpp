@@ -199,8 +199,8 @@ namespace dblz {
 				// std::cout << "read " << ( t4 - t3 ) / (double) CLOCKS_PER_SEC << std::endl;
 
 				// Sample hidden
-				// Hidden: binary (= true)
-				_latt->sample_up_v_to_h_at_timepoint(timepoint,layer_wise,true);
+				// Hidden: prob (= false)
+				_latt->sample_up_v_to_h_at_timepoint(timepoint,layer_wise,false);
 
 				// clock_t t5 = clock();    
 				// std::cout << "sample h " << ( t5 - t4 ) / (double) CLOCKS_PER_SEC << std::endl;
@@ -210,6 +210,9 @@ namespace dblz {
 					moment->reap_as_timepoint_in_batch(MomentType::AWAKE, timepoint, i_batch);
 				};
 
+				// Convert hidden units to be binary
+				_latt->all_units_h_binarize();
+
 				// clock_t t6 = clock();    
 				// std::cout << "reaped awake " << ( t6 - t5 ) / (double) CLOCKS_PER_SEC << std::endl;
 
@@ -217,9 +220,9 @@ namespace dblz {
 				for (int i_sampling_step=0; i_sampling_step<no_latt_sampling_steps; i_sampling_step++) 
 				{
 					// Sample down (hidden -> visible)
-					// Visible: prob (= false)
+					// Visible: binary (= true)
 					// Hiddens: binary (= true)
-					_latt->sample_down_h_to_v_at_timepoint(timepoint,layer_wise,false,true);
+					_latt->sample_down_h_to_v_at_timepoint(timepoint,layer_wise,true,true);
 
 					// Sample up (visible -> hidden)
 					// If not last step:

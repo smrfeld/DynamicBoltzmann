@@ -159,21 +159,13 @@ namespace dblz {
 			std::cout << "--- Sampling lattice ---" << std::endl;
 		};
 
-		// clock_t t0 = clock();    
-
 		// Make a subset
 		std::vector<int> batch_idx_subset = fname_coll.get_random_subset(batch_size);
-
-		// clock_t t1 = clock();    
-		// std::cout << ( t1 - t0 ) / (double) CLOCKS_PER_SEC << std::endl;
 
 		// Reset all moments
 		for (auto &moment: _moments) {
 			moment->reset_to_zero();
 		};
-
-		// clock_t t2 = clock();    
-		// std::cout << ( t2 - t1 ) / (double) CLOCKS_PER_SEC << std::endl;
 
 		// Iterate over time
 		for (int timepoint=timepoint_start; timepoint<=timepoint_end; timepoint++) {
@@ -190,31 +182,30 @@ namespace dblz {
 					std::cout << "." << std::flush;
 				};
 
-				// clock_t t3 = clock();    
+				clock_t t3 = clock();    
 
 				// Read latt
 				_latt->read_from_file(fname_coll.get_fname_series(batch_idx_subset[i_batch]).fnames[timepoint]); // binary units
 
-				// clock_t t4 = clock();    
-				// std::cout << "read " << ( t4 - t3 ) / (double) CLOCKS_PER_SEC << std::endl;
+				clock_t t4 = clock();    
 
 				// Sample hidden
 				// Hidden: prob (= false)
 				_latt->sample_up_v_to_h_at_timepoint(timepoint,layer_wise,false);
 
-				// clock_t t5 = clock();    
-				// std::cout << "sample h " << ( t5 - t4 ) / (double) CLOCKS_PER_SEC << std::endl;
+				clock_t t5 = clock();    
 
 				// Reap awake
 				for (auto &moment: _moments) {
 					moment->reap_as_timepoint_in_batch(MomentType::AWAKE, timepoint, i_batch);
 				};
 
+				clock_t t6 = clock();    
+
 				// Convert hidden units to be binary
 				_latt->all_units_h_binarize();
 
-				// clock_t t6 = clock();    
-				// std::cout << "reaped awake " << ( t6 - t5 ) / (double) CLOCKS_PER_SEC << std::endl;
+				clock_t t7 = clock();    
 
 				// Sample
 				for (int i_sampling_step=0; i_sampling_step<no_latt_sampling_steps; i_sampling_step++) 
@@ -236,11 +227,7 @@ namespace dblz {
 					};
 				};
 
-				// clock_t t7 = clock();    
-				// std::cout << "sample " << ( t7 - t6 ) / (double) CLOCKS_PER_SEC << std::endl;
-
-				// Convert lattice to binary mode to evaluate the asleep phase moments!
-				// _latt->all_units_convert_to_b_mode();
+				clock_t t8 = clock();    
 
 				// Print
 				// latt.print_occupancy();
@@ -250,8 +237,19 @@ namespace dblz {
 					moment->reap_as_timepoint_in_batch(MomentType::ASLEEP, timepoint, i_batch);
 				};
 
-				// clock_t t8 = clock();    
-				// std::cout << "reaped asleep " << ( t8 - t7 ) / (double) CLOCKS_PER_SEC << std::endl;
+				clock_t t9 = clock();    
+
+				// Timing
+				double int1 = ( t4 - t3 ) / (double) CLOCKS_PER_SEC;
+				double int2 = ( t5 - t4 ) / (double) CLOCKS_PER_SEC;
+				double int3 = ( t6 - t5 ) / (double) CLOCKS_PER_SEC;
+				double int4 = ( t7 - t6 ) / (double) CLOCKS_PER_SEC;
+				double int5 = ( t8 - t7 ) / (double) CLOCKS_PER_SEC;
+				double int6 = ( t9 - t8 ) / (double) CLOCKS_PER_SEC;
+				double int_tot = int1 + int2 + int3 + int4 + int5 + int6;
+				//std::cout << "Timepoint: " << timepoint << " batch: " << i_batch << std::endl;
+				//std::cout << "Timing: " << int1 << " " << int2 << " " << int3 << " " << int4 << " " << int5 << " " << int6 << std::endl;
+				//std::cout << "Percentages: " << int1/int_tot << " " << int2/int_tot << " " << int3/int_tot << " " << int4/int_tot << " " << int5/int_tot << " " << int6/int_tot << std::endl;
 			};
 			
 			// Average moments at this timepoint
@@ -350,7 +348,7 @@ namespace dblz {
 		Wake/asleep loop
 		*****/
 
-		// clock_t t3 = clock();    
+		clock_t t3 = clock();    
 
 		wake_sleep_loop(timepoint_integral_start,timepoint_integral_end,batch_size,no_latt_sampling_steps,fname_coll,options.layer_wise,options.VERBOSE_WAKE_ASLEEP);
 
@@ -361,8 +359,8 @@ namespace dblz {
 			};
 		};
 
-		// clock_t t4 = clock();    
-		// std::cout << "wake sleep " << ( t4 - t3 ) / (double) CLOCKS_PER_SEC << std::endl;
+		clock_t t4 = clock();    
+		std::cout << "wake sleep " << ( t4 - t3 ) / (double) CLOCKS_PER_SEC << std::endl;
 
 		/********************
 		Solve diff eq for adjoint

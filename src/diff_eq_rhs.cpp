@@ -140,6 +140,8 @@ namespace dblz {
 		// double lambda_0 = 0.0;
 		// _lambda_s = (1.0 + sqrt(1.0 + 4.0 * pow(lambda_0,2))) / 2.0;
 		// _lambda_sp1 = (1.0 + sqrt(1.0 + 4.0 * pow(_lambda_s,2))) / 2.0;
+		_y_s = new std::map<q3c1::Vertex*,std::vector<double>>();
+		_y_sp1 = new std::map<q3c1::Vertex*,std::vector<double>>();
 	};
 	DiffEqRHS::DiffEqRHS(const DiffEqRHS& other) : Grid(other) {
 		_copy(other);
@@ -330,11 +332,7 @@ namespace dblz {
 		if (nesterov_mode) {
 
 			// New ysp1
-			if (_y_sp1) {
-				delete _y_sp1;
-				_y_sp1 = nullptr;
-			};
-			_y_sp1 = new std::map<q3c1::Vertex*,std::vector<double>>();
+			_y_sp1->clear();
 			if (_no_dims == 1) {
 				for (auto const &pr: _updates) {
 					// Val
@@ -380,11 +378,7 @@ namespace dblz {
 			// Gamma
 			// double gamma_s = (1.0 - _lambda_s) / _lambda_sp1;
 
-			// Check that y_s exists
-			if (!_y_s) {
-				_y_s = new std::map<q3c1::Vertex*,std::vector<double>>();
-			};
-			// All needed values should exist
+			// All needed values in _y_s should exist
 			for (auto const &pr: _updates) {
 				auto it = (*_y_s).find(pr.first);
 				if (it == (*_y_s).end()) {
@@ -511,7 +505,7 @@ namespace dblz {
 
 			// Advance y, lambda
 			_y_s = _y_sp1;
-			_y_sp1 = nullptr; // remove ref, i.e. ysp1 was now passed to ys
+			_y_sp1 = new std::map<q3c1::Vertex*,std::vector<double>>(); // remove ref, i.e. ysp1 was now passed to ys
 			// _lambda_s = _lambda_sp1;
 
 		} else {

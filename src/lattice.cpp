@@ -63,6 +63,8 @@ namespace dblz {
 				};
 			};
 		};
+
+		_IO_did_init = false;
 	};
 	Lattice::Lattice(const Lattice& other) {
 		_copy(other);
@@ -141,6 +143,8 @@ namespace dblz {
 		for (auto i=0; i<other._conns_vv.size(); i++) {
 			_conns_vh.push_back(new ConnVH(*other._conns_vh[i]));
 		};
+		_IO_species_possible = other._IO_species_possible;
+		_IO_did_init = other._IO_did_init;
 	};
 	void Lattice::_move(Lattice& other) {
 		_no_dims = other._no_dims;
@@ -153,6 +157,8 @@ namespace dblz {
 		_conns_vv = other._conns_vv;
 		_conns_vvv = other._conns_vvv;
 		_conns_vh = other._conns_vh;
+		_IO_species_possible = other._IO_species_possible;
+		_IO_did_init = other._IO_did_init;
 
 		// Reset other
 		other._no_dims = 0;
@@ -165,6 +171,8 @@ namespace dblz {
 		other._conns_vv.clear();
 		other._conns_vvv.clear();
 		other._conns_vh.clear();
+		other._IO_species_possible.clear();
+		other._IO_did_init = false;
 	};
 
 	/********************
@@ -813,7 +821,7 @@ namespace dblz {
 	Write/read Latt to a file
 	********************/
 
-	void Lattice::write_to_file(std::string fname, bool binary) 
+	void Lattice::write_to_file(std::string fname) 
 	{
 		std::ofstream f;
 		f.open (fname);
@@ -846,11 +854,24 @@ namespace dblz {
 		f.close();
 	};
 
-
-	void Lattice::read_from_file(std::string fname, bool binary)
+	void Lattice::init_file_reader(std::vector<Sptr> species_possible) {
+		for (auto sp: species_possible) {
+			_IO_species_possible[sp->get_name()] = sp;
+		};
+		_IO_did_init = true;
+	};
+	void Lattice::read_from_file(std::string fname)
 	{
+		if (!_IO_did_init) {
+			std::cerr << ">>> Lattice::read_from_file <<< Error: run init_file_reader first!" << std::endl;
+			exit(EXIT_FAILURE);
+		};
+
 		// Clear the current lattice
 		all_units_set_empty();
+
+		// Map: species to sites
+		std::map<std::string, std::vector<UnitVisible*>> occs_to_write;
 
 		std::ifstream f;
 		f.open(fname);
@@ -863,72 +884,54 @@ namespace dblz {
 		double prob_val;
 		if (f.is_open()) { // make sure we found it
 
-			if (_no_dims == 1 && binary) {
+			if (_no_dims == 1) {
 				while (getline(f,line)) {
 					if (line == "") { continue; };
 					iss = std::istringstream(line);				
 					iss >> x >> sp;
 		    		s = _look_up_unit_v(atoi(x.c_str()));
-		    		s->set_occ(sp,1.0);
+		    		// s->set_occ(sp,1.0);
+		    		occs_to_write[sp].push_back(s);
 		    		// Reset
 			    	sp=""; x="";
 			    };
-			} else if (_no_dims == 1 && !binary) {
-				while (getline(f,line)) {
-					if (line == "") { continue; };
-					iss = std::istringstream(line);		
-					iss >> x >> sp >> prob;
-		    		s = _look_up_unit_v(atoi(x.c_str()));
-		    		prob_val = atof(prob.c_str());
-		    		s->set_occ(sp,prob_val);
-		    		// Reset
-			    	sp=""; x=""; prob="";
-			    };
-			} else if (_no_dims == 2 && binary) {
+			} else if (_no_dims == 2) {
 				while (getline(f,line)) {
 					if (line == "") { continue; };
 					iss = std::istringstream(line);				
 					iss >> x >> y >> sp;
 		    		s = _look_up_unit_v(atoi(x.c_str()),atoi(y.c_str()));
-		    		s->set_occ(sp,1.0);
+		    		// s->set_occ(sp,1.0);
+		    		occs_to_write[sp].push_back(s);
 		    		// Reset
 			    	sp=""; x=""; y="";
 			    };
-			} else if (_no_dims == 2 && !binary) {
-				while (getline(f,line)) {
-					if (line == "") { continue; };
-					iss = std::istringstream(line);				
-					iss >> x >> y >> sp >> prob;
-		    		s = _look_up_unit_v(atoi(x.c_str()),atoi(y.c_str()));				
-		    		prob_val = atof(prob.c_str());
-		    		s->set_occ(sp,prob_val);
-		    		// Reset
-			    	sp=""; x=""; y=""; prob="";
-			    };
-			} else if (_no_dims == 3 && binary) {
+			} else if (_no_dims == 3) {
 				while (getline(f,line)) {
 					if (line == "") { continue; };
 					iss = std::istringstream(line);				
 					iss >> x >> y >> z >> sp;
 			    	s = _look_up_unit_v(atoi(x.c_str()),atoi(y.c_str()),atoi(z.c_str()));
-		    		s->set_occ(sp,1.0);
+		    		// s->set_occ(sp,1.0);
+		    		occs_to_write[sp].push_back(s);
 		    		// Reset
 			    	sp=""; x=""; y=""; z="";
 			    };
-			} else if (_no_dims == 3 && !binary) {
-				while (getline(f,line)) {
-					if (line == "") { continue; };
-					iss = std::istringstream(line);				
-					iss >> x >> y >> z >> sp >> prob;
-			    	s = _look_up_unit_v(atoi(x.c_str()),atoi(y.c_str()),atoi(z.c_str()));
-			    	prob_val = atof(prob.c_str());
-		    		s->set_occ(sp,prob_val);
-		    		// Reset
-			    	sp=""; x=""; y=""; z=""; prob="";
-				};
 			};
 		};
 		f.close();
+
+		for (auto const &pr: occs_to_write) {
+			// find the species
+			auto it = _IO_species_possible.find(pr.first);
+			if (it == _IO_species_possible.end()) {
+				std::cerr << ">>> Lattice::read_from_file <<< Error: could not find species: " << pr.first << std::endl;
+				exit(EXIT_FAILURE);
+			};
+			for (auto const &site: pr.second) {
+				site->set_occ(it->second,1.0);
+			};
+		};
 
 		// std::cout << "Read: " << fname << std::endl;
 	};
@@ -942,18 +945,28 @@ namespace dblz {
 		// Go through hidden layers top to bottom (reverse)
 		auto rit_begin = _latt_h.rbegin();
 		rit_begin++; // Skip the first
-		for (auto rit=rit_begin; rit!=_latt_h.rend(); ++rit)
-		{
-			// Shuffle
-			std::random_shuffle ( _latt_h_idxs[rit->first].begin(), _latt_h_idxs[rit->first].end() );
 
-			if (layer_wise) {
+		if (layer_wise) {
+
+			for (auto rit=rit_begin; rit!=_latt_h.rend(); ++rit)
+			{
+				// Shuffle
+				std::random_shuffle ( _latt_h_idxs[rit->first].begin(), _latt_h_idxs[rit->first].end() );
+
 				// Sample, given input from a layer higher
 				for (auto const &idx: _latt_h_idxs[rit->first]) 
 				{
 					rit->second[idx]->sample_at_timepoint(timepoint, binary_hidden, rit->first+1);
 				};
-			} else {
+			};
+
+		} else {
+
+			for (auto rit=rit_begin; rit!=_latt_h.rend(); ++rit)
+			{
+				// Shuffle
+				std::random_shuffle ( _latt_h_idxs[rit->first].begin(), _latt_h_idxs[rit->first].end() );
+
 				// Sample given both layers
 				for (auto const &idx: _latt_h_idxs[rit->first]) 
 				{
@@ -974,18 +987,39 @@ namespace dblz {
 		};
 	};
 	void Lattice::sample_up_v_to_h_at_timepoint(int timepoint, bool layer_wise, bool binary_hidden) {
-		for (auto it=_latt_h.begin(); it!=_latt_h.end(); it++) 
-		{
-			// Shuffle
-			std::random_shuffle ( _latt_h_idxs[it->first].begin(), _latt_h_idxs[it->first].end() );
+		if (layer_wise) {
 
-			if (layer_wise) {
+			for (auto it=_latt_h.begin(); it!=_latt_h.end(); it++) 
+			{
+				clock_t t8 = clock();    
+
+				// Shuffle
+				std::random_shuffle ( _latt_h_idxs[it->first].begin(), _latt_h_idxs[it->first].end() );
+
+				clock_t t9 = clock();    
+
 				// Sample, given input from a layer higher
 				for (auto const &idx: _latt_h_idxs[it->first]) 
 				{
 					it->second[idx]->sample_at_timepoint(timepoint, binary_hidden, it->first-1);
 				};
-			} else {
+
+				clock_t t10 = clock();    
+
+				double int5 = ( t9 - t8 ) / (double) CLOCKS_PER_SEC;
+				double int6 = ( t10 - t9 ) / (double) CLOCKS_PER_SEC;
+				double int_tot = int5 + int6;
+				//std::cout << "[sample down] Timing: " << int5 << " " << int6 << std::endl;
+				// std::cout << "[sample down] Percentages: " << int5/int_tot << " " << int6/int_tot << std::endl;
+			};
+
+		} else {
+
+			for (auto it=_latt_h.begin(); it!=_latt_h.end(); it++) 
+			{
+				// Shuffle
+				std::random_shuffle ( _latt_h_idxs[it->first].begin(), _latt_h_idxs[it->first].end() );
+
 				// Sample given both layers
 				for (auto const &idx: _latt_h_idxs[it->first]) 
 				{

@@ -5,7 +5,7 @@ CXX = g++
 # C++ flags
 CXXFLAGS = -std=c++14 -fPIC -O3
 # linking flags
-LDFLAGS = -shared -lq3c1
+LDFLAGS = -shared -lq3c1 -O3
 # target lib
 TARGET_LIB = lib/libdynamicboltz.so
 # build dir

@@ -53,6 +53,10 @@ namespace dblz {
 		std::vector<ConnVVV*> _conns_vvv;
 		std::vector<ConnVH*> _conns_vh;
 
+		// IO
+		std::map<std::string,Sptr> _IO_species_possible;
+		bool _IO_did_init;
+
 		// Lookup a site iterator from x,y,z
 		UnitVisible* _look_up_unit_v(int x) const;
 		UnitVisible* _look_up_unit_v(int x, int y) const;
@@ -208,8 +212,10 @@ namespace dblz {
 		Write/read latt to a file
 		********************/
 
-		void write_to_file(std::string fname, bool binary=true);
-		void read_from_file(std::string fname, bool binary=true);
+		void write_to_file(std::string fname);
+
+		void init_file_reader(std::vector<Sptr> species_possible);
+		void read_from_file(std::string fname);
 
 		/********************
 		Sample

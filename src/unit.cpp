@@ -395,16 +395,16 @@ namespace dblz {
 	};
 
 	void Unit::sample_at_timepoint(int timepoint, bool binary, int given_layer) {
-		clock_t t10 = clock();    
+		// clock_t t10 = clock();    
 		// Form the activations vector
 		form_propensity_vector_at_timepoint(timepoint, given_layer);
-		clock_t t11 = clock();    
+		// clock_t t11 = clock();    
 		// Sample
 		_sample(binary);
-		clock_t t12 = clock();    
-		double int5 = ( t11 - t10 ) / (double) CLOCKS_PER_SEC;
-		double int6 = ( t12 - t11 ) / (double) CLOCKS_PER_SEC;
-		std::cout << int5/(int5+int6) << " " << int6/(int5+int6) << std::endl;
+		//clock_t t12 = clock();    
+		//double int5 = ( t11 - t10 ) / (double) CLOCKS_PER_SEC;
+		//double int6 = ( t12 - t11 ) / (double) CLOCKS_PER_SEC;
+		//std::cout << int5/(int5+int6) << " " << int6/(int5+int6) << std::endl;
 	};
 
 	void Unit::_sample(bool binary) {

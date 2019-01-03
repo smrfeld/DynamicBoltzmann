@@ -141,6 +141,8 @@ namespace bmla {
 		for (auto i=0; i<other._conns_vv.size(); i++) {
 			_conns_vh.push_back(new ConnVH(*other._conns_vh[i]));
 		};
+		_IO_species_possible = other._IO_species_possible;
+		_IO_did_init = other._IO_did_init;
 	};
 	void Lattice::_move(Lattice& other) {
 		_no_dims = other._no_dims;
@@ -153,6 +155,8 @@ namespace bmla {
 		_conns_vh = other._conns_vh;
 		_latt_v_idxs = other._latt_v_idxs;
 		_latt_h_idxs = other._latt_h_idxs;
+		_IO_species_possible = other._IO_species_possible;
+		_IO_did_init = other._IO_did_init;
 
 		// Reset other
 		other._no_dims = 0;
@@ -165,6 +169,8 @@ namespace bmla {
 		other._conns_vh.clear();
 		other._latt_v_idxs.clear();
 		other._latt_h_idxs.clear();
+		other._IO_species_possible.clear();
+		other._IO_did_init = false;
 	};
 
 	/********************
@@ -826,17 +832,11 @@ namespace bmla {
 	{
 		std::ofstream f;
 		f.open (fname);
-
-		if (!f.is_open()) {
-			std::cerr << ">>> Error: Lattice::write_to_file <<< could not open file: " << fname << " for writing." << std::endl;
-			exit(EXIT_FAILURE);
-		};
-
 		for (auto const &l: _latt_v) {
 			auto nonzero_map = l->get_nonzero_occs();
-			if (nonzero_map.size() == 0) {
-				// empty, skip
-			} else {
+			// Only write nonzero
+			if (nonzero_map.size() != 0) {
+
 				if (_no_dims == 1) {
 					f << l->x();
 				} else if (_no_dims == 2) {
@@ -844,7 +844,15 @@ namespace bmla {
 				} else if (_no_dims == 3) {
 					f << l->x() << " " << l->y() << " " << l->z();
 				};
-				if (nonzero_map.size() == 1) {
+
+				if (binary) {
+
+					// Ensure binary
+					if (nonzero_map.size() != 1) {
+						std::cerr << ">>> Lattice::write_to_file <<< Error: indicated to write binary mode, but site is not binary!" << std::endl;
+						exit(EXIT_FAILURE);
+					};
+
 					// binary
 					for (auto const &pr: nonzero_map) {
 						f << " " << pr.first->get_name();
@@ -860,19 +868,29 @@ namespace bmla {
 		};
 		f.close();
 	};
+
+	void Lattice::init_file_reader(std::vector<Sptr> species_possible) {
+		for (auto sp: species_possible) {
+			_IO_species_possible[sp->get_name()] = sp;
+		};
+		_IO_did_init = true;
+	};
 	void Lattice::read_from_file(std::string fname, bool binary)
 	{
-		// Clear the current lattice
-		all_units_set_empty();
-
-		std::ifstream f;
-		f.open(fname);
-
-		if (!f.is_open()) {
-			std::cerr << ">>> Error: Lattice::read_from_file <<< could not open file: " << fname << " for reading." << std::endl;
+		if (!_IO_did_init) {
+			std::cerr << ">>> Lattice::read_from_file <<< Error: run init_file_reader first!" << std::endl;
 			exit(EXIT_FAILURE);
 		};
 
+		// Clear the current lattice
+		all_units_set_empty();
+
+		// Map: species to sites
+		std::map<std::string, std::vector<UnitVisible*>> occs_to_write_binary;
+		std::map<std::string, std::vector<std::pair<UnitVisible*,double>>> occs_to_write_prob;
+
+		std::ifstream f;
+		f.open(fname);
 		std::string x="",y="",z="";
 		std::string sp="";
 		std::string line;
@@ -880,41 +898,102 @@ namespace bmla {
 		UnitVisible* s;
 		std::string prob="";
 		double prob_val;
+		if (f.is_open()) { // make sure we found it
 
-		while (getline(f,line)) {
-			if (line == "") { continue; };
-			iss = std::istringstream(line);
-		    iss >> x;
-		    if (_no_dims == 2 || _no_dims == 3) {
-			    iss >> y;
-		    };
-		    if (_no_dims == 3) {
-			    iss >> z;
-		    };
-		    iss >> sp;
-		    if (!binary) {
-		    	// Read the prob
-		    	iss >> prob;
-		    };
-	    	// Add to Latt
-	    	if (_no_dims == 1) {
-	    		s = _look_up_unit_v(atoi(x.c_str()));
-		    } else if (_no_dims == 2) {
-	    		s = _look_up_unit_v(atoi(x.c_str()),atoi(y.c_str()));
-		    } else if (_no_dims == 3) {
-		    	s = _look_up_unit_v(atoi(x.c_str()),atoi(y.c_str()),atoi(z.c_str()));
-		    };
-		    if (binary) {
-	    		s->set_occ(sp,1.0);
-	    	} else {
-	    		prob_val = atof(prob.c_str());
-	    		s->set_occ(sp,prob_val);
-	    	};
-    		// Reset
-	    	sp=""; x=""; y=""; z=""; prob="";
+			if (_no_dims == 1 && binary) {
+				while (getline(f,line)) {
+					if (line == "") { continue; };
+					iss = std::istringstream(line);				
+					iss >> x >> sp;
+		    		s = _look_up_unit_v(atoi(x.c_str()));
+		    		occs_to_write_binary[sp].push_back(s);
+		    		// Reset
+			    	sp=""; x="";
+			    };
+			} else if (_no_dims == 1 && !binary) {
+				while (getline(f,line)) {
+					if (line == "") { continue; };
+					iss = std::istringstream(line);				
+					iss >> x >> sp >> prob;
+		    		s = _look_up_unit_v(atoi(x.c_str()));
+		    		prob_val = atof(prob.c_str());
+		    		occs_to_write_prob[sp].push_back(std::make_pair(s,prob_val));
+		    		// Reset
+			    	sp=""; x=""; prob="";
+			    };			    
+			} else if (_no_dims == 2 && binary) {
+				while (getline(f,line)) {
+					if (line == "") { continue; };
+					iss = std::istringstream(line);				
+					iss >> x >> y >> sp;
+		    		s = _look_up_unit_v(atoi(x.c_str()),atoi(y.c_str()));
+		    		occs_to_write_binary[sp].push_back(s);
+		    		// Reset
+			    	sp=""; x=""; y="";
+			    };
+			} else if (_no_dims == 2 && !binary) {
+				while (getline(f,line)) {
+					if (line == "") { continue; };
+					iss = std::istringstream(line);				
+					iss >> x >> y >> sp >> prob;
+		    		s = _look_up_unit_v(atoi(x.c_str()),atoi(y.c_str()));
+		    		prob_val = atof(prob.c_str());
+		    		occs_to_write_prob[sp].push_back(std::make_pair(s,prob_val));
+		    		// Reset
+			    	sp=""; x=""; y=""; prob="";
+			    };
+			} else if (_no_dims == 3 && binary) {
+				while (getline(f,line)) {
+					if (line == "") { continue; };
+					iss = std::istringstream(line);				
+					iss >> x >> y >> z >> sp;
+			    	s = _look_up_unit_v(atoi(x.c_str()),atoi(y.c_str()),atoi(z.c_str()));
+		    		occs_to_write_binary[sp].push_back(s);
+		    		// Reset
+			    	sp=""; x=""; y=""; z="";
+			    };
+			} else if (_no_dims == 3 && !binary) {
+				while (getline(f,line)) {
+					if (line == "") { continue; };
+					iss = std::istringstream(line);				
+					iss >> x >> y >> z >> sp >> prob;
+			    	s = _look_up_unit_v(atoi(x.c_str()),atoi(y.c_str()),atoi(z.c_str()));
+			    	prob_val = atof(prob.c_str());
+		    		occs_to_write_prob[sp].push_back(std::make_pair(s,prob_val));
+		    		// Reset
+			    	sp=""; x=""; y=""; z=""; prob="";
+			    };
+			};		
 		};
-
 		f.close();
+
+		if (binary) {
+			// Binary mode
+			for (auto const &pr: occs_to_write_binary) {
+				// find the species
+				auto it = _IO_species_possible.find(pr.first);
+				if (it == _IO_species_possible.end()) {
+					std::cerr << ">>> Lattice::read_from_file <<< Error: could not find species: " << pr.first << std::endl;
+					exit(EXIT_FAILURE);
+				};
+				for (auto const &site: pr.second) {
+					site->set_occ(it->second,1.0);
+				};
+			};
+		} else {
+			// Prob mode
+			for (auto const &pr: occs_to_write_prob) {
+				// find the species
+				auto it = _IO_species_possible.find(pr.first);
+				if (it == _IO_species_possible.end()) {
+					std::cerr << ">>> Lattice::read_from_file <<< Error: could not find species: " << pr.first << std::endl;
+					exit(EXIT_FAILURE);
+				};
+				for (auto const &site_pr: pr.second) {
+					site_pr.first->set_occ(it->second,site_pr.second);
+				};
+			};
+		};
 
 		// std::cout << "Read: " << fname << std::endl;
 	};

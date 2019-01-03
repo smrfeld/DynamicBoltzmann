@@ -212,26 +212,26 @@ namespace dblz {
 		Write/read latt to a file
 		********************/
 
-		void write_to_file(std::string fname);
+		void write_to_file(std::string fname, bool binary);
 
 		void init_file_reader(std::vector<Sptr> species_possible);
-		void read_from_file(std::string fname);
+		void read_from_file(std::string fname, bool binary);
 
 		/********************
 		Sample
 		********************/
 
-		void sample_down_h_to_v_at_timepoint(int timepoint, bool layer_wise, bool binary_visible=true, bool binary_hidden=true);
-		void sample_up_v_to_h_at_timepoint(int timepoint, bool layer_wise, bool binary_hidden=true);
+		void sample_down_h_to_v_at_timepoint(int timepoint, bool layer_wise, bool binary_visible, bool binary_hidden);
+		void sample_up_v_to_h_at_timepoint(int timepoint, bool layer_wise, bool binary_hidden);
 
 		/********************
 		Get counts
 		********************/
 
 		double get_count(Sptr &sp) const;
-		double get_count(Sptr &sp1, Sptr &sp2, bool reversibly=true) const;
-		double get_count(Sptr &sp1, Sptr &sp2, Sptr &sp3, bool reversibly=true) const;
-		double get_count(Sptr &sp1, Sptr &sp2, Sptr &sp3, Sptr &sp4, bool reversibly=true) const;
+		double get_count(Sptr &sp1, Sptr &sp2, bool reversibly) const;
+		double get_count(Sptr &sp1, Sptr &sp2, Sptr &sp3, bool reversibly) const;
+		double get_count(Sptr &sp1, Sptr &sp2, Sptr &sp3, Sptr &sp4, bool reversibly) const;
 	};
 
 };

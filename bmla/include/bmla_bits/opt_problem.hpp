@@ -14,6 +14,18 @@ namespace bmla {
 	class Lattice;
 
 	/****************************************
+	Filename
+	****************************************/
+
+	struct FName {
+
+		std::string name;
+		bool binary;
+
+		FName(std::string name, bool binary);
+	};
+
+	/****************************************
 	Filename collection
 	****************************************/
 
@@ -22,7 +34,7 @@ namespace bmla {
 	private:
 
 		// Filenames
-		std::vector<std::string> _fnames;
+		std::vector<FName> _fnames;
 		std::vector<int> _idxs;
 
 	public:
@@ -31,14 +43,14 @@ namespace bmla {
 		Get fnames
 		********************/
 
-		const std::vector<std::string>& get_fnames_all() const;
-		const std::string& get_fname(int idx) const;
+		const std::vector<FName>& get_fnames_all() const;
+		const FName& get_fname(int idx) const;
 
 		/********************
 		Add fname
 		********************/
 
-		void add_fname(std::string fname);
+		void add_fname(FName fname);
 
 		/********************
 		Get random subset
@@ -51,14 +63,40 @@ namespace bmla {
 	OptProblem Options
 	****************************************/
 
-	struct OptionsSolve {
+	struct OptionsWakeSleep {
+
 		// Verbosity
-		bool VERBOSE_UPDATE = false;
-		bool VERBOSE_WAKE_ASLEEP = false;
-		bool VERBOSE_MOMENT = true;
+		bool verbose = false;
 
 		// Start with random lattice
 		bool start_with_random_lattice = false;
+
+		// Awake phase
+		// Is the hidden layer binary for the awake moment?
+		bool is_awake_moment_hidden_binary = false;
+		// Binarize hidden layer after awake moment?
+		// (if !awake_moment_hidden_binary)
+		bool should_binarize_hidden_after_awake_moment = true;
+
+		// Asleep phase
+		// Is the visible reconstruction binary?
+		bool is_asleep_visible_binary = true;
+		// Is the hidden reconstruction binary, EXCEPT in the last phase?
+		bool is_asleep_hidden_binary = true;
+		// Is the hidden reconstruction binary in the last phase?
+		bool is_asleep_hidden_binary_final = false;
+
+		// Layerwise sampling
+		bool layer_wise = true;
+	};
+
+	struct OptionsSolve {
+		// Should check options before starting
+		bool should_check_options = true;
+
+		// Verbosity
+		bool VERBOSE_UPDATE = false;
+		bool VERBOSE_MOMENT = true;
 
 		// L2 Reg mode
 		bool MODE_l2_reg = false;
@@ -72,8 +110,8 @@ namespace bmla {
 		// Nesterov
 		bool nesterov = true;
 
-		// Layerwise sampling
-		bool layer_wise = true;
+		// Options for Wake-Sleep loop
+		OptionsWakeSleep options_wake_sleep = OptionsWakeSleep();
 	};
 
 	/****************************************
@@ -125,7 +163,7 @@ namespace bmla {
 		Wake/asleep loop
 		********************/
 
-		void wake_sleep_loop(int batch_size, int no_latt_sampling_steps, FNameColl &fname_coll, bool layer_wise, bool verbose=false, bool start_with_random_lattice=false);
+		void wake_sleep_loop(int batch_size, int no_latt_sampling_steps, FNameColl &fname_coll, OptionsWakeSleep options=OptionsWakeSleep());
 
 		/********************
 		Solve
@@ -135,7 +173,7 @@ namespace bmla {
 		void check_options(int batch_size, double dopt, int no_latt_sampling_steps, OptionsSolve options);
 
 		// One step
-		void solve_one_step(int i_opt_step, int batch_size, double dopt, int no_latt_sampling_steps, FNameColl &fname_coll, OptionsSolve options = OptionsSolve(), bool should_check_options=true);
+		void solve_one_step(int i_opt_step, int batch_size, double dopt, int no_latt_sampling_steps, FNameColl &fname_coll, OptionsSolve options = OptionsSolve());
 
 		// Many steps
 		void solve(int no_opt_steps, int batch_size, double dopt, int no_latt_sampling_steps, FNameColl &fname_coll, OptionsSolve options = OptionsSolve());

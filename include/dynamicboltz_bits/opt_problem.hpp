@@ -22,11 +22,15 @@ namespace dblz {
 	Filename timeseries
 	****************************************/
 
-	struct FNameSeries {
+	struct FName {
 
-		std::vector<std::string> fnames;
+		std::string name;
+		bool binary;
 
+		FName(std::string name, bool binary);
 	};
+
+	typedef std::vector<FName> FNameSeries;
 
 	/****************************************
 	Filename collection
@@ -67,12 +71,38 @@ namespace dblz {
 	OptProblem Options
 	****************************************/
 
+	struct OptionsWakeSleep {
+
+		// Verbosity
+		bool verbose = false;
+
+		// Awake phase
+		// Is the hidden layer binary for the awake moment?
+		bool is_awake_moment_hidden_binary = false;
+		// Binarize hidden layer after awake moment?
+		// (if !awake_moment_hidden_binary)
+		bool should_binarize_hidden_after_awake_moment = true;
+
+		// Asleep phase
+		// Is the visible reconstruction binary?
+		bool is_asleep_visible_binary = true;
+		// Is the hidden reconstruction binary, EXCEPT in the last phase?
+		bool is_asleep_hidden_binary = true;
+		// Is the hidden reconstruction binary in the last phase?
+		bool is_asleep_hidden_binary_final = false;
+
+		// Layerwise sampling
+		bool layer_wise = true;
+	};
+
 	struct OptionsSolve {
+		// Should the options be checked before beginning
+		bool should_check_options=true;
+
 		// Verbosity
 		bool VERBOSE_NU = false;
 		bool VERBOSE_ADJOINT = false;
 		bool VERBOSE_UPDATE = false;
-		bool VERBOSE_WAKE_ASLEEP = false;
 		bool VERBOSE_MOMENT = true;
 
 		// Random integral
@@ -94,8 +124,8 @@ namespace dblz {
 		bool nesterov = true;
 		double nesterov_acc = 0.5;
 
-		// Layerwise sampling
-		bool layer_wise = true;
+		// Options for Wake-Sleep loop
+		OptionsWakeSleep options_wake_sleep = OptionsWakeSleep();
 	};
 
 	/****************************************
@@ -149,7 +179,7 @@ namespace dblz {
 		********************/
 
 		// timepoint_start & timepoint_end = inclusive
-		void wake_sleep_loop(int timepoint_start, int timepoint_end, int batch_size, int no_latt_sampling_steps, FNameSeriesColl &fname_coll, bool layer_wise, bool verbose=false);
+		void wake_sleep_loop(int timepoint_start, int timepoint_end, int batch_size, int no_latt_sampling_steps, FNameSeriesColl &fname_coll, OptionsWakeSleep options = OptionsWakeSleep());
 
 		/********************
 		Solve
@@ -159,7 +189,7 @@ namespace dblz {
 		void check_options(int no_timesteps, int batch_size, double dt, double dopt, int no_latt_sampling_steps, OptionsSolve options);
 
 		// One step
-		void solve_one_step(int i_opt_step, int no_timesteps, int batch_size, double dt, double dopt, int no_latt_sampling_steps, FNameSeriesColl &fname_coll, OptionsSolve options = OptionsSolve(), bool should_check_options=true);
+		void solve_one_step(int i_opt_step, int no_timesteps, int batch_size, double dt, double dopt, int no_latt_sampling_steps, FNameSeriesColl &fname_coll, OptionsSolve options = OptionsSolve());
 
 		// Many steps
 		void solve(int no_opt_steps, int no_timesteps, int batch_size, double dt, double dopt, int no_latt_sampling_steps, FNameSeriesColl &fname_coll, OptionsSolve options = OptionsSolve());

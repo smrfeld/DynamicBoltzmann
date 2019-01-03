@@ -24,12 +24,49 @@ namespace bmla {
 	Class to hold a lattice site
 	***************************************/
 
+	struct Act {
+		// Species
+		// nullptr for empty
+		Sptr sp;
+		// activation
+		double act;
+		// prob = exp(activation)
+		double prob;
+		// prop = cumulative sum
+		double prop;
+	};
+
 	class Unit {
 
 	private:
 
-		class Impl;
-		std::unique_ptr<Impl> _impl;		
+		// Dimensionality and location
+		int _dim;
+		int _x,_y,_z;
+
+		// Probabilistic mode
+		std::unordered_map<Sptr, double> _nonzero_occs;
+
+		// Data structures for sampling
+		double _sampling_rand;
+		int _sampling_i_chosen;
+
+		// Sample a vector of propensities (cumulative probabilities)
+		void _sample_prop_vec();
+		void _sample(bool binary);
+
+		// Constructor helpers
+		void _clean_up();
+		void _move(Unit& other);
+		void _copy(const Unit& other);
+
+	protected:
+
+		// Activations
+		std::vector<Act> _activations;
+
+		// Bias dict
+		std::shared_ptr<BiasDict> _bias_dict;
 
 	public:
 
@@ -53,8 +90,8 @@ namespace bmla {
 		Check setup
 		********************/
 
-		virtual void print() const;
-		virtual std::string print_str() const;
+		void print() const;
+		std::string print_str() const;
 
 		/********************
 		Location
@@ -73,7 +110,6 @@ namespace bmla {
 		// Add possible species
 		void add_possible_species(Sptr species);
 		void set_possible_species(std::vector<Sptr> species);
-		const std::vector<Sptr>& get_possible_species() const;
 
 		// Bias dict
 		void set_bias_dict(std::shared_ptr<BiasDict> bias_dict);
@@ -86,7 +122,6 @@ namespace bmla {
 		double get_occ(Sptr sp) const; // nullptr for empty
 		const std::unordered_map<Sptr, double>& get_nonzero_occs() const;
 		void set_occ(Sptr sp, double prob);
-		void set_occ(std::string sp, double prob);
 		void set_occ_random();
 
 		void binarize();
@@ -104,8 +139,11 @@ namespace bmla {
 		Sample
 		********************/
 
-		// Sample given activation for every species
-		void sample_given_activations(const std::vector<double>& activations, bool binary=true);
+		virtual void form_propensity_vector();
+		virtual void form_propensity_vector(int given_layer);
+		
+		void sample(bool binary);
+		void sample(bool binary, int given_layer);
 	};
 	// Comparator
 	bool operator <(const Unit& a, const Unit& b);
@@ -151,8 +189,15 @@ namespace bmla {
 
 	private:
 
-		class Impl;
-		std::unique_ptr<Impl> _impl;		
+		// Connections
+		std::vector<std::pair<ConnVV*,int>> _conns_vv;
+		std::vector<std::pair<ConnVVV*,int>> _conns_vvv;
+		std::vector<ConnVH*> _conns_vh;
+
+		// Constructor helpers
+		void _clean_up();
+		void _move(UnitVisible& other);
+		void _copy(const UnitVisible& other);
 
 	public:
 
@@ -174,13 +219,6 @@ namespace bmla {
 		~UnitVisible();
 
 		/********************
-		Verbose
-		********************/
-
-		void print() const;
-		std::string print_str() const;
-
-		/********************
 		Add connection
 		********************/
 
@@ -194,17 +232,11 @@ namespace bmla {
 		const std::vector<ConnVH*>& get_conns_vh() const;
 
 		/********************
-		Get activation
-		********************/
-
-		double get_activation_for_species(Sptr &species) const;
-
-		/********************
 		Sample
 		********************/
 
-		void sample(bool binary);
-
+		void form_propensity_vector();
+		void form_propensity_vector(int given_layer);
 	};
 
 
@@ -247,8 +279,18 @@ namespace bmla {
 
 	private:
 
-		class Impl;
-		std::unique_ptr<Impl> _impl;		
+		// Layer
+		int _layer;
+
+		// Connections
+		std::vector<ConnVH*> _conns_vh;
+		// Layer -> conns -> (conn,idx of me in conn)
+		std::map<int,std::vector<std::pair<ConnHH*,int>>> _conns_hh;
+
+		// Constructor helpers
+		void _clean_up();
+		void _move(UnitHidden& other);
+		void _copy(const UnitHidden& other);
 
 	public:
 
@@ -265,13 +307,6 @@ namespace bmla {
 		~UnitHidden();
 
 		/********************
-		Verbose
-		********************/
-
-		void print() const;
-		std::string print_str() const;
-
-		/********************
 		Location
 		********************/
 
@@ -282,6 +317,7 @@ namespace bmla {
 		Finish setup in lattice
 		********************/
 
+		// Visible-hidden conns
 		void add_conn(ConnVH *conn);
 		const std::vector<ConnVH*>& get_conns_vh() const;
 
@@ -290,18 +326,10 @@ namespace bmla {
 		const std::map<int,std::vector<std::pair<ConnHH*,int>>>& get_conns_hh() const;
 
 		/********************
-		Get activation
-		********************/
-
-		double get_activation_for_species(Sptr &species, int given_layer) const;
-
-		/********************
 		Sample
 		********************/
 
-		void sample(bool binary, int given_layer);
-		void sample(bool binary);
+		void form_propensity_vector();
+		void form_propensity_vector(int given_layer);
 	};
-
-
 };

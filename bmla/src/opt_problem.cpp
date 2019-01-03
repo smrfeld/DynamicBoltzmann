@@ -18,6 +18,15 @@
 namespace bmla {
 
 	/****************************************
+	Filename
+	****************************************/
+
+	FName::FName(std::string name, bool binary) {
+		this->name = name;
+		this->binary = binary;
+	};
+
+	/****************************************
 	Filename collection
 	****************************************/
 
@@ -25,10 +34,10 @@ namespace bmla {
 	Get fnames
 	********************/
 
-	const std::vector<std::string>& FNameColl::get_fnames_all() const {
+	const std::vector<FName>& FNameColl::get_fnames_all() const {
 		return _fnames;
 	};
-	const std::string& FNameColl::get_fname(int idx) const {
+	const FName& FNameColl::get_fname(int idx) const {
 		if (idx >= _fnames.size()) {
 			std::cerr << ">>> Error: FNameColl::get_fname <<< idx: " << idx << " out of range: " << _fnames.size() << std::endl;
 			exit(EXIT_FAILURE);
@@ -40,7 +49,7 @@ namespace bmla {
 	Add fname
 	********************/
 
-	void FNameColl::add_fname(std::string fname) {
+	void FNameColl::add_fname(FName fname) {
 		_fnames.push_back(fname);
 		_idxs.push_back(_fnames.size()-1);
 	};
@@ -139,14 +148,14 @@ namespace bmla {
 	Wake/asleep loop
 	********************/
 
-	void OptProblem::wake_sleep_loop(int batch_size, int no_latt_sampling_steps, FNameColl &fname_coll, bool layer_wise, bool verbose, bool start_with_random_lattice) {
-		if (verbose) {
+	void OptProblem::wake_sleep_loop(int batch_size, int no_latt_sampling_steps, FNameColl &fname_coll, OptionsWakeSleep options) {
+		if (options.verbose) {
 			std::cout << "--- Sampling lattice ---" << std::endl;
 		};
 
 		// Make a subset
 		std::vector<int> idx_subset;
-		if (!start_with_random_lattice) {
+		if (!options.start_with_random_lattice) {
 			idx_subset = fname_coll.get_random_subset(batch_size);
 		};
 
@@ -162,13 +171,14 @@ namespace bmla {
 		for (int i_batch=0; i_batch<batch_size; i_batch++)
 		{
 
-			if (verbose) {
+			if (options.verbose) {
 				std::cout << "." << std::flush;
 			};
 
 			// Read latt
-			if (!start_with_random_lattice) {
-				_latt->read_from_file(fname_coll.get_fname(idx_subset[i_batch])); // binary units
+			if (!options.start_with_random_lattice) {
+				auto file = fname_coll.get_fname(idx_subset[i_batch]); 
+				_latt->read_from_file(file.name,file.binary);
 			} else {
 				// Random lattice...
 				_latt->all_units_v_random();
@@ -176,7 +186,7 @@ namespace bmla {
 
 			// Sample hidden
 			// Hidden: prob (= false)
-			_latt->sample_up_v_to_h(layer_wise, false);
+			_latt->sample_up_v_to_h(options.layer_wise, options.is_awake_moment_hidden_binary);
 
 			// Reap awake
 			for (auto &ixn_param: _ixn_params) {
@@ -186,7 +196,9 @@ namespace bmla {
 			};
 
 			// Convert hidden units to be binary
-			_latt->all_units_h_binarize();
+			if (!options.is_awake_moment_hidden_binary && options.should_binarize_hidden_after_awake_moment) {
+				_latt->all_units_h_binarize();
+			};
 
 			// Sample vis, hidden
 			for (int i_sampling_step=0; i_sampling_step<no_latt_sampling_steps; i_sampling_step++) 
@@ -195,7 +207,7 @@ namespace bmla {
 				// Visible: binary (= true)
 				// Hiddens: binary (= true)
 				// _latt->sample_down_h_to_v(layer_wise, true, true);
-				_latt->sample_down_h_to_v(layer_wise, true, true);
+				_latt->sample_down_h_to_v(options.layer_wise, options.is_asleep_visible_binary, options.is_asleep_hidden_binary);
 
 				// Sample up (visible -> hidden)
 				// If not last step:
@@ -203,9 +215,9 @@ namespace bmla {
 				// Else:
 				// Hiddens: prob (= false)
 				if (i_sampling_step != no_latt_sampling_steps-1) {
-					_latt->sample_up_v_to_h(layer_wise, true); // binary hiddens
+					_latt->sample_up_v_to_h(options.layer_wise, options.is_asleep_hidden_binary); // binary hiddens
 				} else {
-					_latt->sample_up_v_to_h(layer_wise, false); // prob hiddens
+					_latt->sample_up_v_to_h(options.layer_wise, options.is_asleep_hidden_binary_final); // prob hiddens
 				};
 			};
 
@@ -228,11 +240,11 @@ namespace bmla {
 			ixn_param->get_moment()->average_reaps(MomentType::ASLEEP);
 		};
 
-		if (verbose) {
+		if (options.verbose) {
 			std::cout << std::endl;
 		};
 
-		if (verbose) {
+		if (options.verbose) {
 			std::cout << "--- [Finished] Sampled lattice ---" << std::endl;
 			std::cout << std::endl;
 		};
@@ -248,13 +260,13 @@ namespace bmla {
 	};
 
 	// One step
-	void OptProblem::solve_one_step(int i_opt_step, int batch_size, double dopt, int no_latt_sampling_steps, FNameColl &fname_coll, OptionsSolve options, bool should_check_options) {
+	void OptProblem::solve_one_step(int i_opt_step, int batch_size, double dopt, int no_latt_sampling_steps, FNameColl &fname_coll, OptionsSolve options) {
 
 		/*****
 		Check options
 		*****/
 
-		if (should_check_options) {
+		if (options.should_check_options) {
 			check_options(batch_size,dopt,no_latt_sampling_steps,options);
 		};
 
@@ -262,7 +274,7 @@ namespace bmla {
 		Wake/asleep loop
 		*****/
 
-		wake_sleep_loop(batch_size,no_latt_sampling_steps,fname_coll,options.layer_wise,options.VERBOSE_WAKE_ASLEEP,options.start_with_random_lattice);
+		wake_sleep_loop(batch_size,no_latt_sampling_steps,fname_coll,options.options_wake_sleep);
 
 		if (options.VERBOSE_MOMENT) {
 			for (auto &ixn_param: _ixn_params) {

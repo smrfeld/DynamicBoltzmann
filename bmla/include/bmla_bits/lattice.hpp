@@ -53,6 +53,10 @@ namespace bmla {
 		std::vector<ConnVVV*> _conns_vvv;
 		std::vector<ConnVH*> _conns_vh;
 
+		// IO
+		std::map<std::string,Sptr> _IO_species_possible;
+		bool _IO_did_init;
+
 		// Lookup a site iterator from x,y,z
 		UnitVisible* _look_up_unit_v(int x) const;
 		UnitVisible* _look_up_unit_v(int x, int y) const;
@@ -210,24 +214,26 @@ namespace bmla {
 		Write/read latt to a file
 		********************/
 
-		void write_to_file(std::string fname, bool binary=true);
-		void read_from_file(std::string fname, bool binary=true);
+		void write_to_file(std::string fname, bool binary);
+
+		void init_file_reader(std::vector<Sptr> species_possible);
+		void read_from_file(std::string fname, bool binary);
 
 		/********************
 		Sample
 		********************/
 
-		void sample_down_h_to_v(bool layer_wise, bool binary_visible=true, bool binary_hidden=true);
-		void sample_up_v_to_h(bool layer_wise, bool binary_hidden=true);
+		void sample_down_h_to_v(bool layer_wise, bool binary_visible, bool binary_hidden);
+		void sample_up_v_to_h(bool layer_wise, bool binary_hidden);
 
 		/********************
 		Get counts
 		********************/
 
 		double get_count(Sptr &sp) const;
-		double get_count(Sptr &sp1, Sptr &sp2, bool reversibly=true) const;
-		double get_count(Sptr &sp1, Sptr &sp2, Sptr &sp3, bool reversibly=true) const;
-		double get_count(Sptr &sp1, Sptr &sp2, Sptr &sp3, Sptr &sp4, bool reversibly=true) const;
+		double get_count(Sptr &sp1, Sptr &sp2, bool reversibly) const;
+		double get_count(Sptr &sp1, Sptr &sp2, Sptr &sp3, bool reversibly) const;
+		double get_count(Sptr &sp1, Sptr &sp2, Sptr &sp3, Sptr &sp4, bool reversibly) const;
 	};
 
 };

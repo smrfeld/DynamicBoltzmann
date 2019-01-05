@@ -186,7 +186,7 @@ namespace bmla {
 
 			// Sample hidden
 			// Hidden: prob (= false)
-			_latt->sample_up_v_to_h(options.layer_wise, options.is_awake_moment_hidden_binary,options.parallel);
+			_latt->sample_up_v_to_h(options.layer_wise, options.is_awake_moment_hidden_binary, options.parallel);
 
 			// Reap awake
 			for (auto &ixn_param: _ixn_params) {

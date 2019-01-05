@@ -428,7 +428,7 @@ namespace bmla {
 
 			// Write into species
 			for (int i=1; i<_activations.size(); i++) {
-				_nonzero_occs_tbc[_activations[_sampling_i_chosen].sp] = _activations[i].prob/(_activations.back().prop);
+				_nonzero_occs_tbc[_activations[i].sp] = _activations[i].prob/(_activations.back().prop);
 			};
 		};
 	};

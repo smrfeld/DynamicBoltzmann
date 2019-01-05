@@ -87,6 +87,7 @@ namespace bmla {
 		_z = other._z;
 
 		_nonzero_occs = other._nonzero_occs;
+		_nonzero_occs_tbc = other._nonzero_occs_tbc;
 
 		_sampling_rand = other._sampling_rand;
 		_sampling_i_chosen = other._sampling_i_chosen;
@@ -101,6 +102,7 @@ namespace bmla {
 		other._z = 0;
 
 		other._nonzero_occs.clear();
+		other._nonzero_occs_tbc.clear();
 
 		other._sampling_rand = 0.0;
 		other._sampling_i_chosen = 0;
@@ -116,6 +118,7 @@ namespace bmla {
 		_z = other._z;
 
 		_nonzero_occs = other._nonzero_occs;
+		_nonzero_occs_tbc = other._nonzero_occs_tbc;
 
 		_sampling_rand = other._sampling_rand;
 		_sampling_i_chosen = other._sampling_i_chosen;
@@ -387,30 +390,28 @@ namespace bmla {
 	};
 
 
-	void Unit::sample(bool binary) {
+	void Unit::prepare_sample(bool binary) {
 		// Form the activations vector
 		form_propensity_vector();
 		// Sample
-		_sample(binary);
+		_prepare_sample(binary);
 	};
 
-	void Unit::sample(bool binary, int given_layer) {
-		// clock_t t10 = clock();    
+	void Unit::prepare_sample(bool binary, int given_layer) {
 		// Form the activations vector
 		form_propensity_vector(given_layer);
-		// clock_t t11 = clock();    
 		// Sample
-		_sample(binary);
-		//clock_t t12 = clock();    
-		//double int5 = ( t11 - t10 ) / (double) CLOCKS_PER_SEC;
-		//double int6 = ( t12 - t11 ) / (double) CLOCKS_PER_SEC;
-		//std::cout << int5/(int5+int6) << " " << int6/(int5+int6) << std::endl;
+		_prepare_sample(binary);
 	};
 
-	void Unit::_sample(bool binary) {
+	void Unit::committ_sample() {
+		_nonzero_occs = _nonzero_occs_tbc;
+	};
+
+	void Unit::_prepare_sample(bool binary) {
 
 		// Empty the site
-		set_empty();
+		_nonzero_occs_tbc.clear();
 
 		// Commit probs
 		if (binary) {
@@ -420,14 +421,14 @@ namespace bmla {
 
 			if (_sampling_i_chosen != 0) { // 0 is empty
 				// Make the appropriate species at this site
-				set_occ(_activations[_sampling_i_chosen].sp,1.0);
+				_nonzero_occs_tbc[_activations[_sampling_i_chosen].sp] = 1.0;
 			};
 
 		} else {
 
 			// Write into species
 			for (int i=1; i<_activations.size(); i++) {
-				set_occ(_activations[i].sp,_activations[i].prob/(_activations.back().prop));
+				_nonzero_occs_tbc[_activations[_sampling_i_chosen].sp] = _activations[i].prob/(_activations.back().prop);
 			};
 		};
 	};

@@ -995,90 +995,170 @@ namespace dblz {
 	Sample
 	********************/
 
-	void Lattice::sample_down_h_to_v_at_timepoint(int timepoint, bool layer_wise, bool binary_visible, bool binary_hidden) {
+	void Lattice::sample_down_h_to_v_at_timepoint(int timepoint, bool layer_wise, bool binary_visible, bool binary_hidden, bool parallel) {
 
 		// Go through hidden layers top to bottom (reverse)
 		auto rit_begin = _latt_h.rbegin();
 		rit_begin++; // Skip the first
 
-		if (layer_wise) {
+		if (layer_wise && parallel) {
+
+			// Layer wise and in parallel
+
+			for (auto rit=rit_begin; rit!=_latt_h.rend(); ++rit)
+			{
+				for (auto const &idx: _latt_h_idxs[rit->first]) 
+				{
+					rit->second[idx]->prepare_sample_at_timepoint(timepoint, binary_hidden, rit->first+1);
+				};
+				for (auto const &idx: _latt_h_idxs[rit->first]) 
+				{
+					rit->second[idx]->committ_sample();
+				};
+			};			
+
+		} else if (layer_wise && !parallel) {
+
+			// Layer wise and not in parallel
 
 			for (auto rit=rit_begin; rit!=_latt_h.rend(); ++rit)
 			{
 				// Shuffle
 				std::random_shuffle ( _latt_h_idxs[rit->first].begin(), _latt_h_idxs[rit->first].end() );
 
-				// Sample, given input from a layer higher
 				for (auto const &idx: _latt_h_idxs[rit->first]) 
 				{
-					rit->second[idx]->sample_at_timepoint(timepoint, binary_hidden, rit->first+1);
+					rit->second[idx]->prepare_sample_at_timepoint(timepoint, binary_hidden, rit->first+1);
+					rit->second[idx]->committ_sample();
 				};
 			};
 
-		} else {
+		} else if (!layer_wise && parallel) {
+
+			// Not layer wise and in parallel
+
+			for (auto rit=rit_begin; rit!=_latt_h.rend(); ++rit)
+			{
+				for (auto const &idx: _latt_h_idxs[rit->first]) 
+				{
+					rit->second[idx]->prepare_sample_at_timepoint(timepoint, binary_hidden);
+				};
+				for (auto const &idx: _latt_h_idxs[rit->first]) 
+				{
+					rit->second[idx]->committ_sample();
+				};
+			};
+
+		} else if (!layer_wise && !parallel) {
+
+			// Not layer wise and not in parallel
 
 			for (auto rit=rit_begin; rit!=_latt_h.rend(); ++rit)
 			{
 				// Shuffle
 				std::random_shuffle ( _latt_h_idxs[rit->first].begin(), _latt_h_idxs[rit->first].end() );
 
-				// Sample given both layers
 				for (auto const &idx: _latt_h_idxs[rit->first]) 
 				{
-					rit->second[idx]->sample_at_timepoint(timepoint, binary_hidden);
+					rit->second[idx]->prepare_sample_at_timepoint(timepoint, binary_hidden);
+					rit->second[idx]->committ_sample();
 				};
 			};
 		};
 
 		// Finally, sample the visible layer
 
-		// Shuffle
-		std::random_shuffle ( _latt_v_idxs.begin(), _latt_v_idxs.end() );		
+		if (parallel) {
 
-		// Sample
-		for (auto const &idx: _latt_v_idxs) 
-		{
-			_latt_v[idx]->sample_at_timepoint(timepoint,binary_visible);
-		};
-	};
-	void Lattice::sample_up_v_to_h_at_timepoint(int timepoint, bool layer_wise, bool binary_hidden) {
-		if (layer_wise) {
+			// Parallel
 
-			for (auto it=_latt_h.begin(); it!=_latt_h.end(); it++) 
+			for (auto const &idx: _latt_v_idxs) 
 			{
-				clock_t t8 = clock();    
-
-				// Shuffle
-				std::random_shuffle ( _latt_h_idxs[it->first].begin(), _latt_h_idxs[it->first].end() );
-
-				clock_t t9 = clock();    
-
-				// Sample, given input from a layer higher
-				for (auto const &idx: _latt_h_idxs[it->first]) 
-				{
-					it->second[idx]->sample_at_timepoint(timepoint, binary_hidden, it->first-1);
-				};
-
-				clock_t t10 = clock();    
-
-				double int5 = ( t9 - t8 ) / (double) CLOCKS_PER_SEC;
-				double int6 = ( t10 - t9 ) / (double) CLOCKS_PER_SEC;
-				double int_tot = int5 + int6;
-				//std::cout << "[sample down] Timing: " << int5 << " " << int6 << std::endl;
-				// std::cout << "[sample down] Percentages: " << int5/int_tot << " " << int6/int_tot << std::endl;
+				_latt_v[idx]->prepare_sample_at_timepoint(timepoint,binary_visible);
+			};
+			for (auto const &idx: _latt_v_idxs) 
+			{
+				_latt_v[idx]->committ_sample();
 			};
 
 		} else {
 
+			// Not in parallel
+
+			// Shuffle
+			std::random_shuffle ( _latt_v_idxs.begin(), _latt_v_idxs.end() );		
+
+			for (auto const &idx: _latt_v_idxs) 
+			{
+				_latt_v[idx]->prepare_sample_at_timepoint(timepoint,binary_visible);
+				_latt_v[idx]->committ_sample();
+			};
+
+		};
+	};
+	void Lattice::sample_up_v_to_h_at_timepoint(int timepoint, bool layer_wise, bool binary_hidden, bool parallel) {
+
+		if (layer_wise && parallel) {
+
+			// Layer wise and in parallel
+
+			for (auto it=_latt_h.begin(); it!=_latt_h.end(); it++) 
+			{
+				for (auto const &idx: _latt_h_idxs[it->first]) 
+				{
+					it->second[idx]->prepare_sample_at_timepoint(timepoint, binary_hidden, it->first-1);
+				};
+				for (auto const &idx: _latt_h_idxs[it->first]) 
+				{
+					it->second[idx]->committ_sample();
+				};
+			};
+
+		} else if (layer_wise && !parallel) {
+
+			// Layer wise and not in parallel
+
 			for (auto it=_latt_h.begin(); it!=_latt_h.end(); it++) 
 			{
 				// Shuffle
 				std::random_shuffle ( _latt_h_idxs[it->first].begin(), _latt_h_idxs[it->first].end() );
 
-				// Sample given both layers
 				for (auto const &idx: _latt_h_idxs[it->first]) 
 				{
-					it->second[idx]->sample_at_timepoint(timepoint, binary_hidden);
+					it->second[idx]->prepare_sample_at_timepoint(timepoint, binary_hidden, it->first-1);
+					it->second[idx]->committ_sample();
+				};
+			};
+
+		} else if (!layer_wise && parallel) {
+
+			// Not layer wise and in parallel
+
+			for (auto it=_latt_h.begin(); it!=_latt_h.end(); it++) 
+			{
+				for (auto const &idx: _latt_h_idxs[it->first]) 
+				{
+					it->second[idx]->prepare_sample_at_timepoint(timepoint, binary_hidden);
+				};
+				for (auto const &idx: _latt_h_idxs[it->first]) 
+				{
+					it->second[idx]->committ_sample();
+				};
+			};
+
+		} else if (!layer_wise && !parallel) {
+
+			// Not layer wise and not in parallel
+
+			for (auto it=_latt_h.begin(); it!=_latt_h.end(); it++) 
+			{
+				// Shuffle
+				std::random_shuffle ( _latt_h_idxs[it->first].begin(), _latt_h_idxs[it->first].end() );
+
+				for (auto const &idx: _latt_h_idxs[it->first]) 
+				{
+					it->second[idx]->prepare_sample_at_timepoint(timepoint, binary_hidden);
+					it->second[idx]->committ_sample();
 				};
 			};
 		};

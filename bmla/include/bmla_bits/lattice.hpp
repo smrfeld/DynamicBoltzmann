@@ -223,8 +223,8 @@ namespace bmla {
 		Sample
 		********************/
 
-		void sample_down_h_to_v(bool layer_wise, bool binary_visible, bool binary_hidden);
-		void sample_up_v_to_h(bool layer_wise, bool binary_hidden);
+		void sample_down_h_to_v(bool layer_wise, bool binary_visible, bool binary_hidden, bool parallel);
+		void sample_up_v_to_h(bool layer_wise, bool binary_hidden, bool parallel);
 
 		/********************
 		Get counts

@@ -186,7 +186,7 @@ namespace bmla {
 
 			// Sample hidden
 			// Hidden: prob (= false)
-			_latt->sample_up_v_to_h(options.layer_wise, options.is_awake_moment_hidden_binary);
+			_latt->sample_up_v_to_h(options.layer_wise, options.is_awake_moment_hidden_binary,options.parallel);
 
 			// Reap awake
 			for (auto &ixn_param: _ixn_params) {
@@ -207,7 +207,7 @@ namespace bmla {
 				// Visible: binary (= true)
 				// Hiddens: binary (= true)
 				// _latt->sample_down_h_to_v(layer_wise, true, true);
-				_latt->sample_down_h_to_v(options.layer_wise, options.is_asleep_visible_binary, options.is_asleep_hidden_binary);
+				_latt->sample_down_h_to_v(options.layer_wise, options.is_asleep_visible_binary, options.is_asleep_hidden_binary,options.parallel);
 
 				// Sample up (visible -> hidden)
 				// If not last step:
@@ -215,9 +215,9 @@ namespace bmla {
 				// Else:
 				// Hiddens: prob (= false)
 				if (i_sampling_step != no_latt_sampling_steps-1) {
-					_latt->sample_up_v_to_h(options.layer_wise, options.is_asleep_hidden_binary); // binary hiddens
+					_latt->sample_up_v_to_h(options.layer_wise, options.is_asleep_hidden_binary,options.parallel); // binary hiddens
 				} else {
-					_latt->sample_up_v_to_h(options.layer_wise, options.is_asleep_hidden_binary_final); // prob hiddens
+					_latt->sample_up_v_to_h(options.layer_wise, options.is_asleep_hidden_binary_final,options.parallel); // prob hiddens
 				};
 			};
 

@@ -93,6 +93,9 @@ namespace dblz {
 
 		// Layerwise sampling
 		bool layer_wise = true;
+
+		// Parallel sampling
+		bool parallel = true;
 	};
 
 	struct OptionsSolve {

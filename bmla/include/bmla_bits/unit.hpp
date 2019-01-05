@@ -45,7 +45,7 @@ namespace bmla {
 		int _x,_y,_z;
 
 		// Probabilistic mode
-		std::unordered_map<Sptr, double> _nonzero_occs;
+		std::unordered_map<Sptr, double> _nonzero_occs, _nonzero_occs_tbc;
 
 		// Data structures for sampling
 		double _sampling_rand;
@@ -53,7 +53,7 @@ namespace bmla {
 
 		// Sample a vector of propensities (cumulative probabilities)
 		void _sample_prop_vec();
-		void _sample(bool binary);
+		void _prepare_sample(bool binary);
 
 		// Constructor helpers
 		void _clean_up();
@@ -142,8 +142,10 @@ namespace bmla {
 		virtual void form_propensity_vector();
 		virtual void form_propensity_vector(int given_layer);
 		
-		void sample(bool binary);
-		void sample(bool binary, int given_layer);
+		void prepare_sample(bool binary);
+		void prepare_sample(bool binary, int given_layer);
+
+		void committ_sample();
 	};
 	// Comparator
 	bool operator <(const Unit& a, const Unit& b);

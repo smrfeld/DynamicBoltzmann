@@ -88,6 +88,9 @@ namespace bmla {
 
 		// Layerwise sampling
 		bool layer_wise = true;
+
+		// Parallel
+		bool parallel = true;
 	};
 
 	struct OptionsSolve {

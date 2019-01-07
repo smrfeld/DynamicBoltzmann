@@ -36,7 +36,7 @@ namespace dblz {
 		Constructor
 		********************/
 
-		Domain1D(Iptr ixn_param, double min, double max, int no_pts);
+		Domain1D(Iptr ixn_param, double delta, double zero);
 		Domain1D(const Domain1D& other);
 		Domain1D& operator=(const Domain1D& other);
 		Domain1D(Domain1D&& other);
@@ -145,8 +145,6 @@ namespace dblz {
 		Iptr get_parent_ixn_param() const;
 
 		const std::vector<Domain1D*>& get_domain() const;
-
-		bool check_val_is_in_domain_at_timepoint(int timepoint) const;
 
 		double get_val_at_timepoint(int timepoint) const;
 

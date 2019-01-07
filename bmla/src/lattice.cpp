@@ -803,10 +803,23 @@ namespace bmla {
 
 	// Random
 	void Lattice::all_units_v_random() {
-		all_units_set_empty();
-
 		for (auto &ptr: _latt_v) {
 			ptr->set_occ_random();
+		};
+	};
+
+	void Lattice::all_units_in_layer_random(int layer) {
+		if (layer == 0) {
+			for (auto &ptr: _latt_v) {
+				ptr->set_occ_random();
+			};
+		} else {
+			auto it = _latt_h.find(layer);
+			if (it != _latt_h.end()) {
+				for (auto &ptr: it->second) {
+					ptr->set_occ_random();
+				};
+			};
 		};
 	};
 
@@ -1169,7 +1182,157 @@ namespace bmla {
 				};
 			};
 		};
+	};
 
+	void Lattice::sample_layer(int layer, bool binary, bool parallel) {
+
+		if (layer == 0) {
+
+			// Visible layer
+
+			if (parallel) {
+
+				// Parallel
+
+				for (auto const &idx: _latt_v_idxs) 
+				{
+					_latt_v[idx]->prepare_sample(binary);
+				};
+				for (auto const &idx: _latt_v_idxs) 
+				{
+					_latt_v[idx]->committ_sample();
+				};
+
+			} else {
+
+				// Not in parallel
+
+				// Shuffle
+				std::random_shuffle ( _latt_v_idxs.begin(), _latt_v_idxs.end() );		
+
+				for (auto const &idx: _latt_v_idxs) 
+				{
+					_latt_v[idx]->prepare_sample(binary);
+					_latt_v[idx]->committ_sample();
+				};
+
+			};
+
+		} else {
+
+			// Hidden layer
+			auto it = _latt_h.find(layer);
+			if (it == _latt_h.end()) {
+				return;
+			};
+
+			if (parallel) {
+
+				// Parallel
+
+				for (auto const &idx: _latt_h_idxs[it->first]) 
+				{
+					it->second[idx]->prepare_sample(binary);
+				};
+				for (auto const &idx: _latt_h_idxs[it->first]) 
+				{
+					it->second[idx]->committ_sample();
+				};
+
+			} else {
+
+				// Not in parallel
+
+				std::random_shuffle ( _latt_h_idxs[it->first].begin(), _latt_h_idxs[it->first].end() );
+
+				for (auto const &idx: _latt_h_idxs[it->first]) 
+				{
+					it->second[idx]->prepare_sample(binary);
+					it->second[idx]->committ_sample();
+				};
+			};
+		};
+	};
+
+	void Lattice::sample_layer(int layer, int given_layer, bool binary, bool parallel) {
+
+		if (layer == 0) {
+
+			// Visible layer
+
+			if (given_layer != 1) {
+				std::cerr << ">>> Lattice::sample_layer <<< Error: if sampling visible layer = 0, must specify given_layer = 1, instead of: " << given_layer << std::endl;
+				exit(EXIT_FAILURE);
+			};
+
+			if (parallel) {
+
+				// Parallel
+
+				for (auto const &idx: _latt_v_idxs) 
+				{
+					_latt_v[idx]->prepare_sample(binary,given_layer);
+				};
+				for (auto const &idx: _latt_v_idxs) 
+				{
+					_latt_v[idx]->committ_sample();
+				};
+
+			} else {
+
+				// Not in parallel
+
+				// Shuffle
+				std::random_shuffle ( _latt_v_idxs.begin(), _latt_v_idxs.end() );		
+
+				for (auto const &idx: _latt_v_idxs) 
+				{
+					_latt_v[idx]->prepare_sample(binary,given_layer);
+					_latt_v[idx]->committ_sample();
+				};
+
+			};
+
+		} else {
+
+			// Hidden layer
+
+			if (given_layer != layer - 1 && given_layer != layer + 1) {
+				std::cerr << ">>> Lattice::sample_layer <<< Error: sampling hidden layer: " << layer << " then given layer must be " << layer << " +- 1, instead of: " <<  given_layer << std::endl;
+				exit(EXIT_FAILURE);
+			};
+
+			auto it = _latt_h.find(layer);
+			if (it == _latt_h.end()) {
+				return;
+			};
+
+			if (parallel) {
+
+				// Parallel
+
+				for (auto const &idx: _latt_h_idxs[it->first]) 
+				{
+					it->second[idx]->prepare_sample(binary,given_layer);
+				};
+				for (auto const &idx: _latt_h_idxs[it->first]) 
+				{
+					it->second[idx]->committ_sample();
+				};
+
+			} else {
+
+				// Not in parallel
+
+				std::random_shuffle ( _latt_h_idxs[it->first].begin(), _latt_h_idxs[it->first].end() );
+
+				for (auto const &idx: _latt_h_idxs[it->first]) 
+				{
+					it->second[idx]->prepare_sample(binary,given_layer);
+					it->second[idx]->committ_sample();
+				};
+			};
+		};
 	};
 
 	/********************

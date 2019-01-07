@@ -20,7 +20,7 @@ namespace dblz {
 	Domain1D
 	****************************************/
 
-	Domain1D::Domain1D(Iptr ixn_param, double min, double max, int no_pts) : Dimension1D(min,max,no_pts) {
+	Domain1D::Domain1D(Iptr ixn_param, double delta, double zero) : Dimension1D(delta,zero) {
 		_ixn_param = ixn_param;
 	};
 	Domain1D::Domain1D(const Domain1D& other) : Dimension1D(other) {
@@ -256,9 +256,6 @@ namespace dblz {
 		return abscissas;
 	};
 
-	bool DiffEqRHS::check_val_is_in_domain_at_timepoint(int timepoint) const {
-		return Grid::check_in_domain(_form_abscissas(timepoint));
-	};
 	double DiffEqRHS::get_val_at_timepoint(int timepoint) const {
 		return Grid::get_val(_form_abscissas(timepoint));
 	};

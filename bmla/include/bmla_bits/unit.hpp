@@ -122,7 +122,7 @@ namespace bmla {
 		double get_occ(Sptr sp) const; // nullptr for empty
 		const std::unordered_map<Sptr, double>& get_nonzero_occs() const;
 		void set_occ(Sptr sp, double prob);
-		void set_occ_random();
+		void set_occ_random(bool binary);
 
 		void binarize();
 

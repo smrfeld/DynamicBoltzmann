@@ -29,8 +29,8 @@ namespace bmla {
 		double _update;
 
 		// nesterov
-		double _lambda_s, _lambda_sp1;
-		double _y_s, _y_sp1;
+		// double _lambda_s, _lambda_sp1;
+		double *_y_s, *_y_sp1;
 
 		// Fixed value
 		bool _is_val_fixed;
@@ -89,7 +89,7 @@ namespace bmla {
 		********************/
 
 		void update_calculate_and_store(double dopt, bool l2_mode=false, double l2_lambda=0.0, double l2_center=0.0);
-		void update_committ_stored(bool nesterov_mode=true);
+		void update_committ_stored(bool nesterov_mode=true, double nesterov_acc=0.5);
 
 		/********************
 		Write to file
@@ -152,11 +152,11 @@ namespace bmla {
 		_update = 0.0;
 
 		// nesterov
-		double lambda_0 = 0.0;
-		_lambda_s = (1.0 + sqrt(1.0 + 4.0 * pow(lambda_0,2))) / 2.0;
-		_lambda_sp1 = (1.0 + sqrt(1.0 + 4.0 * pow(_lambda_s,2))) / 2.0;
-		_y_s = _val;
-		_y_sp1 = _val;
+		// double lambda_0 = 0.0;
+		// _lambda_s = (1.0 + sqrt(1.0 + 4.0 * pow(lambda_0,2))) / 2.0;
+		// _lambda_sp1 = (1.0 + sqrt(1.0 + 4.0 * pow(_lambda_s,2))) / 2.0;
+		_y_s = nullptr;
+		_y_sp1 = nullptr;
 
 		// Moment
 		_moment = std::make_unique<Moment>(name, type);
@@ -188,15 +188,22 @@ namespace bmla {
 		_clean_up();
 	};
 	void IxnParam::Impl::_clean_up() {
-		// ...
+		if (_y_s) {
+			delete _y_s;
+			_y_s = nullptr;
+		};
+		if (_y_sp1) {
+			delete _y_sp1;
+			_y_sp1 = nullptr;
+		};	
 	};
 	void IxnParam::Impl::_copy(const Impl& other) {
 		_val = other._val;
 		_update = other._update;
-		_lambda_s = other._lambda_s;
-		_lambda_sp1 = other._lambda_sp1;
-		_y_s = other._y_s;
-		_y_sp1 = other._y_sp1;
+		// _lambda_s = other._lambda_s;
+		// _lambda_sp1 = other._lambda_sp1;
+		_y_s = new double(*other._y_s);
+		_y_sp1 = new double(*other._y_sp1);
 
 		_moment = other._moment;
 
@@ -205,8 +212,8 @@ namespace bmla {
 	void IxnParam::Impl::_move(Impl& other) {
 		_val = other._val;
 		_update = other._update;
-		_lambda_s = other._lambda_s;
-		_lambda_sp1 = other._lambda_sp1;
+		// _lambda_s = other._lambda_s;
+		// _lambda_sp1 = other._lambda_sp1;
 		_y_s = other._y_s;
 		_y_sp1 = other._y_sp1;
 
@@ -217,10 +224,10 @@ namespace bmla {
 		// Reset the other
 		other._val = 0.0;
 		other._update = 0.0;
-		other._lambda_s = 0.0;
-		other._lambda_sp1 = 0.0;
-		other._y_s = 0.0;
-		other._y_sp1 = 0.0;
+		// other._lambda_s = 0.0;
+		// other._lambda_sp1 = 0.0;
+		other._y_s = nullptr;
+		other._y_sp1 = nullptr;
 		other._is_val_fixed = false;
 	};
 
@@ -276,26 +283,35 @@ namespace bmla {
 			_update -= 2.0 * l2_lambda * (_val - l2_center);
 		};
 	};
-	void IxnParam::Impl::update_committ_stored(bool nesterov_mode) {
+	void IxnParam::Impl::update_committ_stored(bool nesterov_mode, double nesterov_acc) {
 
 		if (nesterov_mode) {
 
 			// ysp1, lambda sp1
-			_y_sp1 = _val + _update;
+			if (!_y_sp1) {
+				_y_sp1 = new double(_val);
+			};
+			*_y_sp1 = _val + _update;
 			// std::cout << "_y_sp1 = " << _y_sp1 << std::endl;
-			_lambda_sp1 = (1.0 + sqrt(1.0 + 4.0 * pow(_lambda_s,2))) / 2.0;
+			// _lambda_sp1 = (1.0 + sqrt(1.0 + 4.0 * pow(_lambda_s,2))) / 2.0;
 			//std::cout << "_lambda_sp1 = " << _lambda_sp1 << std::endl;
 
 			// Gamma
-			double gamma_s = (1.0 - _lambda_s) / _lambda_sp1;
+			// double gamma_s = (1.0 - _lambda_s) / _lambda_sp1;
 			// std::cout << "gamma_s = " << gamma_s << std::endl;
 
+			// Y_S
+			if (!_y_s) {
+				_y_s = new double(_val);
+			};
+
 			// New val
-			_val = (1.0 - gamma_s) * _y_sp1 + gamma_s * _y_s;
+			// _val = (1.0 - gamma_s) * _y_sp1 + gamma_s * _y_s;
+			_val = (1.0 + nesterov_acc) * (*_y_sp1) - nesterov_acc * (*_y_s);
 
 			// Advance y, lambda
-			_y_s = _y_sp1;
-			_lambda_s = _lambda_sp1;
+			*_y_s = *_y_sp1;
+			// _lambda_s = _lambda_sp1;
 
 		} else {
 
@@ -433,8 +449,8 @@ namespace bmla {
 	void IxnParam::update_calculate_and_store(double dopt, bool l2_mode, double l2_lambda, double l2_center) {
 		_impl->update_calculate_and_store(dopt,l2_mode,l2_lambda,l2_center);
 	};
-	void IxnParam::update_committ_stored(bool nesterov_mode) {
-		_impl->update_committ_stored(nesterov_mode);
+	void IxnParam::update_committ_stored(bool nesterov_mode, double nesterov_acc) {
+		_impl->update_committ_stored(nesterov_mode,nesterov_acc);
 	};
 
 	/********************

@@ -907,12 +907,17 @@ namespace dblz {
 				while (getline(f,line)) {
 					if (line == "") { continue; };
 					iss = std::istringstream(line);				
-					iss >> x >> sp >> prob;
+					iss >> x;
 		    		s = _look_up_unit_v(atoi(x.c_str()));
-		    		prob_val = atof(prob.c_str());
-		    		occs_to_write_prob[sp].push_back(std::make_pair(s,prob_val));
-		    		// Reset
-			    	sp=""; x=""; prob="";
+					for (auto i=0; i<_IO_species_possible.size(); i++) {
+						iss >> sp >> prob;
+			    		prob_val = atof(prob.c_str());
+			    		occs_to_write_prob[sp].push_back(std::make_pair(s,prob_val));
+			    		// Reset
+				    	sp=""; prob="";
+				    };
+					// Reset
+			    	x="";
 			    };			    
 			} else if (_no_dims == 2 && binary) {
 				while (getline(f,line)) {
@@ -928,12 +933,17 @@ namespace dblz {
 				while (getline(f,line)) {
 					if (line == "") { continue; };
 					iss = std::istringstream(line);				
-					iss >> x >> y >> sp >> prob;
+					iss >> x >> y;
 		    		s = _look_up_unit_v(atoi(x.c_str()),atoi(y.c_str()));
-		    		prob_val = atof(prob.c_str());
-		    		occs_to_write_prob[sp].push_back(std::make_pair(s,prob_val));
-		    		// Reset
-			    	sp=""; x=""; y=""; prob="";
+					for (auto i=0; i<_IO_species_possible.size(); i++) {
+						iss >> sp >> prob;
+			    		prob_val = atof(prob.c_str());
+			    		occs_to_write_prob[sp].push_back(std::make_pair(s,prob_val));
+			    		// Reset
+				    	sp=""; prob="";
+				    };
+					// Reset
+			    	x=""; y="";
 			    };
 			} else if (_no_dims == 3 && binary) {
 				while (getline(f,line)) {
@@ -949,12 +959,17 @@ namespace dblz {
 				while (getline(f,line)) {
 					if (line == "") { continue; };
 					iss = std::istringstream(line);				
-					iss >> x >> y >> z >> sp >> prob;
+					iss >> x >> y >> z;
 			    	s = _look_up_unit_v(atoi(x.c_str()),atoi(y.c_str()),atoi(z.c_str()));
-			    	prob_val = atof(prob.c_str());
-		    		occs_to_write_prob[sp].push_back(std::make_pair(s,prob_val));
-		    		// Reset
-			    	sp=""; x=""; y=""; z=""; prob="";
+					for (auto i=0; i<_IO_species_possible.size(); i++) {
+						iss >> sp >> prob;
+			    		prob_val = atof(prob.c_str());
+			    		occs_to_write_prob[sp].push_back(std::make_pair(s,prob_val));
+			    		// Reset
+				    	sp=""; prob="";
+				    };
+					// Reset
+			    	x=""; y=""; z="";
 			    };
 			};		
 		};

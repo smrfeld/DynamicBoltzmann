@@ -283,11 +283,25 @@ namespace bmla {
 			_nonzero_occs[sp] = prob;
 		};
 	};
-	void Unit::set_occ_random() {
+	void Unit::set_occ_random(bool binary) {
 		_nonzero_occs.clear();
-		int r = randI(1,_activations.size()-1);
-		if (r != _activations.size()) {
-			_nonzero_occs[_activations[r].sp] = 1.0;
+		if (binary) {
+			int r = randI(1,_activations.size()-1);
+			if (r != _activations.size()) {
+				_nonzero_occs[_activations[r].sp] = 1.0;
+			};
+		} else {
+			double prob_tot = 0.0;
+			for (auto &act: _activations) {
+				act.prob = randD(0.0,1.0);
+				prob_tot += act.prob;
+			};
+			for (auto &act: _activations) {
+				if (act.sp != nullptr) {
+					_nonzero_occs[act.sp] = act.prob/prob_tot;
+					// std::cout << "Set: " << act.sp->get_name() << " to: " << _nonzero_occs[act.sp] << std::endl;
+				};
+			};
 		};
 	};
 

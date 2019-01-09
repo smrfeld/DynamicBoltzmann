@@ -86,9 +86,6 @@ namespace bmla {
 		// Is the hidden reconstruction binary in the last phase?
 		bool is_asleep_hidden_binary_final = false;
 
-		// Layerwise sampling
-		bool layer_wise = true;
-
 		// Parallel
 		bool parallel = true;
 	};
@@ -112,6 +109,7 @@ namespace bmla {
 
 		// Nesterov
 		bool nesterov = true;
+		double nesterov_acc = 0.5;
 
 		// Options for Wake-Sleep loop
 		OptionsWakeSleep options_wake_sleep = OptionsWakeSleep();

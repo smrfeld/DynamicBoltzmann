@@ -802,22 +802,22 @@ namespace bmla {
 	};
 
 	// Random
-	void Lattice::all_units_v_random() {
+	void Lattice::all_units_v_random(bool binary) {
 		for (auto &ptr: _latt_v) {
-			ptr->set_occ_random();
+			ptr->set_occ_random(binary);
 		};
 	};
 
-	void Lattice::all_units_in_layer_random(int layer) {
+	void Lattice::all_units_in_layer_random(int layer, bool binary) {
 		if (layer == 0) {
 			for (auto &ptr: _latt_v) {
-				ptr->set_occ_random();
+				ptr->set_occ_random(binary);
 			};
 		} else {
 			auto it = _latt_h.find(layer);
 			if (it != _latt_h.end()) {
 				for (auto &ptr: it->second) {
-					ptr->set_occ_random();
+					ptr->set_occ_random(binary);
 				};
 			};
 		};
@@ -927,12 +927,17 @@ namespace bmla {
 				while (getline(f,line)) {
 					if (line == "") { continue; };
 					iss = std::istringstream(line);				
-					iss >> x >> sp >> prob;
+					iss >> x;
 		    		s = _look_up_unit_v(atoi(x.c_str()));
-		    		prob_val = atof(prob.c_str());
-		    		occs_to_write_prob[sp].push_back(std::make_pair(s,prob_val));
-		    		// Reset
-			    	sp=""; x=""; prob="";
+					for (auto i=0; i<_IO_species_possible.size(); i++) {
+						iss >> sp >> prob;
+			    		prob_val = atof(prob.c_str());
+			    		occs_to_write_prob[sp].push_back(std::make_pair(s,prob_val));
+			    		// Reset
+				    	sp=""; prob="";
+				    };
+					// Reset
+			    	x="";
 			    };			    
 			} else if (_no_dims == 2 && binary) {
 				while (getline(f,line)) {
@@ -948,12 +953,17 @@ namespace bmla {
 				while (getline(f,line)) {
 					if (line == "") { continue; };
 					iss = std::istringstream(line);				
-					iss >> x >> y >> sp >> prob;
+					iss >> x >> y;
 		    		s = _look_up_unit_v(atoi(x.c_str()),atoi(y.c_str()));
-		    		prob_val = atof(prob.c_str());
-		    		occs_to_write_prob[sp].push_back(std::make_pair(s,prob_val));
-		    		// Reset
-			    	sp=""; x=""; y=""; prob="";
+					for (auto i=0; i<_IO_species_possible.size(); i++) {
+						iss >> sp >> prob;
+			    		prob_val = atof(prob.c_str());
+			    		occs_to_write_prob[sp].push_back(std::make_pair(s,prob_val));
+			    		// Reset
+				    	sp=""; prob="";
+				    };
+					// Reset
+			    	x=""; y="";
 			    };
 			} else if (_no_dims == 3 && binary) {
 				while (getline(f,line)) {
@@ -969,12 +979,17 @@ namespace bmla {
 				while (getline(f,line)) {
 					if (line == "") { continue; };
 					iss = std::istringstream(line);				
-					iss >> x >> y >> z >> sp >> prob;
+					iss >> x >> y >> z;
 			    	s = _look_up_unit_v(atoi(x.c_str()),atoi(y.c_str()),atoi(z.c_str()));
-			    	prob_val = atof(prob.c_str());
-		    		occs_to_write_prob[sp].push_back(std::make_pair(s,prob_val));
-		    		// Reset
-			    	sp=""; x=""; y=""; z=""; prob="";
+					for (auto i=0; i<_IO_species_possible.size(); i++) {
+						iss >> sp >> prob;
+			    		prob_val = atof(prob.c_str());
+			    		occs_to_write_prob[sp].push_back(std::make_pair(s,prob_val));
+			    		// Reset
+				    	sp=""; prob="";
+				    };
+					// Reset
+			    	x=""; y=""; z="";
 			    };
 			};		
 		};
@@ -1015,171 +1030,25 @@ namespace bmla {
 	Sample
 	********************/
 
-	void Lattice::sample_down_h_to_v(bool layer_wise, bool binary_visible, bool binary_hidden, bool parallel) {
-		
+	void Lattice::sample_down_h_to_v(bool binary_visible, bool binary_hidden, bool parallel) {
+
 		// Go through hidden layers top to bottom (reverse)
 		auto rit_begin = _latt_h.rbegin();
-		rit_begin++; // Skip the first
-
-		if (layer_wise && parallel) {
-
-			// Layer wise and in parallel
-
-			for (auto rit=rit_begin; rit!=_latt_h.rend(); ++rit)
-			{
-				for (auto const &idx: _latt_h_idxs[rit->first]) 
-				{
-					rit->second[idx]->prepare_sample(binary_hidden, rit->first+1);
-				};
-				for (auto const &idx: _latt_h_idxs[rit->first]) 
-				{
-					rit->second[idx]->committ_sample();
-				};
-			};			
-
-		} else if (layer_wise && !parallel) {
-
-			// Layer wise and not in parallel
-
-			for (auto rit=rit_begin; rit!=_latt_h.rend(); ++rit)
-			{
-				// Shuffle
-				std::random_shuffle ( _latt_h_idxs[rit->first].begin(), _latt_h_idxs[rit->first].end() );
-
-				for (auto const &idx: _latt_h_idxs[rit->first]) 
-				{
-					rit->second[idx]->prepare_sample(binary_hidden, rit->first+1);
-					rit->second[idx]->committ_sample();
-				};
-			};
-
-		} else if (!layer_wise && parallel) {
-
-			// Not layer wise and in parallel
-
-			for (auto rit=rit_begin; rit!=_latt_h.rend(); ++rit)
-			{
-				for (auto const &idx: _latt_h_idxs[rit->first]) 
-				{
-					rit->second[idx]->prepare_sample(binary_hidden);
-				};
-				for (auto const &idx: _latt_h_idxs[rit->first]) 
-				{
-					rit->second[idx]->committ_sample();
-				};
-			};
-
-		} else if (!layer_wise && !parallel) {
-
-			// Not layer wise and not in parallel
-
-			for (auto rit=rit_begin; rit!=_latt_h.rend(); ++rit)
-			{
-				// Shuffle
-				std::random_shuffle ( _latt_h_idxs[rit->first].begin(), _latt_h_idxs[rit->first].end() );
-
-				for (auto const &idx: _latt_h_idxs[rit->first]) 
-				{
-					rit->second[idx]->prepare_sample(binary_hidden);
-					rit->second[idx]->committ_sample();
-				};
+		if (rit_begin != _latt_h.rend()) {
+			for (auto layer=rit_begin->first-1; layer>0; layer--) {
+				sample_layer(layer, layer+1, binary_hidden, parallel);
 			};
 		};
 
-		// Finally, sample the visible layer
-
-		if (parallel) {
-
-			// Parallel
-
-			for (auto const &idx: _latt_v_idxs) 
-			{
-				_latt_v[idx]->prepare_sample(binary_visible);
-			};
-			for (auto const &idx: _latt_v_idxs) 
-			{
-				_latt_v[idx]->committ_sample();
-			};
-
-		} else {
-
-			// Not in parallel
-
-			// Shuffle
-			std::random_shuffle ( _latt_v_idxs.begin(), _latt_v_idxs.end() );		
-
-			for (auto const &idx: _latt_v_idxs) 
-			{
-				_latt_v[idx]->prepare_sample(binary_visible);
-				_latt_v[idx]->committ_sample();
-			};
-
-		};
+		// Visibles
+		sample_layer(0, 1, binary_visible, parallel);
 	};
-	void Lattice::sample_up_v_to_h(bool layer_wise, bool binary_hidden, bool parallel) {
-
-		if (layer_wise && parallel) {
-
-			// Layer wise and in parallel
-
-			for (auto it=_latt_h.begin(); it!=_latt_h.end(); it++) 
-			{
-				for (auto const &idx: _latt_h_idxs[it->first]) 
-				{
-					it->second[idx]->prepare_sample(binary_hidden, it->first-1);
-				};
-				for (auto const &idx: _latt_h_idxs[it->first]) 
-				{
-					it->second[idx]->committ_sample();
-				};
-			};
-
-		} else if (layer_wise && !parallel) {
-
-			// Layer wise and not in parallel
-
-			for (auto it=_latt_h.begin(); it!=_latt_h.end(); it++) 
-			{
-				// Shuffle
-				std::random_shuffle ( _latt_h_idxs[it->first].begin(), _latt_h_idxs[it->first].end() );
-
-				for (auto const &idx: _latt_h_idxs[it->first]) 
-				{
-					it->second[idx]->prepare_sample(binary_hidden, it->first-1);
-					it->second[idx]->committ_sample();
-				};
-			};
-
-		} else if (!layer_wise && parallel) {
-
-			// Not layer wise and in parallel
-
-			for (auto it=_latt_h.begin(); it!=_latt_h.end(); it++) 
-			{
-				for (auto const &idx: _latt_h_idxs[it->first]) 
-				{
-					it->second[idx]->prepare_sample(binary_hidden);
-				};
-				for (auto const &idx: _latt_h_idxs[it->first]) 
-				{
-					it->second[idx]->committ_sample();
-				};
-			};
-
-		} else if (!layer_wise && !parallel) {
-
-			// Not layer wise and not in parallel
-
-			for (auto it=_latt_h.begin(); it!=_latt_h.end(); it++) 
-			{
-				// Shuffle
-				std::random_shuffle ( _latt_h_idxs[it->first].begin(), _latt_h_idxs[it->first].end() );
-
-				for (auto const &idx: _latt_h_idxs[it->first]) 
-				{
-					it->second[idx]->prepare_sample(binary_hidden);
-					it->second[idx]->committ_sample();
-				};
+	void Lattice::sample_up_v_to_h(bool binary_hidden, bool parallel) {
+		// Go through hidden layers bottom to top
+		auto rit_begin = _latt_h.rbegin();
+		if (rit_begin != _latt_h.rend()) {
+			for (auto layer=1; layer<=rit_begin->first; layer++) {
+				sample_layer(layer, layer-1, binary_hidden, parallel);
 			};
 		};
 	};

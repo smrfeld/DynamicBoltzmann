@@ -204,8 +204,8 @@ namespace bmla {
 		void all_units_set_empty();
 
 		// Random
-		void all_units_v_random();
-		void all_units_in_layer_random(int layer);
+		void all_units_v_random(bool binary);
+		void all_units_in_layer_random(int layer, bool binary);
 
 		// Binarize
 		void all_units_v_binarize();
@@ -224,8 +224,8 @@ namespace bmla {
 		Sample
 		********************/
 
-		void sample_down_h_to_v(bool layer_wise, bool binary_visible, bool binary_hidden, bool parallel);
-		void sample_up_v_to_h(bool layer_wise, bool binary_hidden, bool parallel);
+		void sample_down_h_to_v(bool binary_visible, bool binary_hidden, bool parallel);
+		void sample_up_v_to_h(bool binary_hidden, bool parallel);
 
 		void sample_layer(int layer, bool binary, bool parallel);
 		void sample_layer(int layer, int given_layer, bool binary, bool parallel);

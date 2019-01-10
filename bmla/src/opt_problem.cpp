@@ -178,7 +178,7 @@ namespace bmla {
 			// Read latt
 			if (!options.start_with_random_lattice) {
 				auto file = fname_coll.get_fname(idx_subset[i_batch]); 
-				_latt->read_from_file(file.name,file.binary);
+				_latt->read_layer_from_file(0,file.name,file.binary);
 			} else {
 				// Random lattice...
 				_latt->all_units_v_random(true); // binary by default

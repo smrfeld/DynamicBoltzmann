@@ -300,8 +300,9 @@ namespace bmla {
 		Constructor
 		********************/
 
-		UnitHidden(int layer, int idx);
-		UnitHidden(int layer, int idx, std::vector<Sptr> species_possible);
+		UnitHidden(int layer, int x);
+		UnitHidden(int layer, int x, int y);
+		UnitHidden(int layer, int x, int y, int z);
 		UnitHidden(const UnitHidden& other);
 		UnitHidden(UnitHidden&& other);
 		UnitHidden& operator=(const UnitHidden& other);
@@ -313,7 +314,6 @@ namespace bmla {
 		********************/
 
 		int layer() const;
-		int idx() const;
 
 		/********************
 		Finish setup in lattice

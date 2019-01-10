@@ -47,21 +47,29 @@ namespace bmla {
 		std::map<int,std::vector<UnitHidden*>> _latt_h;
 		std::map<int,std::vector<int>> _latt_h_idxs;
 
+		// Hidden layer lookup
+		// Layer -> (x,y,z) -> unit 
+		std::map<int, std::map<int, UnitHidden*>> _hlookup_1;
+		std::map<int, std::map<int, std::map<int, UnitHidden*>>> _hlookup_2;
+		std::map<int, std::map<int, std::map<int, std::map<int, UnitHidden*>>>> _hlookup_3;
+
 		// Connections
 		std::vector<ConnHH*> _conns_hh;
 		std::vector<ConnVV*> _conns_vv;
 		std::vector<ConnVVV*> _conns_vvv;
 		std::vector<ConnVH*> _conns_vh;
 
-		// IO
-		std::map<std::string,Sptr> _IO_species_possible;
+		// IO: layer->species name->species
+		std::map<int,std::map<std::string,Sptr>> _IO_species_possible;
 		bool _IO_did_init;
 
 		// Lookup a site iterator from x,y,z
 		UnitVisible* _look_up_unit_v(int x) const;
 		UnitVisible* _look_up_unit_v(int x, int y) const;
 		UnitVisible* _look_up_unit_v(int x, int y, int z) const;
-		UnitHidden* _look_up_unit_h(int layer, int idx) const;
+		UnitHidden* _look_up_unit_h(int layer, int x) const;
+		UnitHidden* _look_up_unit_h(int layer, int x, int y) const;
+		UnitHidden* _look_up_unit_h(int layer, int x, int y, int z) const;
 
 		// Check dim
 		void _check_dim(int dim) const;
@@ -137,8 +145,9 @@ namespace bmla {
 		Add hidden units
 		********************/
 
-		UnitHidden* add_hidden_unit(int layer);
-		UnitHidden* add_hidden_unit(int layer, std::vector<Sptr> species_possible);
+		UnitHidden* add_hidden_unit(int layer, int x);
+		UnitHidden* add_hidden_unit(int layer, int x, int y);
+		UnitHidden* add_hidden_unit(int layer, int x, int y, int z);
 
 		/********************
 		Add visible-hidden connections
@@ -166,7 +175,9 @@ namespace bmla {
 		UnitVisible* get_unit_v(int x, int y) const;
 		UnitVisible* get_unit_v(int x, int y, int z) const;
 
-		UnitHidden* get_unit_h(int layer, int idx) const;
+		UnitHidden* get_unit_h(int layer, int x) const;
+		UnitHidden* get_unit_h(int layer, int x, int y) const;
+		UnitHidden* get_unit_h(int layer, int x, int y, int z) const;
 
 		/********************
 		Get connection
@@ -180,11 +191,13 @@ namespace bmla {
 		ConnVVV* get_conn_vvv(int x1, int y1, int x2, int y2, int x3, int y3) const;
 		ConnVVV* get_conn_vvv(int x1, int y1, int z1, int x2, int y2, int z2, int x3, int y3, int z3) const;
 
-		ConnVH* get_conn_vh(int x, int layer, int idx) const;
-		ConnVH* get_conn_vh(int x, int y, int layer, int idx) const;
-		ConnVH* get_conn_vh(int x, int y, int z, int layer, int idx) const;
+		ConnVH* get_conn_vh(int x, int layer, int xh) const;
+		ConnVH* get_conn_vh(int x, int y, int layer, int xh, int yh) const;
+		ConnVH* get_conn_vh(int x, int y, int z, int layer, int xh, int yh, int zh) const;
 
-		ConnHH* get_conn_hh(int layer1, int idx1, int layer2, int idx2) const;
+		ConnHH* get_conn_hh(int layer1, int x1, int layer2, int x2) const;
+		ConnHH* get_conn_hh(int layer1, int x1, int y1, int layer2, int x2, int y2) const;
+		ConnHH* get_conn_hh(int layer1, int x1, int y1, int z1, int layer2, int x2, int y2, int z2) const;
 
 		/********************
 		Getters (general)
@@ -202,6 +215,7 @@ namespace bmla {
 		void all_units_v_set_empty();
 		void all_units_h_set_empty();
 		void all_units_set_empty();
+		void all_units_in_layer_set_empty(int layer);
 
 		// Random
 		void all_units_v_random(bool binary);
@@ -215,10 +229,10 @@ namespace bmla {
 		Write/read latt to a file
 		********************/
 
-		void write_to_file(std::string fname, bool binary);
+		void write_layer_to_file(int layer, std::string fname, bool binary);
 
-		void init_file_reader(std::vector<Sptr> species_possible);
-		void read_from_file(std::string fname, bool binary);
+		void init_file_reader(std::map<int,std::vector<Sptr>> layers_species_possible);
+		void read_layer_from_file(int layer, std::string fname, bool binary);
 
 		/********************
 		Sample

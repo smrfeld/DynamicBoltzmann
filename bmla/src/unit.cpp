@@ -718,8 +718,13 @@ namespace bmla {
 	Constructor
 	********************/
 
-	UnitHidden::UnitHidden(int layer, int idx) : UnitHidden(layer,idx,{}) {};
-	UnitHidden::UnitHidden(int layer, int idx, std::vector<Sptr> species_possible) : Unit(idx,species_possible) {
+	UnitHidden::UnitHidden(int layer, int x) : Unit(x) {
+		_layer = layer;
+	};
+	UnitHidden::UnitHidden(int layer, int x, int y) : Unit(x,y) {
+		_layer = layer;
+	};
+	UnitHidden::UnitHidden(int layer, int x, int y, int z) : Unit(x,y,z) {
 		_layer = layer;
 	};
 	UnitHidden::UnitHidden(const UnitHidden& other) : Unit(other) {

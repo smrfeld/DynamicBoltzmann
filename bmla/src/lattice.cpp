@@ -143,6 +143,9 @@ namespace bmla {
 		};
 		_IO_species_possible = other._IO_species_possible;
 		_IO_did_init = other._IO_did_init;
+		_hlookup_1 = other._hlookup_1;		
+		_hlookup_2 = other._hlookup_2;		
+		_hlookup_3 = other._hlookup_3;				
 	};
 	void Lattice::_move(Lattice& other) {
 		_no_dims = other._no_dims;
@@ -157,6 +160,9 @@ namespace bmla {
 		_latt_h_idxs = other._latt_h_idxs;
 		_IO_species_possible = other._IO_species_possible;
 		_IO_did_init = other._IO_did_init;
+		_hlookup_1 = other._hlookup_1;		
+		_hlookup_2 = other._hlookup_2;		
+		_hlookup_3 = other._hlookup_3;		
 
 		// Reset other
 		other._no_dims = 0;
@@ -171,6 +177,9 @@ namespace bmla {
 		other._latt_h_idxs.clear();
 		other._IO_species_possible.clear();
 		other._IO_did_init = false;
+		other._hlookup_1.clear();
+		other._hlookup_2.clear();
+		other._hlookup_3.clear();
 	};
 
 	/********************
@@ -489,19 +498,22 @@ namespace bmla {
 	Add hidden units
 	********************/
 
-	UnitHidden* Lattice::add_hidden_unit(int layer) {
-		return add_hidden_unit(layer,{});
-	};
-	UnitHidden* Lattice::add_hidden_unit(int layer, std::vector<Sptr> species_possible) {
-		auto it = _latt_h.find(layer);
-		int idx;
-		if (it != _latt_h.end()) {
-			idx = it->second.size();
-		} else {
-			idx = 0;
-		};
-		_latt_h[layer].push_back(new UnitHidden(layer,idx,species_possible));
+	UnitHidden* Lattice::add_hidden_unit(int layer, int x) {
+		_latt_h[layer].push_back(new UnitHidden(layer,x));
 		_latt_h_idxs[layer].push_back(_latt_h[layer].size()-1);
+		_hlookup_1[layer][x] = _latt_h[layer].back();
+		return _latt_h[layer].back();
+	};
+	UnitHidden* Lattice::add_hidden_unit(int layer, int x, int y) {
+		_latt_h[layer].push_back(new UnitHidden(layer,x,y));
+		_latt_h_idxs[layer].push_back(_latt_h[layer].size()-1);
+		_hlookup_2[layer][x][y] = _latt_h[layer].back();
+		return _latt_h[layer].back();
+	};
+	UnitHidden* Lattice::add_hidden_unit(int layer, int x, int y, int z) {
+		_latt_h[layer].push_back(new UnitHidden(layer,x,y,z));
+		_latt_h_idxs[layer].push_back(_latt_h[layer].size()-1);
+		_hlookup_3[layer][x][y][z] = _latt_h[layer].back();
 		return _latt_h[layer].back();
 	};
 
@@ -575,8 +587,17 @@ namespace bmla {
 		return _look_up_unit_v(x,y,z);
 	};
 
-	UnitHidden* Lattice::get_unit_h(int layer, int idx) const {
-		return _look_up_unit_h(layer,idx);
+	UnitHidden* Lattice::get_unit_h(int layer, int x) const {
+		_check_dim(1);
+		return _look_up_unit_h(layer,x);
+	};
+	UnitHidden* Lattice::get_unit_h(int layer, int x, int y) const {
+		_check_dim(2);
+		return _look_up_unit_h(layer,x,y);
+	};
+	UnitHidden* Lattice::get_unit_h(int layer, int x, int y, int z) const {
+		_check_dim(3);
+		return _look_up_unit_h(layer,x,y,z);
 	};
 
 	/********************
@@ -690,11 +711,11 @@ namespace bmla {
 		exit(EXIT_FAILURE);
 	};
 
-	ConnVH* Lattice::get_conn_vh(int x, int layer, int idx) const {
+	ConnVH* Lattice::get_conn_vh(int x, int layer, int xh) const {
 		_check_dim(1);
 
 		UnitVisible *uv = _look_up_unit_v(x);
-		UnitHidden *uh = _look_up_unit_h(layer,idx);
+		UnitHidden *uh = _look_up_unit_h(layer,xh);
 
 		std::vector<ConnVH*> conns = uv->get_conns_vh();
 		for (auto &conn: conns) {
@@ -704,14 +725,14 @@ namespace bmla {
 		};
 
 		// Never get here
-		std::cerr << ">>> Error: Lattice::get_conn_vh <<< Connection: " << x << " to " << layer << " " << idx << " not found!" << std::endl;
+		std::cerr << ">>> Error: Lattice::get_conn_vh <<< Connection: " << x << " to " << layer << " " << xh << " not found!" << std::endl;
 		exit(EXIT_FAILURE);
 	};
-	ConnVH* Lattice::get_conn_vh(int x, int y, int layer, int idx) const {
+	ConnVH* Lattice::get_conn_vh(int x, int y, int layer, int xh, int yh) const {
 		_check_dim(2);
 
 		UnitVisible *uv = _look_up_unit_v(x,y);
-		UnitHidden *uh = _look_up_unit_h(layer,idx);
+		UnitHidden *uh = _look_up_unit_h(layer,xh,yh);
 
 		std::vector<ConnVH*> conns = uv->get_conns_vh();
 		for (auto &conn: conns) {
@@ -721,14 +742,14 @@ namespace bmla {
 		};
 
 		// Never get here
-		std::cerr << ">>> Error: Lattice::get_conn_vh <<< Connection: " << x << " " << y << " to " << layer << " " << idx << " not found!" << std::endl;
+		std::cerr << ">>> Error: Lattice::get_conn_vh <<< Connection: " << x << " " << y << " to " << layer << " " << xh << " " << yh << " not found!" << std::endl;
 		exit(EXIT_FAILURE);
 	};
-	ConnVH* Lattice::get_conn_vh(int x, int y, int z, int layer, int idx) const {
+	ConnVH* Lattice::get_conn_vh(int x, int y, int z, int layer, int xh, int yh, int zh) const {
 		_check_dim(3);
 
 		UnitVisible *uv = _look_up_unit_v(x,y,z);
-		UnitHidden *uh = _look_up_unit_h(layer,idx);
+		UnitHidden *uh = _look_up_unit_h(layer,xh,yh,zh);
 
 		std::vector<ConnVH*> conns = uv->get_conns_vh();
 		for (auto &conn: conns) {
@@ -738,13 +759,13 @@ namespace bmla {
 		};
 
 		// Never get here
-		std::cerr << ">>> Error: Lattice::get_conn_vh <<< Connection: " << x << " " << y << " " << z << " to " << layer << " " << idx << " not found!" << std::endl;
+		std::cerr << ">>> Error: Lattice::get_conn_vh <<< Connection: " << x << " " << y << " " << z << " to " << layer << " " << xh << " " << yh << " " << zh << " not found!" << std::endl;
 		exit(EXIT_FAILURE);
 	};
 
-	ConnHH* Lattice::get_conn_hh(int layer1, int idx1, int layer2, int idx2) const {
-		UnitHidden *uh1 = _look_up_unit_h(layer1,idx1);
-		UnitHidden *uh2 = _look_up_unit_h(layer2,idx2);
+	ConnHH* Lattice::get_conn_hh(int layer1, int x1, int layer2, int x2) const {
+		UnitHidden *uh1 = _look_up_unit_h(layer1,x1);
+		UnitHidden *uh2 = _look_up_unit_h(layer2,x2);
 
 		std::map<int,std::vector<std::pair<ConnHH*,int>>> conns = uh1->get_conns_hh();
 		auto it = conns.find(layer1);
@@ -757,7 +778,43 @@ namespace bmla {
 		};
 
 		// Never get here
-		std::cerr << ">>> Error: Lattice::get_conn_hh <<< Connection: " << layer1 << " " << idx1 << " to " << layer2 << " " << idx2 << " not found!" << std::endl;
+		std::cerr << ">>> Error: Lattice::get_conn_hh <<< Connection: " << layer1 << " " << x1 << " to " << layer2 << " " << x2 << " not found!" << std::endl;
+		exit(EXIT_FAILURE);
+	};
+	ConnHH* Lattice::get_conn_hh(int layer1, int x1, int y1, int layer2, int x2, int y2) const {
+		UnitHidden *uh1 = _look_up_unit_h(layer1,x1,y1);
+		UnitHidden *uh2 = _look_up_unit_h(layer2,x2,y2);
+
+		std::map<int,std::vector<std::pair<ConnHH*,int>>> conns = uh1->get_conns_hh();
+		auto it = conns.find(layer1);
+		if (it != conns.end()) {
+			for (auto &conn: it->second) {
+				if (conn.first->check_connects_units(uh1,uh2)) {
+					return conn.first;
+				};
+			};
+		};
+
+		// Never get here
+		std::cerr << ">>> Error: Lattice::get_conn_hh <<< Connection: " << layer1 << " " << x1 << " " << y1 << " to " << layer2 << " " << x2 << " " << y2 << " not found!" << std::endl;
+		exit(EXIT_FAILURE);
+	};
+	ConnHH* Lattice::get_conn_hh(int layer1, int x1, int y1, int z1, int layer2, int x2, int y2, int z2) const {
+		UnitHidden *uh1 = _look_up_unit_h(layer1,x1,y1,z1);
+		UnitHidden *uh2 = _look_up_unit_h(layer2,x2,y2,z2);
+
+		std::map<int,std::vector<std::pair<ConnHH*,int>>> conns = uh1->get_conns_hh();
+		auto it = conns.find(layer1);
+		if (it != conns.end()) {
+			for (auto &conn: it->second) {
+				if (conn.first->check_connects_units(uh1,uh2)) {
+					return conn.first;
+				};
+			};
+		};
+
+		// Never get here
+		std::cerr << ">>> Error: Lattice::get_conn_hh <<< Connection: " << layer1 << " " << x1 << " " << y1 << " " << z1 << " to " << layer2 << " " << x2 << " " << y2 << " " << z2 << " not found!" << std::endl;
 		exit(EXIT_FAILURE);
 	};
 
@@ -800,6 +857,16 @@ namespace bmla {
 		all_units_v_set_empty();
 		all_units_h_set_empty();
 	};
+	void Lattice::all_units_in_layer_set_empty(int layer) {
+		if (layer == 0) {
+			all_units_v_set_empty();
+		} else {
+			auto it = _latt_h.find(layer);
+			for (auto &s: it->second) {
+				s->set_empty();
+			};
+		};
+	};
 
 	// Random
 	void Lattice::all_units_v_random(bool binary) {
@@ -841,77 +908,138 @@ namespace bmla {
 	Write/read Latt to a file
 	********************/
 
-	void Lattice::write_to_file(std::string fname, bool binary) 
+	void Lattice::write_layer_to_file(int layer, std::string fname, bool binary) 
 	{
 		std::ofstream f;
 		f.open (fname);
-		for (auto const &l: _latt_v) {
-			auto nonzero_map = l->get_nonzero_occs();
-			// Only write nonzero
-			if (nonzero_map.size() != 0) {
-
-				if (_no_dims == 1) {
-					f << l->x();
-				} else if (_no_dims == 2) {
-					f << l->x() << " " << l->y();
-				} else if (_no_dims == 3) {
-					f << l->x() << " " << l->y() << " " << l->z();
-				};
-
-				if (binary) {
-
-					// Ensure binary
-					if (nonzero_map.size() != 1) {
-						std::cerr << ">>> Lattice::write_to_file <<< Error: indicated to write binary mode, but site is not binary!" << std::endl;
-						exit(EXIT_FAILURE);
-					};
-
-					// binary
-					for (auto const &pr: nonzero_map) {
-						f << " " << pr.first->get_name();
-					};
-				} else {
-					// multiple
-					for (auto const &pr: nonzero_map) {
-						f << " " << pr.first->get_name() << " " << pr.second;
-					};
-				};
-				f << "\n";
-			};
-		};
-		f.close();
-	};
-
-	void Lattice::init_file_reader(std::vector<Sptr> species_possible) {
-		for (auto sp: species_possible) {
-			_IO_species_possible[sp->get_name()] = sp;
-		};
-		_IO_did_init = true;
-	};
-	void Lattice::read_from_file(std::string fname, bool binary)
-	{
-		if (!_IO_did_init) {
-			std::cerr << ">>> Lattice::read_from_file <<< Error: run init_file_reader first!" << std::endl;
+		if (!f.is_open()) { // make sure we found it
+			std::cerr << ">>> Lattice::write_layer_to_file <<< Error: could not open file: " << fname << " for writing" << std::endl;
 			exit(EXIT_FAILURE);
 		};
 
-		// Clear the current lattice
-		all_units_set_empty();
+		if (layer == 0) {
 
-		// Map: species to sites
-		std::map<std::string, std::vector<UnitVisible*>> occs_to_write_binary;
-		std::map<std::string, std::vector<std::pair<UnitVisible*,double>>> occs_to_write_prob;
+			// Visible layer
 
+			for (auto const &l: _latt_v) {
+				auto nonzero_map = l->get_nonzero_occs();
+				// Only write nonzero
+				if (nonzero_map.size() != 0) {
+
+					if (_no_dims == 1) {
+						f << l->x();
+					} else if (_no_dims == 2) {
+						f << l->x() << " " << l->y();
+					} else if (_no_dims == 3) {
+						f << l->x() << " " << l->y() << " " << l->z();
+					};
+
+					if (binary) {
+
+						// Ensure binary
+						if (nonzero_map.size() != 1) {
+							std::cerr << ">>> Lattice::write_to_file <<< Error: indicated to write binary mode, but site is not binary!" << std::endl;
+							exit(EXIT_FAILURE);
+						};
+
+						// binary
+						for (auto const &pr: nonzero_map) {
+							f << " " << pr.first->get_name();
+						};
+					} else {
+						// multiple
+						for (auto const &pr: nonzero_map) {
+							f << " " << pr.first->get_name() << " " << pr.second;
+						};
+					};
+					f << "\n";
+				};
+			};
+
+		} else {
+
+			// Hidden layer
+
+			auto it = _latt_h.find(layer);
+			for (auto const &l: it->second) {
+				auto nonzero_map = l->get_nonzero_occs();
+				// Only write nonzero
+				if (nonzero_map.size() != 0) {
+
+					if (_no_dims == 1) {
+						f << l->x();
+					} else if (_no_dims == 2) {
+						f << l->x() << " " << l->y();
+					} else if (_no_dims == 3) {
+						f << l->x() << " " << l->y() << " " << l->z();
+					};
+
+					if (binary) {
+
+						// Ensure binary
+						if (nonzero_map.size() != 1) {
+							std::cerr << ">>> Lattice::write_to_file <<< Error: indicated to write binary mode, but site is not binary!" << std::endl;
+							exit(EXIT_FAILURE);
+						};
+
+						// binary
+						for (auto const &pr: nonzero_map) {
+							f << " " << pr.first->get_name();
+						};
+					} else {
+						// multiple
+						for (auto const &pr: nonzero_map) {
+							f << " " << pr.first->get_name() << " " << pr.second;
+						};
+					};
+					f << "\n";
+				};
+			};
+		};
+
+		f.close();
+	};
+
+	void Lattice::init_file_reader(std::map<int,std::vector<Sptr>> layers_species_possible) {
+		for (auto pr: layers_species_possible) {
+			for (auto sp: pr.second) {
+				_IO_species_possible[pr.first][sp->get_name()] = sp;
+			};
+		};
+		_IO_did_init = true;
+	};
+	void Lattice::read_layer_from_file(int layer, std::string fname, bool binary)
+	{
+		if (!_IO_did_init) {
+			std::cerr << ">>> Lattice::read_layer_from_file <<< Error: run init_file_reader first!" << std::endl;
+			exit(EXIT_FAILURE);
+		};
+
+		// Clear the layer
+		all_units_in_layer_set_empty(layer);
+
+		// Open
 		std::ifstream f;
 		f.open(fname);
-		std::string x="",y="",z="";
-		std::string sp="";
-		std::string line;
-		std::istringstream iss;
-		UnitVisible* s;
-		std::string prob="";
-		double prob_val;
-		if (f.is_open()) { // make sure we found it
+		if (!f.is_open()) { // make sure we found it
+			std::cerr << ">>> Error: Lattice::read_layer_from_file <<< could not find file: " << fname << std::endl;
+			exit(EXIT_FAILURE);
+		};
+
+		if (layer == 0) {
+
+			// Visible
+
+			std::map<std::string, std::vector<UnitVisible*>> occs_to_write_binary;
+			std::map<std::string, std::vector<std::pair<UnitVisible*,double>>> occs_to_write_prob;
+
+			std::string x="",y="",z="";
+			std::string sp="";
+			std::string line;
+			std::istringstream iss;
+			UnitVisible* s;
+			std::string prob="";
+			double prob_val;
 
 			if (_no_dims == 1 && binary) {
 				while (getline(f,line)) {
@@ -929,7 +1057,7 @@ namespace bmla {
 					iss = std::istringstream(line);				
 					iss >> x;
 		    		s = _look_up_unit_v(atoi(x.c_str()));
-					for (auto i=0; i<_IO_species_possible.size(); i++) {
+					for (auto i=0; i<_IO_species_possible[layer].size(); i++) {
 						iss >> sp >> prob;
 			    		prob_val = atof(prob.c_str());
 			    		occs_to_write_prob[sp].push_back(std::make_pair(s,prob_val));
@@ -955,7 +1083,7 @@ namespace bmla {
 					iss = std::istringstream(line);				
 					iss >> x >> y;
 		    		s = _look_up_unit_v(atoi(x.c_str()),atoi(y.c_str()));
-					for (auto i=0; i<_IO_species_possible.size(); i++) {
+					for (auto i=0; i<_IO_species_possible[layer].size(); i++) {
 						iss >> sp >> prob;
 			    		prob_val = atof(prob.c_str());
 			    		occs_to_write_prob[sp].push_back(std::make_pair(s,prob_val));
@@ -981,7 +1109,7 @@ namespace bmla {
 					iss = std::istringstream(line);				
 					iss >> x >> y >> z;
 			    	s = _look_up_unit_v(atoi(x.c_str()),atoi(y.c_str()),atoi(z.c_str()));
-					for (auto i=0; i<_IO_species_possible.size(); i++) {
+					for (auto i=0; i<_IO_species_possible[layer].size(); i++) {
 						iss >> sp >> prob;
 			    		prob_val = atof(prob.c_str());
 			    		occs_to_write_prob[sp].push_back(std::make_pair(s,prob_val));
@@ -992,36 +1120,160 @@ namespace bmla {
 			    	x=""; y=""; z="";
 			    };
 			};		
-		};
-		f.close();
 
-		if (binary) {
-			// Binary mode
-			for (auto const &pr: occs_to_write_binary) {
-				// find the species
-				auto it = _IO_species_possible.find(pr.first);
-				if (it == _IO_species_possible.end()) {
-					std::cerr << ">>> Lattice::read_from_file <<< Error: could not find species: " << pr.first << std::endl;
-					exit(EXIT_FAILURE);
+			if (binary) {
+				// Binary mode
+				for (auto const &pr: occs_to_write_binary) {
+					// find the species
+					auto it = _IO_species_possible[layer].find(pr.first);
+					if (it == _IO_species_possible[layer].end()) {
+						std::cerr << ">>> Lattice::read_from_file <<< Error: could not find species: " << pr.first << std::endl;
+						exit(EXIT_FAILURE);
+					};
+					for (auto const &site: pr.second) {
+						site->set_occ(it->second,1.0);
+					};
 				};
-				for (auto const &site: pr.second) {
-					site->set_occ(it->second,1.0);
+			} else {
+				// Prob mode
+				for (auto const &pr: occs_to_write_prob) {
+					// find the species
+					auto it = _IO_species_possible[layer].find(pr.first);
+					if (it == _IO_species_possible[layer].end()) {
+						std::cerr << ">>> Lattice::read_from_file <<< Error: could not find species: " << pr.first << std::endl;
+						exit(EXIT_FAILURE);
+					};
+					for (auto const &site_pr: pr.second) {
+						site_pr.first->set_occ(it->second,site_pr.second);
+					};
 				};
 			};
+
 		} else {
-			// Prob mode
-			for (auto const &pr: occs_to_write_prob) {
-				// find the species
-				auto it = _IO_species_possible.find(pr.first);
-				if (it == _IO_species_possible.end()) {
-					std::cerr << ">>> Lattice::read_from_file <<< Error: could not find species: " << pr.first << std::endl;
-					exit(EXIT_FAILURE);
+
+			// Hidden
+
+			std::map<std::string, std::vector<UnitHidden*>> occs_to_write_binary;
+			std::map<std::string, std::vector<std::pair<UnitHidden*,double>>> occs_to_write_prob;
+
+			std::string x="",y="",z="";
+			std::string sp="";
+			std::string line;
+			std::istringstream iss;
+			UnitHidden* s;
+			std::string prob="";
+			double prob_val;
+
+			if (_no_dims == 1 && binary) {
+				while (getline(f,line)) {
+					if (line == "") { continue; };
+					iss = std::istringstream(line);				
+					iss >> x >> sp;
+		    		s = _look_up_unit_h(layer,atoi(x.c_str()));
+		    		occs_to_write_binary[sp].push_back(s);
+		    		// Reset
+			    	sp=""; x="";
+			    };
+			} else if (_no_dims == 1 && !binary) {
+				while (getline(f,line)) {
+					if (line == "") { continue; };
+					iss = std::istringstream(line);				
+					iss >> x;
+		    		s = _look_up_unit_h(layer,atoi(x.c_str()));
+					for (auto i=0; i<_IO_species_possible[layer].size(); i++) {
+						iss >> sp >> prob;
+			    		prob_val = atof(prob.c_str());
+			    		occs_to_write_prob[sp].push_back(std::make_pair(s,prob_val));
+			    		// Reset
+				    	sp=""; prob="";
+				    };
+					// Reset
+			    	x="";
+			    };			    
+			} else if (_no_dims == 2 && binary) {
+				while (getline(f,line)) {
+					if (line == "") { continue; };
+					iss = std::istringstream(line);				
+					iss >> x >> y >> sp;
+		    		s = _look_up_unit_h(layer,atoi(x.c_str()),atoi(y.c_str()));
+		    		occs_to_write_binary[sp].push_back(s);
+		    		// Reset
+			    	sp=""; x=""; y="";
+			    };
+			} else if (_no_dims == 2 && !binary) {
+				while (getline(f,line)) {
+					if (line == "") { continue; };
+					iss = std::istringstream(line);				
+					iss >> x >> y;
+		    		s = _look_up_unit_h(layer,atoi(x.c_str()),atoi(y.c_str()));
+					for (auto i=0; i<_IO_species_possible[layer].size(); i++) {
+						iss >> sp >> prob;
+			    		prob_val = atof(prob.c_str());
+			    		occs_to_write_prob[sp].push_back(std::make_pair(s,prob_val));
+			    		// Reset
+				    	sp=""; prob="";
+				    };
+					// Reset
+			    	x=""; y="";
+			    };
+			} else if (_no_dims == 3 && binary) {
+				while (getline(f,line)) {
+					if (line == "") { continue; };
+					iss = std::istringstream(line);				
+					iss >> x >> y >> z >> sp;
+			    	s = _look_up_unit_h(layer,atoi(x.c_str()),atoi(y.c_str()),atoi(z.c_str()));
+		    		occs_to_write_binary[sp].push_back(s);
+		    		// Reset
+			    	sp=""; x=""; y=""; z="";
+			    };
+			} else if (_no_dims == 3 && !binary) {
+				while (getline(f,line)) {
+					if (line == "") { continue; };
+					iss = std::istringstream(line);				
+					iss >> x >> y >> z;
+			    	s = _look_up_unit_h(layer,atoi(x.c_str()),atoi(y.c_str()),atoi(z.c_str()));
+					for (auto i=0; i<_IO_species_possible[layer].size(); i++) {
+						iss >> sp >> prob;
+			    		prob_val = atof(prob.c_str());
+			    		occs_to_write_prob[sp].push_back(std::make_pair(s,prob_val));
+			    		// Reset
+				    	sp=""; prob="";
+				    };
+					// Reset
+			    	x=""; y=""; z="";
+			    };
+			};		
+
+			if (binary) {
+				// Binary mode
+				for (auto const &pr: occs_to_write_binary) {
+					// find the species
+					auto it = _IO_species_possible[layer].find(pr.first);
+					if (it == _IO_species_possible[layer].end()) {
+						std::cerr << ">>> Lattice::read_from_file <<< Error: could not find species (binary): " << pr.first << std::endl;
+						exit(EXIT_FAILURE);
+					};
+					for (auto const &site: pr.second) {
+						site->set_occ(it->second,1.0);
+					};
 				};
-				for (auto const &site_pr: pr.second) {
-					site_pr.first->set_occ(it->second,site_pr.second);
+			} else {
+				// Prob mode
+				for (auto const &pr: occs_to_write_prob) {
+					// find the species
+					auto it = _IO_species_possible[layer].find(pr.first);
+					if (it == _IO_species_possible[layer].end()) {
+						std::cerr << ">>> Lattice::read_from_file <<< Error: could not find species (prob): " << pr.first << std::endl;
+						exit(EXIT_FAILURE);
+					};
+					for (auto const &site_pr: pr.second) {
+						site_pr.first->set_occ(it->second,site_pr.second);
+					};
 				};
 			};
 		};
+
+		f.close();
 
 		// std::cout << "Read: " << fname << std::endl;
 	};
@@ -1344,16 +1596,53 @@ namespace bmla {
 		return _latt_v[n];
 	};
 
-	UnitHidden* Lattice::_look_up_unit_h(int layer, int idx) const {
-		auto it = _latt_h.find(layer);
-		if (it == _latt_h.end()) {
+	UnitHidden* Lattice::_look_up_unit_h(int layer, int x) const {
+		auto it1 = _hlookup_1.find(layer);
+		if (it1 == _hlookup_1.end()) {
 			return nullptr;
 		};
-		if (idx >= it->second.size()) {
+		auto it2 = it1->second.find(x);
+		if (it2 == it1->second.end()) {
 			return nullptr;
 		};
 
-		return it->second[idx];
+		return it2->second;
+	};
+	UnitHidden* Lattice::_look_up_unit_h(int layer, int x, int y) const {
+		auto it1 = _hlookup_2.find(layer);
+		if (it1 == _hlookup_2.end()) {
+			return nullptr;
+		};
+		auto it2 = it1->second.find(x);
+		if (it2 == it1->second.end()) {
+			return nullptr;
+		};
+		auto it3 = it2->second.find(y);
+		if (it3 == it2->second.end()) {
+			return nullptr;
+		};
+
+		return it3->second;
+	};
+	UnitHidden* Lattice::_look_up_unit_h(int layer, int x, int y, int z) const {
+		auto it1 = _hlookup_3.find(layer);
+		if (it1 == _hlookup_3.end()) {
+			return nullptr;
+		};
+		auto it2 = it1->second.find(x);
+		if (it2 == it1->second.end()) {
+			return nullptr;
+		};
+		auto it3 = it2->second.find(y);
+		if (it3 == it2->second.end()) {
+			return nullptr;
+		};
+		auto it4 = it3->second.find(z);
+		if (it4 == it3->second.end()) {
+			return nullptr;
+		};
+
+		return it4->second;
 	};
 
 	/********************

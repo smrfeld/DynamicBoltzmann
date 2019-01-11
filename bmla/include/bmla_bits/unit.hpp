@@ -19,7 +19,7 @@ namespace bmla {
 	class ConnVVV;
 	class ConnVH;
 	class ConnHH;
-
+        
 	/****************************************
 	Class to hold a lattice site
 	***************************************/

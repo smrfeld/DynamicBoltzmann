@@ -6,10 +6,16 @@ None.
 
 ## Installation
 
-There now is a convenient makefile:
+Use CMake:
 ```
-make
-make install
+mkdir build
+cd build
+cmake ..
+make && make install
+```
+or for Xcode:
+```
+cmake .. -GXcode
 ```
 The default install locations are `/usr/local/include` and `/usr/local/lib`.
 

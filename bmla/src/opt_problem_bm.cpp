@@ -1,10 +1,11 @@
-#include "../include/bmla_bits/opt_problem.hpp"
+#include "../include/bmla_bits/opt_problem_bm.hpp"
 
 // Other headers
 #include "../include/bmla_bits/ixn_param.hpp"
 #include "../include/bmla_bits/lattice.hpp"
 #include "../include/bmla_bits/moment.hpp"
 #include "../include/bmla_bits/general.hpp"
+#include "../include/bmla_bits/fname.hpp"
 
 #include <random>
 #include <algorithm>
@@ -18,123 +19,56 @@
 namespace bmla {
 
 	/****************************************
-	Filename
-	****************************************/
-
-	FName::FName(std::string name, bool binary) {
-		this->name = name;
-		this->binary = binary;
-	};
-
-	/****************************************
-	Filename collection
-	****************************************/
-
-	/********************
-	Get fnames
-	********************/
-
-	const std::vector<FName>& FNameColl::get_fnames_all() const {
-		return _fnames;
-	};
-	const FName& FNameColl::get_fname(int idx) const {
-		if (idx >= _fnames.size()) {
-			std::cerr << ">>> Error: FNameColl::get_fname <<< idx: " << idx << " out of range: " << _fnames.size() << std::endl;
-			exit(EXIT_FAILURE);
-		};
-		return _fnames[idx];
-	};
-
-	/********************
-	Add fname
-	********************/
-
-	void FNameColl::add_fname(FName fname) {
-		_fnames.push_back(fname);
-		_idxs.push_back(_fnames.size()-1);
-	};
-
-	/********************
-	Get random subset
-	********************/
-
-	std::vector<int> FNameColl::get_random_subset(int size) {
-		if (_fnames.size() < size) {
-			std::cerr << ">>> Error: FNameColl::get_random_subset <<< size of subset is equal to size of filename collection" << std::endl;
-			exit(EXIT_FAILURE);
-		};
-
-		// Shuffle idxs
-	    std::random_device rd;
-	    std::mt19937 g(rd());
-	    std::shuffle(_idxs.begin(), _idxs.end(), g);
-
-	    std::vector<int>::const_iterator first = _idxs.begin();
-	    std::vector<int>::const_iterator last = _idxs.begin() + size;
-	    return std::vector<int>(first,last);
-	};
-
-	/****************************************
-	OptProblem
+	OptProblemBM
 	****************************************/
 	
 	/********************
 	Constructor
 	********************/
 
-	OptProblem::OptProblem(std::shared_ptr<Lattice> latt) {
+	OptProblemBM::OptProblemBM(std::shared_ptr<Lattice> latt, std::vector<std::shared_ptr<IxnParam>> ixn_params) {
 		_latt = latt;
+        _ixn_params = ixn_params;
 	};
-	OptProblem::OptProblem(const OptProblem& other) {
+	OptProblemBM::OptProblemBM(const OptProblemBM& other) {
 		_copy(other);
 	};
-	OptProblem::OptProblem(OptProblem&& other) {
+	OptProblemBM::OptProblemBM(OptProblemBM&& other) {
 		_move(other);
 	};
-	OptProblem& OptProblem::operator=(const OptProblem& other) {
+	OptProblemBM& OptProblemBM::operator=(const OptProblemBM& other) {
 		if (this != &other) {
 			_clean_up();
 			_copy(other);
 		};
 		return *this;
 	};
-	OptProblem& OptProblem::operator=(OptProblem&& other) {
+	OptProblemBM& OptProblemBM::operator=(OptProblemBM&& other) {
 		if (this != &other) {
 			_clean_up();
 			_move(other);
 		};
 		return *this;
 	};
-	OptProblem::~OptProblem() {
+	OptProblemBM::~OptProblemBM() {
 		_clean_up();
 	};
 
-	void OptProblem::_clean_up() {};
-	void OptProblem::_move(OptProblem &other) {
+	void OptProblemBM::_clean_up() {};
+	void OptProblemBM::_move(OptProblemBM &other) {
 		_ixn_params = std::move(other._ixn_params);
 		_latt = std::move(other._latt);
 	};
-	void OptProblem::_copy(const OptProblem& other) {
+	void OptProblemBM::_copy(const OptProblemBM& other) {
 		_ixn_params = other._ixn_params;
 		_latt = other._latt;
-	};
-
-	/********************
-	Setters
-	********************/
-
-	void OptProblem::add_ixn_param(std::shared_ptr<IxnParam> ixn_param) {
-		_ixn_params.push_back(ixn_param);
-	};
-	void OptProblem::set_lattice(std::shared_ptr<Lattice> latt) {
-		_latt = latt;
 	};
 
 	/********************
 	Init structures
 	********************/
 
-	void OptProblem::init_structures(int batch_size) {
+	void OptProblemBM::init_structures(int batch_size) {
 
 		// Ixn params
 		for (auto &ixn_param: _ixn_params) {
@@ -148,7 +82,7 @@ namespace bmla {
 	Wake/asleep loop
 	********************/
 
-	void OptProblem::wake_sleep_loop(int batch_size, int no_latt_sampling_steps, FNameColl &fname_coll, OptionsWakeSleep options) {
+	void OptProblemBM::wake_sleep_loop(int batch_size, int no_cd_sampling_steps, int no_mean_field_updates, FNameColl &fname_coll, OptionsWakeSleepBM options) {
 		if (options.verbose) {
 			std::cout << "--- Sampling lattice ---" << std::endl;
 		};
@@ -184,10 +118,11 @@ namespace bmla {
 				_latt->all_units_v_random(true); // binary by default
 			};
 
-			// Sample hidden
-			// Hidden: prob (= false)
-			_latt->sample_up_v_to_h(options.is_awake_moment_hidden_binary, options.parallel);
-
+            // Variational inference
+            for (auto i=0; i<no_mean_field_updates; i++) {
+                _latt->sample_bm_variational_inference(options.parallel);
+            };
+            
 			// Reap awake
 			for (auto &ixn_param: _ixn_params) {
 				if (!ixn_param->get_moment()->get_is_awake_moment_fixed()) {
@@ -195,29 +130,28 @@ namespace bmla {
 				};
 			};
 
-			// Convert hidden units to be binary
-			if (!options.is_awake_moment_hidden_binary && options.should_binarize_hidden_after_awake_moment) {
+			// Convert hidden units to be binary if needed
+			if (options.should_binarize_hidden_after_awake_moment) {
 				_latt->all_units_h_binarize();
 			};
 
 			// Sample vis, hidden
-			for (int i_sampling_step=0; i_sampling_step<no_latt_sampling_steps; i_sampling_step++) 
+			for (int i_sampling_step=0; i_sampling_step<no_cd_sampling_steps; i_sampling_step++) 
 			{
 				// Sample down (hidden -> visible)
 				// Visible: binary (= true)
 				// Hiddens: binary (= true)
-				// _latt->sample_down_h_to_v(true, true);
-				_latt->sample_down_h_to_v(options.is_asleep_visible_binary, options.is_asleep_hidden_binary,options.parallel);
+				_latt->sample_bm_down_h_to_v(options.is_asleep_visible_binary,options.is_asleep_hidden_binary,options.parallel);
 
 				// Sample up (visible -> hidden)
 				// If not last step:
 				// Hiddens: binary (= true)
 				// Else:
 				// Hiddens: prob (= false)
-				if (i_sampling_step != no_latt_sampling_steps-1) {
-					_latt->sample_up_v_to_h(options.is_asleep_hidden_binary,options.parallel); // binary hiddens
+				if (i_sampling_step != no_cd_sampling_steps-1) {
+					_latt->sample_bm_up_v_to_h(options.is_asleep_hidden_binary,options.parallel); // binary hiddens
 				} else {
-					_latt->sample_up_v_to_h(options.is_asleep_hidden_binary_final,options.parallel); // prob hiddens
+					_latt->sample_bm_up_v_to_h(options.is_asleep_hidden_binary_final,options.parallel); // prob hiddens
 				};
 			};
 
@@ -255,28 +189,28 @@ namespace bmla {
 	********************/
 
 	// Check if options passed are valid
-	void OptProblem::check_options(int batch_size, double dopt, int no_latt_sampling_steps, OptionsSolve options) {
+	void OptProblemBM::check_options(int batch_size, double dopt, int no_cd_sampling_steps, int no_mean_field_updates, OptionsSolveBM options) {
 		// ...
 	};
 
 	// One step
-	void OptProblem::solve_one_step(int i_opt_step, int batch_size, double dopt, int no_latt_sampling_steps, FNameColl &fname_coll, OptionsSolve options) {
+	void OptProblemBM::solve_one_step(int i_opt_step, int batch_size, double dopt, int no_cd_sampling_steps, int no_mean_field_updates, FNameColl &fname_coll, OptionsSolveBM options) {
 
 		/*****
 		Check options
 		*****/
 
 		if (options.should_check_options) {
-			check_options(batch_size,dopt,no_latt_sampling_steps,options);
+			check_options(batch_size,dopt,no_cd_sampling_steps,no_mean_field_updates,options);
 		};
 
 		/*****
 		Wake/asleep loop
 		*****/
 
-		wake_sleep_loop(batch_size,no_latt_sampling_steps,fname_coll,options.options_wake_sleep);
+		wake_sleep_loop(batch_size,no_cd_sampling_steps,no_mean_field_updates,fname_coll,options.options_wake_sleep);
 
-		if (options.VERBOSE_MOMENT) {
+		if (options.verbose_moment) {
 			for (auto &ixn_param: _ixn_params) {
 				std::cout << ixn_param->get_name() << " " << std::flush;
 				ixn_param->get_moment()->print_moment_comparison();
@@ -287,22 +221,22 @@ namespace bmla {
 		Form the update
 		********************/
 
-		if (options.VERBOSE_UPDATE) {
+		if (options.verbose_update) {
 			std::cout << "--- Calculating update ---" << std::endl;
 		};
 
 		for (auto &ixn_param: _ixn_params) {
 			if (!ixn_param->get_is_val_fixed()) {
 				// Update
-				if (options.MODE_l2_reg) {
-					ixn_param->update_calculate_and_store(options.MODE_l2_reg,options.VAL_l2_lambda[ixn_param],options.VAL_l2_center[ixn_param]);
+				if (options.l2_reg) {
+					ixn_param->update_calculate_and_store(options.l2_reg,options.l2_lambda[ixn_param],options.l2_center[ixn_param]);
 				} else {
 					ixn_param->update_calculate_and_store();
 				};
 			};
 		};
 
-		if (options.VERBOSE_UPDATE) {
+		if (options.verbose_update) {
 			std::cout << "--- [Finished] Calculating update ---" << std::endl;
 			std::cout << std::endl;
 		};
@@ -311,7 +245,7 @@ namespace bmla {
 		Committ the update
 		********************/
 
-		if (options.VERBOSE_UPDATE) {
+		if (options.verbose_update) {
 			std::cout << "--- Committing update ---" << std::endl;
 		};
 
@@ -320,8 +254,8 @@ namespace bmla {
 			for (auto &ixn_param: _ixn_params) {
 				if (!ixn_param->get_is_val_fixed()) {
 					// Learning rate
-					if (options.MODE_var_learning_rates) {
-						dopt_use = options.VAL_var_learning_rates[ixn_param];
+					if (options.var_learning_rates) {
+						dopt_use = options.var_learning_rate_values[ixn_param];
 					};
 
 					ixn_param->update_committ_stored_sgd(dopt_use);
@@ -331,8 +265,8 @@ namespace bmla {
 			for (auto &ixn_param: _ixn_params) {
 				if (!ixn_param->get_is_val_fixed()) {
 					// Learning rate
-					if (options.MODE_var_learning_rates) {
-						dopt_use = options.VAL_var_learning_rates[ixn_param];
+					if (options.var_learning_rates) {
+						dopt_use = options.var_learning_rate_values[ixn_param];
 					};
 
 					ixn_param->update_committ_stored_nesterov(dopt_use,options.nesterov_acc);
@@ -342,8 +276,8 @@ namespace bmla {
 			for (auto &ixn_param: _ixn_params) {
 				if (!ixn_param->get_is_val_fixed()) {
 					// Learning rate
-					if (options.MODE_var_learning_rates) {
-						dopt_use = options.VAL_var_learning_rates[ixn_param];
+					if (options.var_learning_rates) {
+						dopt_use = options.var_learning_rate_values[ixn_param];
 					};
 
 					ixn_param->update_committ_stored_adam(dopt_use,i_opt_step,options.adam_beta_1,options.adam_beta_2,options.adam_eps);
@@ -351,14 +285,14 @@ namespace bmla {
 			};			
 		};
 
-		if (options.VERBOSE_UPDATE) {
+		if (options.verbose_update) {
 			std::cout << "--- [Finished] Committing update ---" << std::endl;
 			std::cout << std::endl;
 		};
 	};
 
 	// Many steps
-	void OptProblem::solve(int no_opt_steps, int batch_size, double dopt, int no_latt_sampling_steps, FNameColl &fname_coll, OptionsSolve options) {
+	void OptProblemBM::solve(int no_opt_steps, int batch_size, double dopt, int no_cd_sampling_steps, int no_mean_field_updates, FNameColl &fname_coll, OptionsSolveBM options) {
 
 		/*****
 		Init structures
@@ -378,7 +312,7 @@ namespace bmla {
 			std::cout << "------------------" << std::endl;
 
 			// Solve
-			solve_one_step(i_opt_step,batch_size,dopt,no_latt_sampling_steps,fname_coll,options);
+			solve_one_step(i_opt_step,batch_size,dopt,no_cd_sampling_steps,no_mean_field_updates,fname_coll,options);
 		};
 
 	};

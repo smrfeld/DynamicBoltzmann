@@ -1282,29 +1282,74 @@ namespace bmla {
 	Sample
 	********************/
 
-	void Lattice::sample_down_h_to_v(bool binary_visible, bool binary_hidden, bool parallel) {
-
-		// Go through hidden layers top to bottom (reverse)
-		auto rit_begin = _latt_h.rbegin();
-		if (rit_begin != _latt_h.rend()) {
-			for (auto layer=rit_begin->first-1; layer>0; layer--) {
-				sample_layer(layer, layer+1, binary_hidden, parallel);
-			};
-		};
-
-		// Visibles
+    // Sample an RBM down/up
+	void Lattice::sample_rbm_down_h_to_v(bool binary_visible, bool parallel) {
 		sample_layer(0, 1, binary_visible, parallel);
 	};
-	void Lattice::sample_up_v_to_h(bool binary_hidden, bool parallel) {
-		// Go through hidden layers bottom to top
-		auto rit_begin = _latt_h.rbegin();
-		if (rit_begin != _latt_h.rend()) {
-			for (auto layer=1; layer<=rit_begin->first; layer++) {
-				sample_layer(layer, layer-1, binary_hidden, parallel);
-			};
-		};
-	};
+	void Lattice::sample_rbm_up_v_to_h(bool binary_hidden, bool parallel) {
+        sample_layer(1, 0, binary_hidden, parallel);
+    };
 
+    // Sample BM down/up (NOT layer-wise)
+    void Lattice::sample_bm_down_h_to_v(bool binary_visible, bool binary_hidden, bool parallel) {
+        // Go through hidden layers top to bottom (reverse)
+        auto rit_begin = _latt_h.rbegin();
+        if (rit_begin != _latt_h.rend()) {
+            for (auto layer=rit_begin->first-1; layer>0; layer--) {
+                sample_layer(layer, binary_hidden, parallel);
+            };
+        };
+        
+        // Visibles
+        sample_layer(0, binary_visible, parallel);
+    };
+    void Lattice::sample_bm_up_v_to_h(bool binary_hidden, bool parallel) {
+        // Go through hidden layers bottom to top
+        auto rit_begin = _latt_h.rbegin();
+        if (rit_begin != _latt_h.rend()) {
+            for (auto layer=1; layer<=rit_begin->first; layer++) {
+                sample_layer(layer, binary_hidden, parallel);
+            };
+        };
+    };
+    
+    // Variational inference in a BM
+    void Lattice::sample_bm_variational_inference(bool parallel) {
+        // Go through all hidden layers
+        // Probabilistic mean field
+        if (parallel) {
+            
+            // Parallel
+            
+            for (auto &it: _latt_h) {
+                for (auto const &idx: _latt_h_idxs[it.first])
+                {
+                    it.second[idx]->prepare_sample(false); // false = probablistic
+                };
+                for (auto const &idx: _latt_h_idxs[it.first])
+                {
+                    it.second[idx]->committ_sample();
+                };
+            };
+        } else {
+            
+            // Not parallel
+            
+            for (auto &it: _latt_h) {
+                
+                // Shuffle
+                std::random_shuffle ( _latt_h_idxs[it.first].begin(), _latt_h_idxs[it.first].end() );
+                
+                for (auto const &idx: _latt_h_idxs[it.first])
+                {
+                    it.second[idx]->prepare_sample(false); // false = probablistic
+                    it.second[idx]->committ_sample();
+                };
+            };
+        };
+    };
+
+    // Sample a specific layer
 	void Lattice::sample_layer(int layer, bool binary, bool parallel) {
 
 		if (layer == 0) {

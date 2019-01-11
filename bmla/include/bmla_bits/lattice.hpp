@@ -238,9 +238,18 @@ namespace bmla {
 		Sample
 		********************/
 
-		void sample_down_h_to_v(bool binary_visible, bool binary_hidden, bool parallel);
-		void sample_up_v_to_h(bool binary_hidden, bool parallel);
-
+        // Sample an RBM down/up
+		void sample_rbm_down_h_to_v(bool binary_visible, bool parallel);
+		void sample_rbm_up_v_to_h(bool binary_hidden, bool parallel);
+        
+        // Sample BM down/up (NOT layer-wise)
+        void sample_bm_down_h_to_v(bool binary_visible, bool binary_hidden, bool parallel);
+        void sample_bm_up_v_to_h(bool binary_hidden, bool parallel);
+        
+        // Variational inference in a BM
+        void sample_bm_variational_inference(bool parallel);
+        
+        // Sample a specific layer
 		void sample_layer(int layer, bool binary, bool parallel);
 		void sample_layer(int layer, int given_layer, bool binary, bool parallel);
 

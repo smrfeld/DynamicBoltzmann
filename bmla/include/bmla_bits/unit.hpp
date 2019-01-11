@@ -19,7 +19,7 @@ namespace bmla {
 	class ConnVVV;
 	class ConnVH;
 	class ConnHH;
-        
+    
 	/****************************************
 	Class to hold a lattice site
 	***************************************/
@@ -84,7 +84,7 @@ namespace bmla {
 		Unit(Unit&& other);
 		Unit& operator=(const Unit& other);
 		Unit& operator=(Unit&& other);
-		~Unit();
+		virtual ~Unit(); // must be virtual!
 
 		/********************
 		Check setup

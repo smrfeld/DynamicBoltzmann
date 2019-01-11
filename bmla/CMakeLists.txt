@@ -8,12 +8,14 @@ project(bmla)
 
 add_library(bmla SHARED 
 	src/connections.cpp
+	src/fnames.cpp
 	src/general.cpp
 	src/ixn_dicts.cpp
 	src/ixn_param.cpp
 	src/lattice.cpp
 	src/moment.cpp
-	src/opt_problem.cpp
+	src/opt_problem_bm.cpp
+	src/opt_problem_rbm.cpp
 	src/species.cpp
 	src/unit.cpp
 )

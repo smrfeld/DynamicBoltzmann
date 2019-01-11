@@ -1,0 +1,2580 @@
+(* Content-type: application/vnd.wolfram.mathematica *)
+
+(*** Wolfram Notebook File ***)
+(* http://www.wolfram.com/nb *)
+
+(* CreatedBy='Mathematica 11.1' *)
+
+(*CacheID: 234*)
+(* Internal cache information:
+NotebookFileLineBreakTest
+NotebookFileLineBreakTest
+NotebookDataPosition[       158,          7]
+NotebookDataLength[    114505,       2572]
+NotebookOptionsPosition[     99998,       2275]
+NotebookOutlinePosition[    100356,       2291]
+CellTagsIndexPosition[    100313,       2288]
+WindowFrame->Normal*)
+
+(* Beginning of Notebook Content *)
+Notebook[{
+
+Cell[CellGroupData[{
+Cell[BoxData[
+ RowBox[{"SetDirectory", "[", 
+  RowBox[{"NotebookDirectory", "[", "]"}], "]"}]], "Input",
+ CellChangeTimes->{{3.7280884755629053`*^9, 3.7280884817676897`*^9}, {
+  3.731094210931175*^9, 
+  3.731094211625968*^9}},ExpressionUUID->"fe15f474-8d92-4c49-8e35-\
+63dca9b02398"],
+
+Cell[BoxData["\<\"/Users/oernst/Research/cnl/dynamic_boltzmann_cpp/hidden\"\>\
+"], "Output",
+ CellChangeTimes->{
+  3.7280884824540157`*^9, 3.7281483892751427`*^9, 3.728175823193226*^9, 
+   3.728239716927884*^9, 3.728329521598114*^9, 3.7283398120622272`*^9, 
+   3.728339857930257*^9, 3.7283399016037893`*^9, 3.7283412188987713`*^9, 
+   3.728498093869762*^9, 3.728669774783161*^9, 3.72869313657139*^9, 
+   3.729025247670638*^9, 3.729136228982748*^9, 3.729137327816669*^9, {
+   3.729141085241117*^9, 3.729141099772336*^9}, 3.729176047006879*^9, 
+   3.7291813035240917`*^9, 3.7291836999017887`*^9, 3.7300548944647493`*^9, 
+   3.730056984200912*^9, 3.730057492408037*^9, 3.7310939991128807`*^9, 
+   3.731094042151009*^9, 3.731094080485159*^9, 3.731094211848822*^9, 
+   3.731936490721923*^9},ExpressionUUID->"e50c188f-f5a7-4011-85f5-\
+48e2c2ed7373"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["Params", "Subchapter",
+ CellChangeTimes->{{3.728176395687132*^9, 
+  3.728176396319852*^9}},ExpressionUUID->"54f85450-2de6-430b-ab1a-\
+dbcfad854f30"],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"nOpt", "=", "100"}], ";"}]], "Input",
+ CellChangeTimes->{{3.7281763973118067`*^9, 3.7281764206270323`*^9}, {
+  3.728178751137642*^9, 3.728178751245344*^9}, {3.7281792067682333`*^9, 
+  3.728179207372221*^9}, {3.728191034916173*^9, 3.728191035128735*^9}, {
+  3.728241444647897*^9, 3.728241445006426*^9}, {3.72824167838089*^9, 
+  3.7282416793559732`*^9}, {3.728264902229471*^9, 3.728264902774467*^9}, {
+  3.728329682438727*^9, 3.7283296830513983`*^9}, {3.728334827997181*^9, 
+  3.72833482879556*^9}, {3.728708752131447*^9, 3.728708752271871*^9}, {
+  3.7291375194706383`*^9, 
+  3.7291375196569357`*^9}},ExpressionUUID->"090bc2a9-911d-44ca-ad07-\
+3d07675ee28c"],
+
+Cell[BoxData[{
+ RowBox[{
+  RowBox[{"tmax", "=", "1.0"}], ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"dt", "=", "0.01"}], ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"tGrid", "=", 
+   RowBox[{"Table", "[", 
+    RowBox[{
+     RowBox[{"i", "*", "dt"}], ",", 
+     RowBox[{"{", 
+      RowBox[{"i", ",", "0", ",", 
+       RowBox[{"IntegerPart", "[", 
+        RowBox[{"tmax", "/", "dt"}], "]"}]}], "}"}]}], "]"}]}], 
+  ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"nt", "=", 
+   RowBox[{"Length", "[", "tGrid", "]"}]}], ";"}]}], "Input",
+ CellChangeTimes->{{3.728339644707025*^9, 3.7283396749426517`*^9}, {
+  3.728670280049933*^9, 
+  3.72867028493895*^9}},ExpressionUUID->"d768648d-e256-4083-952d-\
+6981fa63f99b"],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"boxLength", "=", "1000"}], ";"}]], "Input",
+ CellChangeTimes->{{3.728263841383081*^9, 3.728263844821638*^9}, {
+  3.728264032330525*^9, 3.728264036134671*^9}, {3.728329322688518*^9, 
+  3.728329322768221*^9}, {3.728329353011117*^9, 3.728329353098922*^9}, {
+  3.728341226928891*^9, 3.728341227126988*^9}, {3.730054901309072*^9, 
+  3.730054901469165*^9}},ExpressionUUID->"1e31e81f-4dc0-44e9-8e10-\
+bc9ed27b0959"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["Nu trajectories (2D)", "Subchapter",
+ CellChangeTimes->{{3.728329561769455*^9, 3.72832956540805*^9}, {
+  3.728708876589959*^9, 
+  3.728708877791744*^9}},ExpressionUUID->"5f18c93b-1cd6-4566-af1b-\
+92d62bf35ace"],
+
+Cell[BoxData[
+ RowBox[{"Manipulate", "[", "\[IndentingNewLine]", 
+  RowBox[{
+   RowBox[{
+    RowBox[{"nuhA", "=", 
+     RowBox[{"Flatten", "[", 
+      RowBox[{"Import", "[", 
+       RowBox[{
+        RowBox[{"\"\<bimol_annihilation_hidden_data/ixn_params/hA_\>\"", "<>", 
+         RowBox[{"IntegerString", "[", 
+          RowBox[{"iOptStep", ",", "10", ",", "4"}], "]"}], "<>", 
+         "\"\<.txt\>\""}], ",", "\"\<Table\>\""}], "]"}], "]"}]}], ";", 
+    "\[IndentingNewLine]", 
+    RowBox[{"nujAA", "=", 
+     RowBox[{"Flatten", "[", 
+      RowBox[{"Import", "[", 
+       RowBox[{
+        RowBox[{"\"\<bimol_annihilation_hidden_data/ixn_params/wA_\>\"", "<>", 
+         RowBox[{"IntegerString", "[", 
+          RowBox[{"iOptStep", ",", "10", ",", "4"}], "]"}], "<>", 
+         "\"\<.txt\>\""}], ",", "\"\<Table\>\""}], "]"}], "]"}]}], ";", "\n", 
+    
+    RowBox[{"Row", "[", 
+     RowBox[{"{", 
+      RowBox[{
+       RowBox[{"ListLinePlot", "[", 
+        RowBox[{"nuhA", ",", 
+         RowBox[{"ImageSize", "\[Rule]", "300"}], ",", 
+         RowBox[{"PlotRange", "\[Rule]", 
+          RowBox[{"{", 
+           RowBox[{
+            RowBox[{"-", "4"}], ",", 
+            RowBox[{"-", "3"}]}], "}"}]}]}], "]"}], ",", 
+       RowBox[{"ListLinePlot", "[", 
+        RowBox[{"nujAA", ",", 
+         RowBox[{"ImageSize", "\[Rule]", "300"}], ",", 
+         RowBox[{"PlotRange", "\[Rule]", 
+          RowBox[{"{", 
+           RowBox[{
+            RowBox[{"-", "7"}], ",", 
+            RowBox[{"-", "4"}]}], "}"}]}]}], "]"}]}], "}"}], "]"}]}], 
+   "\[IndentingNewLine]", ",", 
+   RowBox[{"{", 
+    RowBox[{"iOptStep", ",", "0", ",", 
+     RowBox[{"nOpt", "-", "1"}], ",", "1"}], "}"}]}], "]"}]], "Input",
+ CellChangeTimes->{{3.7287088180607967`*^9, 3.7287088224021482`*^9}, {
+   3.7290252599491997`*^9, 3.7290252757582903`*^9}, {3.729025348768134*^9, 
+   3.729025351355835*^9}, 3.729183695457242*^9, {3.7300550809813557`*^9, 
+   3.730055085796021*^9}, {3.730055120618311*^9, 3.7300551571198874`*^9}, {
+   3.730055322010426*^9, 3.730055338920436*^9}, {3.731094063540794*^9, 
+   3.731094112318541*^9}},ExpressionUUID->"54c23e55-4798-4490-bb0b-\
+cca5039058d4"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["Moments", "Subchapter",
+ CellChangeTimes->{{3.728334902736527*^9, 
+  3.728334903439199*^9}},ExpressionUUID->"b6140646-ff82-4757-b657-\
+60d120a0029b"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"Manipulate", "[", "\[IndentingNewLine]", 
+  RowBox[{
+   RowBox[{
+    RowBox[{"momshA", "=", 
+     RowBox[{"Import", "[", 
+      RowBox[{
+       RowBox[{"\"\<bimol_annihilation_hidden_data/moments/hA_\>\"", "<>", 
+        RowBox[{"IntegerString", "[", 
+         RowBox[{"iOptStep", ",", "10", ",", "4"}], "]"}], "<>", 
+        "\"\<.txt\>\""}], ",", "\"\<Table\>\""}], "]"}]}], ";", 
+    "\[IndentingNewLine]", 
+    RowBox[{"momsjAA", "=", 
+     RowBox[{"Import", "[", 
+      RowBox[{
+       RowBox[{"\"\<bimol_annihilation_hidden_data/moments/wA_\>\"", "<>", 
+        RowBox[{"IntegerString", "[", 
+         RowBox[{"iOptStep", ",", "10", ",", "4"}], "]"}], "<>", 
+        "\"\<.txt\>\""}], ",", "\"\<Table\>\""}], "]"}]}], ";", 
+    "\[IndentingNewLine]", 
+    RowBox[{"Row", "[", 
+     RowBox[{"{", "\[IndentingNewLine]", 
+      RowBox[{
+       RowBox[{"ListLinePlot", "[", 
+        RowBox[{
+         RowBox[{"Transpose", "[", "momshA", "]"}], ",", 
+         RowBox[{"ImageSize", "\[Rule]", "300"}], ",", 
+         RowBox[{"PlotRange", "\[Rule]", 
+          RowBox[{"{", 
+           RowBox[{"0", ",", "120"}], "}"}]}]}], "]"}], ",", 
+       "\[IndentingNewLine]", 
+       RowBox[{"ListLinePlot", "[", 
+        RowBox[{
+         RowBox[{"Transpose", "[", "momsjAA", "]"}], ",", 
+         RowBox[{"ImageSize", "\[Rule]", "300"}], ",", 
+         RowBox[{"PlotRange", "\[Rule]", 
+          RowBox[{"{", 
+           RowBox[{"0", ",", "1"}], "}"}]}]}], "]"}]}], "\[IndentingNewLine]",
+       "}"}], "]"}]}], "\[IndentingNewLine]", ",", 
+   RowBox[{"{", 
+    RowBox[{"iOptStep", ",", "0", ",", 
+     RowBox[{"nOpt", "-", "1"}], ",", "1"}], "}"}]}], "]"}]], "Input",
+ CellChangeTimes->{{3.728338789289468*^9, 3.7283388566045*^9}, 
+   3.728339090027273*^9, {3.728669835925378*^9, 3.7286698393841343`*^9}, {
+   3.7286700686029253`*^9, 3.7286700797943163`*^9}, {3.72867241554344*^9, 
+   3.7286724572525063`*^9}, {3.7286842427643223`*^9, 3.728684248458824*^9}, {
+   3.7286933600598288`*^9, 3.728693380375971*^9}, {3.728702868089018*^9, 
+   3.728702904423183*^9}, {3.729025378001033*^9, 3.729025520828566*^9}, {
+   3.7291363736532373`*^9, 3.729136374578835*^9}, {3.729137404381028*^9, 
+   3.7291374263004417`*^9}, {3.729183695465641*^9, 3.7291836954844437`*^9}, {
+   3.7300551994933233`*^9, 3.7300552807418203`*^9}, {3.731094216317135*^9, 
+   3.731094223388324*^9}, {3.731936524453505*^9, 
+   3.731936536146961*^9}},ExpressionUUID->"b95371fa-58eb-4b44-91ad-\
+2e7876e9e054"],
+
+Cell[BoxData[
+ TagBox[
+  StyleBox[
+   DynamicModuleBox[{$CellContext`iOptStep$$ = 11, Typeset`show$$ = True, 
+    Typeset`bookmarkList$$ = {}, Typeset`bookmarkMode$$ = "Menu", 
+    Typeset`animator$$, Typeset`animvar$$ = 1, Typeset`name$$ = 
+    "\"untitled\"", Typeset`specs$$ = {{
+      Hold[$CellContext`iOptStep$$], 0, 99, 1}}, Typeset`size$$ = {
+    600., {95., 99.}}, Typeset`update$$ = 0, Typeset`initDone$$, 
+    Typeset`skipInitDone$$ = True, $CellContext`iOptStep$8780$$ = 0}, 
+    DynamicBox[Manipulate`ManipulateBoxes[
+     1, StandardForm, "Variables" :> {$CellContext`iOptStep$$ = 0}, 
+      "ControllerVariables" :> {
+        Hold[$CellContext`iOptStep$$, $CellContext`iOptStep$8780$$, 0]}, 
+      "OtherVariables" :> {
+       Typeset`show$$, Typeset`bookmarkList$$, Typeset`bookmarkMode$$, 
+        Typeset`animator$$, Typeset`animvar$$, Typeset`name$$, 
+        Typeset`specs$$, Typeset`size$$, Typeset`update$$, Typeset`initDone$$,
+         Typeset`skipInitDone$$}, "Body" :> ($CellContext`momshA = Import[
+          StringJoin["bimol_annihilation_hidden_data/moments/hA_", 
+           IntegerString[$CellContext`iOptStep$$, 10, 4], ".txt"], 
+          "Table"]; $CellContext`momsjAA = Import[
+          StringJoin["bimol_annihilation_hidden_data/moments/wA_", 
+           IntegerString[$CellContext`iOptStep$$, 10, 4], ".txt"], "Table"]; 
+       Row[{
+          ListLinePlot[
+           Transpose[$CellContext`momshA], ImageSize -> 300, 
+           PlotRange -> {0, 120}], 
+          ListLinePlot[
+           Transpose[$CellContext`momsjAA], ImageSize -> 300, 
+           PlotRange -> {0, 1}]}]), 
+      "Specifications" :> {{$CellContext`iOptStep$$, 0, 99, 1}}, 
+      "Options" :> {}, "DefaultOptions" :> {}],
+     ImageSizeCache->{645., {153., 159.}},
+     SingleEvaluation->True],
+    Deinitialization:>None,
+    DynamicModuleValues:>{},
+    SynchronousInitialization->True,
+    UndoTrackedVariables:>{Typeset`show$$, Typeset`bookmarkMode$$},
+    UnsavedVariables:>{Typeset`initDone$$},
+    UntrackedVariables:>{Typeset`size$$}], "Manipulate",
+   Deployed->True,
+   StripOnInput->False],
+  Manipulate`InterpretManipulate[1]]], "Output",
+ CellChangeTimes->{{3.731094220207762*^9, 3.7310942238869047`*^9}, {
+  3.731936504698122*^9, 
+  3.731936536644261*^9}},ExpressionUUID->"9b0341b7-dc84-41f9-be15-\
+778648b4b249"]
+}, Open  ]]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["Basis funcs (2D)", "Subchapter",
+ CellChangeTimes->{{3.728338880748372*^9, 3.728338883722877*^9}, {
+  3.728688759663946*^9, 3.728688764900566*^9}, {3.728708884414193*^9, 
+  3.728708903630487*^9}},ExpressionUUID->"afdc32ac-d1b7-4ea2-af7f-\
+9221a1785725"],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"gridhA", "=", 
+   RowBox[{"Import", "[", 
+    RowBox[{
+    "\"\<bimol_annihilation_data/grid_F_hA.txt\>\"", ",", "\"\<Table\>\""}], 
+    "]"}]}], ";"}]], "Input",
+ CellChangeTimes->{{3.728669965710442*^9, 3.7286699797357883`*^9}, {
+  3.72868426635526*^9, 3.728684280895852*^9}, {3.72870297461936*^9, 
+  3.728702988402013*^9}, {3.729183695493835*^9, 3.729183695496876*^9}, {
+  3.730059388593749*^9, 
+  3.730059388734103*^9}},ExpressionUUID->"3803f1ec-307c-4e82-ac33-\
+593f1060ea83"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"Manipulate", "[", "\[IndentingNewLine]", 
+  RowBox[{
+   RowBox[{
+    RowBox[{"fhA", "=", 
+     RowBox[{"Flatten", "[", 
+      RowBox[{"Import", "[", 
+       RowBox[{
+        RowBox[{"\"\<bimol_annihilation_data/F/F_hA_\>\"", "<>", 
+         RowBox[{"IntegerString", "[", 
+          RowBox[{"iOptStep", ",", "10", ",", "4"}], "]"}], "<>", 
+         "\"\<.txt\>\""}], ",", "\"\<Table\>\""}], "]"}], "]"}]}], ";", 
+    "\[IndentingNewLine]", 
+    RowBox[{"fhAT", "=", 
+     RowBox[{"Transpose", "[", 
+      RowBox[{"{", 
+       RowBox[{
+        RowBox[{"gridhA", "[", 
+         RowBox[{"[", 
+          RowBox[{";;", ",", "1"}], "]"}], "]"}], ",", 
+        RowBox[{"gridhA", "[", 
+         RowBox[{"[", 
+          RowBox[{";;", ",", "2"}], "]"}], "]"}], ",", "fhA"}], "}"}], 
+      "]"}]}], ";", "\[IndentingNewLine]", 
+    RowBox[{"nushA", "=", 
+     RowBox[{"Flatten", "[", 
+      RowBox[{"Import", "[", 
+       RowBox[{
+        RowBox[{"\"\<bimol_annihilation_data/ixn_params/hA_\>\"", "<>", 
+         RowBox[{"IntegerString", "[", 
+          RowBox[{"iOptStep", ",", "10", ",", "4"}], "]"}], "<>", 
+         "\"\<.txt\>\""}], ",", "\"\<Table\>\""}], "]"}], "]"}]}], ";", 
+    "\[IndentingNewLine]", 
+    RowBox[{"nusjAA", "=", 
+     RowBox[{"Flatten", "[", 
+      RowBox[{"Import", "[", 
+       RowBox[{
+        RowBox[{"\"\<bimol_annihilation_data/ixn_params/jAA_\>\"", "<>", 
+         RowBox[{"IntegerString", "[", 
+          RowBox[{"iOptStep", ",", "10", ",", "4"}], "]"}], "<>", 
+         "\"\<.txt\>\""}], ",", "\"\<Table\>\""}], "]"}], "]"}]}], ";", 
+    "\[IndentingNewLine]", 
+    RowBox[{"Show", "[", 
+     RowBox[{
+      RowBox[{"ListContourPlot", "[", 
+       RowBox[{"fhAT", ",", 
+        RowBox[{"PlotRange", "\[Rule]", 
+         RowBox[{"{", 
+          RowBox[{
+           RowBox[{"-", "0.3"}], ",", "0.3"}], "}"}]}], ",", 
+        RowBox[{"ColorFunctionScaling", "\[Rule]", "False"}], ",", 
+        RowBox[{"ColorFunction", "\[Rule]", 
+         RowBox[{"ColorData", "[", 
+          RowBox[{"{", 
+           RowBox[{"\"\<DarkColorDensityGradient\>\"", ",", 
+            RowBox[{"{", 
+             RowBox[{
+              RowBox[{"-", "0.3"}], ",", "0.3"}], "}"}]}], "}"}], "]"}]}], 
+        ",", 
+        RowBox[{"PlotLegends", "\[Rule]", "Automatic"}]}], "]"}], ",", 
+      RowBox[{"ListLinePlot", "[", 
+       RowBox[{
+        RowBox[{"Transpose", "[", 
+         RowBox[{"{", 
+          RowBox[{"nushA", ",", "nusjAA"}], "}"}], "]"}], ",", 
+        RowBox[{"PlotStyle", "\[Rule]", "Black"}]}], "]"}]}], "]"}]}], 
+   "\[IndentingNewLine]", ",", 
+   RowBox[{"{", 
+    RowBox[{"iOptStep", ",", "0", ",", 
+     RowBox[{"nOpt", "-", "1"}], ",", "1"}], "}"}]}], "]"}]], "Input",
+ CellChangeTimes->{{3.728338889149661*^9, 3.728338975119122*^9}, {
+  3.728339061641361*^9, 3.728339063155252*^9}, {3.728669888609001*^9, 
+  3.728669916465744*^9}, {3.728670001463066*^9, 3.7286700192547083`*^9}, {
+  3.728684292179453*^9, 3.728684382461315*^9}, {3.72870299137684*^9, 
+  3.728703061205483*^9}, {3.728704452004519*^9, 3.728704469226067*^9}, {
+  3.7287048016915207`*^9, 3.728704833380138*^9}, {3.7287057098283157`*^9, 
+  3.728705748512385*^9}, {3.7287089187263536`*^9, 3.728708924895946*^9}, {
+  3.729025567923532*^9, 3.729025572627437*^9}, {3.7291387698188877`*^9, 
+  3.729138968705545*^9}, {3.7291393657783413`*^9, 3.729139461545807*^9}, {
+  3.7291836955200043`*^9, 3.7291836955332212`*^9}, {3.730059398706696*^9, 
+  3.730059415841909*^9}, {3.7300594629161787`*^9, 3.7300595765130873`*^9}, {
+  3.730059803550303*^9, 
+  3.730059812914336*^9}},ExpressionUUID->"6101b216-feea-4b84-997e-\
+0c263769eb99"],
+
+Cell[BoxData[
+ TagBox[
+  StyleBox[
+   DynamicModuleBox[{$CellContext`iOptStep$$ = 20, Typeset`show$$ = True, 
+    Typeset`bookmarkList$$ = {}, Typeset`bookmarkMode$$ = "Menu", 
+    Typeset`animator$$, Typeset`animvar$$ = 1, Typeset`name$$ = 
+    "\"untitled\"", Typeset`specs$$ = {{
+      Hold[$CellContext`iOptStep$$], 0, 99, 1}}, Typeset`size$$ = {
+    788.2000007629395, {66.54893493652344, 12.791915893554688`}}, 
+    Typeset`update$$ = 0, Typeset`initDone$$, Typeset`skipInitDone$$ = 
+    True, $CellContext`iOptStep$203594$$ = 0}, 
+    DynamicBox[Manipulate`ManipulateBoxes[
+     1, StandardForm, "Variables" :> {$CellContext`iOptStep$$ = 0}, 
+      "ControllerVariables" :> {
+        Hold[$CellContext`iOptStep$$, $CellContext`iOptStep$203594$$, 0]}, 
+      "OtherVariables" :> {
+       Typeset`show$$, Typeset`bookmarkList$$, Typeset`bookmarkMode$$, 
+        Typeset`animator$$, Typeset`animvar$$, Typeset`name$$, 
+        Typeset`specs$$, Typeset`size$$, Typeset`update$$, Typeset`initDone$$,
+         Typeset`skipInitDone$$}, "Body" :> ($CellContext`fhA = Flatten[
+          Import[
+           StringJoin["bimol_annihilation_data/F/F_hA_", 
+            IntegerString[$CellContext`iOptStep$$, 10, 4], ".txt"], 
+           "Table"]]; $CellContext`fhAT = Transpose[{
+           Part[$CellContext`gridhA, 
+            Span[1, All], 1], 
+           Part[$CellContext`gridhA, 
+            Span[1, All], 2], $CellContext`fhA}]; $CellContext`nushA = Flatten[
+          Import[
+           StringJoin["bimol_annihilation_data/ixn_params/hA_", 
+            IntegerString[$CellContext`iOptStep$$, 10, 4], ".txt"], 
+           "Table"]]; $CellContext`nusjAA = Flatten[
+          Import[
+           StringJoin["bimol_annihilation_data/ixn_params/jAA_", 
+            IntegerString[$CellContext`iOptStep$$, 10, 4], ".txt"], "Table"]]; 
+       Show[
+         ListContourPlot[$CellContext`fhAT, PlotRange -> {-0.3, 0.3}, 
+          ColorFunctionScaling -> False, ColorFunction -> 
+          ColorData[{"DarkColorDensityGradient", {-0.3, 0.3}}], PlotLegends -> 
+          Automatic], 
+         ListLinePlot[
+          Transpose[{$CellContext`nushA, $CellContext`nusjAA}], PlotStyle -> 
+          Black]]), "Specifications" :> {{$CellContext`iOptStep$$, 0, 99, 1}},
+       "Options" :> {}, "DefaultOptions" :> {}],
+     ImageSizeCache->{834., {83., 89.}},
+     SingleEvaluation->True],
+    Deinitialization:>None,
+    DynamicModuleValues:>{},
+    SynchronousInitialization->True,
+    UndoTrackedVariables:>{Typeset`show$$, Typeset`bookmarkMode$$},
+    UnsavedVariables:>{Typeset`initDone$$},
+    UntrackedVariables:>{Typeset`size$$}], "Manipulate",
+   Deployed->True,
+   StripOnInput->False],
+  Manipulate`InterpretManipulate[1]]], "Output",
+ CellChangeTimes->{
+  3.7300594711628323`*^9, {3.730059542130761*^9, 3.7300595770854397`*^9}, {
+   3.730059805401555*^9, 
+   3.730059813346883*^9}},ExpressionUUID->"27d56530-a666-47b3-88f4-\
+27f04f6202e7"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "Import","nffil",
+   "\"File not found during \\!\\(\\*RowBox[{\\\"Import\\\"}]\\).\"",2,560,20,
+   32650053152343707962,"Local"},
+  "MessageTemplate"]], "Message", "MSG",
+ CellChangeTimes->{
+  3.731093996135034*^9},ExpressionUUID->"edf3d482-89c7-41f7-9fb6-\
+0db3b73bea33"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "Flatten","normal",
+   "\"Nonatomic expression expected at position \
+\\!\\(\\*RowBox[{\\\"1\\\"}]\\) in \\!\\(\\*RowBox[{\\\"Flatten\\\", \
+\\\"[\\\", \\\"$Failed\\\", \\\"]\\\"}]\\).\"",2,560,21,32650053152343707962,
+   "Local"},
+  "MessageTemplate"]], "Message", "MSG",
+ CellChangeTimes->{
+  3.731093996167927*^9},ExpressionUUID->"412d90e6-0e9f-49b8-ba37-\
+c4a0266c948e"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "Symbol","argx",
+   "\"\\!\\(\\*RowBox[{\\\"Symbol\\\"}]\\) called with \\!\\(\\*RowBox[{\\\"0\
+\\\"}]\\) arguments; 1 argument is expected.\"",2,560,22,32650053152343707962,
+   "Local"},
+  "MessageTemplate"]], "Message", "MSG",
+ CellChangeTimes->{
+  3.731093996184717*^9},ExpressionUUID->"a41cc0f4-393c-404e-81fd-\
+6e7307fb0390"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "Symbol","argx",
+   "\"\\!\\(\\*RowBox[{\\\"Symbol\\\"}]\\) called with \\!\\(\\*RowBox[{\\\"0\
+\\\"}]\\) arguments; 1 argument is expected.\"",2,560,23,32650053152343707962,
+   "Local"},
+  "MessageTemplate"]], "Message", "MSG",
+ CellChangeTimes->{
+  3.7310939962057667`*^9},ExpressionUUID->"0e27a0b6-2c56-4de2-8f98-\
+1b0c33bbacf8"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "Transpose","nmtx",
+   "\"The first two levels of \\!\\(\\*RowBox[{\\\"{\\\", \
+RowBox[{RowBox[{\\\"Symbol\\\", \\\"[\\\", \\\"]\\\"}], \\\",\\\", RowBox[{\\\
+\"Symbol\\\", \\\"[\\\", \\\"]\\\"}], \\\",\\\", RowBox[{\\\"Flatten\\\", \
+\\\"[\\\", \\\"$Failed\\\", \\\"]\\\"}]}], \\\"}\\\"}]\\) cannot be \
+transposed.\"",2,560,24,32650053152343707962,"Local"},
+  "MessageTemplate"]], "Message", "MSG",
+ CellChangeTimes->{
+  3.731093996228196*^9},ExpressionUUID->"f412386f-2398-4f32-873f-\
+125f3d168fbb"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "Import","nffil",
+   "\"File not found during \\!\\(\\*RowBox[{\\\"Import\\\"}]\\).\"",2,560,25,
+   32650053152343707962,"Local"},
+  "MessageTemplate"]], "Message", "MSG",
+ CellChangeTimes->{
+  3.731093996251485*^9},ExpressionUUID->"379edfd9-5fd1-451d-9df6-\
+3ea5d27c800c"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "Flatten","normal",
+   "\"Nonatomic expression expected at position \
+\\!\\(\\*RowBox[{\\\"1\\\"}]\\) in \\!\\(\\*RowBox[{\\\"Flatten\\\", \
+\\\"[\\\", \\\"$Failed\\\", \\\"]\\\"}]\\).\"",2,560,26,32650053152343707962,
+   "Local"},
+  "MessageTemplate"]], "Message", "MSG",
+ CellChangeTimes->{
+  3.731093996315744*^9},ExpressionUUID->"34fc9107-af72-4140-b6e3-\
+878ce8ab22a3"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "Import","nffil",
+   "\"File not found during \\!\\(\\*RowBox[{\\\"Import\\\"}]\\).\"",2,560,27,
+   32650053152343707962,"Local"},
+  "MessageTemplate"]], "Message", "MSG",
+ CellChangeTimes->{
+  3.731093996371612*^9},ExpressionUUID->"bbf72d75-5e33-406f-8c19-\
+0a1bea6c46b9"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "General","stop",
+   "\"Further output of \\!\\(\\*StyleBox[RowBox[{\\\"Import\\\", \\\"::\\\", \
+\\\"nffil\\\"}], \\\"MessageName\\\"]\\) will be suppressed during this \
+calculation.\"",2,560,28,32650053152343707962,"Local"},
+  "MessageTemplate"]], "Message", "MSG",
+ CellChangeTimes->{
+  3.731093996424554*^9},ExpressionUUID->"eea518e2-74ad-43fe-8e57-\
+864c993fcfb7"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "Flatten","normal",
+   "\"Nonatomic expression expected at position \
+\\!\\(\\*RowBox[{\\\"1\\\"}]\\) in \\!\\(\\*RowBox[{\\\"Flatten\\\", \
+\\\"[\\\", \\\"$Failed\\\", \\\"]\\\"}]\\).\"",2,560,29,32650053152343707962,
+   "Local"},
+  "MessageTemplate"]], "Message", "MSG",
+ CellChangeTimes->{
+  3.7310939964788017`*^9},ExpressionUUID->"d54659ad-d1a6-476e-b5fd-\
+c497e1287b4c"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "General","stop",
+   "\"Further output of \\!\\(\\*StyleBox[RowBox[{\\\"Flatten\\\", \
+\\\"::\\\", \\\"normal\\\"}], \\\"MessageName\\\"]\\) will be suppressed \
+during this calculation.\"",2,560,30,32650053152343707962,"Local"},
+  "MessageTemplate"]], "Message", "MSG",
+ CellChangeTimes->{
+  3.731093996579661*^9},ExpressionUUID->"cd7811fc-06e0-44dd-8145-\
+c39d5caf3459"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "ListContourPlot","arrayerr",
+   "\"\\!\\(\\*RowBox[{\\\"Transpose\\\", \\\"[\\\", RowBox[{\\\"{\\\", \
+RowBox[{RowBox[{\\\"Symbol\\\", \\\"[\\\", \\\"]\\\"}], \\\",\\\", RowBox[{\\\
+\"Symbol\\\", \\\"[\\\", \\\"]\\\"}], \\\",\\\", RowBox[{\\\"Flatten\\\", \
+\\\"[\\\", \\\"$Failed\\\", \\\"]\\\"}]}], \\\"}\\\"}], \\\"]\\\"}]\\) must \
+be a valid array.\"",2,560,31,32650053152343707962,"Local"},
+  "MessageTemplate"]], "Message", "MSG",
+ CellChangeTimes->{
+  3.731093996643978*^9},ExpressionUUID->"c54c163d-40ae-4bbb-88ff-\
+e6c3fda3c92e"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "Transpose","nmtx",
+   "\"The first two levels of \\!\\(\\*RowBox[{\\\"{\\\", \
+RowBox[{RowBox[{\\\"Flatten\\\", \\\"[\\\", \\\"$Failed\\\", \\\"]\\\"}], \
+\\\",\\\", RowBox[{\\\"Flatten\\\", \\\"[\\\", \\\"$Failed\\\", \
+\\\"]\\\"}]}], \\\"}\\\"}]\\) cannot be transposed.\"",2,560,32,
+   32650053152343707962,"Local"},
+  "MessageTemplate"]], "Message", "MSG",
+ CellChangeTimes->{
+  3.731093996716412*^9},ExpressionUUID->"c254ff30-8a7b-42dd-89d6-\
+701e0f462b3d"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "ListLinePlot","lpn",
+   "\"\\!\\(\\*RowBox[{\\\"Transpose\\\", \\\"[\\\", RowBox[{\\\"{\\\", \
+RowBox[{RowBox[{\\\"Flatten\\\", \\\"[\\\", \\\"$Failed\\\", \\\"]\\\"}], \
+\\\",\\\", RowBox[{\\\"Flatten\\\", \\\"[\\\", \\\"$Failed\\\", \
+\\\"]\\\"}]}], \\\"}\\\"}], \\\"]\\\"}]\\) is not a list of numbers or pairs \
+of numbers.\"",2,560,33,32650053152343707962,"Local"},
+  "MessageTemplate"]], "Message", "MSG",
+ CellChangeTimes->{
+  3.731093996889308*^9},ExpressionUUID->"fbe37144-e534-4575-b768-\
+1f1706d6bd6d"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "ListLinePlot","lpn",
+   "\"\\!\\(\\*RowBox[{\\\"Transpose\\\", \\\"[\\\", RowBox[{\\\"{\\\", \
+RowBox[{RowBox[{\\\"Flatten\\\", \\\"[\\\", \\\"$Failed\\\", \\\"]\\\"}], \
+\\\",\\\", RowBox[{\\\"Flatten\\\", \\\"[\\\", \\\"$Failed\\\", \
+\\\"]\\\"}]}], \\\"}\\\"}], \\\"]\\\"}]\\) is not a list of numbers or pairs \
+of numbers.\"",2,560,34,32650053152343707962,"Local"},
+  "MessageTemplate"]], "Message", "MSG",
+ CellChangeTimes->{
+  3.731093997043955*^9},ExpressionUUID->"4f5f85ad-16ac-402f-9ea0-\
+65fd41a389e8"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "Show","gcomb",
+   "\"Could not combine the graphics objects in \
+\\!\\(\\*RowBox[{\\\"Show\\\", \\\"[\\\", RowBox[{RowBox[{\\\"ListContourPlot\
+\\\", \\\"[\\\", RowBox[{RowBox[{\\\"Transpose\\\", \\\"[\\\", \
+RowBox[{\\\"{\\\", RowBox[{RowBox[{\\\"Symbol\\\", \\\"[\\\", \\\"]\\\"}], \\\
+\",\\\", RowBox[{\\\"Symbol\\\", \\\"[\\\", \\\"]\\\"}], \\\",\\\", \
+RowBox[{\\\"Flatten\\\", \\\"[\\\", \\\"$Failed\\\", \\\"]\\\"}]}], \
+\\\"}\\\"}], \\\"]\\\"}], \\\",\\\", RowBox[{\\\"PlotRange\\\", \\\"\[Rule]\\\
+\", RowBox[{\\\"{\\\", RowBox[{RowBox[{\\\"-\\\", \\\"0.3`\\\"}], \\\",\\\", \
+\\\"0.3`\\\"}], \\\"}\\\"}]}], \\\",\\\", \
+RowBox[{\\\"ColorFunctionScaling\\\", \\\"\[Rule]\\\", \\\"False\\\"}], \\\",\
+\\\", RowBox[{\\\"ColorFunction\\\", \\\"\[Rule]\\\", \
+RowBox[{\\\"ColorDataFunction\\\", \\\"[\\\", \
+RowBox[{\\\"\\\\\\\"DarkColorDensityGradient\\\\\\\"\\\", \\\",\\\", \\\"\\\\\
+\\\"ThemeGradients\\\\\\\"\\\", \\\",\\\", RowBox[{\\\"{\\\", \
+RowBox[{RowBox[{\\\"-\\\", \\\"0.3`\\\"}], \\\",\\\", \\\"0.3`\\\"}], \\\"}\\\
+\"}], \\\",\\\", RowBox[{RowBox[{\\\"Blend\\\", \\\"[\\\", RowBox[{RowBox[{\\\
+\"{\\\", RowBox[{RowBox[{\\\"{\\\", RowBox[{\\\"\[LeftSkeleton]\\\", \
+\\\"2\\\", \\\"\[RightSkeleton]\\\"}], \\\"}\\\"}], \\\",\\\", \
+RowBox[{\\\"{\\\", RowBox[{\\\"\[LeftSkeleton]\\\", \\\"2\\\", \\\"\
+\[RightSkeleton]\\\"}], \\\"}\\\"}], \\\",\\\", RowBox[{\\\"{\\\", RowBox[{\\\
+\"\[LeftSkeleton]\\\", \\\"2\\\", \\\"\[RightSkeleton]\\\"}], \\\"}\\\"}]}], \
+\\\"}\\\"}], \\\",\\\", \\\"#1\\\"}], \\\"]\\\"}], \\\"&\\\"}]}], \
+\\\"]\\\"}]}], \\\",\\\", RowBox[{\\\"PlotLegends\\\", \\\"\[Rule]\\\", \
+\\\"Automatic\\\"}]}], \\\"]\\\"}], \\\",\\\", RowBox[{\\\"ListLinePlot\\\", \
+\\\"[\\\", RowBox[{RowBox[{\\\"Transpose\\\", \\\"[\\\", RowBox[{\\\"{\\\", \
+RowBox[{RowBox[{\\\"Flatten\\\", \\\"[\\\", \\\"$Failed\\\", \\\"]\\\"}], \
+\\\",\\\", RowBox[{\\\"Flatten\\\", \\\"[\\\", \\\"$Failed\\\", \
+\\\"]\\\"}]}], \\\"}\\\"}], \\\"]\\\"}], \\\",\\\", \
+RowBox[{\\\"PlotStyle\\\", \\\"\[Rule]\\\", \
+InterpretationBox[ButtonBox[TooltipBox[GraphicsBox[List[List[GrayLevel[0], \
+RectangleBox[List[0, 0]]], List[GrayLevel[0], RectangleBox[List[1, -1]]], \
+List[GrayLevel[0], RectangleBox[List[0, -1], List[2, 1]]]], Rule[AspectRatio, \
+1], Rule[Frame, True], Rule[FrameStyle, GrayLevel[0.`]], Rule[FrameTicks, \
+None], Rule[PlotRangePadding, None], Rule[ImageSize, Dynamic[List[Automatic, \
+Times[1.35`, CurrentValue[\\\"FontCapHeight\\\"], \
+Power[AbsoluteCurrentValue[Magnification], -1]]]]]], \\\"GrayLevel[0]\\\"], \
+Rule[Appearance, None], Rule[BaseStyle, List[]], Rule[BaselinePosition, \
+Baseline], Rule[DefaultBaseStyle, List[]], RuleDelayed[ButtonFunction, \
+With[List[Set[Typeset`box$, EvaluationBox[]]], If[Not[AbsoluteCurrentValue[\\\
+\"Deployed\\\"]], CompoundExpression[SelectionMove[Typeset`box$, All, \
+Expression], Set[FrontEnd`Private`$ColorSelectorInitialAlpha, 1], \
+Set[FrontEnd`Private`$ColorSelectorInitialColor, GrayLevel[0]], \
+Set[FrontEnd`Private`$ColorSelectorUseMakeBoxes, True], \
+MathLink`CallFrontEnd[FrontEnd`AttachCell[Typeset`box$, \
+FrontEndResource[\\\"GrayLevelColorValueSelector\\\"], List[0, List[Left, \
+Bottom]], List[Left, Top], Rule[\\\"ClosingActions\\\", \
+List[\\\"SelectionDeparture\\\", \\\"ParentChanged\\\", \
+\\\"EvaluatorQuit\\\"]]]]]]]], Rule[BaseStyle, Inherited], Rule[Evaluator, \
+Automatic], Rule[Method, \\\"Preemptive\\\"]], GrayLevel[0], Rule[Editable, \
+False], Rule[Selectable, False]]}]}], \\\"]\\\"}]}], \\\"]\\\"}]\\).\"",2,560,
+   35,32650053152343707962,"Local"},
+  "MessageTemplate"]], "Message", "MSG",
+ CellChangeTimes->{
+  3.731093997099915*^9},ExpressionUUID->"f09f3617-2ce6-4b74-95e7-\
+41c10c1a8ac5"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "ListContourPlot","arrayerr",
+   "\"\\!\\(\\*RowBox[{\\\"Transpose\\\", \\\"[\\\", RowBox[{\\\"{\\\", \
+RowBox[{RowBox[{\\\"Symbol\\\", \\\"[\\\", \\\"]\\\"}], \\\",\\\", RowBox[{\\\
+\"Symbol\\\", \\\"[\\\", \\\"]\\\"}], \\\",\\\", RowBox[{\\\"Flatten\\\", \
+\\\"[\\\", \\\"$Failed\\\", \\\"]\\\"}]}], \\\"}\\\"}], \\\"]\\\"}]\\) must \
+be a valid array.\"",2,560,36,32650053152343707962,"Local"},
+  "MessageTemplate"]], "Message", "MSG",
+ CellChangeTimes->{
+  3.731093997168879*^9},ExpressionUUID->"daa13960-fe52-48b5-9276-\
+2eaceecdaa63"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "ListLinePlot","lpn",
+   "\"\\!\\(\\*RowBox[{\\\"Transpose\\\", \\\"[\\\", RowBox[{\\\"{\\\", \
+RowBox[{RowBox[{\\\"Flatten\\\", \\\"[\\\", \\\"$Failed\\\", \\\"]\\\"}], \
+\\\",\\\", RowBox[{\\\"Flatten\\\", \\\"[\\\", \\\"$Failed\\\", \
+\\\"]\\\"}]}], \\\"}\\\"}], \\\"]\\\"}]\\) is not a list of numbers or pairs \
+of numbers.\"",2,560,37,32650053152343707962,"Local"},
+  "MessageTemplate"]], "Message", "MSG",
+ CellChangeTimes->{
+  3.731093997226699*^9},ExpressionUUID->"19205f96-cb95-4452-bef2-\
+e3df70f93f9f"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "General","stop",
+   "\"Further output of \\!\\(\\*StyleBox[RowBox[{\\\"ListLinePlot\\\", \
+\\\"::\\\", \\\"lpn\\\"}], \\\"MessageName\\\"]\\) will be suppressed during \
+this calculation.\"",2,560,38,32650053152343707962,"Local"},
+  "MessageTemplate"]], "Message", "MSG",
+ CellChangeTimes->{
+  3.731093997256934*^9},ExpressionUUID->"ed64e218-71c6-48dc-92f5-\
+01a4e5fa7a29"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "Show","gcomb",
+   "\"Could not combine the graphics objects in \
+\\!\\(\\*RowBox[{\\\"Show\\\", \\\"[\\\", RowBox[{RowBox[{\\\"ListContourPlot\
+\\\", \\\"[\\\", RowBox[{RowBox[{\\\"Transpose\\\", \\\"[\\\", \
+RowBox[{\\\"{\\\", RowBox[{RowBox[{\\\"Symbol\\\", \\\"[\\\", \\\"]\\\"}], \\\
+\",\\\", RowBox[{\\\"Symbol\\\", \\\"[\\\", \\\"]\\\"}], \\\",\\\", \
+RowBox[{\\\"Flatten\\\", \\\"[\\\", \\\"$Failed\\\", \\\"]\\\"}]}], \
+\\\"}\\\"}], \\\"]\\\"}], \\\",\\\", RowBox[{\\\"PlotRange\\\", \\\"\[Rule]\\\
+\", RowBox[{\\\"{\\\", RowBox[{RowBox[{\\\"-\\\", \\\"0.3`\\\"}], \\\",\\\", \
+\\\"0.3`\\\"}], \\\"}\\\"}]}], \\\",\\\", \
+RowBox[{\\\"ColorFunctionScaling\\\", \\\"\[Rule]\\\", \\\"False\\\"}], \\\",\
+\\\", RowBox[{\\\"ColorFunction\\\", \\\"\[Rule]\\\", \
+RowBox[{\\\"ColorDataFunction\\\", \\\"[\\\", \
+RowBox[{\\\"\\\\\\\"DarkColorDensityGradient\\\\\\\"\\\", \\\",\\\", \\\"\\\\\
+\\\"ThemeGradients\\\\\\\"\\\", \\\",\\\", RowBox[{\\\"{\\\", \
+RowBox[{RowBox[{\\\"-\\\", \\\"0.3`\\\"}], \\\",\\\", \\\"0.3`\\\"}], \\\"}\\\
+\"}], \\\",\\\", RowBox[{RowBox[{\\\"Blend\\\", \\\"[\\\", RowBox[{RowBox[{\\\
+\"{\\\", RowBox[{RowBox[{\\\"{\\\", RowBox[{\\\"\[LeftSkeleton]\\\", \
+\\\"2\\\", \\\"\[RightSkeleton]\\\"}], \\\"}\\\"}], \\\",\\\", \
+RowBox[{\\\"{\\\", RowBox[{\\\"\[LeftSkeleton]\\\", \\\"2\\\", \\\"\
+\[RightSkeleton]\\\"}], \\\"}\\\"}], \\\",\\\", RowBox[{\\\"{\\\", RowBox[{\\\
+\"\[LeftSkeleton]\\\", \\\"2\\\", \\\"\[RightSkeleton]\\\"}], \\\"}\\\"}]}], \
+\\\"}\\\"}], \\\",\\\", \\\"#1\\\"}], \\\"]\\\"}], \\\"&\\\"}]}], \
+\\\"]\\\"}]}], \\\",\\\", RowBox[{\\\"PlotLegends\\\", \\\"\[Rule]\\\", \
+\\\"Automatic\\\"}]}], \\\"]\\\"}], \\\",\\\", RowBox[{\\\"ListLinePlot\\\", \
+\\\"[\\\", RowBox[{RowBox[{\\\"Transpose\\\", \\\"[\\\", RowBox[{\\\"{\\\", \
+RowBox[{RowBox[{\\\"Flatten\\\", \\\"[\\\", \\\"$Failed\\\", \\\"]\\\"}], \
+\\\",\\\", RowBox[{\\\"Flatten\\\", \\\"[\\\", \\\"$Failed\\\", \
+\\\"]\\\"}]}], \\\"}\\\"}], \\\"]\\\"}], \\\",\\\", \
+RowBox[{\\\"PlotStyle\\\", \\\"\[Rule]\\\", \
+InterpretationBox[ButtonBox[TooltipBox[GraphicsBox[List[List[GrayLevel[0], \
+RectangleBox[List[0, 0]]], List[GrayLevel[0], RectangleBox[List[1, -1]]], \
+List[GrayLevel[0], RectangleBox[List[0, -1], List[2, 1]]]], Rule[AspectRatio, \
+1], Rule[Frame, True], Rule[FrameStyle, GrayLevel[0.`]], Rule[FrameTicks, \
+None], Rule[PlotRangePadding, None], Rule[ImageSize, Dynamic[List[Automatic, \
+Times[1.35`, CurrentValue[\\\"FontCapHeight\\\"], \
+Power[AbsoluteCurrentValue[Magnification], -1]]]]]], \\\"GrayLevel[0]\\\"], \
+Rule[Appearance, None], Rule[BaseStyle, List[]], Rule[BaselinePosition, \
+Baseline], Rule[DefaultBaseStyle, List[]], RuleDelayed[ButtonFunction, \
+With[List[Set[Typeset`box$, EvaluationBox[]]], If[Not[AbsoluteCurrentValue[\\\
+\"Deployed\\\"]], CompoundExpression[SelectionMove[Typeset`box$, All, \
+Expression], Set[FrontEnd`Private`$ColorSelectorInitialAlpha, 1], \
+Set[FrontEnd`Private`$ColorSelectorInitialColor, GrayLevel[0]], \
+Set[FrontEnd`Private`$ColorSelectorUseMakeBoxes, True], \
+MathLink`CallFrontEnd[FrontEnd`AttachCell[Typeset`box$, \
+FrontEndResource[\\\"GrayLevelColorValueSelector\\\"], List[0, List[Left, \
+Bottom]], List[Left, Top], Rule[\\\"ClosingActions\\\", \
+List[\\\"SelectionDeparture\\\", \\\"ParentChanged\\\", \
+\\\"EvaluatorQuit\\\"]]]]]]]], Rule[BaseStyle, Inherited], Rule[Evaluator, \
+Automatic], Rule[Method, \\\"Preemptive\\\"]], GrayLevel[0], Rule[Editable, \
+False], Rule[Selectable, False]]}]}], \\\"]\\\"}]}], \\\"]\\\"}]\\).\"",2,560,
+   39,32650053152343707962,"Local"},
+  "MessageTemplate"]], "Message", "MSG",
+ CellChangeTimes->{
+  3.731093997306633*^9},ExpressionUUID->"6e8b43a0-c17c-4f61-9842-\
+6c7c9fe05c68"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "Import","nffil",
+   "\"File not found during \\!\\(\\*RowBox[{\\\"Import\\\"}]\\).\"",2,560,40,
+   32650053152343707962,"Local"},
+  "MessageTemplate"]], "Message", "MSG",
+ CellChangeTimes->{
+  3.731093997366967*^9},ExpressionUUID->"06e390f4-d67d-49d4-a385-\
+f5e3872c1ff0"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "Flatten","normal",
+   "\"Nonatomic expression expected at position \
+\\!\\(\\*RowBox[{\\\"1\\\"}]\\) in \\!\\(\\*RowBox[{\\\"Flatten\\\", \
+\\\"[\\\", \\\"$Failed\\\", \\\"]\\\"}]\\).\"",2,560,41,32650053152343707962,
+   "Local"},
+  "MessageTemplate"]], "Message", "MSG",
+ CellChangeTimes->{
+  3.731093997402154*^9},ExpressionUUID->"3587208e-f2b8-423c-bc8b-\
+be4a9b749767"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "Symbol","argx",
+   "\"\\!\\(\\*RowBox[{\\\"Symbol\\\"}]\\) called with \\!\\(\\*RowBox[{\\\"0\
+\\\"}]\\) arguments; 1 argument is expected.\"",2,560,42,32650053152343707962,
+   "Local"},
+  "MessageTemplate"]], "Message", "MSG",
+ CellChangeTimes->{
+  3.7310939974220057`*^9},ExpressionUUID->"177ae942-e5c6-4733-aa61-\
+8f8b0bee7a90"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "Symbol","argx",
+   "\"\\!\\(\\*RowBox[{\\\"Symbol\\\"}]\\) called with \\!\\(\\*RowBox[{\\\"0\
+\\\"}]\\) arguments; 1 argument is expected.\"",2,560,43,32650053152343707962,
+   "Local"},
+  "MessageTemplate"]], "Message", "MSG",
+ CellChangeTimes->{
+  3.731093997441135*^9},ExpressionUUID->"424df238-3380-4ab5-8b26-\
+11c66c53ba6a"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "Transpose","nmtx",
+   "\"The first two levels of \\!\\(\\*RowBox[{\\\"{\\\", \
+RowBox[{RowBox[{\\\"Symbol\\\", \\\"[\\\", \\\"]\\\"}], \\\",\\\", RowBox[{\\\
+\"Symbol\\\", \\\"[\\\", \\\"]\\\"}], \\\",\\\", RowBox[{\\\"Flatten\\\", \
+\\\"[\\\", \\\"$Failed\\\", \\\"]\\\"}]}], \\\"}\\\"}]\\) cannot be \
+transposed.\"",2,560,44,32650053152343707962,"Local"},
+  "MessageTemplate"]], "Message", "MSG",
+ CellChangeTimes->{
+  3.731093997462084*^9},ExpressionUUID->"6f07d9db-a831-437d-b832-\
+f88667146f0b"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "Import","nffil",
+   "\"File not found during \\!\\(\\*RowBox[{\\\"Import\\\"}]\\).\"",2,560,45,
+   32650053152343707962,"Local"},
+  "MessageTemplate"]], "Message", "MSG",
+ CellChangeTimes->{
+  3.731093997481498*^9},ExpressionUUID->"d5d0b99a-a9ca-476d-b037-\
+f2d0390d2585"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "Flatten","normal",
+   "\"Nonatomic expression expected at position \
+\\!\\(\\*RowBox[{\\\"1\\\"}]\\) in \\!\\(\\*RowBox[{\\\"Flatten\\\", \
+\\\"[\\\", \\\"$Failed\\\", \\\"]\\\"}]\\).\"",2,560,46,32650053152343707962,
+   "Local"},
+  "MessageTemplate"]], "Message", "MSG",
+ CellChangeTimes->{
+  3.7310939975464277`*^9},ExpressionUUID->"006a1464-0b93-4be7-bfe0-\
+8941edd56edf"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "Import","nffil",
+   "\"File not found during \\!\\(\\*RowBox[{\\\"Import\\\"}]\\).\"",2,560,47,
+   32650053152343707962,"Local"},
+  "MessageTemplate"]], "Message", "MSG",
+ CellChangeTimes->{
+  3.7310939976019*^9},ExpressionUUID->"1364d416-b6f7-4a55-87bd-7bc7a997a973"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "General","stop",
+   "\"Further output of \\!\\(\\*StyleBox[RowBox[{\\\"Import\\\", \\\"::\\\", \
+\\\"nffil\\\"}], \\\"MessageName\\\"]\\) will be suppressed during this \
+calculation.\"",2,560,48,32650053152343707962,"Local"},
+  "MessageTemplate"]], "Message", "MSG",
+ CellChangeTimes->{
+  3.7310939976598387`*^9},ExpressionUUID->"980094b2-1966-4d37-bec5-\
+9923eac308bf"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "Flatten","normal",
+   "\"Nonatomic expression expected at position \
+\\!\\(\\*RowBox[{\\\"1\\\"}]\\) in \\!\\(\\*RowBox[{\\\"Flatten\\\", \
+\\\"[\\\", \\\"$Failed\\\", \\\"]\\\"}]\\).\"",2,560,49,32650053152343707962,
+   "Local"},
+  "MessageTemplate"]], "Message", "MSG",
+ CellChangeTimes->{
+  3.7310939977118998`*^9},ExpressionUUID->"3b6c5c73-191e-4b0b-94e9-\
+2903741977de"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "General","stop",
+   "\"Further output of \\!\\(\\*StyleBox[RowBox[{\\\"Flatten\\\", \
+\\\"::\\\", \\\"normal\\\"}], \\\"MessageName\\\"]\\) will be suppressed \
+during this calculation.\"",2,560,50,32650053152343707962,"Local"},
+  "MessageTemplate"]], "Message", "MSG",
+ CellChangeTimes->{
+  3.7310939977710333`*^9},ExpressionUUID->"a37ce155-d3ce-4fa8-857a-\
+29d31d72989f"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "ListContourPlot","arrayerr",
+   "\"\\!\\(\\*RowBox[{\\\"Transpose\\\", \\\"[\\\", RowBox[{\\\"{\\\", \
+RowBox[{RowBox[{\\\"Symbol\\\", \\\"[\\\", \\\"]\\\"}], \\\",\\\", RowBox[{\\\
+\"Symbol\\\", \\\"[\\\", \\\"]\\\"}], \\\",\\\", RowBox[{\\\"Flatten\\\", \
+\\\"[\\\", \\\"$Failed\\\", \\\"]\\\"}]}], \\\"}\\\"}], \\\"]\\\"}]\\) must \
+be a valid array.\"",2,560,51,32650053152343707962,"Local"},
+  "MessageTemplate"]], "Message", "MSG",
+ CellChangeTimes->{
+  3.731093997851688*^9},ExpressionUUID->"9f351d7f-0597-4a6d-97ee-\
+b6889c446390"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "Transpose","nmtx",
+   "\"The first two levels of \\!\\(\\*RowBox[{\\\"{\\\", \
+RowBox[{RowBox[{\\\"Flatten\\\", \\\"[\\\", \\\"$Failed\\\", \\\"]\\\"}], \
+\\\",\\\", RowBox[{\\\"Flatten\\\", \\\"[\\\", \\\"$Failed\\\", \
+\\\"]\\\"}]}], \\\"}\\\"}]\\) cannot be transposed.\"",2,560,52,
+   32650053152343707962,"Local"},
+  "MessageTemplate"]], "Message", "MSG",
+ CellChangeTimes->{
+  3.731093997869578*^9},ExpressionUUID->"141d877f-0522-4229-9926-\
+e94c8bfb08d8"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "ListLinePlot","lpn",
+   "\"\\!\\(\\*RowBox[{\\\"Transpose\\\", \\\"[\\\", RowBox[{\\\"{\\\", \
+RowBox[{RowBox[{\\\"Flatten\\\", \\\"[\\\", \\\"$Failed\\\", \\\"]\\\"}], \
+\\\",\\\", RowBox[{\\\"Flatten\\\", \\\"[\\\", \\\"$Failed\\\", \
+\\\"]\\\"}]}], \\\"}\\\"}], \\\"]\\\"}]\\) is not a list of numbers or pairs \
+of numbers.\"",2,560,53,32650053152343707962,"Local"},
+  "MessageTemplate"]], "Message", "MSG",
+ CellChangeTimes->{
+  3.731093997929501*^9},ExpressionUUID->"40d673df-83ef-43a7-88e9-\
+d15bab6622f1"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "ListLinePlot","lpn",
+   "\"\\!\\(\\*RowBox[{\\\"Transpose\\\", \\\"[\\\", RowBox[{\\\"{\\\", \
+RowBox[{RowBox[{\\\"Flatten\\\", \\\"[\\\", \\\"$Failed\\\", \\\"]\\\"}], \
+\\\",\\\", RowBox[{\\\"Flatten\\\", \\\"[\\\", \\\"$Failed\\\", \
+\\\"]\\\"}]}], \\\"}\\\"}], \\\"]\\\"}]\\) is not a list of numbers or pairs \
+of numbers.\"",2,560,54,32650053152343707962,"Local"},
+  "MessageTemplate"]], "Message", "MSG",
+ CellChangeTimes->{
+  3.731093997989365*^9},ExpressionUUID->"8b73fb66-942e-4a6a-9520-\
+17d886d181d2"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "Show","gcomb",
+   "\"Could not combine the graphics objects in \
+\\!\\(\\*RowBox[{\\\"Show\\\", \\\"[\\\", RowBox[{RowBox[{\\\"ListContourPlot\
+\\\", \\\"[\\\", RowBox[{RowBox[{\\\"Transpose\\\", \\\"[\\\", \
+RowBox[{\\\"{\\\", RowBox[{RowBox[{\\\"Symbol\\\", \\\"[\\\", \\\"]\\\"}], \\\
+\",\\\", RowBox[{\\\"Symbol\\\", \\\"[\\\", \\\"]\\\"}], \\\",\\\", \
+RowBox[{\\\"Flatten\\\", \\\"[\\\", \\\"$Failed\\\", \\\"]\\\"}]}], \
+\\\"}\\\"}], \\\"]\\\"}], \\\",\\\", RowBox[{\\\"PlotRange\\\", \\\"\[Rule]\\\
+\", RowBox[{\\\"{\\\", RowBox[{RowBox[{\\\"-\\\", \\\"0.3`\\\"}], \\\",\\\", \
+\\\"0.3`\\\"}], \\\"}\\\"}]}], \\\",\\\", \
+RowBox[{\\\"ColorFunctionScaling\\\", \\\"\[Rule]\\\", \\\"False\\\"}], \\\",\
+\\\", RowBox[{\\\"ColorFunction\\\", \\\"\[Rule]\\\", \
+RowBox[{\\\"ColorDataFunction\\\", \\\"[\\\", \
+RowBox[{\\\"\\\\\\\"DarkColorDensityGradient\\\\\\\"\\\", \\\",\\\", \\\"\\\\\
+\\\"ThemeGradients\\\\\\\"\\\", \\\",\\\", RowBox[{\\\"{\\\", \
+RowBox[{RowBox[{\\\"-\\\", \\\"0.3`\\\"}], \\\",\\\", \\\"0.3`\\\"}], \\\"}\\\
+\"}], \\\",\\\", RowBox[{RowBox[{\\\"Blend\\\", \\\"[\\\", RowBox[{RowBox[{\\\
+\"{\\\", RowBox[{RowBox[{\\\"{\\\", RowBox[{\\\"\[LeftSkeleton]\\\", \
+\\\"2\\\", \\\"\[RightSkeleton]\\\"}], \\\"}\\\"}], \\\",\\\", \
+RowBox[{\\\"{\\\", RowBox[{\\\"\[LeftSkeleton]\\\", \\\"2\\\", \\\"\
+\[RightSkeleton]\\\"}], \\\"}\\\"}], \\\",\\\", RowBox[{\\\"{\\\", RowBox[{\\\
+\"\[LeftSkeleton]\\\", \\\"2\\\", \\\"\[RightSkeleton]\\\"}], \\\"}\\\"}]}], \
+\\\"}\\\"}], \\\",\\\", \\\"#1\\\"}], \\\"]\\\"}], \\\"&\\\"}]}], \
+\\\"]\\\"}]}], \\\",\\\", RowBox[{\\\"PlotLegends\\\", \\\"\[Rule]\\\", \
+\\\"Automatic\\\"}]}], \\\"]\\\"}], \\\",\\\", RowBox[{\\\"ListLinePlot\\\", \
+\\\"[\\\", RowBox[{RowBox[{\\\"Transpose\\\", \\\"[\\\", RowBox[{\\\"{\\\", \
+RowBox[{RowBox[{\\\"Flatten\\\", \\\"[\\\", \\\"$Failed\\\", \\\"]\\\"}], \
+\\\",\\\", RowBox[{\\\"Flatten\\\", \\\"[\\\", \\\"$Failed\\\", \
+\\\"]\\\"}]}], \\\"}\\\"}], \\\"]\\\"}], \\\",\\\", \
+RowBox[{\\\"PlotStyle\\\", \\\"\[Rule]\\\", \
+InterpretationBox[ButtonBox[TooltipBox[GraphicsBox[List[List[GrayLevel[0], \
+RectangleBox[List[0, 0]]], List[GrayLevel[0], RectangleBox[List[1, -1]]], \
+List[GrayLevel[0], RectangleBox[List[0, -1], List[2, 1]]]], Rule[AspectRatio, \
+1], Rule[Frame, True], Rule[FrameStyle, GrayLevel[0.`]], Rule[FrameTicks, \
+None], Rule[PlotRangePadding, None], Rule[ImageSize, Dynamic[List[Automatic, \
+Times[1.35`, CurrentValue[\\\"FontCapHeight\\\"], \
+Power[AbsoluteCurrentValue[Magnification], -1]]]]]], \\\"GrayLevel[0]\\\"], \
+Rule[Appearance, None], Rule[BaseStyle, List[]], Rule[BaselinePosition, \
+Baseline], Rule[DefaultBaseStyle, List[]], RuleDelayed[ButtonFunction, \
+With[List[Set[Typeset`box$, EvaluationBox[]]], If[Not[AbsoluteCurrentValue[\\\
+\"Deployed\\\"]], CompoundExpression[SelectionMove[Typeset`box$, All, \
+Expression], Set[FrontEnd`Private`$ColorSelectorInitialAlpha, 1], \
+Set[FrontEnd`Private`$ColorSelectorInitialColor, GrayLevel[0]], \
+Set[FrontEnd`Private`$ColorSelectorUseMakeBoxes, True], \
+MathLink`CallFrontEnd[FrontEnd`AttachCell[Typeset`box$, \
+FrontEndResource[\\\"GrayLevelColorValueSelector\\\"], List[0, List[Left, \
+Bottom]], List[Left, Top], Rule[\\\"ClosingActions\\\", \
+List[\\\"SelectionDeparture\\\", \\\"ParentChanged\\\", \
+\\\"EvaluatorQuit\\\"]]]]]]]], Rule[BaseStyle, Inherited], Rule[Evaluator, \
+Automatic], Rule[Method, \\\"Preemptive\\\"]], GrayLevel[0], Rule[Editable, \
+False], Rule[Selectable, False]]}]}], \\\"]\\\"}]}], \\\"]\\\"}]\\).\"",2,560,
+   55,32650053152343707962,"Local"},
+  "MessageTemplate"]], "Message", "MSG",
+ CellChangeTimes->{
+  3.731093998007222*^9},ExpressionUUID->"fdcaa2bd-49d1-42dd-83dd-\
+8cd76cdc856d"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "Import","nffil",
+   "\"File not found during \\!\\(\\*RowBox[{\\\"Import\\\"}]\\).\"",2,579,
+   114,32650053152343707962,"Local"},
+  "MessageTemplate"]], "Message", "MSG",
+ CellChangeTimes->{
+  3.7310941612555513`*^9},ExpressionUUID->"2fcebb4f-db18-4a11-b888-\
+2fc6a930461f"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "Flatten","normal",
+   "\"Nonatomic expression expected at position \
+\\!\\(\\*RowBox[{\\\"1\\\"}]\\) in \\!\\(\\*RowBox[{\\\"Flatten\\\", \
+\\\"[\\\", \\\"$Failed\\\", \\\"]\\\"}]\\).\"",2,579,115,32650053152343707962,
+   "Local"},
+  "MessageTemplate"]], "Message", "MSG",
+ CellChangeTimes->{
+  3.7310941613835707`*^9},ExpressionUUID->"fbcf0781-aaf2-4bb3-97b8-\
+1ddacc92650f"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "Symbol","argx",
+   "\"\\!\\(\\*RowBox[{\\\"Symbol\\\"}]\\) called with \\!\\(\\*RowBox[{\\\"0\
+\\\"}]\\) arguments; 1 argument is expected.\"",2,579,116,
+   32650053152343707962,"Local"},
+  "MessageTemplate"]], "Message", "MSG",
+ CellChangeTimes->{
+  3.731094161430133*^9},ExpressionUUID->"67512550-3da8-4a50-a582-\
+d542a3401409"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "Symbol","argx",
+   "\"\\!\\(\\*RowBox[{\\\"Symbol\\\"}]\\) called with \\!\\(\\*RowBox[{\\\"0\
+\\\"}]\\) arguments; 1 argument is expected.\"",2,579,117,
+   32650053152343707962,"Local"},
+  "MessageTemplate"]], "Message", "MSG",
+ CellChangeTimes->{
+  3.731094161487349*^9},ExpressionUUID->"9bbc0f2b-7d83-4a7a-88a7-\
+3156918f165d"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "Transpose","nmtx",
+   "\"The first two levels of \\!\\(\\*RowBox[{\\\"{\\\", \
+RowBox[{RowBox[{\\\"Symbol\\\", \\\"[\\\", \\\"]\\\"}], \\\",\\\", RowBox[{\\\
+\"Symbol\\\", \\\"[\\\", \\\"]\\\"}], \\\",\\\", RowBox[{\\\"Flatten\\\", \
+\\\"[\\\", \\\"$Failed\\\", \\\"]\\\"}]}], \\\"}\\\"}]\\) cannot be \
+transposed.\"",2,579,118,32650053152343707962,"Local"},
+  "MessageTemplate"]], "Message", "MSG",
+ CellChangeTimes->{
+  3.731094161538204*^9},ExpressionUUID->"a6a46fda-c6fa-47e7-9825-\
+278f655a6e31"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "Import","nffil",
+   "\"File not found during \\!\\(\\*RowBox[{\\\"Import\\\"}]\\).\"",2,579,
+   119,32650053152343707962,"Local"},
+  "MessageTemplate"]], "Message", "MSG",
+ CellChangeTimes->{
+  3.7310941615913153`*^9},ExpressionUUID->"d04a51da-dc29-4da4-845b-\
+d56d298e413c"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "Flatten","normal",
+   "\"Nonatomic expression expected at position \
+\\!\\(\\*RowBox[{\\\"1\\\"}]\\) in \\!\\(\\*RowBox[{\\\"Flatten\\\", \
+\\\"[\\\", \\\"$Failed\\\", \\\"]\\\"}]\\).\"",2,579,120,32650053152343707962,
+   "Local"},
+  "MessageTemplate"]], "Message", "MSG",
+ CellChangeTimes->{
+  3.731094162280179*^9},ExpressionUUID->"8ffe4634-1fb5-4cbc-9b00-\
+f723bc79bc98"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "Import","nffil",
+   "\"File not found during \\!\\(\\*RowBox[{\\\"Import\\\"}]\\).\"",2,579,
+   121,32650053152343707962,"Local"},
+  "MessageTemplate"]], "Message", "MSG",
+ CellChangeTimes->{
+  3.731094162516828*^9},ExpressionUUID->"13a45981-79c2-432b-aa77-\
+b08f97268d86"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "General","stop",
+   "\"Further output of \\!\\(\\*StyleBox[RowBox[{\\\"Import\\\", \\\"::\\\", \
+\\\"nffil\\\"}], \\\"MessageName\\\"]\\) will be suppressed during this \
+calculation.\"",2,579,122,32650053152343707962,"Local"},
+  "MessageTemplate"]], "Message", "MSG",
+ CellChangeTimes->{
+  3.7310941625620537`*^9},ExpressionUUID->"8a5bedd8-a4ab-4c53-be11-\
+5a015f4377ae"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "Flatten","normal",
+   "\"Nonatomic expression expected at position \
+\\!\\(\\*RowBox[{\\\"1\\\"}]\\) in \\!\\(\\*RowBox[{\\\"Flatten\\\", \
+\\\"[\\\", \\\"$Failed\\\", \\\"]\\\"}]\\).\"",2,579,123,32650053152343707962,
+   "Local"},
+  "MessageTemplate"]], "Message", "MSG",
+ CellChangeTimes->{
+  3.731094162614336*^9},ExpressionUUID->"2e784ebf-734c-4c50-a862-\
+f22d47abb8cf"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "General","stop",
+   "\"Further output of \\!\\(\\*StyleBox[RowBox[{\\\"Flatten\\\", \
+\\\"::\\\", \\\"normal\\\"}], \\\"MessageName\\\"]\\) will be suppressed \
+during this calculation.\"",2,579,124,32650053152343707962,"Local"},
+  "MessageTemplate"]], "Message", "MSG",
+ CellChangeTimes->{
+  3.731094162668626*^9},ExpressionUUID->"045c883f-8ef2-4068-b480-\
+73c5acf059d8"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "ListContourPlot","arrayerr",
+   "\"\\!\\(\\*RowBox[{\\\"Transpose\\\", \\\"[\\\", RowBox[{\\\"{\\\", \
+RowBox[{RowBox[{\\\"Symbol\\\", \\\"[\\\", \\\"]\\\"}], \\\",\\\", RowBox[{\\\
+\"Symbol\\\", \\\"[\\\", \\\"]\\\"}], \\\",\\\", RowBox[{\\\"Flatten\\\", \
+\\\"[\\\", \\\"$Failed\\\", \\\"]\\\"}]}], \\\"}\\\"}], \\\"]\\\"}]\\) must \
+be a valid array.\"",2,579,125,32650053152343707962,"Local"},
+  "MessageTemplate"]], "Message", "MSG",
+ CellChangeTimes->{
+  3.731094163530465*^9},ExpressionUUID->"ea0f37e8-041d-4409-923e-\
+0896340c1038"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "Transpose","nmtx",
+   "\"The first two levels of \\!\\(\\*RowBox[{\\\"{\\\", \
+RowBox[{RowBox[{\\\"Flatten\\\", \\\"[\\\", \\\"$Failed\\\", \\\"]\\\"}], \
+\\\",\\\", RowBox[{\\\"Flatten\\\", \\\"[\\\", \\\"$Failed\\\", \
+\\\"]\\\"}]}], \\\"}\\\"}]\\) cannot be transposed.\"",2,579,126,
+   32650053152343707962,"Local"},
+  "MessageTemplate"]], "Message", "MSG",
+ CellChangeTimes->{
+  3.731094163640004*^9},ExpressionUUID->"2b036398-0a14-44e8-be11-\
+d19fa824f323"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "ListLinePlot","lpn",
+   "\"\\!\\(\\*RowBox[{\\\"Transpose\\\", \\\"[\\\", RowBox[{\\\"{\\\", \
+RowBox[{RowBox[{\\\"Flatten\\\", \\\"[\\\", \\\"$Failed\\\", \\\"]\\\"}], \
+\\\",\\\", RowBox[{\\\"Flatten\\\", \\\"[\\\", \\\"$Failed\\\", \
+\\\"]\\\"}]}], \\\"}\\\"}], \\\"]\\\"}]\\) is not a list of numbers or pairs \
+of numbers.\"",2,579,127,32650053152343707962,"Local"},
+  "MessageTemplate"]], "Message", "MSG",
+ CellChangeTimes->{
+  3.731094164157645*^9},ExpressionUUID->"fc70f4d9-b190-4dea-b017-\
+ba52f83a3ce8"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "ListLinePlot","lpn",
+   "\"\\!\\(\\*RowBox[{\\\"Transpose\\\", \\\"[\\\", RowBox[{\\\"{\\\", \
+RowBox[{RowBox[{\\\"Flatten\\\", \\\"[\\\", \\\"$Failed\\\", \\\"]\\\"}], \
+\\\",\\\", RowBox[{\\\"Flatten\\\", \\\"[\\\", \\\"$Failed\\\", \
+\\\"]\\\"}]}], \\\"}\\\"}], \\\"]\\\"}]\\) is not a list of numbers or pairs \
+of numbers.\"",2,579,128,32650053152343707962,"Local"},
+  "MessageTemplate"]], "Message", "MSG",
+ CellChangeTimes->{
+  3.731094164631084*^9},ExpressionUUID->"0e059b4e-f538-43f4-a715-\
+e61688671c41"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "Show","gcomb",
+   "\"Could not combine the graphics objects in \
+\\!\\(\\*RowBox[{\\\"Show\\\", \\\"[\\\", RowBox[{RowBox[{\\\"ListContourPlot\
+\\\", \\\"[\\\", RowBox[{RowBox[{\\\"Transpose\\\", \\\"[\\\", \
+RowBox[{\\\"{\\\", RowBox[{RowBox[{\\\"Symbol\\\", \\\"[\\\", \\\"]\\\"}], \\\
+\",\\\", RowBox[{\\\"Symbol\\\", \\\"[\\\", \\\"]\\\"}], \\\",\\\", \
+RowBox[{\\\"Flatten\\\", \\\"[\\\", \\\"$Failed\\\", \\\"]\\\"}]}], \
+\\\"}\\\"}], \\\"]\\\"}], \\\",\\\", RowBox[{\\\"PlotRange\\\", \\\"\[Rule]\\\
+\", RowBox[{\\\"{\\\", RowBox[{RowBox[{\\\"-\\\", \\\"0.3`\\\"}], \\\",\\\", \
+\\\"0.3`\\\"}], \\\"}\\\"}]}], \\\",\\\", \
+RowBox[{\\\"ColorFunctionScaling\\\", \\\"\[Rule]\\\", \\\"False\\\"}], \\\",\
+\\\", RowBox[{\\\"ColorFunction\\\", \\\"\[Rule]\\\", \
+RowBox[{\\\"ColorDataFunction\\\", \\\"[\\\", \
+RowBox[{\\\"\\\\\\\"DarkColorDensityGradient\\\\\\\"\\\", \\\",\\\", \\\"\\\\\
+\\\"ThemeGradients\\\\\\\"\\\", \\\",\\\", RowBox[{\\\"{\\\", \
+RowBox[{RowBox[{\\\"-\\\", \\\"0.3`\\\"}], \\\",\\\", \\\"0.3`\\\"}], \\\"}\\\
+\"}], \\\",\\\", RowBox[{RowBox[{\\\"Blend\\\", \\\"[\\\", RowBox[{RowBox[{\\\
+\"{\\\", RowBox[{RowBox[{\\\"{\\\", RowBox[{\\\"\[LeftSkeleton]\\\", \
+\\\"2\\\", \\\"\[RightSkeleton]\\\"}], \\\"}\\\"}], \\\",\\\", \
+RowBox[{\\\"{\\\", RowBox[{\\\"\[LeftSkeleton]\\\", \\\"2\\\", \\\"\
+\[RightSkeleton]\\\"}], \\\"}\\\"}], \\\",\\\", RowBox[{\\\"{\\\", RowBox[{\\\
+\"\[LeftSkeleton]\\\", \\\"2\\\", \\\"\[RightSkeleton]\\\"}], \\\"}\\\"}]}], \
+\\\"}\\\"}], \\\",\\\", \\\"#1\\\"}], \\\"]\\\"}], \\\"&\\\"}]}], \
+\\\"]\\\"}]}], \\\",\\\", RowBox[{\\\"PlotLegends\\\", \\\"\[Rule]\\\", \
+\\\"Automatic\\\"}]}], \\\"]\\\"}], \\\",\\\", RowBox[{\\\"ListLinePlot\\\", \
+\\\"[\\\", RowBox[{RowBox[{\\\"Transpose\\\", \\\"[\\\", RowBox[{\\\"{\\\", \
+RowBox[{RowBox[{\\\"Flatten\\\", \\\"[\\\", \\\"$Failed\\\", \\\"]\\\"}], \
+\\\",\\\", RowBox[{\\\"Flatten\\\", \\\"[\\\", \\\"$Failed\\\", \
+\\\"]\\\"}]}], \\\"}\\\"}], \\\"]\\\"}], \\\",\\\", \
+RowBox[{\\\"PlotStyle\\\", \\\"\[Rule]\\\", \
+InterpretationBox[ButtonBox[TooltipBox[GraphicsBox[List[List[GrayLevel[0], \
+RectangleBox[List[0, 0]]], List[GrayLevel[0], RectangleBox[List[1, -1]]], \
+List[GrayLevel[0], RectangleBox[List[0, -1], List[2, 1]]]], Rule[AspectRatio, \
+1], Rule[Frame, True], Rule[FrameStyle, GrayLevel[0.`]], Rule[FrameTicks, \
+None], Rule[PlotRangePadding, None], Rule[ImageSize, Dynamic[List[Automatic, \
+Times[1.35`, CurrentValue[\\\"FontCapHeight\\\"], \
+Power[AbsoluteCurrentValue[Magnification], -1]]]]]], \\\"GrayLevel[0]\\\"], \
+Rule[Appearance, None], Rule[BaseStyle, List[]], Rule[BaselinePosition, \
+Baseline], Rule[DefaultBaseStyle, List[]], RuleDelayed[ButtonFunction, \
+With[List[Set[Typeset`box$, EvaluationBox[]]], If[Not[AbsoluteCurrentValue[\\\
+\"Deployed\\\"]], CompoundExpression[SelectionMove[Typeset`box$, All, \
+Expression], Set[FrontEnd`Private`$ColorSelectorInitialAlpha, 1], \
+Set[FrontEnd`Private`$ColorSelectorInitialColor, GrayLevel[0]], \
+Set[FrontEnd`Private`$ColorSelectorUseMakeBoxes, True], \
+MathLink`CallFrontEnd[FrontEnd`AttachCell[Typeset`box$, \
+FrontEndResource[\\\"GrayLevelColorValueSelector\\\"], List[0, List[Left, \
+Bottom]], List[Left, Top], Rule[\\\"ClosingActions\\\", \
+List[\\\"SelectionDeparture\\\", \\\"ParentChanged\\\", \
+\\\"EvaluatorQuit\\\"]]]]]]]], Rule[BaseStyle, Inherited], Rule[Evaluator, \
+Automatic], Rule[Method, \\\"Preemptive\\\"]], GrayLevel[0], Rule[Editable, \
+False], Rule[Selectable, False]]}]}], \\\"]\\\"}]}], \\\"]\\\"}]\\).\"",2,579,
+   129,32650053152343707962,"Local"},
+  "MessageTemplate"]], "Message", "MSG",
+ CellChangeTimes->{
+  3.731094164672308*^9},ExpressionUUID->"aac65e9a-0416-4956-9de0-\
+c140dacedde9"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "Import","nffil",
+   "\"File not found during \\!\\(\\*RowBox[{\\\"Import\\\"}]\\).\"",2,594,
+   146,32650053152343707962,"Local"},
+  "MessageTemplate"]], "Message", "MSG",
+ CellChangeTimes->{
+  3.7310942157129498`*^9},ExpressionUUID->"40fed4db-0bbc-432a-9c9b-\
+525b8418ef90"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "Flatten","normal",
+   "\"Nonatomic expression expected at position \
+\\!\\(\\*RowBox[{\\\"1\\\"}]\\) in \\!\\(\\*RowBox[{\\\"Flatten\\\", \
+\\\"[\\\", \\\"$Failed\\\", \\\"]\\\"}]\\).\"",2,594,147,32650053152343707962,
+   "Local"},
+  "MessageTemplate"]], "Message", "MSG",
+ CellChangeTimes->{
+  3.73109421575957*^9},ExpressionUUID->"31187f23-3fca-426e-8a19-f3649d8c2c0a"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "Symbol","argx",
+   "\"\\!\\(\\*RowBox[{\\\"Symbol\\\"}]\\) called with \\!\\(\\*RowBox[{\\\"0\
+\\\"}]\\) arguments; 1 argument is expected.\"",2,594,148,
+   32650053152343707962,"Local"},
+  "MessageTemplate"]], "Message", "MSG",
+ CellChangeTimes->{
+  3.731094215779129*^9},ExpressionUUID->"512f3ac1-c064-4807-a8b2-\
+2e873f48b1c9"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "Symbol","argx",
+   "\"\\!\\(\\*RowBox[{\\\"Symbol\\\"}]\\) called with \\!\\(\\*RowBox[{\\\"0\
+\\\"}]\\) arguments; 1 argument is expected.\"",2,594,149,
+   32650053152343707962,"Local"},
+  "MessageTemplate"]], "Message", "MSG",
+ CellChangeTimes->{
+  3.7310942158005133`*^9},ExpressionUUID->"6b73a3e8-6651-4045-a29f-\
+1cf9fd55d065"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "Transpose","nmtx",
+   "\"The first two levels of \\!\\(\\*RowBox[{\\\"{\\\", \
+RowBox[{RowBox[{\\\"Symbol\\\", \\\"[\\\", \\\"]\\\"}], \\\",\\\", RowBox[{\\\
+\"Symbol\\\", \\\"[\\\", \\\"]\\\"}], \\\",\\\", RowBox[{\\\"Flatten\\\", \
+\\\"[\\\", \\\"$Failed\\\", \\\"]\\\"}]}], \\\"}\\\"}]\\) cannot be \
+transposed.\"",2,594,150,32650053152343707962,"Local"},
+  "MessageTemplate"]], "Message", "MSG",
+ CellChangeTimes->{
+  3.73109421582069*^9},ExpressionUUID->"20d22c3f-5dee-4bf8-b257-96aa3090d215"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "Import","nffil",
+   "\"File not found during \\!\\(\\*RowBox[{\\\"Import\\\"}]\\).\"",2,594,
+   151,32650053152343707962,"Local"},
+  "MessageTemplate"]], "Message", "MSG",
+ CellChangeTimes->{
+  3.731094215885445*^9},ExpressionUUID->"bda2368c-8ea7-403a-b0f5-\
+005cfdcacfd8"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "Flatten","normal",
+   "\"Nonatomic expression expected at position \
+\\!\\(\\*RowBox[{\\\"1\\\"}]\\) in \\!\\(\\*RowBox[{\\\"Flatten\\\", \
+\\\"[\\\", \\\"$Failed\\\", \\\"]\\\"}]\\).\"",2,594,152,32650053152343707962,
+   "Local"},
+  "MessageTemplate"]], "Message", "MSG",
+ CellChangeTimes->{
+  3.731094215940949*^9},ExpressionUUID->"fbcd649f-6fac-48ff-8d01-\
+e574bd87dc50"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "Import","nffil",
+   "\"File not found during \\!\\(\\*RowBox[{\\\"Import\\\"}]\\).\"",2,594,
+   153,32650053152343707962,"Local"},
+  "MessageTemplate"]], "Message", "MSG",
+ CellChangeTimes->{
+  3.731094215995384*^9},ExpressionUUID->"1df172c1-711a-4955-b42a-\
+ac7fa76dc81a"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "General","stop",
+   "\"Further output of \\!\\(\\*StyleBox[RowBox[{\\\"Import\\\", \\\"::\\\", \
+\\\"nffil\\\"}], \\\"MessageName\\\"]\\) will be suppressed during this \
+calculation.\"",2,594,154,32650053152343707962,"Local"},
+  "MessageTemplate"]], "Message", "MSG",
+ CellChangeTimes->{
+  3.731094216048707*^9},ExpressionUUID->"88e77e97-b52c-43e0-96d8-\
+18a27a7b017b"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "Flatten","normal",
+   "\"Nonatomic expression expected at position \
+\\!\\(\\*RowBox[{\\\"1\\\"}]\\) in \\!\\(\\*RowBox[{\\\"Flatten\\\", \
+\\\"[\\\", \\\"$Failed\\\", \\\"]\\\"}]\\).\"",2,594,155,32650053152343707962,
+   "Local"},
+  "MessageTemplate"]], "Message", "MSG",
+ CellChangeTimes->{
+  3.731094216107868*^9},ExpressionUUID->"c55018f7-e78f-447f-8682-\
+572c0100896a"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "General","stop",
+   "\"Further output of \\!\\(\\*StyleBox[RowBox[{\\\"Flatten\\\", \
+\\\"::\\\", \\\"normal\\\"}], \\\"MessageName\\\"]\\) will be suppressed \
+during this calculation.\"",2,594,156,32650053152343707962,"Local"},
+  "MessageTemplate"]], "Message", "MSG",
+ CellChangeTimes->{
+  3.73109421615691*^9},ExpressionUUID->"f69d81e5-a305-4992-968c-f2ecdededcab"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "ListContourPlot","arrayerr",
+   "\"\\!\\(\\*RowBox[{\\\"Transpose\\\", \\\"[\\\", RowBox[{\\\"{\\\", \
+RowBox[{RowBox[{\\\"Symbol\\\", \\\"[\\\", \\\"]\\\"}], \\\",\\\", RowBox[{\\\
+\"Symbol\\\", \\\"[\\\", \\\"]\\\"}], \\\",\\\", RowBox[{\\\"Flatten\\\", \
+\\\"[\\\", \\\"$Failed\\\", \\\"]\\\"}]}], \\\"}\\\"}], \\\"]\\\"}]\\) must \
+be a valid array.\"",2,594,157,32650053152343707962,"Local"},
+  "MessageTemplate"]], "Message", "MSG",
+ CellChangeTimes->{
+  3.731094216203906*^9},ExpressionUUID->"7bcd77ec-c8d1-449d-b6ee-\
+b0e4f840b0d3"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "Transpose","nmtx",
+   "\"The first two levels of \\!\\(\\*RowBox[{\\\"{\\\", \
+RowBox[{RowBox[{\\\"Flatten\\\", \\\"[\\\", \\\"$Failed\\\", \\\"]\\\"}], \
+\\\",\\\", RowBox[{\\\"Flatten\\\", \\\"[\\\", \\\"$Failed\\\", \
+\\\"]\\\"}]}], \\\"}\\\"}]\\) cannot be transposed.\"",2,594,158,
+   32650053152343707962,"Local"},
+  "MessageTemplate"]], "Message", "MSG",
+ CellChangeTimes->{
+  3.7310942162221613`*^9},ExpressionUUID->"fa99752a-0513-414f-9805-\
+1f6d45c76fd0"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "ListLinePlot","lpn",
+   "\"\\!\\(\\*RowBox[{\\\"Transpose\\\", \\\"[\\\", RowBox[{\\\"{\\\", \
+RowBox[{RowBox[{\\\"Flatten\\\", \\\"[\\\", \\\"$Failed\\\", \\\"]\\\"}], \
+\\\",\\\", RowBox[{\\\"Flatten\\\", \\\"[\\\", \\\"$Failed\\\", \
+\\\"]\\\"}]}], \\\"}\\\"}], \\\"]\\\"}]\\) is not a list of numbers or pairs \
+of numbers.\"",2,594,159,32650053152343707962,"Local"},
+  "MessageTemplate"]], "Message", "MSG",
+ CellChangeTimes->{
+  3.731094216277425*^9},ExpressionUUID->"8a988498-0323-4655-b754-\
+7cdd9d374593"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "ListLinePlot","lpn",
+   "\"\\!\\(\\*RowBox[{\\\"Transpose\\\", \\\"[\\\", RowBox[{\\\"{\\\", \
+RowBox[{RowBox[{\\\"Flatten\\\", \\\"[\\\", \\\"$Failed\\\", \\\"]\\\"}], \
+\\\",\\\", RowBox[{\\\"Flatten\\\", \\\"[\\\", \\\"$Failed\\\", \
+\\\"]\\\"}]}], \\\"}\\\"}], \\\"]\\\"}]\\) is not a list of numbers or pairs \
+of numbers.\"",2,594,160,32650053152343707962,"Local"},
+  "MessageTemplate"]], "Message", "MSG",
+ CellChangeTimes->{
+  3.731094216341094*^9},ExpressionUUID->"e30179fc-6419-4c93-b047-\
+13d2f1fddc62"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "Show","gcomb",
+   "\"Could not combine the graphics objects in \
+\\!\\(\\*RowBox[{\\\"Show\\\", \\\"[\\\", RowBox[{RowBox[{\\\"ListContourPlot\
+\\\", \\\"[\\\", RowBox[{RowBox[{\\\"Transpose\\\", \\\"[\\\", \
+RowBox[{\\\"{\\\", RowBox[{RowBox[{\\\"Symbol\\\", \\\"[\\\", \\\"]\\\"}], \\\
+\",\\\", RowBox[{\\\"Symbol\\\", \\\"[\\\", \\\"]\\\"}], \\\",\\\", \
+RowBox[{\\\"Flatten\\\", \\\"[\\\", \\\"$Failed\\\", \\\"]\\\"}]}], \
+\\\"}\\\"}], \\\"]\\\"}], \\\",\\\", RowBox[{\\\"PlotRange\\\", \\\"\[Rule]\\\
+\", RowBox[{\\\"{\\\", RowBox[{RowBox[{\\\"-\\\", \\\"0.3`\\\"}], \\\",\\\", \
+\\\"0.3`\\\"}], \\\"}\\\"}]}], \\\",\\\", \
+RowBox[{\\\"ColorFunctionScaling\\\", \\\"\[Rule]\\\", \\\"False\\\"}], \\\",\
+\\\", RowBox[{\\\"ColorFunction\\\", \\\"\[Rule]\\\", \
+RowBox[{\\\"ColorDataFunction\\\", \\\"[\\\", \
+RowBox[{\\\"\\\\\\\"DarkColorDensityGradient\\\\\\\"\\\", \\\",\\\", \\\"\\\\\
+\\\"ThemeGradients\\\\\\\"\\\", \\\",\\\", RowBox[{\\\"{\\\", \
+RowBox[{RowBox[{\\\"-\\\", \\\"0.3`\\\"}], \\\",\\\", \\\"0.3`\\\"}], \\\"}\\\
+\"}], \\\",\\\", RowBox[{RowBox[{\\\"Blend\\\", \\\"[\\\", RowBox[{RowBox[{\\\
+\"{\\\", RowBox[{RowBox[{\\\"{\\\", RowBox[{\\\"\[LeftSkeleton]\\\", \
+\\\"2\\\", \\\"\[RightSkeleton]\\\"}], \\\"}\\\"}], \\\",\\\", \
+RowBox[{\\\"{\\\", RowBox[{\\\"\[LeftSkeleton]\\\", \\\"2\\\", \\\"\
+\[RightSkeleton]\\\"}], \\\"}\\\"}], \\\",\\\", RowBox[{\\\"{\\\", RowBox[{\\\
+\"\[LeftSkeleton]\\\", \\\"2\\\", \\\"\[RightSkeleton]\\\"}], \\\"}\\\"}]}], \
+\\\"}\\\"}], \\\",\\\", \\\"#1\\\"}], \\\"]\\\"}], \\\"&\\\"}]}], \
+\\\"]\\\"}]}], \\\",\\\", RowBox[{\\\"PlotLegends\\\", \\\"\[Rule]\\\", \
+\\\"Automatic\\\"}]}], \\\"]\\\"}], \\\",\\\", RowBox[{\\\"ListLinePlot\\\", \
+\\\"[\\\", RowBox[{RowBox[{\\\"Transpose\\\", \\\"[\\\", RowBox[{\\\"{\\\", \
+RowBox[{RowBox[{\\\"Flatten\\\", \\\"[\\\", \\\"$Failed\\\", \\\"]\\\"}], \
+\\\",\\\", RowBox[{\\\"Flatten\\\", \\\"[\\\", \\\"$Failed\\\", \
+\\\"]\\\"}]}], \\\"}\\\"}], \\\"]\\\"}], \\\",\\\", \
+RowBox[{\\\"PlotStyle\\\", \\\"\[Rule]\\\", \
+InterpretationBox[ButtonBox[TooltipBox[GraphicsBox[List[List[GrayLevel[0], \
+RectangleBox[List[0, 0]]], List[GrayLevel[0], RectangleBox[List[1, -1]]], \
+List[GrayLevel[0], RectangleBox[List[0, -1], List[2, 1]]]], Rule[AspectRatio, \
+1], Rule[Frame, True], Rule[FrameStyle, GrayLevel[0.`]], Rule[FrameTicks, \
+None], Rule[PlotRangePadding, None], Rule[ImageSize, Dynamic[List[Automatic, \
+Times[1.35`, CurrentValue[\\\"FontCapHeight\\\"], \
+Power[AbsoluteCurrentValue[Magnification], -1]]]]]], \\\"GrayLevel[0]\\\"], \
+Rule[Appearance, None], Rule[BaseStyle, List[]], Rule[BaselinePosition, \
+Baseline], Rule[DefaultBaseStyle, List[]], RuleDelayed[ButtonFunction, \
+With[List[Set[Typeset`box$, EvaluationBox[]]], If[Not[AbsoluteCurrentValue[\\\
+\"Deployed\\\"]], CompoundExpression[SelectionMove[Typeset`box$, All, \
+Expression], Set[FrontEnd`Private`$ColorSelectorInitialAlpha, 1], \
+Set[FrontEnd`Private`$ColorSelectorInitialColor, GrayLevel[0]], \
+Set[FrontEnd`Private`$ColorSelectorUseMakeBoxes, True], \
+MathLink`CallFrontEnd[FrontEnd`AttachCell[Typeset`box$, \
+FrontEndResource[\\\"GrayLevelColorValueSelector\\\"], List[0, List[Left, \
+Bottom]], List[Left, Top], Rule[\\\"ClosingActions\\\", \
+List[\\\"SelectionDeparture\\\", \\\"ParentChanged\\\", \
+\\\"EvaluatorQuit\\\"]]]]]]]], Rule[BaseStyle, Inherited], Rule[Evaluator, \
+Automatic], Rule[Method, \\\"Preemptive\\\"]], GrayLevel[0], Rule[Editable, \
+False], Rule[Selectable, False]]}]}], \\\"]\\\"}]}], \\\"]\\\"}]\\).\"",2,594,
+   161,32650053152343707962,"Local"},
+  "MessageTemplate"]], "Message", "MSG",
+ CellChangeTimes->{
+  3.731094216358107*^9},ExpressionUUID->"694549e8-0d2c-4e3a-bd44-\
+b5f55aa10e53"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "Import","nffil",
+   "\"File not found during \\!\\(\\*RowBox[{\\\"Import\\\"}]\\).\"",2,594,
+   162,32650053152343707962,"Local"},
+  "MessageTemplate"]], "Message", "MSG",
+ CellChangeTimes->{
+  3.731094219508765*^9},ExpressionUUID->"f39d7824-cc21-4034-8cca-\
+d06007cbc877"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "Flatten","normal",
+   "\"Nonatomic expression expected at position \
+\\!\\(\\*RowBox[{\\\"1\\\"}]\\) in \\!\\(\\*RowBox[{\\\"Flatten\\\", \
+\\\"[\\\", \\\"$Failed\\\", \\\"]\\\"}]\\).\"",2,594,163,32650053152343707962,
+   "Local"},
+  "MessageTemplate"]], "Message", "MSG",
+ CellChangeTimes->{
+  3.731094219534423*^9},ExpressionUUID->"7236eda2-4077-4524-b568-\
+0e0abe61ac1d"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "Symbol","argx",
+   "\"\\!\\(\\*RowBox[{\\\"Symbol\\\"}]\\) called with \\!\\(\\*RowBox[{\\\"0\
+\\\"}]\\) arguments; 1 argument is expected.\"",2,594,164,
+   32650053152343707962,"Local"},
+  "MessageTemplate"]], "Message", "MSG",
+ CellChangeTimes->{
+  3.7310942195559177`*^9},ExpressionUUID->"ac88dbe6-ed43-4db0-a763-\
+c00e7cfcb87a"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "Symbol","argx",
+   "\"\\!\\(\\*RowBox[{\\\"Symbol\\\"}]\\) called with \\!\\(\\*RowBox[{\\\"0\
+\\\"}]\\) arguments; 1 argument is expected.\"",2,594,165,
+   32650053152343707962,"Local"},
+  "MessageTemplate"]], "Message", "MSG",
+ CellChangeTimes->{
+  3.731094219575721*^9},ExpressionUUID->"784fedbb-606f-4d1a-9f6e-\
+9d62f4809eee"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "Transpose","nmtx",
+   "\"The first two levels of \\!\\(\\*RowBox[{\\\"{\\\", \
+RowBox[{RowBox[{\\\"Symbol\\\", \\\"[\\\", \\\"]\\\"}], \\\",\\\", RowBox[{\\\
+\"Symbol\\\", \\\"[\\\", \\\"]\\\"}], \\\",\\\", RowBox[{\\\"Flatten\\\", \
+\\\"[\\\", \\\"$Failed\\\", \\\"]\\\"}]}], \\\"}\\\"}]\\) cannot be \
+transposed.\"",2,594,166,32650053152343707962,"Local"},
+  "MessageTemplate"]], "Message", "MSG",
+ CellChangeTimes->{
+  3.731094219595937*^9},ExpressionUUID->"4869595e-8248-4da4-a4eb-\
+ad7d3c9ee8c2"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "Import","nffil",
+   "\"File not found during \\!\\(\\*RowBox[{\\\"Import\\\"}]\\).\"",2,594,
+   167,32650053152343707962,"Local"},
+  "MessageTemplate"]], "Message", "MSG",
+ CellChangeTimes->{
+  3.731094219618271*^9},ExpressionUUID->"9248be36-e65f-4b33-a0c8-\
+19c2fc619b09"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "Flatten","normal",
+   "\"Nonatomic expression expected at position \
+\\!\\(\\*RowBox[{\\\"1\\\"}]\\) in \\!\\(\\*RowBox[{\\\"Flatten\\\", \
+\\\"[\\\", \\\"$Failed\\\", \\\"]\\\"}]\\).\"",2,594,168,32650053152343707962,
+   "Local"},
+  "MessageTemplate"]], "Message", "MSG",
+ CellChangeTimes->{
+  3.7310942196842957`*^9},ExpressionUUID->"fbf752e9-61f6-44ea-8e04-\
+7a3db079f1e7"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "Import","nffil",
+   "\"File not found during \\!\\(\\*RowBox[{\\\"Import\\\"}]\\).\"",2,594,
+   169,32650053152343707962,"Local"},
+  "MessageTemplate"]], "Message", "MSG",
+ CellChangeTimes->{
+  3.7310942197399797`*^9},ExpressionUUID->"507f5023-fd0f-4254-a5be-\
+7b9fc484da4f"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "General","stop",
+   "\"Further output of \\!\\(\\*StyleBox[RowBox[{\\\"Import\\\", \\\"::\\\", \
+\\\"nffil\\\"}], \\\"MessageName\\\"]\\) will be suppressed during this \
+calculation.\"",2,594,170,32650053152343707962,"Local"},
+  "MessageTemplate"]], "Message", "MSG",
+ CellChangeTimes->{
+  3.7310942197982893`*^9},ExpressionUUID->"f1a334dd-b661-4c20-9a78-\
+1e653518f441"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "Flatten","normal",
+   "\"Nonatomic expression expected at position \
+\\!\\(\\*RowBox[{\\\"1\\\"}]\\) in \\!\\(\\*RowBox[{\\\"Flatten\\\", \
+\\\"[\\\", \\\"$Failed\\\", \\\"]\\\"}]\\).\"",2,594,171,32650053152343707962,
+   "Local"},
+  "MessageTemplate"]], "Message", "MSG",
+ CellChangeTimes->{
+  3.731094219849921*^9},ExpressionUUID->"9fcb662a-f361-4f64-bc83-\
+92dd62683361"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "General","stop",
+   "\"Further output of \\!\\(\\*StyleBox[RowBox[{\\\"Flatten\\\", \
+\\\"::\\\", \\\"normal\\\"}], \\\"MessageName\\\"]\\) will be suppressed \
+during this calculation.\"",2,594,172,32650053152343707962,"Local"},
+  "MessageTemplate"]], "Message", "MSG",
+ CellChangeTimes->{
+  3.731094219901452*^9},ExpressionUUID->"b1abbdaf-5365-4f96-b980-\
+e9c5ec11abc7"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "ListContourPlot","arrayerr",
+   "\"\\!\\(\\*RowBox[{\\\"Transpose\\\", \\\"[\\\", RowBox[{\\\"{\\\", \
+RowBox[{RowBox[{\\\"Symbol\\\", \\\"[\\\", \\\"]\\\"}], \\\",\\\", RowBox[{\\\
+\"Symbol\\\", \\\"[\\\", \\\"]\\\"}], \\\",\\\", RowBox[{\\\"Flatten\\\", \
+\\\"[\\\", \\\"$Failed\\\", \\\"]\\\"}]}], \\\"}\\\"}], \\\"]\\\"}]\\) must \
+be a valid array.\"",2,594,173,32650053152343707962,"Local"},
+  "MessageTemplate"]], "Message", "MSG",
+ CellChangeTimes->{
+  3.7310942199870653`*^9},ExpressionUUID->"fa7573ad-aaa3-4844-ab8d-\
+694fcc307f7d"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "Transpose","nmtx",
+   "\"The first two levels of \\!\\(\\*RowBox[{\\\"{\\\", \
+RowBox[{RowBox[{\\\"Flatten\\\", \\\"[\\\", \\\"$Failed\\\", \\\"]\\\"}], \
+\\\",\\\", RowBox[{\\\"Flatten\\\", \\\"[\\\", \\\"$Failed\\\", \
+\\\"]\\\"}]}], \\\"}\\\"}]\\) cannot be transposed.\"",2,594,174,
+   32650053152343707962,"Local"},
+  "MessageTemplate"]], "Message", "MSG",
+ CellChangeTimes->{
+  3.731094220004575*^9},ExpressionUUID->"f12a590d-01c3-4ffb-91a2-\
+10c194ace95c"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "ListLinePlot","lpn",
+   "\"\\!\\(\\*RowBox[{\\\"Transpose\\\", \\\"[\\\", RowBox[{\\\"{\\\", \
+RowBox[{RowBox[{\\\"Flatten\\\", \\\"[\\\", \\\"$Failed\\\", \\\"]\\\"}], \
+\\\",\\\", RowBox[{\\\"Flatten\\\", \\\"[\\\", \\\"$Failed\\\", \
+\\\"]\\\"}]}], \\\"}\\\"}], \\\"]\\\"}]\\) is not a list of numbers or pairs \
+of numbers.\"",2,594,175,32650053152343707962,"Local"},
+  "MessageTemplate"]], "Message", "MSG",
+ CellChangeTimes->{
+  3.731094220065057*^9},ExpressionUUID->"96cd01bb-bec2-48cf-ade6-\
+467cf46bef2e"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "ListLinePlot","lpn",
+   "\"\\!\\(\\*RowBox[{\\\"Transpose\\\", \\\"[\\\", RowBox[{\\\"{\\\", \
+RowBox[{RowBox[{\\\"Flatten\\\", \\\"[\\\", \\\"$Failed\\\", \\\"]\\\"}], \
+\\\",\\\", RowBox[{\\\"Flatten\\\", \\\"[\\\", \\\"$Failed\\\", \
+\\\"]\\\"}]}], \\\"}\\\"}], \\\"]\\\"}]\\) is not a list of numbers or pairs \
+of numbers.\"",2,594,176,32650053152343707962,"Local"},
+  "MessageTemplate"]], "Message", "MSG",
+ CellChangeTimes->{
+  3.7310942201282377`*^9},ExpressionUUID->"7aa65c90-d9fe-4d99-927d-\
+d9726639cf1d"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "Show","gcomb",
+   "\"Could not combine the graphics objects in \
+\\!\\(\\*RowBox[{\\\"Show\\\", \\\"[\\\", RowBox[{RowBox[{\\\"ListContourPlot\
+\\\", \\\"[\\\", RowBox[{RowBox[{\\\"Transpose\\\", \\\"[\\\", \
+RowBox[{\\\"{\\\", RowBox[{RowBox[{\\\"Symbol\\\", \\\"[\\\", \\\"]\\\"}], \\\
+\",\\\", RowBox[{\\\"Symbol\\\", \\\"[\\\", \\\"]\\\"}], \\\",\\\", \
+RowBox[{\\\"Flatten\\\", \\\"[\\\", \\\"$Failed\\\", \\\"]\\\"}]}], \
+\\\"}\\\"}], \\\"]\\\"}], \\\",\\\", RowBox[{\\\"PlotRange\\\", \\\"\[Rule]\\\
+\", RowBox[{\\\"{\\\", RowBox[{RowBox[{\\\"-\\\", \\\"0.3`\\\"}], \\\",\\\", \
+\\\"0.3`\\\"}], \\\"}\\\"}]}], \\\",\\\", \
+RowBox[{\\\"ColorFunctionScaling\\\", \\\"\[Rule]\\\", \\\"False\\\"}], \\\",\
+\\\", RowBox[{\\\"ColorFunction\\\", \\\"\[Rule]\\\", \
+RowBox[{\\\"ColorDataFunction\\\", \\\"[\\\", \
+RowBox[{\\\"\\\\\\\"DarkColorDensityGradient\\\\\\\"\\\", \\\",\\\", \\\"\\\\\
+\\\"ThemeGradients\\\\\\\"\\\", \\\",\\\", RowBox[{\\\"{\\\", \
+RowBox[{RowBox[{\\\"-\\\", \\\"0.3`\\\"}], \\\",\\\", \\\"0.3`\\\"}], \\\"}\\\
+\"}], \\\",\\\", RowBox[{RowBox[{\\\"Blend\\\", \\\"[\\\", RowBox[{RowBox[{\\\
+\"{\\\", RowBox[{RowBox[{\\\"{\\\", RowBox[{\\\"\[LeftSkeleton]\\\", \
+\\\"2\\\", \\\"\[RightSkeleton]\\\"}], \\\"}\\\"}], \\\",\\\", \
+RowBox[{\\\"{\\\", RowBox[{\\\"\[LeftSkeleton]\\\", \\\"2\\\", \\\"\
+\[RightSkeleton]\\\"}], \\\"}\\\"}], \\\",\\\", RowBox[{\\\"{\\\", RowBox[{\\\
+\"\[LeftSkeleton]\\\", \\\"2\\\", \\\"\[RightSkeleton]\\\"}], \\\"}\\\"}]}], \
+\\\"}\\\"}], \\\",\\\", \\\"#1\\\"}], \\\"]\\\"}], \\\"&\\\"}]}], \
+\\\"]\\\"}]}], \\\",\\\", RowBox[{\\\"PlotLegends\\\", \\\"\[Rule]\\\", \
+\\\"Automatic\\\"}]}], \\\"]\\\"}], \\\",\\\", RowBox[{\\\"ListLinePlot\\\", \
+\\\"[\\\", RowBox[{RowBox[{\\\"Transpose\\\", \\\"[\\\", RowBox[{\\\"{\\\", \
+RowBox[{RowBox[{\\\"Flatten\\\", \\\"[\\\", \\\"$Failed\\\", \\\"]\\\"}], \
+\\\",\\\", RowBox[{\\\"Flatten\\\", \\\"[\\\", \\\"$Failed\\\", \
+\\\"]\\\"}]}], \\\"}\\\"}], \\\"]\\\"}], \\\",\\\", \
+RowBox[{\\\"PlotStyle\\\", \\\"\[Rule]\\\", \
+InterpretationBox[ButtonBox[TooltipBox[GraphicsBox[List[List[GrayLevel[0], \
+RectangleBox[List[0, 0]]], List[GrayLevel[0], RectangleBox[List[1, -1]]], \
+List[GrayLevel[0], RectangleBox[List[0, -1], List[2, 1]]]], Rule[AspectRatio, \
+1], Rule[Frame, True], Rule[FrameStyle, GrayLevel[0.`]], Rule[FrameTicks, \
+None], Rule[PlotRangePadding, None], Rule[ImageSize, Dynamic[List[Automatic, \
+Times[1.35`, CurrentValue[\\\"FontCapHeight\\\"], \
+Power[AbsoluteCurrentValue[Magnification], -1]]]]]], \\\"GrayLevel[0]\\\"], \
+Rule[Appearance, None], Rule[BaseStyle, List[]], Rule[BaselinePosition, \
+Baseline], Rule[DefaultBaseStyle, List[]], RuleDelayed[ButtonFunction, \
+With[List[Set[Typeset`box$, EvaluationBox[]]], If[Not[AbsoluteCurrentValue[\\\
+\"Deployed\\\"]], CompoundExpression[SelectionMove[Typeset`box$, All, \
+Expression], Set[FrontEnd`Private`$ColorSelectorInitialAlpha, 1], \
+Set[FrontEnd`Private`$ColorSelectorInitialColor, GrayLevel[0]], \
+Set[FrontEnd`Private`$ColorSelectorUseMakeBoxes, True], \
+MathLink`CallFrontEnd[FrontEnd`AttachCell[Typeset`box$, \
+FrontEndResource[\\\"GrayLevelColorValueSelector\\\"], List[0, List[Left, \
+Bottom]], List[Left, Top], Rule[\\\"ClosingActions\\\", \
+List[\\\"SelectionDeparture\\\", \\\"ParentChanged\\\", \
+\\\"EvaluatorQuit\\\"]]]]]]]], Rule[BaseStyle, Inherited], Rule[Evaluator, \
+Automatic], Rule[Method, \\\"Preemptive\\\"]], GrayLevel[0], Rule[Editable, \
+False], Rule[Selectable, False]]}]}], \\\"]\\\"}]}], \\\"]\\\"}]\\).\"",2,594,
+   177,32650053152343707962,"Local"},
+  "MessageTemplate"]], "Message", "MSG",
+ CellChangeTimes->{
+  3.731094220145393*^9},ExpressionUUID->"1d49bd06-ef8e-47d6-823d-\
+592c6f18fcf9"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "Import","nffil",
+   "\"File not found during \\!\\(\\*RowBox[{\\\"Import\\\"}]\\).\"",2,10,9,
+   32655656998272385636,"Local"},
+  "MessageTemplate"]], "Message", "MSG",
+ CellChangeTimes->{
+  3.731936524654563*^9},ExpressionUUID->"b4446109-5c2e-40a5-8b87-\
+9bd3bd4436d5"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "Flatten","normal",
+   "\"Nonatomic expression expected at position \
+\\!\\(\\*RowBox[{\\\"1\\\"}]\\) in \\!\\(\\*RowBox[{\\\"Flatten\\\", \
+\\\"[\\\", \\\"$Failed\\\", \\\"]\\\"}]\\).\"",2,10,10,32655656998272385636,
+   "Local"},
+  "MessageTemplate"]], "Message", "MSG",
+ CellChangeTimes->{
+  3.731936524690136*^9},ExpressionUUID->"40a868c9-d29a-441b-93df-\
+9ec87fce2fd6"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "Symbol","argx",
+   "\"\\!\\(\\*RowBox[{\\\"Symbol\\\"}]\\) called with \\!\\(\\*RowBox[{\\\"0\
+\\\"}]\\) arguments; 1 argument is expected.\"",2,10,11,32655656998272385636,
+   "Local"},
+  "MessageTemplate"]], "Message", "MSG",
+ CellChangeTimes->{
+  3.731936524705287*^9},ExpressionUUID->"2fd39632-6f0d-4971-9243-\
+f1895b5defe2"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "Symbol","argx",
+   "\"\\!\\(\\*RowBox[{\\\"Symbol\\\"}]\\) called with \\!\\(\\*RowBox[{\\\"0\
+\\\"}]\\) arguments; 1 argument is expected.\"",2,10,12,32655656998272385636,
+   "Local"},
+  "MessageTemplate"]], "Message", "MSG",
+ CellChangeTimes->{
+  3.7319365247205877`*^9},ExpressionUUID->"9eb42f4b-b6c9-4c76-b8d9-\
+a76b77b00335"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "Transpose","nmtx",
+   "\"The first two levels of \\!\\(\\*RowBox[{\\\"{\\\", \
+RowBox[{RowBox[{\\\"Symbol\\\", \\\"[\\\", \\\"]\\\"}], \\\",\\\", RowBox[{\\\
+\"Symbol\\\", \\\"[\\\", \\\"]\\\"}], \\\",\\\", RowBox[{\\\"Flatten\\\", \
+\\\"[\\\", \\\"$Failed\\\", \\\"]\\\"}]}], \\\"}\\\"}]\\) cannot be \
+transposed.\"",2,10,13,32655656998272385636,"Local"},
+  "MessageTemplate"]], "Message", "MSG",
+ CellChangeTimes->{
+  3.7319365247355747`*^9},ExpressionUUID->"964c3c85-8a8b-4e7b-9477-\
+657bce419796"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "Import","nffil",
+   "\"File not found during \\!\\(\\*RowBox[{\\\"Import\\\"}]\\).\"",2,10,14,
+   32655656998272385636,"Local"},
+  "MessageTemplate"]], "Message", "MSG",
+ CellChangeTimes->{
+  3.7319365247509193`*^9},ExpressionUUID->"49dbd045-4a5a-47ee-b446-\
+b5083be8afaa"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "Flatten","normal",
+   "\"Nonatomic expression expected at position \
+\\!\\(\\*RowBox[{\\\"1\\\"}]\\) in \\!\\(\\*RowBox[{\\\"Flatten\\\", \
+\\\"[\\\", \\\"$Failed\\\", \\\"]\\\"}]\\).\"",2,10,15,32655656998272385636,
+   "Local"},
+  "MessageTemplate"]], "Message", "MSG",
+ CellChangeTimes->{
+  3.731936524815344*^9},ExpressionUUID->"8cb42197-a344-4ed3-9aa6-\
+efabc0e251a5"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "Import","nffil",
+   "\"File not found during \\!\\(\\*RowBox[{\\\"Import\\\"}]\\).\"",2,10,16,
+   32655656998272385636,"Local"},
+  "MessageTemplate"]], "Message", "MSG",
+ CellChangeTimes->{
+  3.731936524870102*^9},ExpressionUUID->"4e2cd387-486a-4170-84ce-\
+93e7098e5fae"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "General","stop",
+   "\"Further output of \\!\\(\\*StyleBox[RowBox[{\\\"Import\\\", \\\"::\\\", \
+\\\"nffil\\\"}], \\\"MessageName\\\"]\\) will be suppressed during this \
+calculation.\"",2,10,17,32655656998272385636,"Local"},
+  "MessageTemplate"]], "Message", "MSG",
+ CellChangeTimes->{
+  3.731936524927063*^9},ExpressionUUID->"78b83d0d-6c5b-49cd-8e15-\
+e4593fe40dc0"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "Flatten","normal",
+   "\"Nonatomic expression expected at position \
+\\!\\(\\*RowBox[{\\\"1\\\"}]\\) in \\!\\(\\*RowBox[{\\\"Flatten\\\", \
+\\\"[\\\", \\\"$Failed\\\", \\\"]\\\"}]\\).\"",2,10,18,32655656998272385636,
+   "Local"},
+  "MessageTemplate"]], "Message", "MSG",
+ CellChangeTimes->{
+  3.731936524984202*^9},ExpressionUUID->"7284cbb1-44d9-4e5a-9800-\
+491a29066191"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "General","stop",
+   "\"Further output of \\!\\(\\*StyleBox[RowBox[{\\\"Flatten\\\", \
+\\\"::\\\", \\\"normal\\\"}], \\\"MessageName\\\"]\\) will be suppressed \
+during this calculation.\"",2,10,19,32655656998272385636,"Local"},
+  "MessageTemplate"]], "Message", "MSG",
+ CellChangeTimes->{
+  3.731936525037312*^9},ExpressionUUID->"2a006395-4a6c-42f7-9c7c-\
+68afec945575"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "ListContourPlot","arrayerr",
+   "\"\\!\\(\\*RowBox[{\\\"Transpose\\\", \\\"[\\\", RowBox[{\\\"{\\\", \
+RowBox[{RowBox[{\\\"Symbol\\\", \\\"[\\\", \\\"]\\\"}], \\\",\\\", RowBox[{\\\
+\"Symbol\\\", \\\"[\\\", \\\"]\\\"}], \\\",\\\", RowBox[{\\\"Flatten\\\", \
+\\\"[\\\", \\\"$Failed\\\", \\\"]\\\"}]}], \\\"}\\\"}], \\\"]\\\"}]\\) must \
+be a valid array.\"",2,10,20,32655656998272385636,"Local"},
+  "MessageTemplate"]], "Message", "MSG",
+ CellChangeTimes->{
+  3.731936525145073*^9},ExpressionUUID->"887dde08-6f6f-4c7c-8e76-\
+620d80eee71e"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "Transpose","nmtx",
+   "\"The first two levels of \\!\\(\\*RowBox[{\\\"{\\\", \
+RowBox[{RowBox[{\\\"Flatten\\\", \\\"[\\\", \\\"$Failed\\\", \\\"]\\\"}], \
+\\\",\\\", RowBox[{\\\"Flatten\\\", \\\"[\\\", \\\"$Failed\\\", \
+\\\"]\\\"}]}], \\\"}\\\"}]\\) cannot be transposed.\"",2,10,21,
+   32655656998272385636,"Local"},
+  "MessageTemplate"]], "Message", "MSG",
+ CellChangeTimes->{
+  3.731936525192655*^9},ExpressionUUID->"bc5be962-cb3e-4b03-a425-\
+75c6a8a70c32"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "ListLinePlot","lpn",
+   "\"\\!\\(\\*RowBox[{\\\"Transpose\\\", \\\"[\\\", RowBox[{\\\"{\\\", \
+RowBox[{RowBox[{\\\"Flatten\\\", \\\"[\\\", \\\"$Failed\\\", \\\"]\\\"}], \
+\\\",\\\", RowBox[{\\\"Flatten\\\", \\\"[\\\", \\\"$Failed\\\", \
+\\\"]\\\"}]}], \\\"}\\\"}], \\\"]\\\"}]\\) is not a list of numbers or pairs \
+of numbers.\"",2,10,22,32655656998272385636,"Local"},
+  "MessageTemplate"]], "Message", "MSG",
+ CellChangeTimes->{
+  3.731936525251177*^9},ExpressionUUID->"7572ca19-263a-419d-8463-\
+7730895c866b"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "ListLinePlot","lpn",
+   "\"\\!\\(\\*RowBox[{\\\"Transpose\\\", \\\"[\\\", RowBox[{\\\"{\\\", \
+RowBox[{RowBox[{\\\"Flatten\\\", \\\"[\\\", \\\"$Failed\\\", \\\"]\\\"}], \
+\\\",\\\", RowBox[{\\\"Flatten\\\", \\\"[\\\", \\\"$Failed\\\", \
+\\\"]\\\"}]}], \\\"}\\\"}], \\\"]\\\"}]\\) is not a list of numbers or pairs \
+of numbers.\"",2,10,23,32655656998272385636,"Local"},
+  "MessageTemplate"]], "Message", "MSG",
+ CellChangeTimes->{
+  3.731936525303039*^9},ExpressionUUID->"9dcea3fd-e582-4f31-9ba7-\
+2aefa8bed55a"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "Show","gcomb",
+   "\"Could not combine the graphics objects in \
+\\!\\(\\*RowBox[{\\\"Show\\\", \\\"[\\\", RowBox[{RowBox[{\\\"ListContourPlot\
+\\\", \\\"[\\\", RowBox[{RowBox[{\\\"Transpose\\\", \\\"[\\\", \
+RowBox[{\\\"{\\\", RowBox[{RowBox[{\\\"Symbol\\\", \\\"[\\\", \\\"]\\\"}], \\\
+\",\\\", RowBox[{\\\"Symbol\\\", \\\"[\\\", \\\"]\\\"}], \\\",\\\", \
+RowBox[{\\\"Flatten\\\", \\\"[\\\", \\\"$Failed\\\", \\\"]\\\"}]}], \
+\\\"}\\\"}], \\\"]\\\"}], \\\",\\\", RowBox[{\\\"PlotRange\\\", \\\"\[Rule]\\\
+\", RowBox[{\\\"{\\\", RowBox[{RowBox[{\\\"-\\\", \\\"0.3`\\\"}], \\\",\\\", \
+\\\"0.3`\\\"}], \\\"}\\\"}]}], \\\",\\\", \
+RowBox[{\\\"ColorFunctionScaling\\\", \\\"\[Rule]\\\", \\\"False\\\"}], \\\",\
+\\\", RowBox[{\\\"ColorFunction\\\", \\\"\[Rule]\\\", \
+RowBox[{\\\"ColorDataFunction\\\", \\\"[\\\", \
+RowBox[{\\\"\\\\\\\"DarkColorDensityGradient\\\\\\\"\\\", \\\",\\\", \\\"\\\\\
+\\\"ThemeGradients\\\\\\\"\\\", \\\",\\\", RowBox[{\\\"{\\\", \
+RowBox[{RowBox[{\\\"-\\\", \\\"0.3`\\\"}], \\\",\\\", \\\"0.3`\\\"}], \\\"}\\\
+\"}], \\\",\\\", RowBox[{RowBox[{\\\"Blend\\\", \\\"[\\\", RowBox[{RowBox[{\\\
+\"{\\\", RowBox[{RowBox[{\\\"{\\\", RowBox[{\\\"\[LeftSkeleton]\\\", \
+\\\"2\\\", \\\"\[RightSkeleton]\\\"}], \\\"}\\\"}], \\\",\\\", \
+RowBox[{\\\"{\\\", RowBox[{\\\"\[LeftSkeleton]\\\", \\\"2\\\", \\\"\
+\[RightSkeleton]\\\"}], \\\"}\\\"}], \\\",\\\", RowBox[{\\\"{\\\", RowBox[{\\\
+\"\[LeftSkeleton]\\\", \\\"2\\\", \\\"\[RightSkeleton]\\\"}], \\\"}\\\"}]}], \
+\\\"}\\\"}], \\\",\\\", \\\"#1\\\"}], \\\"]\\\"}], \\\"&\\\"}]}], \
+\\\"]\\\"}]}], \\\",\\\", RowBox[{\\\"PlotLegends\\\", \\\"\[Rule]\\\", \
+\\\"Automatic\\\"}]}], \\\"]\\\"}], \\\",\\\", RowBox[{\\\"ListLinePlot\\\", \
+\\\"[\\\", RowBox[{RowBox[{\\\"Transpose\\\", \\\"[\\\", RowBox[{\\\"{\\\", \
+RowBox[{RowBox[{\\\"Flatten\\\", \\\"[\\\", \\\"$Failed\\\", \\\"]\\\"}], \
+\\\",\\\", RowBox[{\\\"Flatten\\\", \\\"[\\\", \\\"$Failed\\\", \
+\\\"]\\\"}]}], \\\"}\\\"}], \\\"]\\\"}], \\\",\\\", \
+RowBox[{\\\"PlotStyle\\\", \\\"\[Rule]\\\", \
+InterpretationBox[ButtonBox[TooltipBox[GraphicsBox[List[List[GrayLevel[0], \
+RectangleBox[List[0, 0]]], List[GrayLevel[0], RectangleBox[List[1, -1]]], \
+List[GrayLevel[0], RectangleBox[List[0, -1], List[2, 1]]]], Rule[AspectRatio, \
+1], Rule[Frame, True], Rule[FrameStyle, GrayLevel[0.`]], Rule[FrameTicks, \
+None], Rule[PlotRangePadding, None], Rule[ImageSize, Dynamic[List[Automatic, \
+Times[1.35`, CurrentValue[\\\"FontCapHeight\\\"], \
+Power[AbsoluteCurrentValue[Magnification], -1]]]]]], \\\"GrayLevel[0]\\\"], \
+Rule[Appearance, None], Rule[BaseStyle, List[]], Rule[BaselinePosition, \
+Baseline], Rule[DefaultBaseStyle, List[]], RuleDelayed[ButtonFunction, \
+With[List[Set[Typeset`box$, EvaluationBox[]]], If[Not[AbsoluteCurrentValue[\\\
+\"Deployed\\\"]], CompoundExpression[SelectionMove[Typeset`box$, All, \
+Expression], Set[FrontEnd`Private`$ColorSelectorInitialAlpha, 1], \
+Set[FrontEnd`Private`$ColorSelectorInitialColor, GrayLevel[0]], \
+Set[FrontEnd`Private`$ColorSelectorUseMakeBoxes, True], \
+MathLink`CallFrontEnd[FrontEnd`AttachCell[Typeset`box$, \
+FrontEndResource[\\\"GrayLevelColorValueSelector\\\"], List[0, List[Left, \
+Bottom]], List[Left, Top], Rule[\\\"ClosingActions\\\", \
+List[\\\"SelectionDeparture\\\", \\\"ParentChanged\\\", \
+\\\"EvaluatorQuit\\\"]]]]]]]], Rule[BaseStyle, Inherited], Rule[Evaluator, \
+Automatic], Rule[Method, \\\"Preemptive\\\"]], GrayLevel[0], Rule[Editable, \
+False], Rule[Selectable, False]]}]}], \\\"]\\\"}]}], \\\"]\\\"}]\\).\"",2,10,
+   24,32655656998272385636,"Local"},
+  "MessageTemplate"]], "Message", "MSG",
+ CellChangeTimes->{
+  3.7319365253406963`*^9},ExpressionUUID->"b89a4f31-0969-4e14-969d-\
+416bf3812dbc"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "ListContourPlot","arrayerr",
+   "\"\\!\\(\\*RowBox[{\\\"Transpose\\\", \\\"[\\\", RowBox[{\\\"{\\\", \
+RowBox[{RowBox[{\\\"Symbol\\\", \\\"[\\\", \\\"]\\\"}], \\\",\\\", RowBox[{\\\
+\"Symbol\\\", \\\"[\\\", \\\"]\\\"}], \\\",\\\", RowBox[{\\\"Flatten\\\", \
+\\\"[\\\", \\\"$Failed\\\", \\\"]\\\"}]}], \\\"}\\\"}], \\\"]\\\"}]\\) must \
+be a valid array.\"",2,10,25,32655656998272385636,"Local"},
+  "MessageTemplate"]], "Message", "MSG",
+ CellChangeTimes->{
+  3.7319365253834333`*^9},ExpressionUUID->"52113fac-71eb-4568-8c37-\
+ad9081f7ee10"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "ListLinePlot","lpn",
+   "\"\\!\\(\\*RowBox[{\\\"Transpose\\\", \\\"[\\\", RowBox[{\\\"{\\\", \
+RowBox[{RowBox[{\\\"Flatten\\\", \\\"[\\\", \\\"$Failed\\\", \\\"]\\\"}], \
+\\\",\\\", RowBox[{\\\"Flatten\\\", \\\"[\\\", \\\"$Failed\\\", \
+\\\"]\\\"}]}], \\\"}\\\"}], \\\"]\\\"}]\\) is not a list of numbers or pairs \
+of numbers.\"",2,10,26,32655656998272385636,"Local"},
+  "MessageTemplate"]], "Message", "MSG",
+ CellChangeTimes->{
+  3.731936525433587*^9},ExpressionUUID->"a2a9eec4-f2c1-4732-8e9b-\
+53983bddf11b"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "General","stop",
+   "\"Further output of \\!\\(\\*StyleBox[RowBox[{\\\"ListLinePlot\\\", \
+\\\"::\\\", \\\"lpn\\\"}], \\\"MessageName\\\"]\\) will be suppressed during \
+this calculation.\"",2,10,27,32655656998272385636,"Local"},
+  "MessageTemplate"]], "Message", "MSG",
+ CellChangeTimes->{
+  3.7319365254551983`*^9},ExpressionUUID->"735f033c-1ffd-46ca-a276-\
+283fa529c46c"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "Show","gcomb",
+   "\"Could not combine the graphics objects in \
+\\!\\(\\*RowBox[{\\\"Show\\\", \\\"[\\\", RowBox[{RowBox[{\\\"ListContourPlot\
+\\\", \\\"[\\\", RowBox[{RowBox[{\\\"Transpose\\\", \\\"[\\\", \
+RowBox[{\\\"{\\\", RowBox[{RowBox[{\\\"Symbol\\\", \\\"[\\\", \\\"]\\\"}], \\\
+\",\\\", RowBox[{\\\"Symbol\\\", \\\"[\\\", \\\"]\\\"}], \\\",\\\", \
+RowBox[{\\\"Flatten\\\", \\\"[\\\", \\\"$Failed\\\", \\\"]\\\"}]}], \
+\\\"}\\\"}], \\\"]\\\"}], \\\",\\\", RowBox[{\\\"PlotRange\\\", \\\"\[Rule]\\\
+\", RowBox[{\\\"{\\\", RowBox[{RowBox[{\\\"-\\\", \\\"0.3`\\\"}], \\\",\\\", \
+\\\"0.3`\\\"}], \\\"}\\\"}]}], \\\",\\\", \
+RowBox[{\\\"ColorFunctionScaling\\\", \\\"\[Rule]\\\", \\\"False\\\"}], \\\",\
+\\\", RowBox[{\\\"ColorFunction\\\", \\\"\[Rule]\\\", \
+RowBox[{\\\"ColorDataFunction\\\", \\\"[\\\", \
+RowBox[{\\\"\\\\\\\"DarkColorDensityGradient\\\\\\\"\\\", \\\",\\\", \\\"\\\\\
+\\\"ThemeGradients\\\\\\\"\\\", \\\",\\\", RowBox[{\\\"{\\\", \
+RowBox[{RowBox[{\\\"-\\\", \\\"0.3`\\\"}], \\\",\\\", \\\"0.3`\\\"}], \\\"}\\\
+\"}], \\\",\\\", RowBox[{RowBox[{\\\"Blend\\\", \\\"[\\\", RowBox[{RowBox[{\\\
+\"{\\\", RowBox[{RowBox[{\\\"{\\\", RowBox[{\\\"\[LeftSkeleton]\\\", \
+\\\"2\\\", \\\"\[RightSkeleton]\\\"}], \\\"}\\\"}], \\\",\\\", \
+RowBox[{\\\"{\\\", RowBox[{\\\"\[LeftSkeleton]\\\", \\\"2\\\", \\\"\
+\[RightSkeleton]\\\"}], \\\"}\\\"}], \\\",\\\", RowBox[{\\\"{\\\", RowBox[{\\\
+\"\[LeftSkeleton]\\\", \\\"2\\\", \\\"\[RightSkeleton]\\\"}], \\\"}\\\"}]}], \
+\\\"}\\\"}], \\\",\\\", \\\"#1\\\"}], \\\"]\\\"}], \\\"&\\\"}]}], \
+\\\"]\\\"}]}], \\\",\\\", RowBox[{\\\"PlotLegends\\\", \\\"\[Rule]\\\", \
+\\\"Automatic\\\"}]}], \\\"]\\\"}], \\\",\\\", RowBox[{\\\"ListLinePlot\\\", \
+\\\"[\\\", RowBox[{RowBox[{\\\"Transpose\\\", \\\"[\\\", RowBox[{\\\"{\\\", \
+RowBox[{RowBox[{\\\"Flatten\\\", \\\"[\\\", \\\"$Failed\\\", \\\"]\\\"}], \
+\\\",\\\", RowBox[{\\\"Flatten\\\", \\\"[\\\", \\\"$Failed\\\", \
+\\\"]\\\"}]}], \\\"}\\\"}], \\\"]\\\"}], \\\",\\\", \
+RowBox[{\\\"PlotStyle\\\", \\\"\[Rule]\\\", \
+InterpretationBox[ButtonBox[TooltipBox[GraphicsBox[List[List[GrayLevel[0], \
+RectangleBox[List[0, 0]]], List[GrayLevel[0], RectangleBox[List[1, -1]]], \
+List[GrayLevel[0], RectangleBox[List[0, -1], List[2, 1]]]], Rule[AspectRatio, \
+1], Rule[Frame, True], Rule[FrameStyle, GrayLevel[0.`]], Rule[FrameTicks, \
+None], Rule[PlotRangePadding, None], Rule[ImageSize, Dynamic[List[Automatic, \
+Times[1.35`, CurrentValue[\\\"FontCapHeight\\\"], \
+Power[AbsoluteCurrentValue[Magnification], -1]]]]]], \\\"GrayLevel[0]\\\"], \
+Rule[Appearance, None], Rule[BaseStyle, List[]], Rule[BaselinePosition, \
+Baseline], Rule[DefaultBaseStyle, List[]], RuleDelayed[ButtonFunction, \
+With[List[Set[Typeset`box$, EvaluationBox[]]], If[Not[AbsoluteCurrentValue[\\\
+\"Deployed\\\"]], CompoundExpression[SelectionMove[Typeset`box$, All, \
+Expression], Set[FrontEnd`Private`$ColorSelectorInitialAlpha, 1], \
+Set[FrontEnd`Private`$ColorSelectorInitialColor, GrayLevel[0]], \
+Set[FrontEnd`Private`$ColorSelectorUseMakeBoxes, True], \
+MathLink`CallFrontEnd[FrontEnd`AttachCell[Typeset`box$, \
+FrontEndResource[\\\"GrayLevelColorValueSelector\\\"], List[0, List[Left, \
+Bottom]], List[Left, Top], Rule[\\\"ClosingActions\\\", \
+List[\\\"SelectionDeparture\\\", \\\"ParentChanged\\\", \
+\\\"EvaluatorQuit\\\"]]]]]]]], Rule[BaseStyle, Inherited], Rule[Evaluator, \
+Automatic], Rule[Method, \\\"Preemptive\\\"]], GrayLevel[0], Rule[Editable, \
+False], Rule[Selectable, False]]}]}], \\\"]\\\"}]}], \\\"]\\\"}]\\).\"",2,10,
+   28,32655656998272385636,"Local"},
+  "MessageTemplate"]], "Message", "MSG",
+ CellChangeTimes->{
+  3.731936525491126*^9},ExpressionUUID->"f3d08339-0500-4205-98b1-\
+62bfe0272082"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "Import","nffil",
+   "\"File not found during \\!\\(\\*RowBox[{\\\"Import\\\"}]\\).\"",2,10,29,
+   32655656998272385636,"Local"},
+  "MessageTemplate"]], "Message", "MSG",
+ CellChangeTimes->{
+  3.731936525532023*^9},ExpressionUUID->"d6caee09-2cde-4e42-ad0b-\
+d5bf93fc43e8"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "Flatten","normal",
+   "\"Nonatomic expression expected at position \
+\\!\\(\\*RowBox[{\\\"1\\\"}]\\) in \\!\\(\\*RowBox[{\\\"Flatten\\\", \
+\\\"[\\\", \\\"$Failed\\\", \\\"]\\\"}]\\).\"",2,10,30,32655656998272385636,
+   "Local"},
+  "MessageTemplate"]], "Message", "MSG",
+ CellChangeTimes->{
+  3.7319365255561123`*^9},ExpressionUUID->"b443c90b-d650-4de2-ac3f-\
+21fc0f0c7ed4"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "Symbol","argx",
+   "\"\\!\\(\\*RowBox[{\\\"Symbol\\\"}]\\) called with \\!\\(\\*RowBox[{\\\"0\
+\\\"}]\\) arguments; 1 argument is expected.\"",2,10,31,32655656998272385636,
+   "Local"},
+  "MessageTemplate"]], "Message", "MSG",
+ CellChangeTimes->{
+  3.7319365255710278`*^9},ExpressionUUID->"c7f44168-070c-491e-ab8c-\
+5a8f26315190"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "Symbol","argx",
+   "\"\\!\\(\\*RowBox[{\\\"Symbol\\\"}]\\) called with \\!\\(\\*RowBox[{\\\"0\
+\\\"}]\\) arguments; 1 argument is expected.\"",2,10,32,32655656998272385636,
+   "Local"},
+  "MessageTemplate"]], "Message", "MSG",
+ CellChangeTimes->{
+  3.7319365255855494`*^9},ExpressionUUID->"4937537d-808e-41e4-8ab9-\
+67384a7c575d"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "Transpose","nmtx",
+   "\"The first two levels of \\!\\(\\*RowBox[{\\\"{\\\", \
+RowBox[{RowBox[{\\\"Symbol\\\", \\\"[\\\", \\\"]\\\"}], \\\",\\\", RowBox[{\\\
+\"Symbol\\\", \\\"[\\\", \\\"]\\\"}], \\\",\\\", RowBox[{\\\"Flatten\\\", \
+\\\"[\\\", \\\"$Failed\\\", \\\"]\\\"}]}], \\\"}\\\"}]\\) cannot be \
+transposed.\"",2,10,33,32655656998272385636,"Local"},
+  "MessageTemplate"]], "Message", "MSG",
+ CellChangeTimes->{
+  3.731936525600163*^9},ExpressionUUID->"5873f4fd-0d61-4e12-89ac-\
+f0d9f176e668"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "Import","nffil",
+   "\"File not found during \\!\\(\\*RowBox[{\\\"Import\\\"}]\\).\"",2,10,34,
+   32655656998272385636,"Local"},
+  "MessageTemplate"]], "Message", "MSG",
+ CellChangeTimes->{
+  3.731936525615341*^9},ExpressionUUID->"990d0cd0-3219-4561-926f-\
+5fcddccbc8da"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "Flatten","normal",
+   "\"Nonatomic expression expected at position \
+\\!\\(\\*RowBox[{\\\"1\\\"}]\\) in \\!\\(\\*RowBox[{\\\"Flatten\\\", \
+\\\"[\\\", \\\"$Failed\\\", \\\"]\\\"}]\\).\"",2,10,35,32655656998272385636,
+   "Local"},
+  "MessageTemplate"]], "Message", "MSG",
+ CellChangeTimes->{
+  3.731936525683029*^9},ExpressionUUID->"d58de07f-ffe5-45a3-bbc9-\
+0af70a55d6de"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "Import","nffil",
+   "\"File not found during \\!\\(\\*RowBox[{\\\"Import\\\"}]\\).\"",2,10,36,
+   32655656998272385636,"Local"},
+  "MessageTemplate"]], "Message", "MSG",
+ CellChangeTimes->{
+  3.731936525736513*^9},ExpressionUUID->"a1cd529d-6282-46f0-8428-\
+419e6a5f33e5"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "General","stop",
+   "\"Further output of \\!\\(\\*StyleBox[RowBox[{\\\"Import\\\", \\\"::\\\", \
+\\\"nffil\\\"}], \\\"MessageName\\\"]\\) will be suppressed during this \
+calculation.\"",2,10,37,32655656998272385636,"Local"},
+  "MessageTemplate"]], "Message", "MSG",
+ CellChangeTimes->{
+  3.7319365257932463`*^9},ExpressionUUID->"1b50097d-528e-490e-b9a4-\
+589e06340b53"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "Flatten","normal",
+   "\"Nonatomic expression expected at position \
+\\!\\(\\*RowBox[{\\\"1\\\"}]\\) in \\!\\(\\*RowBox[{\\\"Flatten\\\", \
+\\\"[\\\", \\\"$Failed\\\", \\\"]\\\"}]\\).\"",2,10,38,32655656998272385636,
+   "Local"},
+  "MessageTemplate"]], "Message", "MSG",
+ CellChangeTimes->{
+  3.731936525849247*^9},ExpressionUUID->"489c3666-5730-444a-a67c-\
+198f13d5a5fc"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "General","stop",
+   "\"Further output of \\!\\(\\*StyleBox[RowBox[{\\\"Flatten\\\", \
+\\\"::\\\", \\\"normal\\\"}], \\\"MessageName\\\"]\\) will be suppressed \
+during this calculation.\"",2,10,39,32655656998272385636,"Local"},
+  "MessageTemplate"]], "Message", "MSG",
+ CellChangeTimes->{
+  3.731936525902466*^9},ExpressionUUID->"8715652f-94ba-405f-a799-\
+9fcc37712a6f"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "ListContourPlot","arrayerr",
+   "\"\\!\\(\\*RowBox[{\\\"Transpose\\\", \\\"[\\\", RowBox[{\\\"{\\\", \
+RowBox[{RowBox[{\\\"Symbol\\\", \\\"[\\\", \\\"]\\\"}], \\\",\\\", RowBox[{\\\
+\"Symbol\\\", \\\"[\\\", \\\"]\\\"}], \\\",\\\", RowBox[{\\\"Flatten\\\", \
+\\\"[\\\", \\\"$Failed\\\", \\\"]\\\"}]}], \\\"}\\\"}], \\\"]\\\"}]\\) must \
+be a valid array.\"",2,10,40,32655656998272385636,"Local"},
+  "MessageTemplate"]], "Message", "MSG",
+ CellChangeTimes->{
+  3.731936525947546*^9},ExpressionUUID->"be1b47a2-03e0-483b-aae6-\
+7370dc67c002"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "Transpose","nmtx",
+   "\"The first two levels of \\!\\(\\*RowBox[{\\\"{\\\", \
+RowBox[{RowBox[{\\\"Flatten\\\", \\\"[\\\", \\\"$Failed\\\", \\\"]\\\"}], \
+\\\",\\\", RowBox[{\\\"Flatten\\\", \\\"[\\\", \\\"$Failed\\\", \
+\\\"]\\\"}]}], \\\"}\\\"}]\\) cannot be transposed.\"",2,10,41,
+   32655656998272385636,"Local"},
+  "MessageTemplate"]], "Message", "MSG",
+ CellChangeTimes->{
+  3.731936525966124*^9},ExpressionUUID->"350b6b59-9a1d-440a-9958-\
+1d8ebda1e05e"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "ListLinePlot","lpn",
+   "\"\\!\\(\\*RowBox[{\\\"Transpose\\\", \\\"[\\\", RowBox[{\\\"{\\\", \
+RowBox[{RowBox[{\\\"Flatten\\\", \\\"[\\\", \\\"$Failed\\\", \\\"]\\\"}], \
+\\\",\\\", RowBox[{\\\"Flatten\\\", \\\"[\\\", \\\"$Failed\\\", \
+\\\"]\\\"}]}], \\\"}\\\"}], \\\"]\\\"}]\\) is not a list of numbers or pairs \
+of numbers.\"",2,10,42,32655656998272385636,"Local"},
+  "MessageTemplate"]], "Message", "MSG",
+ CellChangeTimes->{
+  3.731936526015533*^9},ExpressionUUID->"349c60d7-caee-463e-b481-\
+cbeceb96aeb1"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "ListLinePlot","lpn",
+   "\"\\!\\(\\*RowBox[{\\\"Transpose\\\", \\\"[\\\", RowBox[{\\\"{\\\", \
+RowBox[{RowBox[{\\\"Flatten\\\", \\\"[\\\", \\\"$Failed\\\", \\\"]\\\"}], \
+\\\",\\\", RowBox[{\\\"Flatten\\\", \\\"[\\\", \\\"$Failed\\\", \
+\\\"]\\\"}]}], \\\"}\\\"}], \\\"]\\\"}]\\) is not a list of numbers or pairs \
+of numbers.\"",2,10,43,32655656998272385636,"Local"},
+  "MessageTemplate"]], "Message", "MSG",
+ CellChangeTimes->{
+  3.73193652606675*^9},ExpressionUUID->"007e627b-8282-4141-8961-98666080fc9f"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "Show","gcomb",
+   "\"Could not combine the graphics objects in \
+\\!\\(\\*RowBox[{\\\"Show\\\", \\\"[\\\", RowBox[{RowBox[{\\\"ListContourPlot\
+\\\", \\\"[\\\", RowBox[{RowBox[{\\\"Transpose\\\", \\\"[\\\", \
+RowBox[{\\\"{\\\", RowBox[{RowBox[{\\\"Symbol\\\", \\\"[\\\", \\\"]\\\"}], \\\
+\",\\\", RowBox[{\\\"Symbol\\\", \\\"[\\\", \\\"]\\\"}], \\\",\\\", \
+RowBox[{\\\"Flatten\\\", \\\"[\\\", \\\"$Failed\\\", \\\"]\\\"}]}], \
+\\\"}\\\"}], \\\"]\\\"}], \\\",\\\", RowBox[{\\\"PlotRange\\\", \\\"\[Rule]\\\
+\", RowBox[{\\\"{\\\", RowBox[{RowBox[{\\\"-\\\", \\\"0.3`\\\"}], \\\",\\\", \
+\\\"0.3`\\\"}], \\\"}\\\"}]}], \\\",\\\", \
+RowBox[{\\\"ColorFunctionScaling\\\", \\\"\[Rule]\\\", \\\"False\\\"}], \\\",\
+\\\", RowBox[{\\\"ColorFunction\\\", \\\"\[Rule]\\\", \
+RowBox[{\\\"ColorDataFunction\\\", \\\"[\\\", \
+RowBox[{\\\"\\\\\\\"DarkColorDensityGradient\\\\\\\"\\\", \\\",\\\", \\\"\\\\\
+\\\"ThemeGradients\\\\\\\"\\\", \\\",\\\", RowBox[{\\\"{\\\", \
+RowBox[{RowBox[{\\\"-\\\", \\\"0.3`\\\"}], \\\",\\\", \\\"0.3`\\\"}], \\\"}\\\
+\"}], \\\",\\\", RowBox[{RowBox[{\\\"Blend\\\", \\\"[\\\", RowBox[{RowBox[{\\\
+\"{\\\", RowBox[{RowBox[{\\\"{\\\", RowBox[{\\\"\[LeftSkeleton]\\\", \
+\\\"2\\\", \\\"\[RightSkeleton]\\\"}], \\\"}\\\"}], \\\",\\\", \
+RowBox[{\\\"{\\\", RowBox[{\\\"\[LeftSkeleton]\\\", \\\"2\\\", \\\"\
+\[RightSkeleton]\\\"}], \\\"}\\\"}], \\\",\\\", RowBox[{\\\"{\\\", RowBox[{\\\
+\"\[LeftSkeleton]\\\", \\\"2\\\", \\\"\[RightSkeleton]\\\"}], \\\"}\\\"}]}], \
+\\\"}\\\"}], \\\",\\\", \\\"#1\\\"}], \\\"]\\\"}], \\\"&\\\"}]}], \
+\\\"]\\\"}]}], \\\",\\\", RowBox[{\\\"PlotLegends\\\", \\\"\[Rule]\\\", \
+\\\"Automatic\\\"}]}], \\\"]\\\"}], \\\",\\\", RowBox[{\\\"ListLinePlot\\\", \
+\\\"[\\\", RowBox[{RowBox[{\\\"Transpose\\\", \\\"[\\\", RowBox[{\\\"{\\\", \
+RowBox[{RowBox[{\\\"Flatten\\\", \\\"[\\\", \\\"$Failed\\\", \\\"]\\\"}], \
+\\\",\\\", RowBox[{\\\"Flatten\\\", \\\"[\\\", \\\"$Failed\\\", \
+\\\"]\\\"}]}], \\\"}\\\"}], \\\"]\\\"}], \\\",\\\", \
+RowBox[{\\\"PlotStyle\\\", \\\"\[Rule]\\\", \
+InterpretationBox[ButtonBox[TooltipBox[GraphicsBox[List[List[GrayLevel[0], \
+RectangleBox[List[0, 0]]], List[GrayLevel[0], RectangleBox[List[1, -1]]], \
+List[GrayLevel[0], RectangleBox[List[0, -1], List[2, 1]]]], Rule[AspectRatio, \
+1], Rule[Frame, True], Rule[FrameStyle, GrayLevel[0.`]], Rule[FrameTicks, \
+None], Rule[PlotRangePadding, None], Rule[ImageSize, Dynamic[List[Automatic, \
+Times[1.35`, CurrentValue[\\\"FontCapHeight\\\"], \
+Power[AbsoluteCurrentValue[Magnification], -1]]]]]], \\\"GrayLevel[0]\\\"], \
+Rule[Appearance, None], Rule[BaseStyle, List[]], Rule[BaselinePosition, \
+Baseline], Rule[DefaultBaseStyle, List[]], RuleDelayed[ButtonFunction, \
+With[List[Set[Typeset`box$, EvaluationBox[]]], If[Not[AbsoluteCurrentValue[\\\
+\"Deployed\\\"]], CompoundExpression[SelectionMove[Typeset`box$, All, \
+Expression], Set[FrontEnd`Private`$ColorSelectorInitialAlpha, 1], \
+Set[FrontEnd`Private`$ColorSelectorInitialColor, GrayLevel[0]], \
+Set[FrontEnd`Private`$ColorSelectorUseMakeBoxes, True], \
+MathLink`CallFrontEnd[FrontEnd`AttachCell[Typeset`box$, \
+FrontEndResource[\\\"GrayLevelColorValueSelector\\\"], List[0, List[Left, \
+Bottom]], List[Left, Top], Rule[\\\"ClosingActions\\\", \
+List[\\\"SelectionDeparture\\\", \\\"ParentChanged\\\", \
+\\\"EvaluatorQuit\\\"]]]]]]]], Rule[BaseStyle, Inherited], Rule[Evaluator, \
+Automatic], Rule[Method, \\\"Preemptive\\\"]], GrayLevel[0], Rule[Editable, \
+False], Rule[Selectable, False]]}]}], \\\"]\\\"}]}], \\\"]\\\"}]\\).\"",2,10,
+   44,32655656998272385636,"Local"},
+  "MessageTemplate"]], "Message", "MSG",
+ CellChangeTimes->{
+  3.7319365260815067`*^9},ExpressionUUID->"9273fc84-0a6c-496a-87ae-\
+5dfbd97f36fe"]
+}, Open  ]]
+}, Open  ]]
+},
+WindowSize->{1048, 751},
+WindowMargins->{{Automatic, 452}, {168, Automatic}},
+FrontEndVersion->"11.1 for Mac OS X x86 (32-bit, 64-bit Kernel) (April 18, \
+2017)",
+StyleDefinitions->"Default.nb"
+]
+(* End of Notebook Content *)
+
+(* Internal cache information *)
+(*CellTagsOutline
+CellTagsIndex->{}
+*)
+(*CellTagsIndex
+CellTagsIndex->{}
+*)
+(*NotebookFileOutline
+Notebook[{
+Cell[CellGroupData[{
+Cell[580, 22, 283, 6, 32, "Input", "ExpressionUUID" -> \
+"fe15f474-8d92-4c49-8e35-63dca9b02398"],
+Cell[866, 30, 843, 13, 32, "Output", "ExpressionUUID" -> \
+"e50c188f-f5a7-4011-85f5-48e2c2ed7373"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[1746, 48, 154, 3, 63, "Subchapter", "ExpressionUUID" -> \
+"54f85450-2de6-430b-ab1a-dbcfad854f30"],
+Cell[1903, 53, 691, 12, 32, "Input", "ExpressionUUID" -> \
+"090bc2a9-911d-44ca-ad07-3d07675ee28c"],
+Cell[2597, 67, 728, 21, 96, "Input", "ExpressionUUID" -> \
+"d768648d-e256-4083-952d-6981fa63f99b"],
+Cell[3328, 90, 443, 8, 32, "Input", "ExpressionUUID" -> \
+"1e31e81f-4dc0-44e9-8e10-bc9ed27b0959"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[3808, 103, 216, 4, 63, "Subchapter", "ExpressionUUID" -> \
+"5f18c93b-1cd6-4566-af1b-92d62bf35ace"],
+Cell[4027, 109, 2148, 51, 180, "Input", "ExpressionUUID" -> \
+"54c23e55-4798-4490-bb0b-cca5039058d4"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[6212, 165, 155, 3, 63, "Subchapter", "ExpressionUUID" -> \
+"b6140646-ff82-4757-b657-60d120a0029b"],
+Cell[CellGroupData[{
+Cell[6392, 172, 2486, 53, 180, "Input", "ExpressionUUID" -> \
+"b95371fa-58eb-4b44-91ad-2e7876e9e054"],
+Cell[8881, 227, 2336, 47, 329, "Output", "ExpressionUUID" -> \
+"9b0341b7-dc84-41f9-be15-778648b4b249"]
+}, Open  ]]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[11266, 280, 259, 4, 63, "Subchapter", "ExpressionUUID" -> \
+"afdc32ac-d1b7-4ea2-af7f-9221a1785725"],
+Cell[11528, 286, 516, 12, 32, "Input", "ExpressionUUID" -> \
+"3803f1ec-307c-4e82-ac33-593f1060ea83"],
+Cell[CellGroupData[{
+Cell[12069, 302, 3626, 83, 222, "Input", "ExpressionUUID" -> \
+"6101b216-feea-4b84-997e-0c263769eb99"],
+Cell[15698, 387, 2937, 59, 189, "Output", "ExpressionUUID" -> \
+"27d56530-a666-47b3-88f4-27f04f6202e7"],
+Cell[18638, 448, 304, 8, 24, "Message", "ExpressionUUID" -> \
+"edf3d482-89c7-41f7-9fb6-0db3b73bea33"],
+Cell[18945, 458, 405, 10, 24, "Message", "ExpressionUUID" -> \
+"412d90e6-0e9f-49b8-ba37-c4a0266c948e"],
+Cell[19353, 470, 361, 9, 24, "Message", "ExpressionUUID" -> \
+"a41cc0f4-393c-404e-81fd-6e7307fb0390"],
+Cell[19717, 481, 363, 9, 24, "Message", "ExpressionUUID" -> \
+"0e27a0b6-2c56-4de2-8f98-1b0c33bbacf8"],
+Cell[20083, 492, 533, 11, 24, "Message", "ExpressionUUID" -> \
+"f412386f-2398-4f32-873f-125f3d168fbb"],
+Cell[20619, 505, 304, 8, 24, "Message", "ExpressionUUID" -> \
+"379edfd9-5fd1-451d-9df6-3ea5d27c800c"],
+Cell[20926, 515, 405, 10, 24, "Message", "ExpressionUUID" -> \
+"34fc9107-af72-4140-b6e3-878ce8ab22a3"],
+Cell[21334, 527, 304, 8, 24, "Message", "ExpressionUUID" -> \
+"bbf72d75-5e33-406f-8c19-0a1bea6c46b9"],
+Cell[21641, 537, 401, 9, 24, "Message", "ExpressionUUID" -> \
+"eea518e2-74ad-43fe-8e57-864c993fcfb7"],
+Cell[22045, 548, 407, 10, 24, "Message", "ExpressionUUID" -> \
+"d54659ad-d1a6-476e-b5fd-c497e1287b4c"],
+Cell[22455, 560, 403, 9, 24, "Message", "ExpressionUUID" -> \
+"cd7811fc-06e0-44dd-8145-c39d5caf3459"],
+Cell[22861, 571, 571, 11, 24, "Message", "ExpressionUUID" -> \
+"c54c163d-40ae-4bbb-88ff-e6c3fda3c92e"],
+Cell[23435, 584, 494, 11, 24, "Message", "ExpressionUUID" -> \
+"c254ff30-8a7b-42dd-89d6-701e0f462b3d"],
+Cell[23932, 597, 545, 11, 24, "Message", "ExpressionUUID" -> \
+"fbe37144-e534-4575-b768-1f1706d6bd6d"],
+Cell[24480, 610, 545, 11, 24, "Message", "ExpressionUUID" -> \
+"4f5f85ad-16ac-402f-9ea0-65fd41a389e8"],
+Cell[25028, 623, 3721, 57, 94, "Message", "ExpressionUUID" -> \
+"f09f3617-2ce6-4b74-95e7-41c10c1a8ac5"],
+Cell[28752, 682, 571, 11, 24, "Message", "ExpressionUUID" -> \
+"daa13960-fe52-48b5-9276-2eaceecdaa63"],
+Cell[29326, 695, 545, 11, 24, "Message", "ExpressionUUID" -> \
+"19205f96-cb95-4452-bef2-e3df70f93f9f"],
+Cell[29874, 708, 405, 9, 24, "Message", "ExpressionUUID" -> \
+"ed64e218-71c6-48dc-92f5-01a4e5fa7a29"],
+Cell[30282, 719, 3721, 57, 94, "Message", "ExpressionUUID" -> \
+"6e8b43a0-c17c-4f61-9842-6c7c9fe05c68"],
+Cell[34006, 778, 304, 8, 24, "Message", "ExpressionUUID" -> \
+"06e390f4-d67d-49d4-a385-f5e3872c1ff0"],
+Cell[34313, 788, 405, 10, 24, "Message", "ExpressionUUID" -> \
+"3587208e-f2b8-423c-bc8b-be4a9b749767"],
+Cell[34721, 800, 363, 9, 24, "Message", "ExpressionUUID" -> \
+"177ae942-e5c6-4733-aa61-8f8b0bee7a90"],
+Cell[35087, 811, 361, 9, 24, "Message", "ExpressionUUID" -> \
+"424df238-3380-4ab5-8b26-11c66c53ba6a"],
+Cell[35451, 822, 533, 11, 24, "Message", "ExpressionUUID" -> \
+"6f07d9db-a831-437d-b832-f88667146f0b"],
+Cell[35987, 835, 304, 8, 24, "Message", "ExpressionUUID" -> \
+"d5d0b99a-a9ca-476d-b037-f2d0390d2585"],
+Cell[36294, 845, 407, 10, 24, "Message", "ExpressionUUID" -> \
+"006a1464-0b93-4be7-bfe0-8941edd56edf"],
+Cell[36704, 857, 300, 7, 24, "Message", "ExpressionUUID" -> \
+"1364d416-b6f7-4a55-87bd-7bc7a997a973"],
+Cell[37007, 866, 403, 9, 24, "Message", "ExpressionUUID" -> \
+"980094b2-1966-4d37-bec5-9923eac308bf"],
+Cell[37413, 877, 407, 10, 24, "Message", "ExpressionUUID" -> \
+"3b6c5c73-191e-4b0b-94e9-2903741977de"],
+Cell[37823, 889, 405, 9, 24, "Message", "ExpressionUUID" -> \
+"a37ce155-d3ce-4fa8-857a-29d31d72989f"],
+Cell[38231, 900, 571, 11, 24, "Message", "ExpressionUUID" -> \
+"9f351d7f-0597-4a6d-97ee-b6889c446390"],
+Cell[38805, 913, 494, 11, 24, "Message", "ExpressionUUID" -> \
+"141d877f-0522-4229-9926-e94c8bfb08d8"],
+Cell[39302, 926, 545, 11, 24, "Message", "ExpressionUUID" -> \
+"40d673df-83ef-43a7-88e9-d15bab6622f1"],
+Cell[39850, 939, 545, 11, 24, "Message", "ExpressionUUID" -> \
+"8b73fb66-942e-4a6a-9520-17d886d181d2"],
+Cell[40398, 952, 3721, 57, 94, "Message", "ExpressionUUID" -> \
+"fdcaa2bd-49d1-42dd-83dd-8cd76cdc856d"],
+Cell[44122, 1011, 307, 8, 24, "Message", "ExpressionUUID" -> \
+"2fcebb4f-db18-4a11-b888-2fc6a930461f"],
+Cell[44432, 1021, 408, 10, 24, "Message", "ExpressionUUID" -> \
+"fbcf0781-aaf2-4bb3-97b8-1ddacc92650f"],
+Cell[44843, 1033, 362, 9, 24, "Message", "ExpressionUUID" -> \
+"67512550-3da8-4a50-a582-d542a3401409"],
+Cell[45208, 1044, 362, 9, 24, "Message", "ExpressionUUID" -> \
+"9bbc0f2b-7d83-4a7a-88a7-3156918f165d"],
+Cell[45573, 1055, 534, 11, 24, "Message", "ExpressionUUID" -> \
+"a6a46fda-c6fa-47e7-9825-278f655a6e31"],
+Cell[46110, 1068, 307, 8, 24, "Message", "ExpressionUUID" -> \
+"d04a51da-dc29-4da4-845b-d56d298e413c"],
+Cell[46420, 1078, 406, 10, 24, "Message", "ExpressionUUID" -> \
+"8ffe4634-1fb5-4cbc-9b00-f723bc79bc98"],
+Cell[46829, 1090, 305, 8, 24, "Message", "ExpressionUUID" -> \
+"13a45981-79c2-432b-aa77-b08f97268d86"],
+Cell[47137, 1100, 404, 9, 24, "Message", "ExpressionUUID" -> \
+"8a5bedd8-a4ab-4c53-be11-5a015f4377ae"],
+Cell[47544, 1111, 406, 10, 24, "Message", "ExpressionUUID" -> \
+"2e784ebf-734c-4c50-a862-f22d47abb8cf"],
+Cell[47953, 1123, 404, 9, 24, "Message", "ExpressionUUID" -> \
+"045c883f-8ef2-4068-b480-73c5acf059d8"],
+Cell[48360, 1134, 572, 11, 24, "Message", "ExpressionUUID" -> \
+"ea0f37e8-041d-4409-923e-0896340c1038"],
+Cell[48935, 1147, 495, 11, 24, "Message", "ExpressionUUID" -> \
+"2b036398-0a14-44e8-be11-d19fa824f323"],
+Cell[49433, 1160, 546, 11, 24, "Message", "ExpressionUUID" -> \
+"fc70f4d9-b190-4dea-b017-ba52f83a3ce8"],
+Cell[49982, 1173, 546, 11, 24, "Message", "ExpressionUUID" -> \
+"0e059b4e-f538-43f4-a715-e61688671c41"],
+Cell[50531, 1186, 3722, 57, 94, "Message", "ExpressionUUID" -> \
+"aac65e9a-0416-4956-9de0-c140dacedde9"],
+Cell[54256, 1245, 307, 8, 24, "Message", "ExpressionUUID" -> \
+"40fed4db-0bbc-432a-9c9b-525b8418ef90"],
+Cell[54566, 1255, 403, 9, 24, "Message", "ExpressionUUID" -> \
+"31187f23-3fca-426e-8a19-f3649d8c2c0a"],
+Cell[54972, 1266, 362, 9, 24, "Message", "ExpressionUUID" -> \
+"512f3ac1-c064-4807-a8b2-2e873f48b1c9"],
+Cell[55337, 1277, 364, 9, 24, "Message", "ExpressionUUID" -> \
+"6b73a3e8-6651-4045-a29f-1cf9fd55d065"],
+Cell[55704, 1288, 531, 10, 24, "Message", "ExpressionUUID" -> \
+"20d22c3f-5dee-4bf8-b257-96aa3090d215"],
+Cell[56238, 1300, 305, 8, 24, "Message", "ExpressionUUID" -> \
+"bda2368c-8ea7-403a-b0f5-005cfdcacfd8"],
+Cell[56546, 1310, 406, 10, 24, "Message", "ExpressionUUID" -> \
+"fbcd649f-6fac-48ff-8d01-e574bd87dc50"],
+Cell[56955, 1322, 305, 8, 24, "Message", "ExpressionUUID" -> \
+"1df172c1-711a-4955-b42a-ac7fa76dc81a"],
+Cell[57263, 1332, 402, 9, 24, "Message", "ExpressionUUID" -> \
+"88e77e97-b52c-43e0-96d8-18a27a7b017b"],
+Cell[57668, 1343, 406, 10, 24, "Message", "ExpressionUUID" -> \
+"c55018f7-e78f-447f-8682-572c0100896a"],
+Cell[58077, 1355, 401, 8, 24, "Message", "ExpressionUUID" -> \
+"f69d81e5-a305-4992-968c-f2ecdededcab"],
+Cell[58481, 1365, 572, 11, 24, "Message", "ExpressionUUID" -> \
+"7bcd77ec-c8d1-449d-b6ee-b0e4f840b0d3"],
+Cell[59056, 1378, 497, 11, 24, "Message", "ExpressionUUID" -> \
+"fa99752a-0513-414f-9805-1f6d45c76fd0"],
+Cell[59556, 1391, 546, 11, 24, "Message", "ExpressionUUID" -> \
+"8a988498-0323-4655-b754-7cdd9d374593"],
+Cell[60105, 1404, 546, 11, 24, "Message", "ExpressionUUID" -> \
+"e30179fc-6419-4c93-b047-13d2f1fddc62"],
+Cell[60654, 1417, 3722, 57, 94, "Message", "ExpressionUUID" -> \
+"694549e8-0d2c-4e3a-bd44-b5f55aa10e53"],
+Cell[64379, 1476, 305, 8, 24, "Message", "ExpressionUUID" -> \
+"f39d7824-cc21-4034-8cca-d06007cbc877"],
+Cell[64687, 1486, 406, 10, 24, "Message", "ExpressionUUID" -> \
+"7236eda2-4077-4524-b568-0e0abe61ac1d"],
+Cell[65096, 1498, 364, 9, 24, "Message", "ExpressionUUID" -> \
+"ac88dbe6-ed43-4db0-a763-c00e7cfcb87a"],
+Cell[65463, 1509, 362, 9, 24, "Message", "ExpressionUUID" -> \
+"784fedbb-606f-4d1a-9f6e-9d62f4809eee"],
+Cell[65828, 1520, 534, 11, 24, "Message", "ExpressionUUID" -> \
+"4869595e-8248-4da4-a4eb-ad7d3c9ee8c2"],
+Cell[66365, 1533, 305, 8, 24, "Message", "ExpressionUUID" -> \
+"9248be36-e65f-4b33-a0c8-19c2fc619b09"],
+Cell[66673, 1543, 408, 10, 24, "Message", "ExpressionUUID" -> \
+"fbf752e9-61f6-44ea-8e04-7a3db079f1e7"],
+Cell[67084, 1555, 307, 8, 24, "Message", "ExpressionUUID" -> \
+"507f5023-fd0f-4254-a5be-7b9fc484da4f"],
+Cell[67394, 1565, 404, 9, 24, "Message", "ExpressionUUID" -> \
+"f1a334dd-b661-4c20-9a78-1e653518f441"],
+Cell[67801, 1576, 406, 10, 24, "Message", "ExpressionUUID" -> \
+"9fcb662a-f361-4f64-bc83-92dd62683361"],
+Cell[68210, 1588, 404, 9, 24, "Message", "ExpressionUUID" -> \
+"b1abbdaf-5365-4f96-b980-e9c5ec11abc7"],
+Cell[68617, 1599, 574, 11, 24, "Message", "ExpressionUUID" -> \
+"fa7573ad-aaa3-4844-ab8d-694fcc307f7d"],
+Cell[69194, 1612, 495, 11, 24, "Message", "ExpressionUUID" -> \
+"f12a590d-01c3-4ffb-91a2-10c194ace95c"],
+Cell[69692, 1625, 546, 11, 24, "Message", "ExpressionUUID" -> \
+"96cd01bb-bec2-48cf-ade6-467cf46bef2e"],
+Cell[70241, 1638, 548, 11, 24, "Message", "ExpressionUUID" -> \
+"7aa65c90-d9fe-4d99-927d-d9726639cf1d"],
+Cell[70792, 1651, 3722, 57, 94, "Message", "ExpressionUUID" -> \
+"1d49bd06-ef8e-47d6-823d-592c6f18fcf9"],
+Cell[74517, 1710, 302, 8, 24, "Message", "ExpressionUUID" -> \
+"b4446109-5c2e-40a5-8b87-9bd3bd4436d5"],
+Cell[74822, 1720, 404, 10, 24, "Message", "ExpressionUUID" -> \
+"40a868c9-d29a-441b-93df-9ec87fce2fd6"],
+Cell[75229, 1732, 360, 9, 24, "Message", "ExpressionUUID" -> \
+"2fd39632-6f0d-4971-9243-f1895b5defe2"],
+Cell[75592, 1743, 362, 9, 24, "Message", "ExpressionUUID" -> \
+"9eb42f4b-b6c9-4c76-b8d9-a76b77b00335"],
+Cell[75957, 1754, 534, 11, 24, "Message", "ExpressionUUID" -> \
+"964c3c85-8a8b-4e7b-9477-657bce419796"],
+Cell[76494, 1767, 305, 8, 24, "Message", "ExpressionUUID" -> \
+"49dbd045-4a5a-47ee-b446-b5083be8afaa"],
+Cell[76802, 1777, 404, 10, 24, "Message", "ExpressionUUID" -> \
+"8cb42197-a344-4ed3-9aa6-efabc0e251a5"],
+Cell[77209, 1789, 303, 8, 24, "Message", "ExpressionUUID" -> \
+"4e2cd387-486a-4170-84ce-93e7098e5fae"],
+Cell[77515, 1799, 400, 9, 24, "Message", "ExpressionUUID" -> \
+"78b83d0d-6c5b-49cd-8e15-e4593fe40dc0"],
+Cell[77918, 1810, 404, 10, 24, "Message", "ExpressionUUID" -> \
+"7284cbb1-44d9-4e5a-9800-491a29066191"],
+Cell[78325, 1822, 402, 9, 24, "Message", "ExpressionUUID" -> \
+"2a006395-4a6c-42f7-9c7c-68afec945575"],
+Cell[78730, 1833, 570, 11, 24, "Message", "ExpressionUUID" -> \
+"887dde08-6f6f-4c7c-8e76-620d80eee71e"],
+Cell[79303, 1846, 493, 11, 24, "Message", "ExpressionUUID" -> \
+"bc5be962-cb3e-4b03-a425-75c6a8a70c32"],
+Cell[79799, 1859, 544, 11, 24, "Message", "ExpressionUUID" -> \
+"7572ca19-263a-419d-8463-7730895c866b"],
+Cell[80346, 1872, 544, 11, 24, "Message", "ExpressionUUID" -> \
+"9dcea3fd-e582-4f31-9ba7-2aefa8bed55a"],
+Cell[80893, 1885, 3722, 57, 94, "Message", "ExpressionUUID" -> \
+"b89a4f31-0969-4e14-969d-416bf3812dbc"],
+Cell[84618, 1944, 572, 11, 24, "Message", "ExpressionUUID" -> \
+"52113fac-71eb-4568-8c37-ad9081f7ee10"],
+Cell[85193, 1957, 544, 11, 24, "Message", "ExpressionUUID" -> \
+"a2a9eec4-f2c1-4732-8e9b-53983bddf11b"],
+Cell[85740, 1970, 406, 9, 24, "Message", "ExpressionUUID" -> \
+"735f033c-1ffd-46ca-a276-283fa529c46c"],
+Cell[86149, 1981, 3720, 57, 94, "Message", "ExpressionUUID" -> \
+"f3d08339-0500-4205-98b1-62bfe0272082"],
+Cell[89872, 2040, 303, 8, 24, "Message", "ExpressionUUID" -> \
+"d6caee09-2cde-4e42-ad0b-d5bf93fc43e8"],
+Cell[90178, 2050, 406, 10, 24, "Message", "ExpressionUUID" -> \
+"b443c90b-d650-4de2-ac3f-21fc0f0c7ed4"],
+Cell[90587, 2062, 362, 9, 24, "Message", "ExpressionUUID" -> \
+"c7f44168-070c-491e-ab8c-5a8f26315190"],
+Cell[90952, 2073, 362, 9, 24, "Message", "ExpressionUUID" -> \
+"4937537d-808e-41e4-8ab9-67384a7c575d"],
+Cell[91317, 2084, 532, 11, 24, "Message", "ExpressionUUID" -> \
+"5873f4fd-0d61-4e12-89ac-f0d9f176e668"],
+Cell[91852, 2097, 303, 8, 24, "Message", "ExpressionUUID" -> \
+"990d0cd0-3219-4561-926f-5fcddccbc8da"],
+Cell[92158, 2107, 404, 10, 24, "Message", "ExpressionUUID" -> \
+"d58de07f-ffe5-45a3-bbc9-0af70a55d6de"],
+Cell[92565, 2119, 303, 8, 24, "Message", "ExpressionUUID" -> \
+"a1cd529d-6282-46f0-8428-419e6a5f33e5"],
+Cell[92871, 2129, 402, 9, 24, "Message", "ExpressionUUID" -> \
+"1b50097d-528e-490e-b9a4-589e06340b53"],
+Cell[93276, 2140, 404, 10, 24, "Message", "ExpressionUUID" -> \
+"489c3666-5730-444a-a67c-198f13d5a5fc"],
+Cell[93683, 2152, 402, 9, 24, "Message", "ExpressionUUID" -> \
+"8715652f-94ba-405f-a799-9fcc37712a6f"],
+Cell[94088, 2163, 570, 11, 24, "Message", "ExpressionUUID" -> \
+"be1b47a2-03e0-483b-aae6-7370dc67c002"],
+Cell[94661, 2176, 493, 11, 24, "Message", "ExpressionUUID" -> \
+"350b6b59-9a1d-440a-9958-1d8ebda1e05e"],
+Cell[95157, 2189, 544, 11, 24, "Message", "ExpressionUUID" -> \
+"349c60d7-caee-463e-b481-cbeceb96aeb1"],
+Cell[95704, 2202, 541, 10, 24, "Message", "ExpressionUUID" -> \
+"007e627b-8282-4141-8961-98666080fc9f"],
+Cell[96248, 2214, 3722, 57, 94, "Message", "ExpressionUUID" -> \
+"9273fc84-0a6c-496a-87ae-5dfbd97f36fe"]
+}, Open  ]]
+}, Open  ]]
+}
+]
+*)
+

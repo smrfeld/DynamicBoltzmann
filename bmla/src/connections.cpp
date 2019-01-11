@@ -199,6 +199,7 @@ namespace bmla {
 	ConnVH::ConnVH(UnitVisible *uv, UnitHidden* uh) {
 		_uv = uv;
 		_uh = uh;
+		_multiplier = nullptr;
 	};
 	ConnVH::ConnVH(const ConnVH& other) {
 		_copy(other);
@@ -225,16 +226,38 @@ namespace bmla {
 	};
 	void ConnVH::_clean_up() {
 		// Nothing....
+		if (_multiplier) {
+			delete _multiplier;
+			_multiplier = nullptr;
+		};
 	};
 	void ConnVH::_move(ConnVH& other) {
 		_uv = std::move(other._uv);
 		_uh = std::move(other._uh);
 		_ixn_dict = std::move(other._ixn_dict);
+		_multiplier = other._multiplier;
+
+		other._multiplier = nullptr;
 	};
 	void ConnVH::_copy(const ConnVH& other) {
 		_uv = other._uv;
 		_uh = other._uh;
 		_ixn_dict = other._ixn_dict;
+		if (other._multiplier) {
+			_multiplier = new double(*other._multiplier);
+		};	
+	};
+
+	/********************
+	Multiplier
+	********************/
+
+	void ConnVH::set_multiplier(double multiplier) {
+		if (!_multiplier) {
+			_multiplier = new double(multiplier);
+		} else {
+			*_multiplier = multiplier;
+		};
 	};
 
 	/********************
@@ -318,6 +341,10 @@ namespace bmla {
 			act += ixn * pr.second; // * 1.0
 		};
 
+		if (_multiplier) {
+			act *= *_multiplier;
+		};
+
 		return act;
 	};
 
@@ -337,6 +364,10 @@ namespace bmla {
 			// Add
 			act += ixn * pr.second; // * 1.0
 		};
+
+		//if (_multiplier) {
+		//	act *= *_multiplier;
+		//};
 
 		return act;
 	};

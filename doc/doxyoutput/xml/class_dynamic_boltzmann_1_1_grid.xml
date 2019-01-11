@@ -1,0 +1,424 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.8.11">
+  <compounddef id="class_dynamic_boltzmann_1_1_grid" kind="class" language="C++" prot="public">
+    <compoundname>DynamicBoltzmann::Grid</compoundname>
+    <derivedcompoundref refid="class_dynamic_boltzmann_1_1_ixn_param" prot="public" virt="non-virtual">DynamicBoltzmann::IxnParam</derivedcompoundref>
+      <sectiondef kind="private-attrib">
+      <memberdef kind="variable" id="class_dynamic_boltzmann_1_1_grid_1abe33c7f06c69253a8ef431bdb5455117" prot="private" static="no" mutable="no">
+        <type>std::string</type>
+        <definition>std::string DynamicBoltzmann::Grid::_name</definition>
+        <argsstring></argsstring>
+        <name>_name</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="ixn_param.hpp" line="31" column="1" bodyfile="ixn_param.hpp" bodystart="31" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="class_dynamic_boltzmann_1_1_grid_1af23fdd2d84de29ae7953de7353a25898" prot="private" static="no" mutable="no">
+        <type>int</type>
+        <definition>int DynamicBoltzmann::Grid::_n</definition>
+        <argsstring></argsstring>
+        <name>_n</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="ixn_param.hpp" line="34" column="1" bodyfile="ixn_param.hpp" bodystart="34" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="class_dynamic_boltzmann_1_1_grid_1afc66329e424092004975fad43dd4597a" prot="private" static="no" mutable="no">
+        <type>double</type>
+        <definition>double DynamicBoltzmann::Grid::_min</definition>
+        <argsstring></argsstring>
+        <name>_min</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="ixn_param.hpp" line="36" column="1" bodyfile="ixn_param.hpp" bodystart="36" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="class_dynamic_boltzmann_1_1_grid_1a11cee7267d10f4243d7d2bea25611020" prot="private" static="no" mutable="no">
+        <type>double</type>
+        <definition>double DynamicBoltzmann::Grid::_max</definition>
+        <argsstring></argsstring>
+        <name>_max</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="ixn_param.hpp" line="37" column="1" bodyfile="ixn_param.hpp" bodystart="37" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="class_dynamic_boltzmann_1_1_grid_1ab406d99bc95468640e8bfc7860480376" prot="private" static="no" mutable="no">
+        <type>double</type>
+        <definition>double DynamicBoltzmann::Grid::_delta</definition>
+        <argsstring></argsstring>
+        <name>_delta</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="ixn_param.hpp" line="38" column="1" bodyfile="ixn_param.hpp" bodystart="38" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="class_dynamic_boltzmann_1_1_grid_1a3a05ed506d9e7ff2148fc6242bad6129" prot="private" static="no" mutable="no">
+        <type>double *</type>
+        <definition>double* DynamicBoltzmann::Grid::_grid</definition>
+        <argsstring></argsstring>
+        <name>_grid</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="ixn_param.hpp" line="40" column="1" bodyfile="ixn_param.hpp" bodystart="40" bodyend="-1"/>
+      </memberdef>
+      </sectiondef>
+      <sectiondef kind="private-func">
+      <memberdef kind="function" id="class_dynamic_boltzmann_1_1_grid_1a274f695cba1aae93c0d681cbdddcb0ea" prot="private" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void DynamicBoltzmann::Grid::_copy</definition>
+        <argsstring>(const Grid &amp;other)</argsstring>
+        <name>_copy</name>
+        <param>
+          <type>const <ref refid="class_dynamic_boltzmann_1_1_grid" kindref="compound">Grid</ref> &amp;</type>
+          <declname>other</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="ixn_param.hpp" line="43" column="1" bodyfile="ixn_param.cpp" bodystart="49" bodyend="57"/>
+      </memberdef>
+      <memberdef kind="function" id="class_dynamic_boltzmann_1_1_grid_1a19b79cb2132a02594ef3898010b20361" prot="private" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void DynamicBoltzmann::Grid::_clean_up</definition>
+        <argsstring>()</argsstring>
+        <name>_clean_up</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="ixn_param.hpp" line="44" column="1" bodyfile="ixn_param.cpp" bodystart="58" bodyend="60"/>
+      </memberdef>
+      </sectiondef>
+      <sectiondef kind="public-func">
+      <memberdef kind="function" id="class_dynamic_boltzmann_1_1_grid_1a2157d36b8473f980080d0fc2da8d5fbb" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type></type>
+        <definition>DynamicBoltzmann::Grid::Grid</definition>
+        <argsstring>(std::string name, double min, double max, int n)</argsstring>
+        <name>Grid</name>
+        <param>
+          <type>std::string</type>
+          <declname>name</declname>
+        </param>
+        <param>
+          <type>double</type>
+          <declname>min</declname>
+        </param>
+        <param>
+          <type>double</type>
+          <declname>max</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>n</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="ixn_param.hpp" line="49" column="1" bodyfile="ixn_param.cpp" bodystart="21" bodyend="32"/>
+      </memberdef>
+      <memberdef kind="function" id="class_dynamic_boltzmann_1_1_grid_1a4dc7b79cd7cd99c9214fe7908e20fca1" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type></type>
+        <definition>DynamicBoltzmann::Grid::Grid</definition>
+        <argsstring>(const Grid &amp;other)</argsstring>
+        <name>Grid</name>
+        <param>
+          <type>const <ref refid="class_dynamic_boltzmann_1_1_grid" kindref="compound">Grid</ref> &amp;</type>
+          <declname>other</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="ixn_param.hpp" line="50" column="1" bodyfile="ixn_param.cpp" bodystart="33" bodyend="36"/>
+      </memberdef>
+      <memberdef kind="function" id="class_dynamic_boltzmann_1_1_grid_1a57ae2f59d256463924a2f6c29e9cb303" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="class_dynamic_boltzmann_1_1_grid" kindref="compound">Grid</ref> &amp;</type>
+        <definition>Grid &amp; DynamicBoltzmann::Grid::operator=</definition>
+        <argsstring>(const Grid &amp;other)</argsstring>
+        <name>operator=</name>
+        <param>
+          <type>const <ref refid="class_dynamic_boltzmann_1_1_grid" kindref="compound">Grid</ref> &amp;</type>
+          <declname>other</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="ixn_param.hpp" line="51" column="1" bodyfile="ixn_param.cpp" bodystart="37" bodyend="45"/>
+      </memberdef>
+      <memberdef kind="function" id="class_dynamic_boltzmann_1_1_grid_1a6711b47673a8590c525773baedcff385" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type></type>
+        <definition>DynamicBoltzmann::Grid::~Grid</definition>
+        <argsstring>()</argsstring>
+        <name>~Grid</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="ixn_param.hpp" line="52" column="1" bodyfile="ixn_param.cpp" bodystart="46" bodyend="48"/>
+      </memberdef>
+      <memberdef kind="function" id="class_dynamic_boltzmann_1_1_grid_1aa236bc0939605046256271fe6b6c823b" prot="public" static="no" const="yes" explicit="no" inline="no" virt="non-virtual">
+        <type>std::string</type>
+        <definition>std::string DynamicBoltzmann::Grid::name</definition>
+        <argsstring>() const </argsstring>
+        <name>name</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="ixn_param.hpp" line="55" column="1" bodyfile="ixn_param.cpp" bodystart="66" bodyend="66"/>
+      </memberdef>
+      <memberdef kind="function" id="class_dynamic_boltzmann_1_1_grid_1a9c771fcd7109591f049b19e73f52235b" prot="public" static="no" const="yes" explicit="no" inline="no" virt="non-virtual">
+        <type>double</type>
+        <definition>double DynamicBoltzmann::Grid::delta</definition>
+        <argsstring>() const </argsstring>
+        <name>delta</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="ixn_param.hpp" line="56" column="1" bodyfile="ixn_param.cpp" bodystart="68" bodyend="68"/>
+      </memberdef>
+      <memberdef kind="function" id="class_dynamic_boltzmann_1_1_grid_1ac4d034f48c1f362818cd30933abb8056" prot="public" static="no" const="yes" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int DynamicBoltzmann::Grid::n</definition>
+        <argsstring>() const </argsstring>
+        <name>n</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="ixn_param.hpp" line="57" column="1" bodyfile="ixn_param.cpp" bodystart="70" bodyend="70"/>
+      </memberdef>
+      <memberdef kind="function" id="class_dynamic_boltzmann_1_1_grid_1a7752e77d709f945e8df8dfb3904a2596" prot="public" static="no" const="yes" explicit="no" inline="no" virt="non-virtual">
+        <type>double</type>
+        <definition>double DynamicBoltzmann::Grid::get_by_idx</definition>
+        <argsstring>(int i) const </argsstring>
+        <name>get_by_idx</name>
+        <param>
+          <type>int</type>
+          <declname>i</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="ixn_param.hpp" line="58" column="1" bodyfile="ixn_param.cpp" bodystart="72" bodyend="74"/>
+      </memberdef>
+      <memberdef kind="function" id="class_dynamic_boltzmann_1_1_grid_1a62fb96009144166506a0c430a82060d5" prot="public" static="no" const="yes" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int DynamicBoltzmann::Grid::surrounding_idxs</definition>
+        <argsstring>(double x) const </argsstring>
+        <name>surrounding_idxs</name>
+        <param>
+          <type>double</type>
+          <declname>x</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="ixn_param.hpp" line="62" column="1" bodyfile="ixn_param.cpp" bodystart="80" bodyend="85"/>
+      </memberdef>
+      <memberdef kind="function" id="class_dynamic_boltzmann_1_1_grid_1a5f4e114ef8f0e991c92f5718e23eb0d5" prot="public" static="no" const="yes" explicit="no" inline="no" virt="non-virtual">
+        <type>double</type>
+        <definition>double DynamicBoltzmann::Grid::frac_between</definition>
+        <argsstring>(double x) const </argsstring>
+        <name>frac_between</name>
+        <param>
+          <type>double</type>
+          <declname>x</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="ixn_param.hpp" line="65" column="1" bodyfile="ixn_param.cpp" bodystart="87" bodyend="90"/>
+      </memberdef>
+      <memberdef kind="function" id="class_dynamic_boltzmann_1_1_grid_1ac71020ea95c3d2a5980e1d07e6fef718" prot="public" static="no" const="yes" explicit="no" inline="no" virt="non-virtual">
+        <type>double</type>
+        <definition>double DynamicBoltzmann::Grid::frac_between</definition>
+        <argsstring>(double x, int i) const </argsstring>
+        <name>frac_between</name>
+        <param>
+          <type>double</type>
+          <declname>x</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>i</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="ixn_param.hpp" line="67" column="1" bodyfile="ixn_param.cpp" bodystart="92" bodyend="95"/>
+      </memberdef>
+      <memberdef kind="function" id="class_dynamic_boltzmann_1_1_grid_1a07e2317cff706de8c1906afd3bfde232" prot="public" static="no" const="yes" explicit="no" inline="no" virt="non-virtual">
+        <type>bool</type>
+        <definition>bool DynamicBoltzmann::Grid::in_grid</definition>
+        <argsstring>(double x) const </argsstring>
+        <name>in_grid</name>
+        <param>
+          <type>double</type>
+          <declname>x</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="ixn_param.hpp" line="70" column="1" bodyfile="ixn_param.cpp" bodystart="101" bodyend="108"/>
+      </memberdef>
+      <memberdef kind="function" id="class_dynamic_boltzmann_1_1_grid_1a325f1ad76784c508f3038201320e8dc4" prot="public" static="no" const="yes" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void DynamicBoltzmann::Grid::print_grid_range</definition>
+        <argsstring>() const </argsstring>
+        <name>print_grid_range</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="ixn_param.hpp" line="73" column="1" bodyfile="ixn_param.cpp" bodystart="114" bodyend="117"/>
+      </memberdef>
+      <memberdef kind="function" id="class_dynamic_boltzmann_1_1_grid_1a2cd7c36ceaa873d009b76ef1afe232ba" prot="public" static="no" const="yes" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void DynamicBoltzmann::Grid::write_grid</definition>
+        <argsstring>(std::string fname) const </argsstring>
+        <name>write_grid</name>
+        <param>
+          <type>std::string</type>
+          <declname>fname</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="ixn_param.hpp" line="76" column="1" bodyfile="ixn_param.cpp" bodystart="123" bodyend="130"/>
+      </memberdef>
+      <memberdef kind="function" id="class_dynamic_boltzmann_1_1_grid_1a74282b7e883a10c094a5dcc311616da8" prot="public" static="no" const="yes" explicit="no" inline="no" virt="non-virtual">
+        <type>std::vector&lt; double &gt;</type>
+        <definition>std::vector&lt; double &gt; DynamicBoltzmann::Grid::test_sin</definition>
+        <argsstring>() const </argsstring>
+        <name>test_sin</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="ixn_param.hpp" line="79" column="1" bodyfile="ixn_param.cpp" bodystart="136" bodyend="142"/>
+      </memberdef>
+      <memberdef kind="function" id="class_dynamic_boltzmann_1_1_grid_1ac48c73b4f9156d2c403ba2fb95e8a4dc" prot="public" static="no" const="yes" explicit="no" inline="no" virt="non-virtual">
+        <type>std::vector&lt; double &gt;</type>
+        <definition>std::vector&lt; double &gt; DynamicBoltzmann::Grid::test_cos</definition>
+        <argsstring>() const </argsstring>
+        <name>test_cos</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="ixn_param.hpp" line="80" column="1" bodyfile="ixn_param.cpp" bodystart="143" bodyend="149"/>
+      </memberdef>
+      </sectiondef>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <inheritancegraph>
+      <node id="10">
+        <label>DynamicBoltzmann::IxnParam</label>
+        <link refid="class_dynamic_boltzmann_1_1_ixn_param"/>
+        <childnode refid="9" relation="public-inheritance">
+        </childnode>
+      </node>
+      <node id="9">
+        <label>DynamicBoltzmann::Grid</label>
+        <link refid="class_dynamic_boltzmann_1_1_grid"/>
+      </node>
+    </inheritancegraph>
+    <location file="ixn_param.hpp" line="26" column="1" bodyfile="ixn_param.hpp" bodystart="26" bodyend="81"/>
+    <listofallmembers>
+      <member refid="class_dynamic_boltzmann_1_1_grid_1a19b79cb2132a02594ef3898010b20361" prot="private" virt="non-virtual"><scope>DynamicBoltzmann::Grid</scope><name>_clean_up</name></member>
+      <member refid="class_dynamic_boltzmann_1_1_grid_1a274f695cba1aae93c0d681cbdddcb0ea" prot="private" virt="non-virtual"><scope>DynamicBoltzmann::Grid</scope><name>_copy</name></member>
+      <member refid="class_dynamic_boltzmann_1_1_grid_1ab406d99bc95468640e8bfc7860480376" prot="private" virt="non-virtual"><scope>DynamicBoltzmann::Grid</scope><name>_delta</name></member>
+      <member refid="class_dynamic_boltzmann_1_1_grid_1a3a05ed506d9e7ff2148fc6242bad6129" prot="private" virt="non-virtual"><scope>DynamicBoltzmann::Grid</scope><name>_grid</name></member>
+      <member refid="class_dynamic_boltzmann_1_1_grid_1a11cee7267d10f4243d7d2bea25611020" prot="private" virt="non-virtual"><scope>DynamicBoltzmann::Grid</scope><name>_max</name></member>
+      <member refid="class_dynamic_boltzmann_1_1_grid_1afc66329e424092004975fad43dd4597a" prot="private" virt="non-virtual"><scope>DynamicBoltzmann::Grid</scope><name>_min</name></member>
+      <member refid="class_dynamic_boltzmann_1_1_grid_1af23fdd2d84de29ae7953de7353a25898" prot="private" virt="non-virtual"><scope>DynamicBoltzmann::Grid</scope><name>_n</name></member>
+      <member refid="class_dynamic_boltzmann_1_1_grid_1abe33c7f06c69253a8ef431bdb5455117" prot="private" virt="non-virtual"><scope>DynamicBoltzmann::Grid</scope><name>_name</name></member>
+      <member refid="class_dynamic_boltzmann_1_1_grid_1a9c771fcd7109591f049b19e73f52235b" prot="public" virt="non-virtual"><scope>DynamicBoltzmann::Grid</scope><name>delta</name></member>
+      <member refid="class_dynamic_boltzmann_1_1_grid_1a5f4e114ef8f0e991c92f5718e23eb0d5" prot="public" virt="non-virtual"><scope>DynamicBoltzmann::Grid</scope><name>frac_between</name></member>
+      <member refid="class_dynamic_boltzmann_1_1_grid_1ac71020ea95c3d2a5980e1d07e6fef718" prot="public" virt="non-virtual"><scope>DynamicBoltzmann::Grid</scope><name>frac_between</name></member>
+      <member refid="class_dynamic_boltzmann_1_1_grid_1a7752e77d709f945e8df8dfb3904a2596" prot="public" virt="non-virtual"><scope>DynamicBoltzmann::Grid</scope><name>get_by_idx</name></member>
+      <member refid="class_dynamic_boltzmann_1_1_grid_1a2157d36b8473f980080d0fc2da8d5fbb" prot="public" virt="non-virtual"><scope>DynamicBoltzmann::Grid</scope><name>Grid</name></member>
+      <member refid="class_dynamic_boltzmann_1_1_grid_1a4dc7b79cd7cd99c9214fe7908e20fca1" prot="public" virt="non-virtual"><scope>DynamicBoltzmann::Grid</scope><name>Grid</name></member>
+      <member refid="class_dynamic_boltzmann_1_1_grid_1a07e2317cff706de8c1906afd3bfde232" prot="public" virt="non-virtual"><scope>DynamicBoltzmann::Grid</scope><name>in_grid</name></member>
+      <member refid="class_dynamic_boltzmann_1_1_grid_1ac4d034f48c1f362818cd30933abb8056" prot="public" virt="non-virtual"><scope>DynamicBoltzmann::Grid</scope><name>n</name></member>
+      <member refid="class_dynamic_boltzmann_1_1_grid_1aa236bc0939605046256271fe6b6c823b" prot="public" virt="non-virtual"><scope>DynamicBoltzmann::Grid</scope><name>name</name></member>
+      <member refid="class_dynamic_boltzmann_1_1_grid_1a57ae2f59d256463924a2f6c29e9cb303" prot="public" virt="non-virtual"><scope>DynamicBoltzmann::Grid</scope><name>operator=</name></member>
+      <member refid="class_dynamic_boltzmann_1_1_grid_1a325f1ad76784c508f3038201320e8dc4" prot="public" virt="non-virtual"><scope>DynamicBoltzmann::Grid</scope><name>print_grid_range</name></member>
+      <member refid="class_dynamic_boltzmann_1_1_grid_1a62fb96009144166506a0c430a82060d5" prot="public" virt="non-virtual"><scope>DynamicBoltzmann::Grid</scope><name>surrounding_idxs</name></member>
+      <member refid="class_dynamic_boltzmann_1_1_grid_1ac48c73b4f9156d2c403ba2fb95e8a4dc" prot="public" virt="non-virtual"><scope>DynamicBoltzmann::Grid</scope><name>test_cos</name></member>
+      <member refid="class_dynamic_boltzmann_1_1_grid_1a74282b7e883a10c094a5dcc311616da8" prot="public" virt="non-virtual"><scope>DynamicBoltzmann::Grid</scope><name>test_sin</name></member>
+      <member refid="class_dynamic_boltzmann_1_1_grid_1a2cd7c36ceaa873d009b76ef1afe232ba" prot="public" virt="non-virtual"><scope>DynamicBoltzmann::Grid</scope><name>write_grid</name></member>
+      <member refid="class_dynamic_boltzmann_1_1_grid_1a6711b47673a8590c525773baedcff385" prot="public" virt="non-virtual"><scope>DynamicBoltzmann::Grid</scope><name>~Grid</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

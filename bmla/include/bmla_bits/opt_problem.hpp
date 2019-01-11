@@ -63,6 +63,8 @@ namespace bmla {
 	OptProblem Options
 	****************************************/
 
+	enum class Solver : unsigned int { SGD, NESTEROV, ADAM };
+
 	struct OptionsWakeSleep {
 
 		// Verbosity
@@ -107,12 +109,19 @@ namespace bmla {
 		bool MODE_var_learning_rates = false;
 		std::map<std::shared_ptr<IxnParam>,double> VAL_var_learning_rates;
 
-		// Nesterov
-		bool nesterov = true;
-		double nesterov_acc = 0.5;
-
 		// Options for Wake-Sleep loop
 		OptionsWakeSleep options_wake_sleep = OptionsWakeSleep();
+
+		// Options for the solvers
+		Solver solver = Solver::ADAM;
+
+		// Nesterov
+		double nesterov_acc = 0.5;
+
+		// Adam
+		double adam_beta_1 = 0.9;
+		double adam_beta_2 = 0.999;
+		double adam_eps = 0.00000001;
 	};
 
 	/****************************************

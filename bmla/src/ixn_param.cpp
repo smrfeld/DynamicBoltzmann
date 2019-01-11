@@ -9,6 +9,7 @@
 #include <fstream>
 #include <sstream>
 #include <cmath>
+#include <algorithm>
 
 /************************************
 * Namespace for bmla
@@ -30,7 +31,11 @@ namespace bmla {
 
 		// nesterov
 		// double _lambda_s, _lambda_sp1;
-		double *_y_s, *_y_sp1;
+		double *_nesterov_y_s, *_nesterov_y_sp1;
+
+		// adam
+		double *_adam_m;
+		double *_adam_v;
 
 		// Fixed value
 		bool _is_val_fixed;
@@ -88,8 +93,10 @@ namespace bmla {
 		Update
 		********************/
 
-		void update_calculate_and_store(double dopt, bool l2_mode=false, double l2_lambda=0.0, double l2_center=0.0);
-		void update_committ_stored(bool nesterov_mode=true, double nesterov_acc=0.5);
+		void update_calculate_and_store(bool l2_mode=false, double l2_lambda=0.0, double l2_center=0.0);
+		void update_committ_stored_sgd(double dopt);
+		void update_committ_stored_nesterov(double dopt, double nesterov_acc);
+		void update_committ_stored_adam(double dopt, int opt_step, double beta_1, double beta_2, double eps);
 
 		/********************
 		Write to file
@@ -155,8 +162,12 @@ namespace bmla {
 		// double lambda_0 = 0.0;
 		// _lambda_s = (1.0 + sqrt(1.0 + 4.0 * pow(lambda_0,2))) / 2.0;
 		// _lambda_sp1 = (1.0 + sqrt(1.0 + 4.0 * pow(_lambda_s,2))) / 2.0;
-		_y_s = nullptr;
-		_y_sp1 = nullptr;
+		_nesterov_y_s = nullptr;
+		_nesterov_y_sp1 = nullptr;
+
+		// adam
+		_adam_v = nullptr;
+		_adam_m = nullptr;
 
 		// Moment
 		_moment = std::make_unique<Moment>(name, type);
@@ -188,13 +199,21 @@ namespace bmla {
 		_clean_up();
 	};
 	void IxnParam::Impl::_clean_up() {
-		if (_y_s) {
-			delete _y_s;
-			_y_s = nullptr;
+		if (_nesterov_y_s) {
+			delete _nesterov_y_s;
+			_nesterov_y_s = nullptr;
 		};
-		if (_y_sp1) {
-			delete _y_sp1;
-			_y_sp1 = nullptr;
+		if (_nesterov_y_sp1) {
+			delete _nesterov_y_sp1;
+			_nesterov_y_sp1 = nullptr;
+		};
+		if (_adam_m) {
+			delete _adam_m;
+			_adam_m = nullptr;
+		};
+		if (_adam_v) {
+			delete _adam_v;
+			_adam_v = nullptr;
 		};	
 	};
 	void IxnParam::Impl::_copy(const Impl& other) {
@@ -202,8 +221,10 @@ namespace bmla {
 		_update = other._update;
 		// _lambda_s = other._lambda_s;
 		// _lambda_sp1 = other._lambda_sp1;
-		_y_s = new double(*other._y_s);
-		_y_sp1 = new double(*other._y_sp1);
+		_nesterov_y_s = new double(*other._nesterov_y_s);
+		_nesterov_y_sp1 = new double(*other._nesterov_y_sp1);
+		_adam_m = new double(*other._adam_m);
+		_adam_v = new double(*other._adam_v);
 
 		_moment = other._moment;
 
@@ -214,8 +235,10 @@ namespace bmla {
 		_update = other._update;
 		// _lambda_s = other._lambda_s;
 		// _lambda_sp1 = other._lambda_sp1;
-		_y_s = other._y_s;
-		_y_sp1 = other._y_sp1;
+		_nesterov_y_s = other._nesterov_y_s;
+		_nesterov_y_sp1 = other._nesterov_y_sp1;
+		_adam_m = other._adam_m;
+		_adam_v = other._adam_v;
 
 		_moment = std::move(other._moment);
 
@@ -226,9 +249,11 @@ namespace bmla {
 		other._update = 0.0;
 		// other._lambda_s = 0.0;
 		// other._lambda_sp1 = 0.0;
-		other._y_s = nullptr;
-		other._y_sp1 = nullptr;
+		other._nesterov_y_s = nullptr;
+		other._nesterov_y_sp1 = nullptr;
 		other._is_val_fixed = false;
+		other._adam_m = nullptr;
+		other._adam_v = nullptr;
 	};
 
 	/********************
@@ -277,48 +302,66 @@ namespace bmla {
 	Update
 	********************/
 
-	void IxnParam::Impl::update_calculate_and_store(double dopt, bool l2_mode, double l2_lambda, double l2_center) {
-		_update = - dopt * (_moment->get_moment(MomentType::ASLEEP) - _moment->get_moment(MomentType::AWAKE));
+	void IxnParam::Impl::update_calculate_and_store(bool l2_mode, double l2_lambda, double l2_center) {
+		_update = _moment->get_moment(MomentType::ASLEEP) - _moment->get_moment(MomentType::AWAKE);
 		if (l2_mode) {
-			_update -= 2.0 * l2_lambda * (_val - l2_center);
+			_update += 2.0 * l2_lambda * (_val - l2_center);
 		};
 	};
-	void IxnParam::Impl::update_committ_stored(bool nesterov_mode, double nesterov_acc) {
+	void IxnParam::Impl::update_committ_stored_sgd(double dopt) {
+		// Just update
+		_val -= dopt*_update;
+	};
+	void IxnParam::Impl::update_committ_stored_nesterov(double dopt, double nesterov_acc) {
 
-		if (nesterov_mode) {
-
-			// ysp1, lambda sp1
-			if (!_y_sp1) {
-				_y_sp1 = new double(_val);
-			};
-			*_y_sp1 = _val + _update;
-			// std::cout << "_y_sp1 = " << _y_sp1 << std::endl;
-			// _lambda_sp1 = (1.0 + sqrt(1.0 + 4.0 * pow(_lambda_s,2))) / 2.0;
-			//std::cout << "_lambda_sp1 = " << _lambda_sp1 << std::endl;
-
-			// Gamma
-			// double gamma_s = (1.0 - _lambda_s) / _lambda_sp1;
-			// std::cout << "gamma_s = " << gamma_s << std::endl;
-
-			// Y_S
-			if (!_y_s) {
-				_y_s = new double(_val);
-			};
-
-			// New val
-			// _val = (1.0 - gamma_s) * _y_sp1 + gamma_s * _y_s;
-			_val = (1.0 + nesterov_acc) * (*_y_sp1) - nesterov_acc * (*_y_s);
-
-			// Advance y, lambda
-			*_y_s = *_y_sp1;
-			// _lambda_s = _lambda_sp1;
-
-		} else {
-
-			// Just update
-			_val += _update;
-
+		// ysp1, lambda sp1
+		if (!_nesterov_y_sp1) {
+			_nesterov_y_sp1 = new double(_val);
 		};
+		*_nesterov_y_sp1 = _val - dopt * _update;
+		// std::cout << "_nesterov_y_sp1 = " << _nesterov_y_sp1 << std::endl;
+		// _lambda_sp1 = (1.0 + sqrt(1.0 + 4.0 * pow(_lambda_s,2))) / 2.0;
+		//std::cout << "_lambda_sp1 = " << _lambda_sp1 << std::endl;
+
+		// Gamma
+		// double gamma_s = (1.0 - _lambda_s) / _lambda_sp1;
+		// std::cout << "gamma_s = " << gamma_s << std::endl;
+
+		// Y_S
+		if (!_nesterov_y_s) {
+			_nesterov_y_s = new double(_val);
+		};
+
+		// New val
+		// _val = (1.0 - gamma_s) * _nesterov_y_sp1 + gamma_s * _nesterov_y_s;
+		_val = (1.0 + nesterov_acc) * (*_nesterov_y_sp1) - nesterov_acc * (*_nesterov_y_s);
+
+		// Advance y, lambda
+		*_nesterov_y_s = *_nesterov_y_sp1;
+		// _lambda_s = _lambda_sp1;
+	};
+	void IxnParam::Impl::update_committ_stored_adam(double dopt, int opt_step, double beta_1, double beta_2, double eps) {
+		if (!_adam_m) {
+			_adam_m = new double(0.0);
+		};
+		if (!_adam_v) {
+			_adam_v = new double(0.0);
+		};
+
+		int opt_step_use = std::max(opt_step,1);
+
+		// first moment
+		*_adam_m = beta_1*(*_adam_m) + (1.0 - beta_1)*_update;
+
+		// second
+		*_adam_v = beta_2*(*_adam_v) + (1.0-beta_2)*pow(_update,2);
+
+		// corrections
+		double mhat = (*_adam_m) / (1.0 - pow(beta_1,opt_step_use));
+		double vhat = (*_adam_v) / (1.0 - pow(beta_2,opt_step_use));
+
+		// update
+		_val -= dopt * mhat / (sqrt(vhat) + eps);
 	};
 
 	/********************
@@ -446,11 +489,17 @@ namespace bmla {
 	Update
 	********************/
 
-	void IxnParam::update_calculate_and_store(double dopt, bool l2_mode, double l2_lambda, double l2_center) {
-		_impl->update_calculate_and_store(dopt,l2_mode,l2_lambda,l2_center);
+	void IxnParam::update_calculate_and_store(bool l2_mode, double l2_lambda, double l2_center) {
+		_impl->update_calculate_and_store(l2_mode,l2_lambda,l2_center);
 	};
-	void IxnParam::update_committ_stored(bool nesterov_mode, double nesterov_acc) {
-		_impl->update_committ_stored(nesterov_mode,nesterov_acc);
+	void IxnParam::update_committ_stored_sgd(double dopt) {
+		_impl->update_committ_stored_sgd(dopt);
+	};
+	void IxnParam::update_committ_stored_nesterov(double dopt, double nesterov_acc) {
+		_impl->update_committ_stored_nesterov(dopt,nesterov_acc);
+	};
+	void IxnParam::update_committ_stored_adam(double dopt, int opt_step, double beta_1, double beta_2, double eps) {
+		_impl->update_committ_stored_adam(dopt,opt_step,beta_1,beta_2,eps);
 	};
 
 	/********************

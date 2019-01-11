@@ -1,0 +1,746 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.8.11">
+  <compounddef id="class_dynamic_boltzmann_1_1_basis_func" kind="class" language="C++" prot="public">
+    <compoundname>DynamicBoltzmann::BasisFunc</compoundname>
+    <basecompoundref refid="class_dynamic_boltzmann_1_1_array" prot="public" virt="non-virtual">DynamicBoltzmann::Array</basecompoundref>
+      <sectiondef kind="private-attrib">
+      <memberdef kind="variable" id="class_dynamic_boltzmann_1_1_basis_func_1a8b9212677e24ebeab32b242507f1ac45" prot="private" static="no" mutable="no">
+        <type>std::string</type>
+        <definition>std::string DynamicBoltzmann::BasisFunc::_name</definition>
+        <argsstring></argsstring>
+        <name>_name</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="ixn_param.hpp" line="301" column="1" bodyfile="ixn_param.hpp" bodystart="301" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="class_dynamic_boltzmann_1_1_basis_func_1a6f9eaa8a93edecc984e527c5f36c4e17" prot="private" static="no" mutable="no">
+        <type>std::vector&lt; std::pair&lt; <ref refid="class_dynamic_boltzmann_1_1_ixn_param" kindref="compound">IxnParam</ref> *, <ref refid="class_dynamic_boltzmann_1_1_var_term" kindref="compound">VarTerm</ref> * &gt; &gt;</type>
+        <definition>std::vector&lt;std::pair&lt;IxnParam*,VarTerm*&gt; &gt; DynamicBoltzmann::BasisFunc::_update_ptrs</definition>
+        <argsstring></argsstring>
+        <name>_update_ptrs</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="ixn_param.hpp" line="304" column="1" bodyfile="ixn_param.hpp" bodystart="304" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="class_dynamic_boltzmann_1_1_basis_func_1a9a6e66ac14fa5028bf8e3b38775c2d51" prot="private" static="no" mutable="no">
+        <type>int *</type>
+        <definition>int* DynamicBoltzmann::BasisFunc::_idxs_bounding</definition>
+        <argsstring></argsstring>
+        <name>_idxs_bounding</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="ixn_param.hpp" line="310" column="1" bodyfile="ixn_param.hpp" bodystart="310" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="class_dynamic_boltzmann_1_1_basis_func_1a8eac7b8c7a2b9ede8b9b28198519d02b" prot="private" static="no" mutable="no">
+        <type>int *</type>
+        <definition>int* DynamicBoltzmann::BasisFunc::_idxs_p_cube</definition>
+        <argsstring></argsstring>
+        <name>_idxs_p_cube</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="ixn_param.hpp" line="311" column="1" bodyfile="ixn_param.hpp" bodystart="311" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="class_dynamic_boltzmann_1_1_basis_func_1a6cdd25d1a78baaa85e3a7baead76bbb4" prot="private" static="no" mutable="no">
+        <type>int *</type>
+        <definition>int* DynamicBoltzmann::BasisFunc::_idxs_ext_1</definition>
+        <argsstring></argsstring>
+        <name>_idxs_ext_1</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="ixn_param.hpp" line="312" column="1" bodyfile="ixn_param.hpp" bodystart="312" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="class_dynamic_boltzmann_1_1_basis_func_1a7a9d4c24780485aae9b452a3741bc21f" prot="private" static="no" mutable="no">
+        <type>int *</type>
+        <definition>int* DynamicBoltzmann::BasisFunc::_idxs_ext_2</definition>
+        <argsstring></argsstring>
+        <name>_idxs_ext_2</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="ixn_param.hpp" line="313" column="1" bodyfile="ixn_param.hpp" bodystart="313" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="class_dynamic_boltzmann_1_1_basis_func_1a7dd454dafbe8d606d65d319769e09df0" prot="private" static="no" mutable="no">
+        <type>double *</type>
+        <definition>double* DynamicBoltzmann::BasisFunc::_fracs</definition>
+        <argsstring></argsstring>
+        <name>_fracs</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="ixn_param.hpp" line="314" column="1" bodyfile="ixn_param.hpp" bodystart="314" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="class_dynamic_boltzmann_1_1_basis_func_1aac6fd304aa9d8ed4554171f3e50a437e" prot="private" static="no" mutable="no">
+        <type>double *</type>
+        <definition>double* DynamicBoltzmann::BasisFunc::_p_cube</definition>
+        <argsstring></argsstring>
+        <name>_p_cube</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="ixn_param.hpp" line="315" column="1" bodyfile="ixn_param.hpp" bodystart="315" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="class_dynamic_boltzmann_1_1_basis_func_1a2f255f5a8ce63be545e72e68ca474615" prot="private" static="no" mutable="no">
+        <type>double *</type>
+        <definition>double* DynamicBoltzmann::BasisFunc::_update_gathered</definition>
+        <argsstring></argsstring>
+        <name>_update_gathered</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="ixn_param.hpp" line="318" column="1" bodyfile="ixn_param.hpp" bodystart="318" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="class_dynamic_boltzmann_1_1_basis_func_1ae467562201fc9ccbc6070b7b89a87800" prot="private" static="no" mutable="no">
+        <type>bool *</type>
+        <definition>bool* DynamicBoltzmann::BasisFunc::_derivs</definition>
+        <argsstring></argsstring>
+        <name>_derivs</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="ixn_param.hpp" line="321" column="1" bodyfile="ixn_param.hpp" bodystart="321" bodyend="-1"/>
+      </memberdef>
+      </sectiondef>
+      <sectiondef kind="private-func">
+      <memberdef kind="function" id="class_dynamic_boltzmann_1_1_basis_func_1a61113d0429d4f1f4a2d019c3254edfe6" prot="private" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void DynamicBoltzmann::BasisFunc::_get_bounding</definition>
+        <argsstring>(int it, bool safe=false)</argsstring>
+        <name>_get_bounding</name>
+        <param>
+          <type>int</type>
+          <declname>it</declname>
+        </param>
+        <param>
+          <type>bool</type>
+          <declname>safe</declname>
+          <defval>false</defval>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="ixn_param.hpp" line="307" column="1" bodyfile="ixn_param.cpp" bodystart="929" bodyend="957"/>
+      </memberdef>
+      <memberdef kind="function" id="class_dynamic_boltzmann_1_1_basis_func_1a9d132d08a80c11381f8f6a4d205af1ed" prot="private" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void DynamicBoltzmann::BasisFunc::_fill_p</definition>
+        <argsstring>(int dim)</argsstring>
+        <name>_fill_p</name>
+        <param>
+          <type>int</type>
+          <declname>dim</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="ixn_param.hpp" line="308" column="1" bodyfile="ixn_param.cpp" bodystart="870" bodyend="926"/>
+      </memberdef>
+      <memberdef kind="function" id="class_dynamic_boltzmann_1_1_basis_func_1a51edd38e192fbe16cd2b5b9840092f29" prot="private" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void DynamicBoltzmann::BasisFunc::_copy</definition>
+        <argsstring>(const BasisFunc &amp;other)</argsstring>
+        <name>_copy</name>
+        <param>
+          <type>const <ref refid="class_dynamic_boltzmann_1_1_basis_func" kindref="compound">BasisFunc</ref> &amp;</type>
+          <declname>other</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="ixn_param.hpp" line="324" column="1" bodyfile="ixn_param.cpp" bodystart="800" bodyend="825"/>
+      </memberdef>
+      <memberdef kind="function" id="class_dynamic_boltzmann_1_1_basis_func_1a2944e441357a546ac3fbe35d08814bde" prot="private" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void DynamicBoltzmann::BasisFunc::_clean_up</definition>
+        <argsstring>()</argsstring>
+        <name>_clean_up</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="ixn_param.hpp" line="325" column="1" bodyfile="ixn_param.cpp" bodystart="826" bodyend="835"/>
+      </memberdef>
+      <memberdef kind="function" id="class_dynamic_boltzmann_1_1_basis_func_1aac7d82fd1fddfa49d591efdd1505e9a5" prot="private" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>double</type>
+        <definition>double DynamicBoltzmann::BasisFunc::_cubic_interp</definition>
+        <argsstring>(double p[4], double f)</argsstring>
+        <name>_cubic_interp</name>
+        <param>
+          <type>double</type>
+          <declname>p</declname>
+          <array>[4]</array>
+        </param>
+        <param>
+          <type>double</type>
+          <declname>f</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="ixn_param.hpp" line="328" column="1" bodyfile="ixn_param.cpp" bodystart="1143" bodyend="1145"/>
+      </memberdef>
+      <memberdef kind="function" id="class_dynamic_boltzmann_1_1_basis_func_1ae686f41a15d9bb9c40d8cdc282153893" prot="private" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>double</type>
+        <definition>double DynamicBoltzmann::BasisFunc::_deriv</definition>
+        <argsstring>(double p[4], double f)</argsstring>
+        <name>_deriv</name>
+        <param>
+          <type>double</type>
+          <declname>p</declname>
+          <array>[4]</array>
+        </param>
+        <param>
+          <type>double</type>
+          <declname>f</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="ixn_param.hpp" line="329" column="1" bodyfile="ixn_param.cpp" bodystart="1146" bodyend="1148"/>
+      </memberdef>
+      <memberdef kind="function" id="class_dynamic_boltzmann_1_1_basis_func_1aa716814b3882f4995482f5ea838a2bfc" prot="private" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>double</type>
+        <definition>double DynamicBoltzmann::BasisFunc::_n_cubic_interp</definition>
+        <argsstring>(int dim, double *p, double fracs[], bool derivs[])</argsstring>
+        <name>_n_cubic_interp</name>
+        <param>
+          <type>int</type>
+          <declname>dim</declname>
+        </param>
+        <param>
+          <type>double *</type>
+          <declname>p</declname>
+        </param>
+        <param>
+          <type>double</type>
+          <declname>fracs</declname>
+          <array>[]</array>
+        </param>
+        <param>
+          <type>bool</type>
+          <declname>derivs</declname>
+          <array>[]</array>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="ixn_param.hpp" line="330" column="1" bodyfile="ixn_param.cpp" bodystart="1149" bodyend="1173"/>
+      </memberdef>
+      </sectiondef>
+      <sectiondef kind="public-func">
+      <memberdef kind="function" id="class_dynamic_boltzmann_1_1_basis_func_1a324da7795f5917b6c9d45c0323f316bc" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type></type>
+        <definition>DynamicBoltzmann::BasisFunc::BasisFunc</definition>
+        <argsstring>(std::string name, std::vector&lt; IxnParam * &gt; ixn_params)</argsstring>
+        <name>BasisFunc</name>
+        <param>
+          <type>std::string</type>
+          <declname>name</declname>
+        </param>
+        <param>
+          <type>std::vector&lt; <ref refid="class_dynamic_boltzmann_1_1_ixn_param" kindref="compound">IxnParam</ref> * &gt;</type>
+          <declname>ixn_params</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="ixn_param.hpp" line="335" column="1" bodyfile="ixn_param.cpp" bodystart="768" bodyend="782"/>
+      </memberdef>
+      <memberdef kind="function" id="class_dynamic_boltzmann_1_1_basis_func_1a390d4df83ae45995eb744ca63e6112fe" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type></type>
+        <definition>DynamicBoltzmann::BasisFunc::BasisFunc</definition>
+        <argsstring>(const BasisFunc &amp;other)</argsstring>
+        <name>BasisFunc</name>
+        <param>
+          <type>const <ref refid="class_dynamic_boltzmann_1_1_basis_func" kindref="compound">BasisFunc</ref> &amp;</type>
+          <declname>other</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="ixn_param.hpp" line="336" column="1" bodyfile="ixn_param.cpp" bodystart="783" bodyend="785"/>
+      </memberdef>
+      <memberdef kind="function" id="class_dynamic_boltzmann_1_1_basis_func_1a2135813a3ba4e9391d68a3801b74e7e5" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="class_dynamic_boltzmann_1_1_basis_func" kindref="compound">BasisFunc</ref> &amp;</type>
+        <definition>BasisFunc &amp; DynamicBoltzmann::BasisFunc::operator=</definition>
+        <argsstring>(const BasisFunc &amp;other)</argsstring>
+        <name>operator=</name>
+        <param>
+          <type>const <ref refid="class_dynamic_boltzmann_1_1_basis_func" kindref="compound">BasisFunc</ref> &amp;</type>
+          <declname>other</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="ixn_param.hpp" line="337" column="1" bodyfile="ixn_param.cpp" bodystart="786" bodyend="796"/>
+      </memberdef>
+      <memberdef kind="function" id="class_dynamic_boltzmann_1_1_basis_func_1a06db2555ff2504db93260a6a7910e664" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type></type>
+        <definition>DynamicBoltzmann::BasisFunc::~BasisFunc</definition>
+        <argsstring>()</argsstring>
+        <name>~BasisFunc</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="ixn_param.hpp" line="338" column="1" bodyfile="ixn_param.cpp" bodystart="797" bodyend="799"/>
+      </memberdef>
+      <memberdef kind="function" id="class_dynamic_boltzmann_1_1_basis_func_1aa3a077299b5e2f3d4094efc27c106513" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void DynamicBoltzmann::BasisFunc::add_update_ptrs</definition>
+        <argsstring>(IxnParam *ixn_param, VarTerm *var_term)</argsstring>
+        <name>add_update_ptrs</name>
+        <param>
+          <type><ref refid="class_dynamic_boltzmann_1_1_ixn_param" kindref="compound">IxnParam</ref> *</type>
+          <declname>ixn_param</declname>
+        </param>
+        <param>
+          <type><ref refid="class_dynamic_boltzmann_1_1_var_term" kindref="compound">VarTerm</ref> *</type>
+          <declname>var_term</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="ixn_param.hpp" line="341" column="1" bodyfile="ixn_param.cpp" bodystart="841" bodyend="844"/>
+      </memberdef>
+      <memberdef kind="function" id="class_dynamic_boltzmann_1_1_basis_func_1a842ce68c9a9a9a9b5c23e3dac7676c28" prot="public" static="no" const="yes" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void DynamicBoltzmann::BasisFunc::validate_setup</definition>
+        <argsstring>() const </argsstring>
+        <name>validate_setup</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="ixn_param.hpp" line="344" column="1" bodyfile="ixn_param.cpp" bodystart="851" bodyend="860"/>
+      </memberdef>
+      <memberdef kind="function" id="class_dynamic_boltzmann_1_1_basis_func_1afa8b1e7917e171677d2df60fc18afe85" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>double</type>
+        <definition>double DynamicBoltzmann::BasisFunc::get_at_time</definition>
+        <argsstring>(int it)</argsstring>
+        <name>get_at_time</name>
+        <param>
+          <type>int</type>
+          <declname>it</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="ixn_param.hpp" line="347" column="1" bodyfile="ixn_param.cpp" bodystart="963" bodyend="969"/>
+      </memberdef>
+      <memberdef kind="function" id="class_dynamic_boltzmann_1_1_basis_func_1aec8d39e3f4e4f043091249a68a208275" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>double</type>
+        <definition>double DynamicBoltzmann::BasisFunc::get_deriv_at_time</definition>
+        <argsstring>(int it, int i_dim)</argsstring>
+        <name>get_deriv_at_time</name>
+        <param>
+          <type>int</type>
+          <declname>it</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>i_dim</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="ixn_param.hpp" line="348" column="1" bodyfile="ixn_param.cpp" bodystart="971" bodyend="985"/>
+      </memberdef>
+      <memberdef kind="function" id="class_dynamic_boltzmann_1_1_basis_func_1a9f54ea03aa4b61d57ea3b62ddbc7d2bd" prot="public" static="no" const="yes" explicit="no" inline="no" virt="non-virtual">
+        <type>std::string</type>
+        <definition>std::string DynamicBoltzmann::BasisFunc::name</definition>
+        <argsstring>() const </argsstring>
+        <name>name</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="ixn_param.hpp" line="351" column="1" bodyfile="ixn_param.cpp" bodystart="991" bodyend="993"/>
+      </memberdef>
+      <memberdef kind="function" id="class_dynamic_boltzmann_1_1_basis_func_1ab4d3c930c905a184a7f55047515f3681" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void DynamicBoltzmann::BasisFunc::update</definition>
+        <argsstring>(int n_t, double dt, double dopt)</argsstring>
+        <name>update</name>
+        <param>
+          <type>int</type>
+          <declname>n_t</declname>
+        </param>
+        <param>
+          <type>double</type>
+          <declname>dt</declname>
+        </param>
+        <param>
+          <type>double</type>
+          <declname>dopt</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="ixn_param.hpp" line="354" column="1" bodyfile="ixn_param.cpp" bodystart="999" bodyend="1011"/>
+      </memberdef>
+      <memberdef kind="function" id="class_dynamic_boltzmann_1_1_basis_func_1ad5fa2b1c6064c17634af1a59131b7d01" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void DynamicBoltzmann::BasisFunc::update_gather</definition>
+        <argsstring>(int n_t, double dt, double dopt)</argsstring>
+        <name>update_gather</name>
+        <param>
+          <type>int</type>
+          <declname>n_t</declname>
+        </param>
+        <param>
+          <type>double</type>
+          <declname>dt</declname>
+        </param>
+        <param>
+          <type>double</type>
+          <declname>dopt</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="ixn_param.hpp" line="355" column="1" bodyfile="ixn_param.cpp" bodystart="1013" bodyend="1032"/>
+      </memberdef>
+      <memberdef kind="function" id="class_dynamic_boltzmann_1_1_basis_func_1a13218a4bb29d62e7bdcd3f24a5f46228" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void DynamicBoltzmann::BasisFunc::update_committ_gathered</definition>
+        <argsstring>()</argsstring>
+        <name>update_committ_gathered</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="ixn_param.hpp" line="356" column="1" bodyfile="ixn_param.cpp" bodystart="1034" bodyend="1048"/>
+      </memberdef>
+      <memberdef kind="function" id="class_dynamic_boltzmann_1_1_basis_func_1a9f7d0d817c78cfbc8745bc684839793a" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void DynamicBoltzmann::BasisFunc::test_fill_2d</definition>
+        <argsstring>()</argsstring>
+        <name>test_fill_2d</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="ixn_param.hpp" line="359" column="1" bodyfile="ixn_param.cpp" bodystart="1054" bodyend="1067"/>
+      </memberdef>
+      <memberdef kind="function" id="class_dynamic_boltzmann_1_1_basis_func_1a53890b0fa73a15ed47bef913e8e47917" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void DynamicBoltzmann::BasisFunc::test_fill_3d</definition>
+        <argsstring>()</argsstring>
+        <name>test_fill_3d</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="ixn_param.hpp" line="360" column="1" bodyfile="ixn_param.cpp" bodystart="1068" bodyend="1085"/>
+      </memberdef>
+      <memberdef kind="function" id="class_dynamic_boltzmann_1_1_basis_func_1a9148ebeec0ab1b2228c0ce0e01013c56" prot="public" static="no" const="yes" explicit="no" inline="no" virt="non-virtual">
+        <type>double</type>
+        <definition>double DynamicBoltzmann::BasisFunc::get_by_idxs</definition>
+        <argsstring>(int *idxs) const </argsstring>
+        <name>get_by_idxs</name>
+        <param>
+          <type>int *</type>
+          <declname>idxs</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="ixn_param.hpp" line="365" column="1" bodyfile="ixn_param.cpp" bodystart="1091" bodyend="1093"/>
+      </memberdef>
+      <memberdef kind="function" id="class_dynamic_boltzmann_1_1_basis_func_1a20ced12f9ef450f6db5d40950850a2be" prot="public" static="no" const="yes" explicit="no" inline="no" virt="non-virtual">
+        <type>double</type>
+        <definition>double DynamicBoltzmann::BasisFunc::get_by_idx</definition>
+        <argsstring>(int i) const </argsstring>
+        <name>get_by_idx</name>
+        <param>
+          <type>int</type>
+          <declname>i</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="ixn_param.hpp" line="366" column="1" bodyfile="ixn_param.cpp" bodystart="1095" bodyend="1097"/>
+      </memberdef>
+      <memberdef kind="function" id="class_dynamic_boltzmann_1_1_basis_func_1a867b71a18568e2d620ba0cfe6169009f" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void DynamicBoltzmann::BasisFunc::set_by_idxs</definition>
+        <argsstring>(int *idxs, double val)</argsstring>
+        <name>set_by_idxs</name>
+        <param>
+          <type>int *</type>
+          <declname>idxs</declname>
+        </param>
+        <param>
+          <type>double</type>
+          <declname>val</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="ixn_param.hpp" line="367" column="1" bodyfile="ixn_param.cpp" bodystart="1099" bodyend="1101"/>
+      </memberdef>
+      <memberdef kind="function" id="class_dynamic_boltzmann_1_1_basis_func_1a9dd4012ab05af05ff40279ba991b488c" prot="public" static="no" const="yes" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void DynamicBoltzmann::BasisFunc::write_grid</definition>
+        <argsstring>(std::string fname) const </argsstring>
+        <name>write_grid</name>
+        <param>
+          <type>std::string</type>
+          <declname>fname</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="ixn_param.hpp" line="370" column="1" bodyfile="ixn_param.cpp" bodystart="1103" bodyend="1105"/>
+      </memberdef>
+      <memberdef kind="function" id="class_dynamic_boltzmann_1_1_basis_func_1a27610272c65bccc3d2f022c197b8ab0c" prot="public" static="no" const="yes" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void DynamicBoltzmann::BasisFunc::write_vals</definition>
+        <argsstring>(std::string dir, int idx) const </argsstring>
+        <name>write_vals</name>
+        <param>
+          <type>std::string</type>
+          <declname>dir</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>idx</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="ixn_param.hpp" line="371" column="1" bodyfile="ixn_param.cpp" bodystart="1106" bodyend="1108"/>
+      </memberdef>
+      <memberdef kind="function" id="class_dynamic_boltzmann_1_1_basis_func_1a4aeb401d956434d8802d5435797c6877" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void DynamicBoltzmann::BasisFunc::read_vals</definition>
+        <argsstring>(std::string fname)</argsstring>
+        <name>read_vals</name>
+        <param>
+          <type>std::string</type>
+          <declname>fname</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="ixn_param.hpp" line="372" column="1" bodyfile="ixn_param.cpp" bodystart="1109" bodyend="1111"/>
+      </memberdef>
+      <memberdef kind="function" id="class_dynamic_boltzmann_1_1_basis_func_1ae2b6681fae9d6f89c4b6bd80f6886eb1" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>double</type>
+        <definition>double DynamicBoltzmann::BasisFunc::get_delta_source</definition>
+        <argsstring>(int it, int i)</argsstring>
+        <name>get_delta_source</name>
+        <param>
+          <type>int</type>
+          <declname>it</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>i</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="ixn_param.hpp" line="375" column="1" bodyfile="ixn_param.cpp" bodystart="1117" bodyend="1133"/>
+      </memberdef>
+      </sectiondef>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <inheritancegraph>
+      <node id="3">
+        <label>DynamicBoltzmann::BasisFunc</label>
+        <link refid="class_dynamic_boltzmann_1_1_basis_func"/>
+        <childnode refid="4" relation="public-inheritance">
+        </childnode>
+      </node>
+      <node id="4">
+        <label>DynamicBoltzmann::Array</label>
+        <link refid="class_dynamic_boltzmann_1_1_array"/>
+      </node>
+    </inheritancegraph>
+    <collaborationgraph>
+      <node id="5">
+        <label>DynamicBoltzmann::BasisFunc</label>
+        <link refid="class_dynamic_boltzmann_1_1_basis_func"/>
+        <childnode refid="6" relation="public-inheritance">
+        </childnode>
+      </node>
+      <node id="6">
+        <label>DynamicBoltzmann::Array</label>
+        <link refid="class_dynamic_boltzmann_1_1_array"/>
+      </node>
+    </collaborationgraph>
+    <location file="ixn_param.hpp" line="296" column="1" bodyfile="ixn_param.hpp" bodystart="296" bodyend="376"/>
+    <listofallmembers>
+      <member refid="class_dynamic_boltzmann_1_1_basis_func_1a2944e441357a546ac3fbe35d08814bde" prot="private" virt="non-virtual"><scope>DynamicBoltzmann::BasisFunc</scope><name>_clean_up</name></member>
+      <member refid="class_dynamic_boltzmann_1_1_basis_func_1a51edd38e192fbe16cd2b5b9840092f29" prot="private" virt="non-virtual"><scope>DynamicBoltzmann::BasisFunc</scope><name>_copy</name></member>
+      <member refid="class_dynamic_boltzmann_1_1_basis_func_1aac7d82fd1fddfa49d591efdd1505e9a5" prot="private" virt="non-virtual"><scope>DynamicBoltzmann::BasisFunc</scope><name>_cubic_interp</name></member>
+      <member refid="class_dynamic_boltzmann_1_1_basis_func_1ae686f41a15d9bb9c40d8cdc282153893" prot="private" virt="non-virtual"><scope>DynamicBoltzmann::BasisFunc</scope><name>_deriv</name></member>
+      <member refid="class_dynamic_boltzmann_1_1_basis_func_1ae467562201fc9ccbc6070b7b89a87800" prot="private" virt="non-virtual"><scope>DynamicBoltzmann::BasisFunc</scope><name>_derivs</name></member>
+      <member refid="class_dynamic_boltzmann_1_1_array_1a8dd3c191f35ff374593265a6e9a609e2" prot="protected" virt="non-virtual"><scope>DynamicBoltzmann::BasisFunc</scope><name>_dim_pwrs</name></member>
+      <member refid="class_dynamic_boltzmann_1_1_basis_func_1a9d132d08a80c11381f8f6a4d205af1ed" prot="private" virt="non-virtual"><scope>DynamicBoltzmann::BasisFunc</scope><name>_fill_p</name></member>
+      <member refid="class_dynamic_boltzmann_1_1_basis_func_1a7dd454dafbe8d606d65d319769e09df0" prot="private" virt="non-virtual"><scope>DynamicBoltzmann::BasisFunc</scope><name>_fracs</name></member>
+      <member refid="class_dynamic_boltzmann_1_1_basis_func_1a61113d0429d4f1f4a2d019c3254edfe6" prot="private" virt="non-virtual"><scope>DynamicBoltzmann::BasisFunc</scope><name>_get_bounding</name></member>
+      <member refid="class_dynamic_boltzmann_1_1_basis_func_1a9a6e66ac14fa5028bf8e3b38775c2d51" prot="private" virt="non-virtual"><scope>DynamicBoltzmann::BasisFunc</scope><name>_idxs_bounding</name></member>
+      <member refid="class_dynamic_boltzmann_1_1_basis_func_1a6cdd25d1a78baaa85e3a7baead76bbb4" prot="private" virt="non-virtual"><scope>DynamicBoltzmann::BasisFunc</scope><name>_idxs_ext_1</name></member>
+      <member refid="class_dynamic_boltzmann_1_1_basis_func_1a7a9d4c24780485aae9b452a3741bc21f" prot="private" virt="non-virtual"><scope>DynamicBoltzmann::BasisFunc</scope><name>_idxs_ext_2</name></member>
+      <member refid="class_dynamic_boltzmann_1_1_basis_func_1a8eac7b8c7a2b9ede8b9b28198519d02b" prot="private" virt="non-virtual"><scope>DynamicBoltzmann::BasisFunc</scope><name>_idxs_p_cube</name></member>
+      <member refid="class_dynamic_boltzmann_1_1_array_1a5c414b3ccaf1e023d082097cc5ce163b" prot="protected" virt="non-virtual"><scope>DynamicBoltzmann::BasisFunc</scope><name>_ixn_params</name></member>
+      <member refid="class_dynamic_boltzmann_1_1_basis_func_1aa716814b3882f4995482f5ea838a2bfc" prot="private" virt="non-virtual"><scope>DynamicBoltzmann::BasisFunc</scope><name>_n_cubic_interp</name></member>
+      <member refid="class_dynamic_boltzmann_1_1_array_1a58d5bb3d8658b0e35cfe841f982608d9" prot="protected" virt="non-virtual"><scope>DynamicBoltzmann::BasisFunc</scope><name>_n_params</name></member>
+      <member refid="class_dynamic_boltzmann_1_1_basis_func_1a8b9212677e24ebeab32b242507f1ac45" prot="private" virt="non-virtual"><scope>DynamicBoltzmann::BasisFunc</scope><name>_name</name></member>
+      <member refid="class_dynamic_boltzmann_1_1_basis_func_1aac6fd304aa9d8ed4554171f3e50a437e" prot="private" virt="non-virtual"><scope>DynamicBoltzmann::BasisFunc</scope><name>_p_cube</name></member>
+      <member refid="class_dynamic_boltzmann_1_1_basis_func_1a2f255f5a8ce63be545e72e68ca474615" prot="private" virt="non-virtual"><scope>DynamicBoltzmann::BasisFunc</scope><name>_update_gathered</name></member>
+      <member refid="class_dynamic_boltzmann_1_1_basis_func_1a6f9eaa8a93edecc984e527c5f36c4e17" prot="private" virt="non-virtual"><scope>DynamicBoltzmann::BasisFunc</scope><name>_update_ptrs</name></member>
+      <member refid="class_dynamic_boltzmann_1_1_array_1a1ba50a3e48d86620f2ab2c3fc1037a86" prot="protected" virt="non-virtual"><scope>DynamicBoltzmann::BasisFunc</scope><name>_val_len</name></member>
+      <member refid="class_dynamic_boltzmann_1_1_array_1a9650ce27e959cc17e85d8af8ffedadc7" prot="protected" virt="non-virtual"><scope>DynamicBoltzmann::BasisFunc</scope><name>_vals</name></member>
+      <member refid="class_dynamic_boltzmann_1_1_basis_func_1aa3a077299b5e2f3d4094efc27c106513" prot="public" virt="non-virtual"><scope>DynamicBoltzmann::BasisFunc</scope><name>add_update_ptrs</name></member>
+      <member refid="class_dynamic_boltzmann_1_1_array_1ac0a160a4cf28962dea5f53694ef15e75" prot="public" virt="non-virtual"><scope>DynamicBoltzmann::BasisFunc</scope><name>Array</name></member>
+      <member refid="class_dynamic_boltzmann_1_1_array_1a6514cd537865d7d27305ac0c6c07a649" prot="public" virt="non-virtual"><scope>DynamicBoltzmann::BasisFunc</scope><name>Array</name></member>
+      <member refid="class_dynamic_boltzmann_1_1_array_1a2bcea1a5da5fa0c0458146145e2c7912" prot="public" virt="non-virtual"><scope>DynamicBoltzmann::BasisFunc</scope><name>Array</name></member>
+      <member refid="class_dynamic_boltzmann_1_1_array_1a35d80b1c99228e6c5b952fe87b26ca57" prot="public" virt="non-virtual"><scope>DynamicBoltzmann::BasisFunc</scope><name>Array</name></member>
+      <member refid="class_dynamic_boltzmann_1_1_basis_func_1a324da7795f5917b6c9d45c0323f316bc" prot="public" virt="non-virtual"><scope>DynamicBoltzmann::BasisFunc</scope><name>BasisFunc</name></member>
+      <member refid="class_dynamic_boltzmann_1_1_basis_func_1a390d4df83ae45995eb744ca63e6112fe" prot="public" virt="non-virtual"><scope>DynamicBoltzmann::BasisFunc</scope><name>BasisFunc</name></member>
+      <member refid="class_dynamic_boltzmann_1_1_array_1ad7b39654ecb64c844fa76862ee811d05" prot="public" virt="non-virtual"><scope>DynamicBoltzmann::BasisFunc</scope><name>check_dims</name></member>
+      <member refid="class_dynamic_boltzmann_1_1_basis_func_1afa8b1e7917e171677d2df60fc18afe85" prot="public" virt="non-virtual"><scope>DynamicBoltzmann::BasisFunc</scope><name>get_at_time</name></member>
+      <member refid="class_dynamic_boltzmann_1_1_basis_func_1a20ced12f9ef450f6db5d40950850a2be" prot="public" virt="non-virtual"><scope>DynamicBoltzmann::BasisFunc</scope><name>get_by_idx</name></member>
+      <member refid="class_dynamic_boltzmann_1_1_basis_func_1a9148ebeec0ab1b2228c0ce0e01013c56" prot="public" virt="non-virtual"><scope>DynamicBoltzmann::BasisFunc</scope><name>get_by_idxs</name></member>
+      <member refid="class_dynamic_boltzmann_1_1_basis_func_1ae2b6681fae9d6f89c4b6bd80f6886eb1" prot="public" virt="non-virtual"><scope>DynamicBoltzmann::BasisFunc</scope><name>get_delta_source</name></member>
+      <member refid="class_dynamic_boltzmann_1_1_basis_func_1aec8d39e3f4e4f043091249a68a208275" prot="public" virt="non-virtual"><scope>DynamicBoltzmann::BasisFunc</scope><name>get_deriv_at_time</name></member>
+      <member refid="class_dynamic_boltzmann_1_1_array_1a410ada01fec9084f3c5028c9954f4baa" prot="public" virt="non-virtual"><scope>DynamicBoltzmann::BasisFunc</scope><name>get_idxs</name></member>
+      <member refid="class_dynamic_boltzmann_1_1_basis_func_1a9f54ea03aa4b61d57ea3b62ddbc7d2bd" prot="public" virt="non-virtual"><scope>DynamicBoltzmann::BasisFunc</scope><name>name</name></member>
+      <member refid="class_dynamic_boltzmann_1_1_basis_func_1a2135813a3ba4e9391d68a3801b74e7e5" prot="public" virt="non-virtual"><scope>DynamicBoltzmann::BasisFunc</scope><name>operator=</name></member>
+      <member refid="class_dynamic_boltzmann_1_1_array_1ac44b5c15f6e0fd923e1e371317ebbb93" prot="public" virt="non-virtual" ambiguityscope="DynamicBoltzmann::Array::"><scope>DynamicBoltzmann::BasisFunc</scope><name>operator=</name></member>
+      <member refid="class_dynamic_boltzmann_1_1_array_1a472bd69fdacdc6d935694aaebc0517be" prot="public" virt="non-virtual" ambiguityscope="DynamicBoltzmann::Array::"><scope>DynamicBoltzmann::BasisFunc</scope><name>operator=</name></member>
+      <member refid="class_dynamic_boltzmann_1_1_basis_func_1a4aeb401d956434d8802d5435797c6877" prot="public" virt="non-virtual"><scope>DynamicBoltzmann::BasisFunc</scope><name>read_vals</name></member>
+      <member refid="class_dynamic_boltzmann_1_1_array_1a14ff8fdfa0bce64d03d75dc102ebd0be" prot="public" virt="non-virtual"><scope>DynamicBoltzmann::BasisFunc</scope><name>set_by_idx</name></member>
+      <member refid="class_dynamic_boltzmann_1_1_basis_func_1a867b71a18568e2d620ba0cfe6169009f" prot="public" virt="non-virtual"><scope>DynamicBoltzmann::BasisFunc</scope><name>set_by_idxs</name></member>
+      <member refid="class_dynamic_boltzmann_1_1_basis_func_1a9f7d0d817c78cfbc8745bc684839793a" prot="public" virt="non-virtual"><scope>DynamicBoltzmann::BasisFunc</scope><name>test_fill_2d</name></member>
+      <member refid="class_dynamic_boltzmann_1_1_basis_func_1a53890b0fa73a15ed47bef913e8e47917" prot="public" virt="non-virtual"><scope>DynamicBoltzmann::BasisFunc</scope><name>test_fill_3d</name></member>
+      <member refid="class_dynamic_boltzmann_1_1_basis_func_1ab4d3c930c905a184a7f55047515f3681" prot="public" virt="non-virtual"><scope>DynamicBoltzmann::BasisFunc</scope><name>update</name></member>
+      <member refid="class_dynamic_boltzmann_1_1_basis_func_1a13218a4bb29d62e7bdcd3f24a5f46228" prot="public" virt="non-virtual"><scope>DynamicBoltzmann::BasisFunc</scope><name>update_committ_gathered</name></member>
+      <member refid="class_dynamic_boltzmann_1_1_basis_func_1ad5fa2b1c6064c17634af1a59131b7d01" prot="public" virt="non-virtual"><scope>DynamicBoltzmann::BasisFunc</scope><name>update_gather</name></member>
+      <member refid="class_dynamic_boltzmann_1_1_basis_func_1a842ce68c9a9a9a9b5c23e3dac7676c28" prot="public" virt="non-virtual"><scope>DynamicBoltzmann::BasisFunc</scope><name>validate_setup</name></member>
+      <member refid="class_dynamic_boltzmann_1_1_basis_func_1a9dd4012ab05af05ff40279ba991b488c" prot="public" virt="non-virtual"><scope>DynamicBoltzmann::BasisFunc</scope><name>write_grid</name></member>
+      <member refid="class_dynamic_boltzmann_1_1_basis_func_1a27610272c65bccc3d2f022c197b8ab0c" prot="public" virt="non-virtual"><scope>DynamicBoltzmann::BasisFunc</scope><name>write_vals</name></member>
+      <member refid="class_dynamic_boltzmann_1_1_array_1a5fbc749dde425ce7cd882af2f3cd266d" prot="public" virt="non-virtual" ambiguityscope="DynamicBoltzmann::Array::"><scope>DynamicBoltzmann::BasisFunc</scope><name>write_vals</name></member>
+      <member refid="class_dynamic_boltzmann_1_1_array_1aab392c15045f9874b6dded72ed7fb909" prot="public" virt="non-virtual"><scope>DynamicBoltzmann::BasisFunc</scope><name>zero</name></member>
+      <member refid="class_dynamic_boltzmann_1_1_array_1a530d635b411dbb11f9858a142400e4be" prot="public" virt="non-virtual"><scope>DynamicBoltzmann::BasisFunc</scope><name>~Array</name></member>
+      <member refid="class_dynamic_boltzmann_1_1_basis_func_1a06db2555ff2504db93260a6a7910e664" prot="public" virt="non-virtual"><scope>DynamicBoltzmann::BasisFunc</scope><name>~BasisFunc</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

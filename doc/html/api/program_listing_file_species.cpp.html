@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Program Listing for File species.cpp &#8212; DynamicBoltzmann 0.0.0 documentation</title>
+    <link rel="stylesheet" href="../_static/bootstrap-sphinx.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/collapsible-lists/css/tree_view.css" type="text/css" />
+    <script type="text/javascript" src="../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="../_static/collapsible-lists/js/CollapsibleLists.compressed.js"></script>
+    <script type="text/javascript" src="../_static/collapsible-lists/js/apply-collapsible-lists.js"></script>
+    <script type="text/javascript" src="../_static/js/jquery-1.11.0.min.js"></script>
+    <script type="text/javascript" src="../_static/js/jquery-fix.js"></script>
+    <script type="text/javascript" src="../_static/bootstrap-3.3.7/js/bootstrap.min.js"></script>
+    <script type="text/javascript" src="../_static/bootstrap-sphinx.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+<meta charset='utf-8'>
+<meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
+<meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
+<meta name="apple-mobile-web-app-capable" content="yes">
+
+  </head><body>
+
+  <div id="navbar" class="navbar navbar-default navbar-fixed-top">
+    <div class="container">
+      <div class="navbar-header">
+        <!-- .btn-navbar is used as the toggle for collapsed navbar content -->
+        <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".nav-collapse">
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand" href="../index.html">
+          DynamicBoltzmann</a>
+        <span class="navbar-text navbar-version pull-left"><b></b></span>
+      </div>
+
+        <div class="collapse navbar-collapse nav-collapse">
+          <ul class="nav navbar-nav">
+            
+                <li><a href="../examples.html">Examples</a></li>
+            
+            
+              <li class="dropdown globaltoc-container">
+  <a role="button"
+     id="dLabelGlobalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="../index.html">DynamicBoltzmann <b class="caret"></b></a>
+  <ul class="dropdown-menu globaltoc"
+      role="menu"
+      aria-labelledby="dLabelGlobalToc"></ul>
+</li>
+              
+                <li class="dropdown">
+  <a role="button"
+     id="dLabelLocalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="#">Page <b class="caret"></b></a>
+  <ul class="dropdown-menu localtoc"
+      role="menu"
+      aria-labelledby="dLabelLocalToc"><ul>
+<li><a class="reference internal" href="#">Program Listing for File species.cpp</a></li>
+</ul>
+</ul>
+</li>
+              
+            
+            
+              
+                
+              
+            
+            
+            
+            
+              <li class="hidden-sm">
+<div id="sourcelink">
+  <a href="../_sources/api/program_listing_file_species.cpp.rst.txt"
+     rel="nofollow">Source</a>
+</div></li>
+            
+          </ul>
+
+          
+            
+<form class="navbar-form navbar-right" action="../search.html" method="get">
+ <div class="form-group">
+  <input type="text" name="q" class="form-control" placeholder="Search" />
+ </div>
+  <input type="hidden" name="check_keywords" value="yes" />
+  <input type="hidden" name="area" value="default" />
+</form>
+          
+        </div>
+    </div>
+  </div>
+
+<div class="container">
+  <div class="row">
+      <div class="col-md-3">
+        <div id="sidebar" class="bs-sidenav" role="complementary"><ul>
+<li><a class="reference internal" href="#">Program Listing for File species.cpp</a></li>
+</ul>
+
+<div id="sourcelink">
+  <a href="../_sources/api/program_listing_file_species.cpp.rst.txt"
+     rel="nofollow">Source</a>
+</div>
+<form action="../search.html" method="get">
+ <div class="form-group">
+  <input type="text" name="q" class="form-control" placeholder="Search" />
+ </div>
+  <input type="hidden" name="check_keywords" value="yes" />
+  <input type="hidden" name="area" value="default" />
+</form>
+        </div>
+      </div>
+    <div class="col-md-9 content">
+      
+  <div class="section" id="program-listing-for-file-species-cpp">
+<span id="program-listing-file-species-cpp"></span><h1>Program Listing for File species.cpp<a class="headerlink" href="#program-listing-for-file-species-cpp" title="Permalink to this headline">¶</a></h1>
+<ul class="simple">
+<li>Return to documentation for <a class="reference internal" href="file_species.cpp.html#file-species-cpp"><span class="std std-ref">File species.cpp</span></a></li>
+</ul>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="cp">#include</span> <span class="cpf">&lt;iostream&gt;</span><span class="cp"></span>
+<span class="cp">#include</span> <span class="cpf">&quot;ixn_param.hpp&quot; // also includes species header</span><span class="cp"></span>
+
+<span class="cm">/************************************</span>
+<span class="cm">* Namespace for Gillespie3D</span>
+<span class="cm">************************************/</span>
+
+<span class="k">namespace</span> <span class="n">DynamicBoltzmann</span> <span class="p">{</span>
+
+    <span class="cm">/****************************************</span>
+<span class="cm">    Species</span>
+<span class="cm">    ****************************************/</span>
+
+    <span class="n">Species</span><span class="o">::</span><span class="n">Species</span><span class="p">(</span><span class="n">std</span><span class="o">::</span><span class="n">string</span> <span class="n">name</span><span class="p">)</span> <span class="p">{</span>
+        <span class="n">_name</span> <span class="o">=</span> <span class="n">name</span><span class="p">;</span>
+        <span class="n">_count</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+
+        <span class="c1">// Ptrs</span>
+        <span class="n">_t_opt_ptr</span> <span class="o">=</span> <span class="k">nullptr</span><span class="p">;</span>
+        <span class="n">_h_ptr</span> <span class="o">=</span> <span class="k">nullptr</span><span class="p">;</span>
+    <span class="p">};</span>
+
+    <span class="cm">/********************</span>
+<span class="cm">    Set pointer to the opt time variable</span>
+<span class="cm">    ********************/</span>
+
+    <span class="kt">void</span> <span class="n">Species</span><span class="o">::</span><span class="n">set_opt_time_ptr</span><span class="p">(</span><span class="kt">int</span> <span class="o">*</span><span class="n">t_opt_ptr</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="n">_t_opt_ptr</span> <span class="o">=</span> <span class="n">t_opt_ptr</span><span class="p">;</span>
+    <span class="p">};</span>
+
+    <span class="cm">/********************</span>
+<span class="cm">    Set h, j ptr</span>
+<span class="cm">    ********************/</span>
+
+    <span class="kt">void</span> <span class="n">Species</span><span class="o">::</span><span class="n">set_h_ptr</span><span class="p">(</span><span class="n">IxnParam</span> <span class="o">*</span><span class="n">h_ptr</span><span class="p">)</span> <span class="p">{</span>
+        <span class="n">_h_ptr</span> <span class="o">=</span> <span class="n">h_ptr</span><span class="p">;</span>
+    <span class="p">};</span>
+    <span class="kt">void</span> <span class="n">Species</span><span class="o">::</span><span class="n">add_j_ptr</span><span class="p">(</span><span class="n">Species</span><span class="o">*</span> <span class="n">sp</span><span class="p">,</span> <span class="n">IxnParam</span> <span class="o">*</span><span class="n">j_ptr</span><span class="p">)</span> <span class="p">{</span>
+        <span class="n">_j_ptr</span><span class="p">[</span><span class="n">sp</span><span class="p">]</span> <span class="o">=</span> <span class="n">j_ptr</span><span class="p">;</span>
+        <span class="c1">// Also add entry in nn count</span>
+        <span class="n">_nn_count</span><span class="p">[</span><span class="n">sp</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+    <span class="p">};</span>
+
+    <span class="cm">/********************</span>
+<span class="cm">    Validate setup</span>
+<span class="cm">    ********************/</span>
+
+    <span class="kt">void</span> <span class="n">Species</span><span class="o">::</span><span class="n">validate_setup</span><span class="p">()</span> <span class="k">const</span> <span class="p">{</span>
+        <span class="n">std</span><span class="o">::</span><span class="n">cout</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;--- Validate species: &quot;</span> <span class="o">&lt;&lt;</span> <span class="n">_name</span> <span class="o">&lt;&lt;</span> <span class="s">&quot; ---&quot;</span> <span class="o">&lt;&lt;</span> <span class="n">std</span><span class="o">::</span><span class="n">endl</span><span class="p">;</span>
+        <span class="n">std</span><span class="o">::</span><span class="n">cout</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;   NNs: &quot;</span> <span class="o">&lt;&lt;</span> <span class="n">std</span><span class="o">::</span><span class="n">flush</span><span class="p">;</span>
+        <span class="k">for</span> <span class="p">(</span><span class="k">auto</span> <span class="nl">p</span><span class="p">:</span> <span class="n">_nn_count</span><span class="p">)</span> <span class="p">{</span>
+            <span class="n">std</span><span class="o">::</span><span class="n">cout</span> <span class="o">&lt;&lt;</span> <span class="n">p</span><span class="p">.</span><span class="n">first</span><span class="o">-&gt;</span><span class="n">name</span><span class="p">()</span> <span class="o">&lt;&lt;</span> <span class="s">&quot; &quot;</span> <span class="o">&lt;&lt;</span> <span class="n">std</span><span class="o">::</span><span class="n">flush</span><span class="p">;</span>
+        <span class="p">};</span>
+        <span class="n">std</span><span class="o">::</span><span class="n">cout</span> <span class="o">&lt;&lt;</span> <span class="n">std</span><span class="o">::</span><span class="n">endl</span><span class="p">;</span>
+        <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">_t_opt_ptr</span><span class="p">)</span> <span class="p">{</span>
+            <span class="n">std</span><span class="o">::</span><span class="n">cerr</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;ERROR: no time ptr set&quot;</span> <span class="o">&lt;&lt;</span> <span class="n">std</span><span class="o">::</span><span class="n">endl</span><span class="p">;</span>
+            <span class="n">exit</span><span class="p">(</span><span class="n">EXIT_FAILURE</span><span class="p">);</span>
+        <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+            <span class="n">std</span><span class="o">::</span><span class="n">cout</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;   Time ptr is set&quot;</span> <span class="o">&lt;&lt;</span> <span class="n">std</span><span class="o">::</span><span class="n">endl</span><span class="p">;</span>
+        <span class="p">};</span>
+        <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">_h_ptr</span><span class="p">)</span> <span class="p">{</span>
+            <span class="n">std</span><span class="o">::</span><span class="n">cerr</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;ERROR: no h ptr set&quot;</span> <span class="o">&lt;&lt;</span> <span class="n">std</span><span class="o">::</span><span class="n">endl</span><span class="p">;</span>
+            <span class="n">exit</span><span class="p">(</span><span class="n">EXIT_FAILURE</span><span class="p">);</span>
+        <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+            <span class="n">std</span><span class="o">::</span><span class="n">cout</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;   h ptr is set&quot;</span> <span class="o">&lt;&lt;</span> <span class="n">std</span><span class="o">::</span><span class="n">endl</span><span class="p">;</span>
+        <span class="p">};</span>
+    <span class="p">};</span>
+
+    <span class="cm">/********************</span>
+<span class="cm">    Setters/getters</span>
+<span class="cm">    ********************/</span>
+
+    <span class="kt">double</span> <span class="n">Species</span><span class="o">::</span><span class="n">h</span><span class="p">()</span> <span class="k">const</span> <span class="p">{</span>
+        <span class="k">return</span> <span class="n">_h_ptr</span><span class="o">-&gt;</span><span class="n">get_at_time</span><span class="p">(</span><span class="o">*</span><span class="n">_t_opt_ptr</span><span class="p">);</span>
+    <span class="p">};</span>
+    <span class="kt">double</span> <span class="n">Species</span><span class="o">::</span><span class="n">j</span><span class="p">(</span><span class="n">Species</span> <span class="o">*</span><span class="n">other</span><span class="p">)</span> <span class="k">const</span> <span class="p">{</span>
+        <span class="k">return</span> <span class="n">_j_ptr</span><span class="p">.</span><span class="n">at</span><span class="p">(</span><span class="n">other</span><span class="p">)</span><span class="o">-&gt;</span><span class="n">get_at_time</span><span class="p">(</span><span class="o">*</span><span class="n">_t_opt_ptr</span><span class="p">);</span>
+    <span class="p">};</span>
+    <span class="kt">int</span> <span class="n">Species</span><span class="o">::</span><span class="n">count</span><span class="p">()</span> <span class="k">const</span> <span class="p">{</span>
+        <span class="k">return</span> <span class="n">_count</span><span class="p">;</span>
+    <span class="p">};</span>
+    <span class="kt">int</span> <span class="n">Species</span><span class="o">::</span><span class="n">nn_count</span><span class="p">(</span><span class="n">Species</span> <span class="o">*</span><span class="n">other</span><span class="p">)</span> <span class="k">const</span> <span class="p">{</span>
+        <span class="k">return</span> <span class="n">_nn_count</span><span class="p">.</span><span class="n">at</span><span class="p">(</span><span class="n">other</span><span class="p">);</span>
+    <span class="p">};</span>
+
+    <span class="n">std</span><span class="o">::</span><span class="n">string</span> <span class="n">Species</span><span class="o">::</span><span class="n">name</span><span class="p">()</span> <span class="k">const</span> <span class="p">{</span> <span class="k">return</span> <span class="n">_name</span><span class="p">;</span> <span class="p">};</span>
+
+    <span class="cm">/********************</span>
+<span class="cm">    Increment counts</span>
+<span class="cm">    ********************/</span>
+
+    <span class="kt">void</span> <span class="n">Species</span><span class="o">::</span><span class="n">count_plus</span><span class="p">()</span> <span class="p">{</span> <span class="n">_count</span><span class="o">++</span><span class="p">;</span> <span class="p">};</span>
+    <span class="kt">void</span> <span class="n">Species</span><span class="o">::</span><span class="n">count_minus</span><span class="p">()</span> <span class="p">{</span> <span class="n">_count</span><span class="o">--</span><span class="p">;</span> <span class="p">};</span>
+    <span class="kt">void</span> <span class="n">Species</span><span class="o">::</span><span class="n">nn_count_plus</span><span class="p">(</span><span class="n">Species</span><span class="o">*</span> <span class="n">other</span><span class="p">)</span> <span class="p">{</span> <span class="n">_nn_count</span><span class="p">[</span><span class="n">other</span><span class="p">]</span><span class="o">++</span><span class="p">;</span> <span class="p">};</span>
+    <span class="kt">void</span> <span class="n">Species</span><span class="o">::</span><span class="n">nn_count_minus</span><span class="p">(</span><span class="n">Species</span><span class="o">*</span> <span class="n">other</span><span class="p">)</span> <span class="p">{</span> <span class="n">_nn_count</span><span class="p">[</span><span class="n">other</span><span class="p">]</span><span class="o">--</span><span class="p">;</span> <span class="p">};</span>
+
+    <span class="cm">/********************</span>
+<span class="cm">    Reset counts</span>
+<span class="cm">    ********************/</span>
+
+    <span class="kt">void</span> <span class="n">Species</span><span class="o">::</span><span class="n">reset_counts</span><span class="p">()</span> <span class="p">{</span>
+        <span class="n">_count</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+        <span class="k">for</span> <span class="p">(</span><span class="k">auto</span> <span class="n">it</span><span class="o">=</span><span class="n">_nn_count</span><span class="p">.</span><span class="n">begin</span><span class="p">();</span> <span class="n">it</span><span class="o">!=</span><span class="n">_nn_count</span><span class="p">.</span><span class="n">end</span><span class="p">();</span> <span class="n">it</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+            <span class="n">it</span><span class="o">-&gt;</span><span class="n">second</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+        <span class="p">};</span>
+    <span class="p">};</span>
+
+    <span class="cm">/********************</span>
+<span class="cm">    Comparator</span>
+<span class="cm">    ********************/</span>
+
+    <span class="kt">bool</span> <span class="k">operator</span> <span class="o">&lt;</span><span class="p">(</span><span class="k">const</span> <span class="n">Species</span><span class="o">&amp;</span> <span class="n">a</span><span class="p">,</span> <span class="k">const</span> <span class="n">Species</span><span class="o">&amp;</span> <span class="n">b</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">return</span> <span class="n">a</span><span class="p">.</span><span class="n">name</span><span class="p">()</span> <span class="o">&lt;</span> <span class="n">b</span><span class="p">.</span><span class="n">name</span><span class="p">();</span>
+    <span class="p">};</span>
+
+<span class="p">};</span>
+</pre></div>
+</div>
+</div>
+
+
+    </div>
+      
+  </div>
+</div>
+<footer class="footer">
+  <div class="container">
+    <p class="pull-right">
+      <a href="#">Back to top</a>
+      
+    </p>
+    <p>
+        &copy; Copyright 2018, Oliver K Ernst.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.7.1.<br/>
+    </p>
+  </div>
+</footer>
+  </body>
+</html>

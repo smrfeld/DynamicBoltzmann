@@ -1,0 +1,693 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.8.11">
+  <compounddef id="class_dynamic_boltzmann_1_1_ixn_param" kind="class" language="C++" prot="public">
+    <compoundname>DynamicBoltzmann::IxnParam</compoundname>
+    <basecompoundref refid="class_dynamic_boltzmann_1_1_grid" prot="public" virt="non-virtual">DynamicBoltzmann::Grid</basecompoundref>
+      <sectiondef kind="public-type">
+      <memberdef kind="enum" id="class_dynamic_boltzmann_1_1_ixn_param_1aadbaaf61626eba7e8cc272e785079d3b" prot="public" static="no">
+        <name>MomentType</name>
+        <enumvalue id="class_dynamic_boltzmann_1_1_ixn_param_1aadbaaf61626eba7e8cc272e785079d3baaa17b87beab80a8a8015212c6a709356" prot="public">
+          <name>AWAKE</name>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="class_dynamic_boltzmann_1_1_ixn_param_1aadbaaf61626eba7e8cc272e785079d3ba26cc254e391c896f91f9939b62e36490" prot="public">
+          <name>ASLEEP</name>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="ixn_param.hpp" line="155" column="1" bodyfile="ixn_param.hpp" bodystart="155" bodyend="155"/>
+      </memberdef>
+      </sectiondef>
+      <sectiondef kind="private-attrib">
+      <memberdef kind="variable" id="class_dynamic_boltzmann_1_1_ixn_param_1a560aef2449beb59001f4e0e821f1b5b4" prot="private" static="no" mutable="no">
+        <type>IxnParamType</type>
+        <definition>IxnParamType DynamicBoltzmann::IxnParam::_type</definition>
+        <argsstring></argsstring>
+        <name>_type</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="ixn_param.hpp" line="102" column="1" bodyfile="ixn_param.hpp" bodystart="102" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="class_dynamic_boltzmann_1_1_ixn_param_1a6e71a3966fad8c2c3fc9334983fe2c43" prot="private" static="no" mutable="no">
+        <type><ref refid="class_dynamic_boltzmann_1_1_species" kindref="compound">Species</ref> *</type>
+        <definition>Species* DynamicBoltzmann::IxnParam::_sp1</definition>
+        <argsstring></argsstring>
+        <name>_sp1</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="ixn_param.hpp" line="105" column="1" bodyfile="ixn_param.hpp" bodystart="105" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="class_dynamic_boltzmann_1_1_ixn_param_1a0ac606e847d05f6a52ba43e73c8fefaa" prot="private" static="no" mutable="no">
+        <type><ref refid="class_dynamic_boltzmann_1_1_species" kindref="compound">Species</ref> *</type>
+        <definition>Species* DynamicBoltzmann::IxnParam::_sp2</definition>
+        <argsstring></argsstring>
+        <name>_sp2</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="ixn_param.hpp" line="106" column="1" bodyfile="ixn_param.hpp" bodystart="106" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="class_dynamic_boltzmann_1_1_ixn_param_1aeafba35ec96899ecc5b20bdb79a3f391" prot="private" static="no" mutable="no">
+        <type>int</type>
+        <definition>int DynamicBoltzmann::IxnParam::_n_t</definition>
+        <argsstring></argsstring>
+        <name>_n_t</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="ixn_param.hpp" line="109" column="1" bodyfile="ixn_param.hpp" bodystart="109" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="class_dynamic_boltzmann_1_1_ixn_param_1aa2152985d908d4100b5b685ed8247bd0" prot="private" static="no" mutable="no">
+        <type>double *</type>
+        <definition>double* DynamicBoltzmann::IxnParam::_vals</definition>
+        <argsstring></argsstring>
+        <name>_vals</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="ixn_param.hpp" line="112" column="1" bodyfile="ixn_param.hpp" bodystart="112" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="class_dynamic_boltzmann_1_1_ixn_param_1a5fc06512404ea3f64e00489a2446e060" prot="private" static="no" mutable="no">
+        <type>double</type>
+        <definition>double DynamicBoltzmann::IxnParam::_val0</definition>
+        <argsstring></argsstring>
+        <name>_val0</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="ixn_param.hpp" line="115" column="1" bodyfile="ixn_param.hpp" bodystart="115" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="class_dynamic_boltzmann_1_1_ixn_param_1ad40716096d37af6e0ba0bbfac9106906" prot="private" static="no" mutable="no">
+        <type>double *</type>
+        <definition>double* DynamicBoltzmann::IxnParam::_asleep</definition>
+        <argsstring></argsstring>
+        <name>_asleep</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="ixn_param.hpp" line="118" column="1" bodyfile="ixn_param.hpp" bodystart="118" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="class_dynamic_boltzmann_1_1_ixn_param_1a1ca2a067c3184116bc5198bfcdbd8f60" prot="private" static="no" mutable="no">
+        <type>double *</type>
+        <definition>double* DynamicBoltzmann::IxnParam::_awake</definition>
+        <argsstring></argsstring>
+        <name>_awake</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="ixn_param.hpp" line="119" column="1" bodyfile="ixn_param.hpp" bodystart="119" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="class_dynamic_boltzmann_1_1_ixn_param_1a0a15a5a57c5d74083d8901b99307097a" prot="private" static="no" mutable="no">
+        <type><ref refid="class_dynamic_boltzmann_1_1_basis_func" kindref="compound">BasisFunc</ref> *</type>
+        <definition>BasisFunc* DynamicBoltzmann::IxnParam::_bf</definition>
+        <argsstring></argsstring>
+        <name>_bf</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="ixn_param.hpp" line="122" column="1" bodyfile="ixn_param.hpp" bodystart="122" bodyend="-1"/>
+      </memberdef>
+      </sectiondef>
+      <sectiondef kind="private-func">
+      <memberdef kind="function" id="class_dynamic_boltzmann_1_1_ixn_param_1aff7f721e43702c449abb2813e49311ad" prot="private" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void DynamicBoltzmann::IxnParam::_copy</definition>
+        <argsstring>(const IxnParam &amp;other)</argsstring>
+        <name>_copy</name>
+        <param>
+          <type>const <ref refid="class_dynamic_boltzmann_1_1_ixn_param" kindref="compound">IxnParam</ref> &amp;</type>
+          <declname>other</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="ixn_param.hpp" line="125" column="1" bodyfile="ixn_param.cpp" bodystart="195" bodyend="209"/>
+      </memberdef>
+      <memberdef kind="function" id="class_dynamic_boltzmann_1_1_ixn_param_1ab1febae15868a3bf572162c5208e247f" prot="private" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void DynamicBoltzmann::IxnParam::_clean_up</definition>
+        <argsstring>()</argsstring>
+        <name>_clean_up</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="ixn_param.hpp" line="126" column="1" bodyfile="ixn_param.cpp" bodystart="210" bodyend="214"/>
+      </memberdef>
+      </sectiondef>
+      <sectiondef kind="public-func">
+      <memberdef kind="function" id="class_dynamic_boltzmann_1_1_ixn_param_1a73908750b0b99700bba9cc1afe85ee73" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type></type>
+        <definition>DynamicBoltzmann::IxnParam::IxnParam</definition>
+        <argsstring>(std::string name, IxnParamType type, Species *sp, double min, double max, int n, double val0, int n_t)</argsstring>
+        <name>IxnParam</name>
+        <param>
+          <type>std::string</type>
+          <declname>name</declname>
+        </param>
+        <param>
+          <type>IxnParamType</type>
+          <declname>type</declname>
+        </param>
+        <param>
+          <type><ref refid="class_dynamic_boltzmann_1_1_species" kindref="compound">Species</ref> *</type>
+          <declname>sp</declname>
+        </param>
+        <param>
+          <type>double</type>
+          <declname>min</declname>
+        </param>
+        <param>
+          <type>double</type>
+          <declname>max</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>n</declname>
+        </param>
+        <param>
+          <type>double</type>
+          <declname>val0</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>n_t</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="ixn_param.hpp" line="131" column="1" bodyfile="ixn_param.cpp" bodystart="159" bodyend="159"/>
+      </memberdef>
+      <memberdef kind="function" id="class_dynamic_boltzmann_1_1_ixn_param_1a190633b51e2d7ff20f3ee80b6a24b801" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type></type>
+        <definition>DynamicBoltzmann::IxnParam::IxnParam</definition>
+        <argsstring>(std::string name, IxnParamType type, Species *sp1, Species *sp2, double min, double max, int n, double val0, int n_t)</argsstring>
+        <name>IxnParam</name>
+        <param>
+          <type>std::string</type>
+          <declname>name</declname>
+        </param>
+        <param>
+          <type>IxnParamType</type>
+          <declname>type</declname>
+        </param>
+        <param>
+          <type><ref refid="class_dynamic_boltzmann_1_1_species" kindref="compound">Species</ref> *</type>
+          <declname>sp1</declname>
+        </param>
+        <param>
+          <type><ref refid="class_dynamic_boltzmann_1_1_species" kindref="compound">Species</ref> *</type>
+          <declname>sp2</declname>
+        </param>
+        <param>
+          <type>double</type>
+          <declname>min</declname>
+        </param>
+        <param>
+          <type>double</type>
+          <declname>max</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>n</declname>
+        </param>
+        <param>
+          <type>double</type>
+          <declname>val0</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>n_t</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="ixn_param.hpp" line="132" column="1" bodyfile="ixn_param.cpp" bodystart="160" bodyend="178"/>
+      </memberdef>
+      <memberdef kind="function" id="class_dynamic_boltzmann_1_1_ixn_param_1a4d3252510b3305a65702b4bc311c2e7f" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type></type>
+        <definition>DynamicBoltzmann::IxnParam::IxnParam</definition>
+        <argsstring>(const IxnParam &amp;other)</argsstring>
+        <name>IxnParam</name>
+        <param>
+          <type>const <ref refid="class_dynamic_boltzmann_1_1_ixn_param" kindref="compound">IxnParam</ref> &amp;</type>
+          <declname>other</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="ixn_param.hpp" line="133" column="1" bodyfile="ixn_param.cpp" bodystart="179" bodyend="181"/>
+      </memberdef>
+      <memberdef kind="function" id="class_dynamic_boltzmann_1_1_ixn_param_1a194873d2bdef7bf857ff42c60efc3156" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="class_dynamic_boltzmann_1_1_ixn_param" kindref="compound">IxnParam</ref> &amp;</type>
+        <definition>IxnParam &amp; DynamicBoltzmann::IxnParam::operator=</definition>
+        <argsstring>(const IxnParam &amp;other)</argsstring>
+        <name>operator=</name>
+        <param>
+          <type>const <ref refid="class_dynamic_boltzmann_1_1_ixn_param" kindref="compound">IxnParam</ref> &amp;</type>
+          <declname>other</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="ixn_param.hpp" line="134" column="1" bodyfile="ixn_param.cpp" bodystart="182" bodyend="191"/>
+      </memberdef>
+      <memberdef kind="function" id="class_dynamic_boltzmann_1_1_ixn_param_1a92ef3d50b320a486d3405c148550de33" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type></type>
+        <definition>DynamicBoltzmann::IxnParam::~IxnParam</definition>
+        <argsstring>()</argsstring>
+        <name>~IxnParam</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="ixn_param.hpp" line="135" column="1" bodyfile="ixn_param.cpp" bodystart="192" bodyend="194"/>
+      </memberdef>
+      <memberdef kind="function" id="class_dynamic_boltzmann_1_1_ixn_param_1afa20230953049b732f9c9a9f0dbe7c68" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void DynamicBoltzmann::IxnParam::set_basis_func_ptr</definition>
+        <argsstring>(BasisFunc *bf)</argsstring>
+        <name>set_basis_func_ptr</name>
+        <param>
+          <type><ref refid="class_dynamic_boltzmann_1_1_basis_func" kindref="compound">BasisFunc</ref> *</type>
+          <declname>bf</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="ixn_param.hpp" line="138" column="1" bodyfile="ixn_param.cpp" bodystart="221" bodyend="223"/>
+      </memberdef>
+      <memberdef kind="function" id="class_dynamic_boltzmann_1_1_ixn_param_1a180a8d62e7d7b373eb6f40b97ee10a4e" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>bool</type>
+        <definition>bool DynamicBoltzmann::IxnParam::is_bf</definition>
+        <argsstring>(BasisFunc *bf)</argsstring>
+        <name>is_bf</name>
+        <param>
+          <type><ref refid="class_dynamic_boltzmann_1_1_basis_func" kindref="compound">BasisFunc</ref> *</type>
+          <declname>bf</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="ixn_param.hpp" line="139" column="1" bodyfile="ixn_param.cpp" bodystart="224" bodyend="230"/>
+      </memberdef>
+      <memberdef kind="function" id="class_dynamic_boltzmann_1_1_ixn_param_1a203e62bbffbe94e9b414403148576598" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void DynamicBoltzmann::IxnParam::set_init_cond</definition>
+        <argsstring>(double val)</argsstring>
+        <name>set_init_cond</name>
+        <param>
+          <type>double</type>
+          <declname>val</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="ixn_param.hpp" line="142" column="1" bodyfile="ixn_param.cpp" bodystart="236" bodyend="239"/>
+      </memberdef>
+      <memberdef kind="function" id="class_dynamic_boltzmann_1_1_ixn_param_1adb5a9e8c5bbb14d00c37f368261a3dee" prot="public" static="no" const="yes" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void DynamicBoltzmann::IxnParam::validate_setup</definition>
+        <argsstring>() const </argsstring>
+        <name>validate_setup</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="ixn_param.hpp" line="145" column="1" bodyfile="ixn_param.cpp" bodystart="245" bodyend="253"/>
+      </memberdef>
+      <memberdef kind="function" id="class_dynamic_boltzmann_1_1_ixn_param_1ab4168cc201546e2131a6be3219fdf78c" prot="public" static="no" const="yes" explicit="no" inline="no" virt="non-virtual">
+        <type>double</type>
+        <definition>double DynamicBoltzmann::IxnParam::get_at_time</definition>
+        <argsstring>(int it) const </argsstring>
+        <name>get_at_time</name>
+        <param>
+          <type>int</type>
+          <declname>it</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="ixn_param.hpp" line="148" column="1" bodyfile="ixn_param.cpp" bodystart="259" bodyend="262"/>
+      </memberdef>
+      <memberdef kind="function" id="class_dynamic_boltzmann_1_1_ixn_param_1ac4072d4a6007e0561f92ecfb8356b23f" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>bool</type>
+        <definition>bool DynamicBoltzmann::IxnParam::calculate_at_time</definition>
+        <argsstring>(int it_next, double dt)</argsstring>
+        <name>calculate_at_time</name>
+        <param>
+          <type>int</type>
+          <declname>it_next</declname>
+        </param>
+        <param>
+          <type>double</type>
+          <declname>dt</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="ixn_param.hpp" line="152" column="1" bodyfile="ixn_param.cpp" bodystart="268" bodyend="272"/>
+      </memberdef>
+      <memberdef kind="function" id="class_dynamic_boltzmann_1_1_ixn_param_1a45501823becf515535b9a9d5912217b3" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void DynamicBoltzmann::IxnParam::moments_reset</definition>
+        <argsstring>()</argsstring>
+        <name>moments_reset</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="ixn_param.hpp" line="156" column="1" bodyfile="ixn_param.cpp" bodystart="278" bodyend="284"/>
+      </memberdef>
+      <memberdef kind="function" id="class_dynamic_boltzmann_1_1_ixn_param_1af4ce8e84f7f717d18f2203f7bfe75c2c" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void DynamicBoltzmann::IxnParam::moments_retrieve_at_time</definition>
+        <argsstring>(MomentType moment_type, int it)</argsstring>
+        <name>moments_retrieve_at_time</name>
+        <param>
+          <type>MomentType</type>
+          <declname>moment_type</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>it</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="ixn_param.hpp" line="157" column="1" bodyfile="ixn_param.cpp" bodystart="285" bodyend="287"/>
+      </memberdef>
+      <memberdef kind="function" id="class_dynamic_boltzmann_1_1_ixn_param_1a1d008539402dbc1cd661228d143c4b25" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void DynamicBoltzmann::IxnParam::moments_retrieve_at_time</definition>
+        <argsstring>(MomentType moment_type, int it, int batch_size)</argsstring>
+        <name>moments_retrieve_at_time</name>
+        <param>
+          <type>MomentType</type>
+          <declname>moment_type</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>it</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>batch_size</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="ixn_param.hpp" line="158" column="1" bodyfile="ixn_param.cpp" bodystart="288" bodyend="307"/>
+      </memberdef>
+      <memberdef kind="function" id="class_dynamic_boltzmann_1_1_ixn_param_1a289d40a63e538f3308a82fde965edce4" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>double</type>
+        <definition>double DynamicBoltzmann::IxnParam::moments_diff_at_time</definition>
+        <argsstring>(int it)</argsstring>
+        <name>moments_diff_at_time</name>
+        <param>
+          <type>int</type>
+          <declname>it</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="ixn_param.hpp" line="159" column="1" bodyfile="ixn_param.cpp" bodystart="309" bodyend="311"/>
+      </memberdef>
+      <memberdef kind="function" id="class_dynamic_boltzmann_1_1_ixn_param_1a19c8d47ad186e791e776b85300694352" prot="public" static="no" const="yes" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void DynamicBoltzmann::IxnParam::write_vals</definition>
+        <argsstring>(std::string dir, int idx, int n_t_traj) const </argsstring>
+        <name>write_vals</name>
+        <param>
+          <type>std::string</type>
+          <declname>dir</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>idx</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>n_t_traj</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="ixn_param.hpp" line="162" column="1" bodyfile="ixn_param.cpp" bodystart="317" bodyend="325"/>
+      </memberdef>
+      <memberdef kind="function" id="class_dynamic_boltzmann_1_1_ixn_param_1a6d589fa4e6126fc6af108e4ea14a223d" prot="public" static="no" const="yes" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void DynamicBoltzmann::IxnParam::write_vals</definition>
+        <argsstring>(std::string dir, int idx1, int idx2, int n_t_traj) const </argsstring>
+        <name>write_vals</name>
+        <param>
+          <type>std::string</type>
+          <declname>dir</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>idx1</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>idx2</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>n_t_traj</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="ixn_param.hpp" line="163" column="1" bodyfile="ixn_param.cpp" bodystart="326" bodyend="334"/>
+      </memberdef>
+      <memberdef kind="function" id="class_dynamic_boltzmann_1_1_ixn_param_1af366349e41306311e76ac7fe5b69c788" prot="public" static="no" const="yes" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void DynamicBoltzmann::IxnParam::write_moments</definition>
+        <argsstring>(std::string dir, int idx, int n_t_traj) const </argsstring>
+        <name>write_moments</name>
+        <param>
+          <type>std::string</type>
+          <declname>dir</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>idx</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>n_t_traj</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="ixn_param.hpp" line="164" column="1" bodyfile="ixn_param.cpp" bodystart="336" bodyend="344"/>
+      </memberdef>
+      <memberdef kind="function" id="class_dynamic_boltzmann_1_1_ixn_param_1ad3466d678e80b4dd54d423e471310735" prot="public" static="no" const="yes" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void DynamicBoltzmann::IxnParam::write_moments</definition>
+        <argsstring>(std::string dir, int idx1, int idx2, int n_t_traj) const </argsstring>
+        <name>write_moments</name>
+        <param>
+          <type>std::string</type>
+          <declname>dir</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>idx1</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>idx2</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>n_t_traj</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="ixn_param.hpp" line="165" column="1" bodyfile="ixn_param.cpp" bodystart="345" bodyend="353"/>
+      </memberdef>
+      </sectiondef>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <inheritancegraph>
+      <node id="12">
+        <label>DynamicBoltzmann::IxnParam</label>
+        <link refid="class_dynamic_boltzmann_1_1_ixn_param"/>
+        <childnode refid="13" relation="public-inheritance">
+        </childnode>
+      </node>
+      <node id="13">
+        <label>DynamicBoltzmann::Grid</label>
+        <link refid="class_dynamic_boltzmann_1_1_grid"/>
+      </node>
+    </inheritancegraph>
+    <collaborationgraph>
+      <node id="14">
+        <label>DynamicBoltzmann::IxnParam</label>
+        <link refid="class_dynamic_boltzmann_1_1_ixn_param"/>
+        <childnode refid="15" relation="public-inheritance">
+        </childnode>
+      </node>
+      <node id="15">
+        <label>DynamicBoltzmann::Grid</label>
+        <link refid="class_dynamic_boltzmann_1_1_grid"/>
+      </node>
+    </collaborationgraph>
+    <location file="ixn_param.hpp" line="97" column="1" bodyfile="ixn_param.hpp" bodystart="97" bodyend="166"/>
+    <listofallmembers>
+      <member refid="class_dynamic_boltzmann_1_1_ixn_param_1ad40716096d37af6e0ba0bbfac9106906" prot="private" virt="non-virtual"><scope>DynamicBoltzmann::IxnParam</scope><name>_asleep</name></member>
+      <member refid="class_dynamic_boltzmann_1_1_ixn_param_1a1ca2a067c3184116bc5198bfcdbd8f60" prot="private" virt="non-virtual"><scope>DynamicBoltzmann::IxnParam</scope><name>_awake</name></member>
+      <member refid="class_dynamic_boltzmann_1_1_ixn_param_1a0a15a5a57c5d74083d8901b99307097a" prot="private" virt="non-virtual"><scope>DynamicBoltzmann::IxnParam</scope><name>_bf</name></member>
+      <member refid="class_dynamic_boltzmann_1_1_ixn_param_1ab1febae15868a3bf572162c5208e247f" prot="private" virt="non-virtual"><scope>DynamicBoltzmann::IxnParam</scope><name>_clean_up</name></member>
+      <member refid="class_dynamic_boltzmann_1_1_ixn_param_1aff7f721e43702c449abb2813e49311ad" prot="private" virt="non-virtual"><scope>DynamicBoltzmann::IxnParam</scope><name>_copy</name></member>
+      <member refid="class_dynamic_boltzmann_1_1_ixn_param_1aeafba35ec96899ecc5b20bdb79a3f391" prot="private" virt="non-virtual"><scope>DynamicBoltzmann::IxnParam</scope><name>_n_t</name></member>
+      <member refid="class_dynamic_boltzmann_1_1_ixn_param_1a6e71a3966fad8c2c3fc9334983fe2c43" prot="private" virt="non-virtual"><scope>DynamicBoltzmann::IxnParam</scope><name>_sp1</name></member>
+      <member refid="class_dynamic_boltzmann_1_1_ixn_param_1a0ac606e847d05f6a52ba43e73c8fefaa" prot="private" virt="non-virtual"><scope>DynamicBoltzmann::IxnParam</scope><name>_sp2</name></member>
+      <member refid="class_dynamic_boltzmann_1_1_ixn_param_1a560aef2449beb59001f4e0e821f1b5b4" prot="private" virt="non-virtual"><scope>DynamicBoltzmann::IxnParam</scope><name>_type</name></member>
+      <member refid="class_dynamic_boltzmann_1_1_ixn_param_1a5fc06512404ea3f64e00489a2446e060" prot="private" virt="non-virtual"><scope>DynamicBoltzmann::IxnParam</scope><name>_val0</name></member>
+      <member refid="class_dynamic_boltzmann_1_1_ixn_param_1aa2152985d908d4100b5b685ed8247bd0" prot="private" virt="non-virtual"><scope>DynamicBoltzmann::IxnParam</scope><name>_vals</name></member>
+      <member refid="class_dynamic_boltzmann_1_1_ixn_param_1aadbaaf61626eba7e8cc272e785079d3ba26cc254e391c896f91f9939b62e36490" prot="public" virt="non-virtual"><scope>DynamicBoltzmann::IxnParam</scope><name>ASLEEP</name></member>
+      <member refid="class_dynamic_boltzmann_1_1_ixn_param_1aadbaaf61626eba7e8cc272e785079d3baaa17b87beab80a8a8015212c6a709356" prot="public" virt="non-virtual"><scope>DynamicBoltzmann::IxnParam</scope><name>AWAKE</name></member>
+      <member refid="class_dynamic_boltzmann_1_1_ixn_param_1ac4072d4a6007e0561f92ecfb8356b23f" prot="public" virt="non-virtual"><scope>DynamicBoltzmann::IxnParam</scope><name>calculate_at_time</name></member>
+      <member refid="class_dynamic_boltzmann_1_1_grid_1a9c771fcd7109591f049b19e73f52235b" prot="public" virt="non-virtual"><scope>DynamicBoltzmann::IxnParam</scope><name>delta</name></member>
+      <member refid="class_dynamic_boltzmann_1_1_grid_1a5f4e114ef8f0e991c92f5718e23eb0d5" prot="public" virt="non-virtual"><scope>DynamicBoltzmann::IxnParam</scope><name>frac_between</name></member>
+      <member refid="class_dynamic_boltzmann_1_1_grid_1ac71020ea95c3d2a5980e1d07e6fef718" prot="public" virt="non-virtual"><scope>DynamicBoltzmann::IxnParam</scope><name>frac_between</name></member>
+      <member refid="class_dynamic_boltzmann_1_1_ixn_param_1ab4168cc201546e2131a6be3219fdf78c" prot="public" virt="non-virtual"><scope>DynamicBoltzmann::IxnParam</scope><name>get_at_time</name></member>
+      <member refid="class_dynamic_boltzmann_1_1_grid_1a7752e77d709f945e8df8dfb3904a2596" prot="public" virt="non-virtual"><scope>DynamicBoltzmann::IxnParam</scope><name>get_by_idx</name></member>
+      <member refid="class_dynamic_boltzmann_1_1_grid_1a2157d36b8473f980080d0fc2da8d5fbb" prot="public" virt="non-virtual"><scope>DynamicBoltzmann::IxnParam</scope><name>Grid</name></member>
+      <member refid="class_dynamic_boltzmann_1_1_grid_1a4dc7b79cd7cd99c9214fe7908e20fca1" prot="public" virt="non-virtual"><scope>DynamicBoltzmann::IxnParam</scope><name>Grid</name></member>
+      <member refid="class_dynamic_boltzmann_1_1_grid_1a07e2317cff706de8c1906afd3bfde232" prot="public" virt="non-virtual"><scope>DynamicBoltzmann::IxnParam</scope><name>in_grid</name></member>
+      <member refid="class_dynamic_boltzmann_1_1_ixn_param_1a180a8d62e7d7b373eb6f40b97ee10a4e" prot="public" virt="non-virtual"><scope>DynamicBoltzmann::IxnParam</scope><name>is_bf</name></member>
+      <member refid="class_dynamic_boltzmann_1_1_ixn_param_1a73908750b0b99700bba9cc1afe85ee73" prot="public" virt="non-virtual"><scope>DynamicBoltzmann::IxnParam</scope><name>IxnParam</name></member>
+      <member refid="class_dynamic_boltzmann_1_1_ixn_param_1a190633b51e2d7ff20f3ee80b6a24b801" prot="public" virt="non-virtual"><scope>DynamicBoltzmann::IxnParam</scope><name>IxnParam</name></member>
+      <member refid="class_dynamic_boltzmann_1_1_ixn_param_1a4d3252510b3305a65702b4bc311c2e7f" prot="public" virt="non-virtual"><scope>DynamicBoltzmann::IxnParam</scope><name>IxnParam</name></member>
+      <member refid="class_dynamic_boltzmann_1_1_ixn_param_1a289d40a63e538f3308a82fde965edce4" prot="public" virt="non-virtual"><scope>DynamicBoltzmann::IxnParam</scope><name>moments_diff_at_time</name></member>
+      <member refid="class_dynamic_boltzmann_1_1_ixn_param_1a45501823becf515535b9a9d5912217b3" prot="public" virt="non-virtual"><scope>DynamicBoltzmann::IxnParam</scope><name>moments_reset</name></member>
+      <member refid="class_dynamic_boltzmann_1_1_ixn_param_1af4ce8e84f7f717d18f2203f7bfe75c2c" prot="public" virt="non-virtual"><scope>DynamicBoltzmann::IxnParam</scope><name>moments_retrieve_at_time</name></member>
+      <member refid="class_dynamic_boltzmann_1_1_ixn_param_1a1d008539402dbc1cd661228d143c4b25" prot="public" virt="non-virtual"><scope>DynamicBoltzmann::IxnParam</scope><name>moments_retrieve_at_time</name></member>
+      <member refid="class_dynamic_boltzmann_1_1_ixn_param_1aadbaaf61626eba7e8cc272e785079d3b" prot="public" virt="non-virtual"><scope>DynamicBoltzmann::IxnParam</scope><name>MomentType</name></member>
+      <member refid="class_dynamic_boltzmann_1_1_grid_1ac4d034f48c1f362818cd30933abb8056" prot="public" virt="non-virtual"><scope>DynamicBoltzmann::IxnParam</scope><name>n</name></member>
+      <member refid="class_dynamic_boltzmann_1_1_grid_1aa236bc0939605046256271fe6b6c823b" prot="public" virt="non-virtual"><scope>DynamicBoltzmann::IxnParam</scope><name>name</name></member>
+      <member refid="class_dynamic_boltzmann_1_1_ixn_param_1a194873d2bdef7bf857ff42c60efc3156" prot="public" virt="non-virtual"><scope>DynamicBoltzmann::IxnParam</scope><name>operator=</name></member>
+      <member refid="class_dynamic_boltzmann_1_1_grid_1a57ae2f59d256463924a2f6c29e9cb303" prot="public" virt="non-virtual" ambiguityscope="DynamicBoltzmann::Grid::"><scope>DynamicBoltzmann::IxnParam</scope><name>operator=</name></member>
+      <member refid="class_dynamic_boltzmann_1_1_grid_1a325f1ad76784c508f3038201320e8dc4" prot="public" virt="non-virtual"><scope>DynamicBoltzmann::IxnParam</scope><name>print_grid_range</name></member>
+      <member refid="class_dynamic_boltzmann_1_1_ixn_param_1afa20230953049b732f9c9a9f0dbe7c68" prot="public" virt="non-virtual"><scope>DynamicBoltzmann::IxnParam</scope><name>set_basis_func_ptr</name></member>
+      <member refid="class_dynamic_boltzmann_1_1_ixn_param_1a203e62bbffbe94e9b414403148576598" prot="public" virt="non-virtual"><scope>DynamicBoltzmann::IxnParam</scope><name>set_init_cond</name></member>
+      <member refid="class_dynamic_boltzmann_1_1_grid_1a62fb96009144166506a0c430a82060d5" prot="public" virt="non-virtual"><scope>DynamicBoltzmann::IxnParam</scope><name>surrounding_idxs</name></member>
+      <member refid="class_dynamic_boltzmann_1_1_grid_1ac48c73b4f9156d2c403ba2fb95e8a4dc" prot="public" virt="non-virtual"><scope>DynamicBoltzmann::IxnParam</scope><name>test_cos</name></member>
+      <member refid="class_dynamic_boltzmann_1_1_grid_1a74282b7e883a10c094a5dcc311616da8" prot="public" virt="non-virtual"><scope>DynamicBoltzmann::IxnParam</scope><name>test_sin</name></member>
+      <member refid="class_dynamic_boltzmann_1_1_ixn_param_1adb5a9e8c5bbb14d00c37f368261a3dee" prot="public" virt="non-virtual"><scope>DynamicBoltzmann::IxnParam</scope><name>validate_setup</name></member>
+      <member refid="class_dynamic_boltzmann_1_1_grid_1a2cd7c36ceaa873d009b76ef1afe232ba" prot="public" virt="non-virtual"><scope>DynamicBoltzmann::IxnParam</scope><name>write_grid</name></member>
+      <member refid="class_dynamic_boltzmann_1_1_ixn_param_1af366349e41306311e76ac7fe5b69c788" prot="public" virt="non-virtual"><scope>DynamicBoltzmann::IxnParam</scope><name>write_moments</name></member>
+      <member refid="class_dynamic_boltzmann_1_1_ixn_param_1ad3466d678e80b4dd54d423e471310735" prot="public" virt="non-virtual"><scope>DynamicBoltzmann::IxnParam</scope><name>write_moments</name></member>
+      <member refid="class_dynamic_boltzmann_1_1_ixn_param_1a19c8d47ad186e791e776b85300694352" prot="public" virt="non-virtual"><scope>DynamicBoltzmann::IxnParam</scope><name>write_vals</name></member>
+      <member refid="class_dynamic_boltzmann_1_1_ixn_param_1a6d589fa4e6126fc6af108e4ea14a223d" prot="public" virt="non-virtual"><scope>DynamicBoltzmann::IxnParam</scope><name>write_vals</name></member>
+      <member refid="class_dynamic_boltzmann_1_1_grid_1a6711b47673a8590c525773baedcff385" prot="public" virt="non-virtual"><scope>DynamicBoltzmann::IxnParam</scope><name>~Grid</name></member>
+      <member refid="class_dynamic_boltzmann_1_1_ixn_param_1a92ef3d50b320a486d3405c148550de33" prot="public" virt="non-virtual"><scope>DynamicBoltzmann::IxnParam</scope><name>~IxnParam</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

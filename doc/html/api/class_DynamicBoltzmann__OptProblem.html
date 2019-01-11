@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Class OptProblem &#8212; DynamicBoltzmann 0.0.0 documentation</title>
+    <link rel="stylesheet" href="../_static/bootstrap-sphinx.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/collapsible-lists/css/tree_view.css" type="text/css" />
+    <script type="text/javascript" src="../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="../_static/collapsible-lists/js/CollapsibleLists.compressed.js"></script>
+    <script type="text/javascript" src="../_static/collapsible-lists/js/apply-collapsible-lists.js"></script>
+    <script type="text/javascript" src="../_static/js/jquery-1.11.0.min.js"></script>
+    <script type="text/javascript" src="../_static/js/jquery-fix.js"></script>
+    <script type="text/javascript" src="../_static/bootstrap-3.3.7/js/bootstrap.min.js"></script>
+    <script type="text/javascript" src="../_static/bootstrap-sphinx.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Enum DimType" href="enum_DynamicBoltzmann__DimType.html" />
+    <link rel="prev" title="Struct Dim" href="struct_DynamicBoltzmann__Dim.html" />
+<meta charset='utf-8'>
+<meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
+<meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
+<meta name="apple-mobile-web-app-capable" content="yes">
+
+  </head><body>
+
+  <div id="navbar" class="navbar navbar-default navbar-fixed-top">
+    <div class="container">
+      <div class="navbar-header">
+        <!-- .btn-navbar is used as the toggle for collapsed navbar content -->
+        <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".nav-collapse">
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand" href="../index.html">
+          DynamicBoltzmann</a>
+        <span class="navbar-text navbar-version pull-left"><b></b></span>
+      </div>
+
+        <div class="collapse navbar-collapse nav-collapse">
+          <ul class="nav navbar-nav">
+            
+                <li><a href="../examples.html">Examples</a></li>
+            
+            
+              <li class="dropdown globaltoc-container">
+  <a role="button"
+     id="dLabelGlobalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="../index.html">DynamicBoltzmann <b class="caret"></b></a>
+  <ul class="dropdown-menu globaltoc"
+      role="menu"
+      aria-labelledby="dLabelGlobalToc"><p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="library_root.html">Library API</a></li>
+</ul>
+</ul>
+</li>
+              
+                <li class="dropdown">
+  <a role="button"
+     id="dLabelLocalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="#">Page <b class="caret"></b></a>
+  <ul class="dropdown-menu localtoc"
+      role="menu"
+      aria-labelledby="dLabelLocalToc"><ul>
+<li><a class="reference internal" href="#">Class OptProblem</a><ul>
+<li><a class="reference internal" href="#class-documentation">Class Documentation</a></li>
+</ul>
+</li>
+</ul>
+</ul>
+</li>
+              
+            
+            
+              
+                
+  <li>
+    <a href="struct_DynamicBoltzmann__Dim.html" title="Previous Chapter: Struct Dim"><span class="glyphicon glyphicon-chevron-left visible-sm"></span><span class="hidden-sm hidden-tablet">&laquo; Struct Dim</span>
+    </a>
+  </li>
+  <li>
+    <a href="enum_DynamicBoltzmann__DimType.html" title="Next Chapter: Enum DimType"><span class="glyphicon glyphicon-chevron-right visible-sm"></span><span class="hidden-sm hidden-tablet">Enum DimType &raquo;</span>
+    </a>
+  </li>
+              
+            
+            
+            
+            
+              <li class="hidden-sm">
+<div id="sourcelink">
+  <a href="../_sources/api/class_DynamicBoltzmann__OptProblem.rst.txt"
+     rel="nofollow">Source</a>
+</div></li>
+            
+          </ul>
+
+          
+            
+<form class="navbar-form navbar-right" action="../search.html" method="get">
+ <div class="form-group">
+  <input type="text" name="q" class="form-control" placeholder="Search" />
+ </div>
+  <input type="hidden" name="check_keywords" value="yes" />
+  <input type="hidden" name="area" value="default" />
+</form>
+          
+        </div>
+    </div>
+  </div>
+
+<div class="container">
+  <div class="row">
+      <div class="col-md-3">
+        <div id="sidebar" class="bs-sidenav" role="complementary"><ul>
+<li><a class="reference internal" href="#">Class OptProblem</a><ul>
+<li><a class="reference internal" href="#class-documentation">Class Documentation</a></li>
+</ul>
+</li>
+</ul>
+
+  <li>
+    <a href="struct_DynamicBoltzmann__Dim.html" title="Previous Chapter: Struct Dim"><span class="glyphicon glyphicon-chevron-left visible-sm"></span><span class="hidden-sm hidden-tablet">&laquo; Struct Dim</span>
+    </a>
+  </li>
+  <li>
+    <a href="enum_DynamicBoltzmann__DimType.html" title="Next Chapter: Enum DimType"><span class="glyphicon glyphicon-chevron-right visible-sm"></span><span class="hidden-sm hidden-tablet">Enum DimType &raquo;</span>
+    </a>
+  </li>
+<div id="sourcelink">
+  <a href="../_sources/api/class_DynamicBoltzmann__OptProblem.rst.txt"
+     rel="nofollow">Source</a>
+</div>
+<form action="../search.html" method="get">
+ <div class="form-group">
+  <input type="text" name="q" class="form-control" placeholder="Search" />
+ </div>
+  <input type="hidden" name="check_keywords" value="yes" />
+  <input type="hidden" name="area" value="default" />
+</form>
+        </div>
+      </div>
+    <div class="col-md-9 content">
+      
+  <div class="section" id="class-optproblem">
+<span id="class-dynamicboltzmann-optproblem"></span><h1>Class OptProblem<a class="headerlink" href="#class-optproblem" title="Permalink to this headline">¶</a></h1>
+<ul class="simple">
+<li>Defined in <a class="reference internal" href="file_dynamic_boltzmann.hpp.html#file-dynamic-boltzmann-hpp"><span class="std std-ref">File dynamic_boltzmann.hpp</span></a></li>
+</ul>
+<div class="section" id="class-documentation">
+<h2>Class Documentation<a class="headerlink" href="#class-documentation" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="_CPPv3N16DynamicBoltzmann10OptProblemE">
+<span id="_CPPv2N16DynamicBoltzmann10OptProblemE"></span><span id="DynamicBoltzmann::OptProblem"></span><span class="target" id="class_dynamic_boltzmann_1_1_opt_problem"></span><em class="property">class </em>DynamicBoltzmann<code class="descclassname">::</code><code class="descname">OptProblem</code><a class="headerlink" href="#_CPPv3N16DynamicBoltzmann10OptProblemE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric">Public Functions</p>
+<dl class="function">
+<dt id="_CPPv3N16DynamicBoltzmann10OptProblem10OptProblemENSt6vectorI3DimEENSt6vectorINSt6stringEEEdiiiidi">
+<span id="_CPPv2N16DynamicBoltzmann10OptProblem10OptProblemENSt6vectorI3DimEENSt6vectorINSt6stringEEEdiiiidi"></span><span id="DynamicBoltzmann::OptProblem::OptProblem__std::vector:Dim:.std::vector:ss:.double.i.i.i.i.double.i"></span><span class="target" id="class_dynamic_boltzmann_1_1_opt_problem_1a58d2027f8055e6bc6696dd3757816c4b"></span>DynamicBoltzmann::<a class="reference internal" href="#_CPPv3N16DynamicBoltzmann10OptProblemE" title="DynamicBoltzmann::OptProblem">OptProblem</a><code class="descname">OptProblem</code><span class="sig-paren">(</span>std::vector&lt;<a class="reference internal" href="struct_DynamicBoltzmann__Dim.html#_CPPv3N16DynamicBoltzmann3DimE" title="DynamicBoltzmann::Dim">Dim</a>&gt; <em>dims</em>, std::vector&lt;std::string&gt; <em>species</em>, double <em>t_max</em>, int <em>n_t</em>, int <em>batch_size</em>, int <em>n_annealing</em>, int <em>box_length</em>, double <em>dopt</em>, int <em>n_opt</em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv3N16DynamicBoltzmann10OptProblem10OptProblemENSt6vectorI3DimEENSt6vectorINSt6stringEEEdiiiidi" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Constructor. </p>
+<p><dl class="docutils">
+<dt><strong>Parameters</strong></dt>
+<dd><ul class="breatheparameterlist first last simple">
+<li><code class="docutils literal notranslate"><span class="pre">dims</span></code>: Vector of dimensions </li>
+<li><code class="docutils literal notranslate"><span class="pre">species</span></code>: Vector of species present </li>
+<li><code class="docutils literal notranslate"><span class="pre">t_max</span></code>: Maximum time </li>
+<li><code class="docutils literal notranslate"><span class="pre">n_t</span></code>: No. of timepoints in the trajectory </li>
+<li><code class="docutils literal notranslate"><span class="pre">batch_size</span></code>: Batch size </li>
+<li><code class="docutils literal notranslate"><span class="pre">n_annealing</span></code>: No. annealing steps </li>
+<li><code class="docutils literal notranslate"><span class="pre">box_length</span></code>: Box length </li>
+<li><code class="docutils literal notranslate"><span class="pre">dopt</span></code>: Optimization step interval </li>
+<li><code class="docutils literal notranslate"><span class="pre">n_opt</span></code>: No. optimization steps </li>
+</ul>
+</dd>
+</dl>
+</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="_CPPv3N16DynamicBoltzmann10OptProblem10OptProblemERK10OptProblem">
+<span id="_CPPv2N16DynamicBoltzmann10OptProblem10OptProblemERK10OptProblem"></span><span id="DynamicBoltzmann::OptProblem::OptProblem__OptProblemCR"></span><span class="target" id="class_dynamic_boltzmann_1_1_opt_problem_1a00484c35d03e665a58ac3ee20f8cb278"></span>DynamicBoltzmann::<a class="reference internal" href="#_CPPv3N16DynamicBoltzmann10OptProblemE" title="DynamicBoltzmann::OptProblem">OptProblem</a><code class="descname">OptProblem</code><span class="sig-paren">(</span><em class="property">const</em> <a class="reference internal" href="#_CPPv3N16DynamicBoltzmann10OptProblem10OptProblemENSt6vectorI3DimEENSt6vectorINSt6stringEEEdiiiidi" title="DynamicBoltzmann::OptProblem::OptProblem">OptProblem</a> &amp;<em>other</em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv3N16DynamicBoltzmann10OptProblem10OptProblemERK10OptProblem" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Copy constructor. </p>
+<p><dl class="docutils">
+<dt><strong>Parameters</strong></dt>
+<dd><ul class="breatheparameterlist first last simple">
+<li><code class="docutils literal notranslate"><span class="pre">other</span></code>: The other </li>
+</ul>
+</dd>
+</dl>
+</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="_CPPv3N16DynamicBoltzmann10OptProblem10OptProblemERR10OptProblem">
+<span id="_CPPv2N16DynamicBoltzmann10OptProblem10OptProblemERR10OptProblem"></span><span id="DynamicBoltzmann::OptProblem::OptProblem__OptProblemRR"></span><span class="target" id="class_dynamic_boltzmann_1_1_opt_problem_1a0492bebf42ad968f51c8e86582f19c82"></span>DynamicBoltzmann::<a class="reference internal" href="#_CPPv3N16DynamicBoltzmann10OptProblemE" title="DynamicBoltzmann::OptProblem">OptProblem</a><code class="descname">OptProblem</code><span class="sig-paren">(</span><a class="reference internal" href="#_CPPv3N16DynamicBoltzmann10OptProblem10OptProblemENSt6vectorI3DimEENSt6vectorINSt6stringEEEdiiiidi" title="DynamicBoltzmann::OptProblem::OptProblem">OptProblem</a> &amp;&amp;<em>other</em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv3N16DynamicBoltzmann10OptProblem10OptProblemERR10OptProblem" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Move constructor. </p>
+<p><dl class="docutils">
+<dt><strong>Parameters</strong></dt>
+<dd><ul class="breatheparameterlist first last simple">
+<li><code class="docutils literal notranslate"><span class="pre">other</span></code>: The other </li>
+</ul>
+</dd>
+</dl>
+</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="_CPPv3N16DynamicBoltzmann10OptProblemaSERK10OptProblem">
+<span id="_CPPv2N16DynamicBoltzmann10OptProblemaSERK10OptProblem"></span><span id="DynamicBoltzmann::OptProblem::assign-operator__OptProblemCR"></span><span class="target" id="class_dynamic_boltzmann_1_1_opt_problem_1a8e072c7db208111558da0f15a755bfb4"></span><a class="reference internal" href="#_CPPv3N16DynamicBoltzmann10OptProblemE" title="DynamicBoltzmann::OptProblem">OptProblem</a> &amp;DynamicBoltzmann::<a class="reference internal" href="#_CPPv3N16DynamicBoltzmann10OptProblemE" title="DynamicBoltzmann::OptProblem">OptProblem</a><code class="descname">operator=</code><span class="sig-paren">(</span><em class="property">const</em> <a class="reference internal" href="#_CPPv3N16DynamicBoltzmann10OptProblemE" title="DynamicBoltzmann::OptProblem">OptProblem</a> &amp;<em>other</em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv3N16DynamicBoltzmann10OptProblemaSERK10OptProblem" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Copy assignment. </p>
+<p><dl class="docutils">
+<dt><strong>Return</strong></dt>
+<dd>Copied </dd>
+<dt><strong>Parameters</strong></dt>
+<dd><ul class="breatheparameterlist first last simple">
+<li><code class="docutils literal notranslate"><span class="pre">other</span></code>: The other </li>
+</ul>
+</dd>
+</dl>
+</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="_CPPv3N16DynamicBoltzmann10OptProblemaSERR10OptProblem">
+<span id="_CPPv2N16DynamicBoltzmann10OptProblemaSERR10OptProblem"></span><span id="DynamicBoltzmann::OptProblem::assign-operator__OptProblemRR"></span><span class="target" id="class_dynamic_boltzmann_1_1_opt_problem_1a75bea2b86c2272c76ff0cd4dcbaa7d95"></span><a class="reference internal" href="#_CPPv3N16DynamicBoltzmann10OptProblemE" title="DynamicBoltzmann::OptProblem">OptProblem</a> &amp;DynamicBoltzmann::<a class="reference internal" href="#_CPPv3N16DynamicBoltzmann10OptProblemE" title="DynamicBoltzmann::OptProblem">OptProblem</a><code class="descname">operator=</code><span class="sig-paren">(</span><a class="reference internal" href="#_CPPv3N16DynamicBoltzmann10OptProblemE" title="DynamicBoltzmann::OptProblem">OptProblem</a> &amp;&amp;<em>other</em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv3N16DynamicBoltzmann10OptProblemaSERR10OptProblem" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Move assignment. </p>
+<p><dl class="docutils">
+<dt><strong>Return</strong></dt>
+<dd>Moved Destructor </dd>
+<dt><strong>Parameters</strong></dt>
+<dd><ul class="breatheparameterlist first last simple">
+<li><code class="docutils literal notranslate"><span class="pre">other</span></code>: The other </li>
+</ul>
+</dd>
+</dl>
+</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="_CPPv3N16DynamicBoltzmann10OptProblem10set_dir_ioENSt6stringE">
+<span id="_CPPv2N16DynamicBoltzmann10OptProblem10set_dir_ioENSt6stringE"></span><span id="DynamicBoltzmann::OptProblem::set_dir_io__ss"></span><span class="target" id="class_dynamic_boltzmann_1_1_opt_problem_1a67db41eb9f0ec318332f6a1211ddb7bc"></span>void DynamicBoltzmann::<a class="reference internal" href="#_CPPv3N16DynamicBoltzmann10OptProblemE" title="DynamicBoltzmann::OptProblem">OptProblem</a><code class="descname">set_dir_io</code><span class="sig-paren">(</span>std::string <em>dir</em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv3N16DynamicBoltzmann10OptProblem10set_dir_ioENSt6stringE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Sets the dir for i/o. </p>
+<p><dl class="docutils">
+<dt><strong>Parameters</strong></dt>
+<dd><ul class="breatheparameterlist first last simple">
+<li><code class="docutils literal notranslate"><span class="pre">dir</span></code>: The dir </li>
+</ul>
+</dd>
+</dl>
+</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="_CPPv3N16DynamicBoltzmann10OptProblem19set_fname_start_idxEi">
+<span id="_CPPv2N16DynamicBoltzmann10OptProblem19set_fname_start_idxEi"></span><span id="DynamicBoltzmann::OptProblem::set_fname_start_idx__i"></span><span class="target" id="class_dynamic_boltzmann_1_1_opt_problem_1a83160e41553c9a760eee6262c3899fec"></span>void DynamicBoltzmann::<a class="reference internal" href="#_CPPv3N16DynamicBoltzmann10OptProblemE" title="DynamicBoltzmann::OptProblem">OptProblem</a><code class="descname">set_fname_start_idx</code><span class="sig-paren">(</span>int <em>idx</em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv3N16DynamicBoltzmann10OptProblem19set_fname_start_idxEi" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Sets the filename index to start reading. </p>
+<p><dl class="docutils">
+<dt><strong>Parameters</strong></dt>
+<dd><ul class="breatheparameterlist first last simple">
+<li><code class="docutils literal notranslate"><span class="pre">idx</span></code>: The index </li>
+</ul>
+</dd>
+</dl>
+</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="_CPPv3N16DynamicBoltzmann10OptProblem9add_fnameENSt6stringE">
+<span id="_CPPv2N16DynamicBoltzmann10OptProblem9add_fnameENSt6stringE"></span><span id="DynamicBoltzmann::OptProblem::add_fname__ss"></span><span class="target" id="class_dynamic_boltzmann_1_1_opt_problem_1aafa0b606ee170bde95408fa89786d65d"></span>void DynamicBoltzmann::<a class="reference internal" href="#_CPPv3N16DynamicBoltzmann10OptProblemE" title="DynamicBoltzmann::OptProblem">OptProblem</a><code class="descname">add_fname</code><span class="sig-paren">(</span>std::string <em>f</em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv3N16DynamicBoltzmann10OptProblem9add_fnameENSt6stringE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Adds a filename for the lattices. </p>
+<p><dl class="docutils">
+<dt><strong>Parameters</strong></dt>
+<dd><ul class="breatheparameterlist first last simple">
+<li><code class="docutils literal notranslate"><span class="pre">f</span></code>: The filename </li>
+</ul>
+</dd>
+</dl>
+</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="_CPPv3NK16DynamicBoltzmann10OptProblem14validate_setupEv">
+<span id="_CPPv2NK16DynamicBoltzmann10OptProblem14validate_setupEv"></span><span id="DynamicBoltzmann::OptProblem::validate_setupC"></span><span class="target" id="class_dynamic_boltzmann_1_1_opt_problem_1ab25383102524e8157b03963d03d8dbdc"></span>void DynamicBoltzmann::<a class="reference internal" href="#_CPPv3N16DynamicBoltzmann10OptProblemE" title="DynamicBoltzmann::OptProblem">OptProblem</a><code class="descname">validate_setup</code><span class="sig-paren">(</span><span class="sig-paren">)</span> <em class="property">const</em><a class="headerlink" href="#_CPPv3NK16DynamicBoltzmann10OptProblem14validate_setupEv" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Validate the setup by printing. </p>
+</dd></dl>
+
+<dl class="function">
+<dt id="_CPPv3N16DynamicBoltzmann10OptProblem20solve_ixn_param_trajEv">
+<span id="_CPPv2N16DynamicBoltzmann10OptProblem20solve_ixn_param_trajEv"></span><span id="DynamicBoltzmann::OptProblem::solve_ixn_param_traj"></span><span class="target" id="class_dynamic_boltzmann_1_1_opt_problem_1aca6645256f8ac5c3169707c58c1e599d"></span>void DynamicBoltzmann::<a class="reference internal" href="#_CPPv3N16DynamicBoltzmann10OptProblemE" title="DynamicBoltzmann::OptProblem">OptProblem</a><code class="descname">solve_ixn_param_traj</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv3N16DynamicBoltzmann10OptProblem20solve_ixn_param_trajEv" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="_CPPv3N16DynamicBoltzmann10OptProblem14solve_var_trajEv">
+<span id="_CPPv2N16DynamicBoltzmann10OptProblem14solve_var_trajEv"></span><span id="DynamicBoltzmann::OptProblem::solve_var_traj"></span><span class="target" id="class_dynamic_boltzmann_1_1_opt_problem_1a8709a651da5b0c684941f1bdfa3346d6"></span>void DynamicBoltzmann::<a class="reference internal" href="#_CPPv3N16DynamicBoltzmann10OptProblemE" title="DynamicBoltzmann::OptProblem">OptProblem</a><code class="descname">solve_var_traj</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv3N16DynamicBoltzmann10OptProblem14solve_var_trajEv" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="_CPPv3N16DynamicBoltzmann10OptProblem5solveEb">
+<span id="_CPPv2N16DynamicBoltzmann10OptProblem5solveEb"></span><span id="DynamicBoltzmann::OptProblem::solve__b"></span><span class="target" id="class_dynamic_boltzmann_1_1_opt_problem_1ac5a71999d89d1fe606c67c9a51ef16fa"></span>void DynamicBoltzmann::<a class="reference internal" href="#_CPPv3N16DynamicBoltzmann10OptProblemE" title="DynamicBoltzmann::OptProblem">OptProblem</a><code class="descname">solve</code><span class="sig-paren">(</span>bool <em>verbose</em> = false<span class="sig-paren">)</span><a class="headerlink" href="#_CPPv3N16DynamicBoltzmann10OptProblem5solveEb" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="_CPPv3N16DynamicBoltzmann10OptProblem16solve_varying_icEb">
+<span id="_CPPv2N16DynamicBoltzmann10OptProblem16solve_varying_icEb"></span><span id="DynamicBoltzmann::OptProblem::solve_varying_ic__b"></span><span class="target" id="class_dynamic_boltzmann_1_1_opt_problem_1a8c83ffe42ede6977c07670ce455fda30"></span>void DynamicBoltzmann::<a class="reference internal" href="#_CPPv3N16DynamicBoltzmann10OptProblemE" title="DynamicBoltzmann::OptProblem">OptProblem</a><code class="descname">solve_varying_ic</code><span class="sig-paren">(</span>bool <em>verbose</em> = false<span class="sig-paren">)</span><a class="headerlink" href="#_CPPv3N16DynamicBoltzmann10OptProblem16solve_varying_icEb" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="_CPPv3N16DynamicBoltzmann10OptProblem14read_init_condENSt6stringE">
+<span id="_CPPv2N16DynamicBoltzmann10OptProblem14read_init_condENSt6stringE"></span><span id="DynamicBoltzmann::OptProblem::read_init_cond__ss"></span><span class="target" id="class_dynamic_boltzmann_1_1_opt_problem_1a2ddeee0f123209de276dfe3e9f8eca50"></span>void DynamicBoltzmann::<a class="reference internal" href="#_CPPv3N16DynamicBoltzmann10OptProblemE" title="DynamicBoltzmann::OptProblem">OptProblem</a><code class="descname">read_init_cond</code><span class="sig-paren">(</span>std::string <em>dir</em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv3N16DynamicBoltzmann10OptProblem14read_init_condENSt6stringE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="_CPPv3NK16DynamicBoltzmann10OptProblem14write_bf_gridsEv">
+<span id="_CPPv2NK16DynamicBoltzmann10OptProblem14write_bf_gridsEv"></span><span id="DynamicBoltzmann::OptProblem::write_bf_gridsC"></span><span class="target" id="class_dynamic_boltzmann_1_1_opt_problem_1a27aa0e5ff6f7a17c85b9bad4b8a7c51e"></span>void DynamicBoltzmann::<a class="reference internal" href="#_CPPv3N16DynamicBoltzmann10OptProblemE" title="DynamicBoltzmann::OptProblem">OptProblem</a><code class="descname">write_bf_grids</code><span class="sig-paren">(</span><span class="sig-paren">)</span> <em class="property">const</em><a class="headerlink" href="#_CPPv3NK16DynamicBoltzmann10OptProblem14write_bf_gridsEv" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="_CPPv3NK16DynamicBoltzmann10OptProblem12write_t_gridEv">
+<span id="_CPPv2NK16DynamicBoltzmann10OptProblem12write_t_gridEv"></span><span id="DynamicBoltzmann::OptProblem::write_t_gridC"></span><span class="target" id="class_dynamic_boltzmann_1_1_opt_problem_1a879d768fdec93e8d25675cddc5c2032e"></span>void DynamicBoltzmann::<a class="reference internal" href="#_CPPv3N16DynamicBoltzmann10OptProblemE" title="DynamicBoltzmann::OptProblem">OptProblem</a><code class="descname">write_t_grid</code><span class="sig-paren">(</span><span class="sig-paren">)</span> <em class="property">const</em><a class="headerlink" href="#_CPPv3NK16DynamicBoltzmann10OptProblem12write_t_gridEv" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="_CPPv3NK16DynamicBoltzmann10OptProblem16write_ixn_paramsENSt6stringEi">
+<span id="_CPPv2NK16DynamicBoltzmann10OptProblem16write_ixn_paramsENSt6stringEi"></span><span id="DynamicBoltzmann::OptProblem::write_ixn_params__ss.iC"></span><span class="target" id="class_dynamic_boltzmann_1_1_opt_problem_1aa2db15a51b543e7bdb8ee525353148d0"></span>void DynamicBoltzmann::<a class="reference internal" href="#_CPPv3N16DynamicBoltzmann10OptProblemE" title="DynamicBoltzmann::OptProblem">OptProblem</a><code class="descname">write_ixn_params</code><span class="sig-paren">(</span>std::string <em>dir</em>, int <em>idx</em><span class="sig-paren">)</span> <em class="property">const</em><a class="headerlink" href="#_CPPv3NK16DynamicBoltzmann10OptProblem16write_ixn_paramsENSt6stringEi" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="_CPPv3NK16DynamicBoltzmann10OptProblem16write_ixn_paramsENSt6stringEii">
+<span id="_CPPv2NK16DynamicBoltzmann10OptProblem16write_ixn_paramsENSt6stringEii"></span><span id="DynamicBoltzmann::OptProblem::write_ixn_params__ss.i.iC"></span><span class="target" id="class_dynamic_boltzmann_1_1_opt_problem_1a7cc5921b3da0f742faff4bbbaa8aaa7a"></span>void DynamicBoltzmann::<a class="reference internal" href="#_CPPv3N16DynamicBoltzmann10OptProblemE" title="DynamicBoltzmann::OptProblem">OptProblem</a><code class="descname">write_ixn_params</code><span class="sig-paren">(</span>std::string <em>dir</em>, int <em>idx1</em>, int <em>idx2</em><span class="sig-paren">)</span> <em class="property">const</em><a class="headerlink" href="#_CPPv3NK16DynamicBoltzmann10OptProblem16write_ixn_paramsENSt6stringEii" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="_CPPv3NK16DynamicBoltzmann10OptProblem9write_bfsENSt6stringEi">
+<span id="_CPPv2NK16DynamicBoltzmann10OptProblem9write_bfsENSt6stringEi"></span><span id="DynamicBoltzmann::OptProblem::write_bfs__ss.iC"></span><span class="target" id="class_dynamic_boltzmann_1_1_opt_problem_1aacbece60736583d9a8f112de0f6a8427"></span>void DynamicBoltzmann::<a class="reference internal" href="#_CPPv3N16DynamicBoltzmann10OptProblemE" title="DynamicBoltzmann::OptProblem">OptProblem</a><code class="descname">write_bfs</code><span class="sig-paren">(</span>std::string <em>dir</em>, int <em>idx</em><span class="sig-paren">)</span> <em class="property">const</em><a class="headerlink" href="#_CPPv3NK16DynamicBoltzmann10OptProblem9write_bfsENSt6stringEi" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="_CPPv3NK16DynamicBoltzmann10OptProblem15write_var_termsENSt6stringEi">
+<span id="_CPPv2NK16DynamicBoltzmann10OptProblem15write_var_termsENSt6stringEi"></span><span id="DynamicBoltzmann::OptProblem::write_var_terms__ss.iC"></span><span class="target" id="class_dynamic_boltzmann_1_1_opt_problem_1a6e17a7f282611978883a8e62d29dec3e"></span>void DynamicBoltzmann::<a class="reference internal" href="#_CPPv3N16DynamicBoltzmann10OptProblemE" title="DynamicBoltzmann::OptProblem">OptProblem</a><code class="descname">write_var_terms</code><span class="sig-paren">(</span>std::string <em>dir</em>, int <em>idx</em><span class="sig-paren">)</span> <em class="property">const</em><a class="headerlink" href="#_CPPv3NK16DynamicBoltzmann10OptProblem15write_var_termsENSt6stringEi" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="_CPPv3NK16DynamicBoltzmann10OptProblem13write_momentsENSt6stringEi">
+<span id="_CPPv2NK16DynamicBoltzmann10OptProblem13write_momentsENSt6stringEi"></span><span id="DynamicBoltzmann::OptProblem::write_moments__ss.iC"></span><span class="target" id="class_dynamic_boltzmann_1_1_opt_problem_1a0430cc61f28983ee8cfb299104b8a3ad"></span>void DynamicBoltzmann::<a class="reference internal" href="#_CPPv3N16DynamicBoltzmann10OptProblemE" title="DynamicBoltzmann::OptProblem">OptProblem</a><code class="descname">write_moments</code><span class="sig-paren">(</span>std::string <em>dir</em>, int <em>idx</em><span class="sig-paren">)</span> <em class="property">const</em><a class="headerlink" href="#_CPPv3NK16DynamicBoltzmann10OptProblem13write_momentsENSt6stringEi" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="_CPPv3NK16DynamicBoltzmann10OptProblem13write_momentsENSt6stringEii">
+<span id="_CPPv2NK16DynamicBoltzmann10OptProblem13write_momentsENSt6stringEii"></span><span id="DynamicBoltzmann::OptProblem::write_moments__ss.i.iC"></span><span class="target" id="class_dynamic_boltzmann_1_1_opt_problem_1aaaaf2d5d2c71c0d75dc47783e791c4d6"></span>void DynamicBoltzmann::<a class="reference internal" href="#_CPPv3N16DynamicBoltzmann10OptProblemE" title="DynamicBoltzmann::OptProblem">OptProblem</a><code class="descname">write_moments</code><span class="sig-paren">(</span>std::string <em>dir</em>, int <em>idx1</em>, int <em>idx2</em><span class="sig-paren">)</span> <em class="property">const</em><a class="headerlink" href="#_CPPv3NK16DynamicBoltzmann10OptProblem13write_momentsENSt6stringEii" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="_CPPv3N16DynamicBoltzmann10OptProblem28set_flag_write_bf_only_finalEv">
+<span id="_CPPv2N16DynamicBoltzmann10OptProblem28set_flag_write_bf_only_finalEv"></span><span id="DynamicBoltzmann::OptProblem::set_flag_write_bf_only_final"></span><span class="target" id="class_dynamic_boltzmann_1_1_opt_problem_1a2c7d1a6871e240e4b3d0441e5338d4da"></span>void DynamicBoltzmann::<a class="reference internal" href="#_CPPv3N16DynamicBoltzmann10OptProblemE" title="DynamicBoltzmann::OptProblem">OptProblem</a><code class="descname">set_flag_write_bf_only_final</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv3N16DynamicBoltzmann10OptProblem28set_flag_write_bf_only_finalEv" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="_CPPv3N16DynamicBoltzmann10OptProblem7read_bfENSt6stringENSt6stringE">
+<span id="_CPPv2N16DynamicBoltzmann10OptProblem7read_bfENSt6stringENSt6stringE"></span><span id="DynamicBoltzmann::OptProblem::read_bf__ss.ss"></span><span class="target" id="class_dynamic_boltzmann_1_1_opt_problem_1aabbf1f6c09c2d57838632eea8eb0b1cd"></span>void DynamicBoltzmann::<a class="reference internal" href="#_CPPv3N16DynamicBoltzmann10OptProblemE" title="DynamicBoltzmann::OptProblem">OptProblem</a><code class="descname">read_bf</code><span class="sig-paren">(</span>std::string <em>bf_name</em>, std::string <em>fname</em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv3N16DynamicBoltzmann10OptProblem7read_bfENSt6stringENSt6stringE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+</div>
+</dd></dl>
+
+</div>
+</div>
+
+
+    </div>
+      
+  </div>
+</div>
+<footer class="footer">
+  <div class="container">
+    <p class="pull-right">
+      <a href="#">Back to top</a>
+      
+    </p>
+    <p>
+        &copy; Copyright 2018, Oliver K Ernst.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.7.1.<br/>
+    </p>
+  </div>
+</footer>
+  </body>
+</html>

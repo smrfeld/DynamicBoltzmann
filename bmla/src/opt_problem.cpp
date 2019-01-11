@@ -291,19 +291,13 @@ namespace bmla {
 			std::cout << "--- Calculating update ---" << std::endl;
 		};
 
-		double dopt_use = dopt;
 		for (auto &ixn_param: _ixn_params) {
 			if (!ixn_param->get_is_val_fixed()) {
-				// Learning rate
-				if (options.MODE_var_learning_rates) {
-					dopt_use = options.VAL_var_learning_rates[ixn_param];
-				};
-
 				// Update
 				if (options.MODE_l2_reg) {
-					ixn_param->update_calculate_and_store(dopt_use,options.MODE_l2_reg,options.VAL_l2_lambda[ixn_param],options.VAL_l2_center[ixn_param]);
+					ixn_param->update_calculate_and_store(options.MODE_l2_reg,options.VAL_l2_lambda[ixn_param],options.VAL_l2_center[ixn_param]);
 				} else {
-					ixn_param->update_calculate_and_store(dopt_use);
+					ixn_param->update_calculate_and_store();
 				};
 			};
 		};
@@ -321,10 +315,40 @@ namespace bmla {
 			std::cout << "--- Committing update ---" << std::endl;
 		};
 
-		for (auto &ixn_param: _ixn_params) {
-			if (!ixn_param->get_is_val_fixed()) {
-				ixn_param->update_committ_stored(options.nesterov,options.nesterov_acc);
+		double dopt_use = dopt;
+		if (options.solver == Solver::SGD) {
+			for (auto &ixn_param: _ixn_params) {
+				if (!ixn_param->get_is_val_fixed()) {
+					// Learning rate
+					if (options.MODE_var_learning_rates) {
+						dopt_use = options.VAL_var_learning_rates[ixn_param];
+					};
+
+					ixn_param->update_committ_stored_sgd(dopt_use);
+				};
 			};
+		} else if (options.solver == Solver::NESTEROV) {
+			for (auto &ixn_param: _ixn_params) {
+				if (!ixn_param->get_is_val_fixed()) {
+					// Learning rate
+					if (options.MODE_var_learning_rates) {
+						dopt_use = options.VAL_var_learning_rates[ixn_param];
+					};
+
+					ixn_param->update_committ_stored_nesterov(dopt_use,options.nesterov_acc);
+				};
+			};
+		} else if (options.solver == Solver::ADAM) {
+			for (auto &ixn_param: _ixn_params) {
+				if (!ixn_param->get_is_val_fixed()) {
+					// Learning rate
+					if (options.MODE_var_learning_rates) {
+						dopt_use = options.VAL_var_learning_rates[ixn_param];
+					};
+
+					ixn_param->update_committ_stored_adam(dopt_use,i_opt_step,options.adam_beta_1,options.adam_beta_2,options.adam_eps);
+				};
+			};			
 		};
 
 		if (options.VERBOSE_UPDATE) {

@@ -117,6 +117,8 @@ namespace bmla {
 
 		std::shared_ptr<O2IxnDict> _ixn_dict;
 
+		double *_multiplier;
+
 		// Constructor helpers
 		void _clean_up();
 		void _copy(const ConnVH& other);
@@ -134,6 +136,12 @@ namespace bmla {
 		ConnVH& operator=(const ConnVH& other);
 		ConnVH& operator=(ConnVH&& other);
 		~ConnVH();
+
+		/********************
+		Multiplier
+		********************/
+
+		void set_multiplier(double multiplier);
 
 		/********************
 		Check units involved

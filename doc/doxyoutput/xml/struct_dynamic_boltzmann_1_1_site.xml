@@ -1,0 +1,170 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.8.11">
+  <compounddef id="struct_dynamic_boltzmann_1_1_site" kind="struct" language="C++" prot="public">
+    <compoundname>DynamicBoltzmann::Site</compoundname>
+      <sectiondef kind="public-attrib">
+      <memberdef kind="variable" id="struct_dynamic_boltzmann_1_1_site_1ab44fcd1938cc94f4feb8a2255864ca46" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int DynamicBoltzmann::Site::x</definition>
+        <argsstring></argsstring>
+        <name>x</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="lattice.hpp" line="45" column="1" bodyfile="lattice.hpp" bodystart="45" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct_dynamic_boltzmann_1_1_site_1ab821c0b6671dc70a900c6cbdb1331e36" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int DynamicBoltzmann::Site::y</definition>
+        <argsstring></argsstring>
+        <name>y</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="lattice.hpp" line="46" column="1" bodyfile="lattice.hpp" bodystart="46" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct_dynamic_boltzmann_1_1_site_1a2013fa41f6106768ab2e8c8c522cfb44" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int DynamicBoltzmann::Site::z</definition>
+        <argsstring></argsstring>
+        <name>z</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="lattice.hpp" line="47" column="1" bodyfile="lattice.hpp" bodystart="47" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct_dynamic_boltzmann_1_1_site_1a50d24966b5786d4f2301e4a7de2ae5b4" prot="public" static="no" mutable="no">
+        <type><ref refid="class_dynamic_boltzmann_1_1_species" kindref="compound">Species</ref> *</type>
+        <definition>Species* DynamicBoltzmann::Site::sp</definition>
+        <argsstring></argsstring>
+        <name>sp</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="lattice.hpp" line="48" column="1" bodyfile="lattice.hpp" bodystart="48" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct_dynamic_boltzmann_1_1_site_1a4d2bf1cfa905c549441ba42f483e9374" prot="public" static="no" mutable="no">
+        <type>std::vector&lt; latt_it &gt;</type>
+        <definition>std::vector&lt;latt_it&gt; DynamicBoltzmann::Site::nbrs</definition>
+        <argsstring></argsstring>
+        <name>nbrs</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="lattice.hpp" line="49" column="1" bodyfile="lattice.hpp" bodystart="49" bodyend="-1"/>
+      </memberdef>
+      </sectiondef>
+      <sectiondef kind="public-func">
+      <memberdef kind="function" id="struct_dynamic_boltzmann_1_1_site_1a61d35d37cd18483c6b050cecf1fc9aea" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type></type>
+        <definition>DynamicBoltzmann::Site::Site</definition>
+        <argsstring>()</argsstring>
+        <name>Site</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="lattice.hpp" line="52" column="1" bodyfile="lattice.cpp" bodystart="21" bodyend="21"/>
+      </memberdef>
+      <memberdef kind="function" id="struct_dynamic_boltzmann_1_1_site_1a021450eb035343291c9d8c7098c4361b" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type></type>
+        <definition>DynamicBoltzmann::Site::Site</definition>
+        <argsstring>(int xIn, int yIn, int zIn)</argsstring>
+        <name>Site</name>
+        <param>
+          <type>int</type>
+          <declname>xIn</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>yIn</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>zIn</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="lattice.hpp" line="53" column="1" bodyfile="lattice.cpp" bodystart="22" bodyend="22"/>
+      </memberdef>
+      <memberdef kind="function" id="struct_dynamic_boltzmann_1_1_site_1a9a3e75aa5f2b7f61831d5ca125f1dcfd" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type></type>
+        <definition>DynamicBoltzmann::Site::Site</definition>
+        <argsstring>(int xIn, int yIn, int zIn, Species *spIn)</argsstring>
+        <name>Site</name>
+        <param>
+          <type>int</type>
+          <declname>xIn</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>yIn</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>zIn</declname>
+        </param>
+        <param>
+          <type><ref refid="class_dynamic_boltzmann_1_1_species" kindref="compound">Species</ref> *</type>
+          <declname>spIn</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="lattice.hpp" line="54" column="1" bodyfile="lattice.cpp" bodystart="23" bodyend="28"/>
+      </memberdef>
+      </sectiondef>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <collaborationgraph>
+      <node id="21">
+        <label>DynamicBoltzmann::Site</label>
+        <link refid="struct_dynamic_boltzmann_1_1_site"/>
+        <childnode refid="22" relation="usage">
+          <edgelabel>sp</edgelabel>
+        </childnode>
+      </node>
+      <node id="22">
+        <label>DynamicBoltzmann::Species</label>
+        <link refid="class_dynamic_boltzmann_1_1_species"/>
+      </node>
+    </collaborationgraph>
+    <location file="lattice.hpp" line="44" column="1" bodyfile="lattice.hpp" bodystart="44" bodyend="55"/>
+    <listofallmembers>
+      <member refid="struct_dynamic_boltzmann_1_1_site_1a4d2bf1cfa905c549441ba42f483e9374" prot="public" virt="non-virtual"><scope>DynamicBoltzmann::Site</scope><name>nbrs</name></member>
+      <member refid="struct_dynamic_boltzmann_1_1_site_1a61d35d37cd18483c6b050cecf1fc9aea" prot="public" virt="non-virtual"><scope>DynamicBoltzmann::Site</scope><name>Site</name></member>
+      <member refid="struct_dynamic_boltzmann_1_1_site_1a021450eb035343291c9d8c7098c4361b" prot="public" virt="non-virtual"><scope>DynamicBoltzmann::Site</scope><name>Site</name></member>
+      <member refid="struct_dynamic_boltzmann_1_1_site_1a9a3e75aa5f2b7f61831d5ca125f1dcfd" prot="public" virt="non-virtual"><scope>DynamicBoltzmann::Site</scope><name>Site</name></member>
+      <member refid="struct_dynamic_boltzmann_1_1_site_1a50d24966b5786d4f2301e4a7de2ae5b4" prot="public" virt="non-virtual"><scope>DynamicBoltzmann::Site</scope><name>sp</name></member>
+      <member refid="struct_dynamic_boltzmann_1_1_site_1ab44fcd1938cc94f4feb8a2255864ca46" prot="public" virt="non-virtual"><scope>DynamicBoltzmann::Site</scope><name>x</name></member>
+      <member refid="struct_dynamic_boltzmann_1_1_site_1ab821c0b6671dc70a900c6cbdb1331e36" prot="public" virt="non-virtual"><scope>DynamicBoltzmann::Site</scope><name>y</name></member>
+      <member refid="struct_dynamic_boltzmann_1_1_site_1a2013fa41f6106768ab2e8c8c522cfb44" prot="public" virt="non-virtual"><scope>DynamicBoltzmann::Site</scope><name>z</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

@@ -3,6 +3,11 @@
 #include <memory>
 #include <map>
 
+#ifndef SOLVER_H
+#define SOLVER_H
+#include "solver.hpp"
+#endif
+
 /************************************
 * Namespace for bmla
 ************************************/
@@ -17,8 +22,6 @@ namespace bmla {
 	/****************************************
 	OptProblemRBM Options
 	****************************************/
-
-	enum class Solver : unsigned int { SGD, NESTEROV, ADAM };
 
 	struct OptionsWakeSleepRBM {
 

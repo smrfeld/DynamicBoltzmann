@@ -242,9 +242,8 @@ namespace bmla {
 		void sample_rbm_down_h_to_v(bool binary_visible, bool parallel);
 		void sample_rbm_up_v_to_h(bool binary_hidden, bool parallel);
         
-        // Sample BM down/up (NOT layer-wise)
-        void sample_bm_down_h_to_v(bool binary_visible, bool binary_hidden, bool parallel);
-        void sample_bm_up_v_to_h(bool binary_hidden, bool parallel);
+        // Sample BM (NOT layer-wise)
+        void sample_bm(bool binary_visible, bool binary_hidden, bool parallel);
         
         // Variational inference in a BM
         void sample_bm_variational_inference(bool parallel);

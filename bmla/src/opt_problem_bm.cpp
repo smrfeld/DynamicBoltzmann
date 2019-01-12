@@ -138,21 +138,12 @@ namespace bmla {
 			// Sample vis, hidden
 			for (int i_sampling_step=0; i_sampling_step<no_cd_sampling_steps; i_sampling_step++) 
 			{
-				// Sample down (hidden -> visible)
-				// Visible: binary (= true)
-				// Hiddens: binary (= true)
-				_latt->sample_bm_down_h_to_v(options.is_asleep_visible_binary,options.is_asleep_hidden_binary,options.parallel);
-
-				// Sample up (visible -> hidden)
-				// If not last step:
-				// Hiddens: binary (= true)
-				// Else:
-				// Hiddens: prob (= false)
-				if (i_sampling_step != no_cd_sampling_steps-1) {
-					_latt->sample_bm_up_v_to_h(options.is_asleep_hidden_binary,options.parallel); // binary hiddens
-				} else {
-					_latt->sample_bm_up_v_to_h(options.is_asleep_hidden_binary_final,options.parallel); // prob hiddens
-				};
+				// Sample
+                if (i_sampling_step != no_cd_sampling_steps-1) {
+                    _latt->sample_bm(options.is_asleep_visible_binary,options.is_asleep_hidden_binary,options.parallel);
+                } else {
+                    _latt->sample_bm(options.is_asleep_visible_binary,options.is_asleep_hidden_binary_final,options.parallel);
+                };
 			};
 
 			// Print

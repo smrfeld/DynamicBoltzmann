@@ -199,7 +199,8 @@ namespace bmla {
 	ConnVH::ConnVH(UnitVisible *uv, UnitHidden* uh) {
 		_uv = uv;
 		_uh = uh;
-		_multiplier = nullptr;
+		_multiplier_h_to_v = nullptr;
+        _multiplier_v_to_h = nullptr;
 	};
 	ConnVH::ConnVH(const ConnVH& other) {
 		_copy(other);
@@ -225,26 +226,34 @@ namespace bmla {
 		_clean_up();
 	};
 	void ConnVH::_clean_up() {
-		// Nothing....
-		if (_multiplier) {
-			delete _multiplier;
-			_multiplier = nullptr;
+        if (_multiplier_h_to_v) {
+            delete _multiplier_h_to_v;
+            _multiplier_h_to_v = nullptr;
+        };
+		if (_multiplier_v_to_h) {
+			delete _multiplier_v_to_h;
+            _multiplier_v_to_h = nullptr;
 		};
 	};
 	void ConnVH::_move(ConnVH& other) {
 		_uv = std::move(other._uv);
 		_uh = std::move(other._uh);
 		_ixn_dict = std::move(other._ixn_dict);
-		_multiplier = other._multiplier;
-
-		other._multiplier = nullptr;
+		_multiplier_h_to_v = other._multiplier_h_to_v;
+        _multiplier_v_to_h = other._multiplier_v_to_h;
+        
+		other._multiplier_h_to_v = nullptr;
+        other._multiplier_v_to_h = nullptr;
 	};
 	void ConnVH::_copy(const ConnVH& other) {
 		_uv = other._uv;
 		_uh = other._uh;
 		_ixn_dict = other._ixn_dict;
-		if (other._multiplier) {
-			_multiplier = new double(*other._multiplier);
+		if (other._multiplier_h_to_v) {
+			_multiplier_h_to_v = new double(*other._multiplier_h_to_v);
+        };
+        if (other._multiplier_v_to_h) {
+            _multiplier_v_to_h = new double(*other._multiplier_v_to_h);
 		};	
 	};
 
@@ -252,14 +261,21 @@ namespace bmla {
 	Multiplier
 	********************/
 
-	void ConnVH::set_multiplier(double multiplier) {
-		if (!_multiplier) {
-			_multiplier = new double(multiplier);
+	void ConnVH::set_multiplier_h_to_v(double multiplier_h_to_v) {
+		if (!_multiplier_h_to_v) {
+			_multiplier_h_to_v = new double(multiplier_h_to_v);
 		} else {
-			*_multiplier = multiplier;
+			*_multiplier_h_to_v = multiplier_h_to_v;
 		};
 	};
-
+    void ConnVH::set_multiplier_v_to_h(double multiplier_v_to_h) {
+        if (!_multiplier_v_to_h) {
+            _multiplier_v_to_h = new double(multiplier_v_to_h);
+        } else {
+            *_multiplier_v_to_h = multiplier_v_to_h;
+        };
+    };
+    
 	/********************
 	Check units involved
 	********************/
@@ -341,8 +357,8 @@ namespace bmla {
 			act += ixn * pr.second; // * 1.0
 		};
 
-		if (_multiplier) {
-			act *= *_multiplier;
+		if (_multiplier_h_to_v) {
+			act *= *_multiplier_h_to_v;
 		};
 
 		return act;
@@ -365,9 +381,9 @@ namespace bmla {
 			act += ixn * pr.second; // * 1.0
 		};
 
-		//if (_multiplier) {
-		//	act *= *_multiplier;
-		//};
+		if (_multiplier_v_to_h) {
+			act *= *_multiplier_v_to_h;
+		};
 
 		return act;
 	};

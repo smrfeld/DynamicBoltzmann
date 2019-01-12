@@ -1290,25 +1290,54 @@ namespace bmla {
         sample_layer(1, 0, binary_hidden, parallel);
     };
 
-    // Sample BM down/up (NOT layer-wise)
-    void Lattice::sample_bm_down_h_to_v(bool binary_visible, bool binary_hidden, bool parallel) {
-        // Go through hidden layers top to bottom (reverse)
-        auto rit_begin = _latt_h.rbegin();
-        if (rit_begin != _latt_h.rend()) {
-            for (auto layer=rit_begin->first-1; layer>0; layer--) {
-                sample_layer(layer, binary_hidden, parallel);
-            };
-        };
+    // Sample BM (NOT layer-wise)
+    void Lattice::sample_bm(bool binary_visible, bool binary_hidden, bool parallel) {
         
-        // Visibles
-        sample_layer(0, binary_visible, parallel);
-    };
-    void Lattice::sample_bm_up_v_to_h(bool binary_hidden, bool parallel) {
-        // Go through hidden layers bottom to top
-        auto rit_begin = _latt_h.rbegin();
-        if (rit_begin != _latt_h.rend()) {
-            for (auto layer=1; layer<=rit_begin->first; layer++) {
-                sample_layer(layer, binary_hidden, parallel);
+        if (parallel) {
+            
+            // Parallel
+            
+            // Visible
+            for (auto const &idx: _latt_v_idxs)
+            {
+                _latt_v[idx]->prepare_sample(binary_visible);
+            };
+            
+            // Hiddens
+            for (auto &it: _latt_h) {
+                for (auto const &idx: _latt_h_idxs[it.first]) {
+                    it.second[idx]->prepare_sample(binary_hidden);
+                };
+            };
+            
+            // Committ
+            for (auto const &idx: _latt_v_idxs)
+            {
+                _latt_v[idx]->committ_sample();
+            };
+            for (auto &it: _latt_h) {
+                for (auto const &idx: _latt_h_idxs[it.first]) {
+                    it.second[idx]->committ_sample();
+                };
+            };
+
+        } else {
+            
+            // Not parallel
+            
+            // Visible
+            for (auto const &idx: _latt_v_idxs)
+            {
+                _latt_v[idx]->prepare_sample(binary_visible);
+                _latt_v[idx]->committ_sample();
+            };
+            
+            // Hiddens
+            for (auto &it: _latt_h) {
+                for (auto const &idx: _latt_h_idxs[it.first]) {
+                    it.second[idx]->prepare_sample(binary_hidden);
+                    it.second[idx]->committ_sample();
+                };
             };
         };
     };

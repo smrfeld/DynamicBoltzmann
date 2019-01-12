@@ -117,7 +117,8 @@ namespace bmla {
 
 		std::shared_ptr<O2IxnDict> _ixn_dict;
 
-		double *_multiplier;
+		double *_multiplier_h_to_v;
+        double *_multiplier_v_to_h;
 
 		// Constructor helpers
 		void _clean_up();
@@ -141,7 +142,8 @@ namespace bmla {
 		Multiplier
 		********************/
 
-		void set_multiplier(double multiplier);
+		void set_multiplier_h_to_v(double multiplier_h_to_v);
+        void set_multiplier_v_to_h(double multiplier_v_to_h);
 
 		/********************
 		Check units involved

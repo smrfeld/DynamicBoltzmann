@@ -6,19 +6,18 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 project(bmla)
 
+AUX_SOURCE_DIRECTORY(src SRC_FILES) 
+
+file (GLOB HEADER_FILES "include/bmla_bits/*.hpp")
+file (GLOB HEADER_FILES_FWDS "include/bmla_bits/fwds/*.hpp")
+
 add_library(bmla SHARED 
-	src/connections.cpp
-	src/fnames.cpp
-	src/general.cpp
-	src/ixn_dicts.cpp
-	src/ixn_param.cpp
-	src/lattice.cpp
-	src/moment.cpp
-	src/opt_problem_bm.cpp
-	src/opt_problem_rbm.cpp
-	src/species.cpp
-	src/unit.cpp
+	${SRC_FILES}
+	${HEADER_FILES}
+	${HEADER_FILES_FWDS}
 )
+
+target_include_directories(bmla PRIVATE include/bmla_bits include/bmla_bits/fwds)
 
 install(TARGETS bmla DESTINATION lib)
 

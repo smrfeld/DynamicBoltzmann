@@ -59,19 +59,6 @@ namespace bmla {
 
     class OptProblemBM : public OptProblem {
 
-	private:
-
-		// Ixn params
-		std::vector<std::shared_ptr<IxnParam>> _ixn_params;
-
-		// Lattice
-		std::shared_ptr<Lattice> _latt;
-
-		// Constructor helpers
-		void _clean_up();
-		void _move(OptProblemBM &other);
-		void _copy(const OptProblemBM& other);
-
 	public:
 
 		/********************

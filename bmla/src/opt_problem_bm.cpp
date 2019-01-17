@@ -30,7 +30,7 @@ namespace bmla {
 		if (options.verbose) {
 			std::cout << "--- Sampling lattice ---" << std::endl;
 		};
-
+        
 		// Make a subset
 		std::vector<int> idx_subset;
         idx_subset = fname_coll.get_random_subset(batch_size);
@@ -205,7 +205,7 @@ namespace bmla {
 
 	// One step
 	void OptProblemBM::solve_one_step(int i_opt_step, int batch_size, int no_markov_chains, double dopt, int no_cd_sampling_steps, int no_mean_field_updates, FNameColl &fname_coll, OptionsSolve options, OptionsWakeSleepBM options_wake_sleep) {
-
+        
 		/*****
 		Check options
 		*****/

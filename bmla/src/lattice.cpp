@@ -40,6 +40,8 @@ namespace bmla {
 		_no_dims = dim;
 		_box_length = box_length;
         _no_markov_chains = 0;
+
+        _IO_did_init = false;
         
 		// Make a fully linked list of sites
 		if (dim == 1) {
@@ -1073,10 +1075,11 @@ namespace bmla {
 				_IO_species_possible[pr.first][sp->get_name()] = sp;
 			};
 		};
+        
 		_IO_did_init = true;
 	};
 	void Lattice::read_layer_from_file(int layer, std::string fname, bool binary)
-	{
+	{        
 		if (!_IO_did_init) {
 			std::cerr << ">>> Lattice::read_layer_from_file <<< Error: run init_file_reader first!" << std::endl;
 			exit(EXIT_FAILURE);

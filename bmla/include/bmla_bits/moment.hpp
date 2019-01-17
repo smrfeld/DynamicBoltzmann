@@ -45,8 +45,11 @@ namespace bmla {
 		std::vector<ConnVH*> _monitor_w;
 		std::vector<ConnHH*> _monitor_x;
 
-		// Batch size
+		// Visible batch size
 		int _batch_size;
+        
+        // Asleep no markov chains
+        int _no_markov_chains;
 
 		// Reaped values from the sampler
 		// Size = _batch_size
@@ -104,12 +107,15 @@ namespace bmla {
 		IxnParamType get_type() const;
 
 		/********************
-		Batch size
+		Batch size/no markov chains
 		********************/
 
 		int get_batch_size() const;
 		void set_batch_size(int batch_size);
 
+        int get_no_markov_chains() const;
+        void set_no_markov_chains(int no_markov_chains);
+        
 		/********************
 		Reset
 		********************/
@@ -130,15 +136,15 @@ namespace bmla {
 		double get_moment(MomentType type) const;
 		void set_moment(MomentType type, double val);
 
-		// Batch
-		double get_moment_in_batch(MomentType type, int i_batch) const;
-		void set_moment_in_batch(MomentType type, int i_batch, double val);
+		// Sample
+		double get_moment_sample(MomentType type, int i_sample) const;
+		void set_moment_sample(MomentType type, int i_sample, double val);
 
 		/********************
 		Reap from lattice
 		********************/
 
-		void reap_in_batch(MomentType type, int i_batch);
+		void reap_sample(MomentType type, int i_sample);
 		
 		/********************
 		Average reaps

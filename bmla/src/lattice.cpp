@@ -39,7 +39,8 @@ namespace bmla {
 		};
 		_no_dims = dim;
 		_box_length = box_length;
-
+        _no_markov_chains = 0;
+        
 		// Make a fully linked list of sites
 		if (dim == 1) {
 			for (int x=1; x<=box_length; x++) {
@@ -119,6 +120,7 @@ namespace bmla {
 	void Lattice::_copy(const Lattice& other) {
 		_no_dims = other._no_dims;
 		_box_length = other._box_length;
+        _no_markov_chains = other._no_markov_chains;
 		for (auto i=0; i<other._latt_v.size(); i++) {
 			_latt_v.push_back(new UnitVisible(*other._latt_v[i]));
 		};
@@ -150,6 +152,7 @@ namespace bmla {
 	void Lattice::_move(Lattice& other) {
 		_no_dims = other._no_dims;
 		_box_length = other._box_length;
+        _no_markov_chains = other._no_markov_chains;
 		_latt_v = other._latt_v;
 		_latt_h = other._latt_h;
 		_conns_hh = other._conns_hh;
@@ -167,6 +170,7 @@ namespace bmla {
 		// Reset other
 		other._no_dims = 0;
 		other._box_length = 0;
+        other._no_markov_chains = 0;
 		other._latt_v.clear();
 		other._latt_h.clear();
 		other._conns_hh.clear();
@@ -199,6 +203,17 @@ namespace bmla {
 		};
 	};
 
+    /********************
+     Getters
+     ********************/
+    
+    int Lattice::get_no_dims() const {
+        return _no_dims;
+    };
+    int Lattice::get_box_length() const {
+        return _box_length;
+    };
+    
 	/********************
 	Helpers to setup all sites - Add possible species to all sites
 	********************/
@@ -822,9 +837,6 @@ namespace bmla {
 	Getters
 	********************/
 
-	int Lattice::get_no_dims() const {
-		return _no_dims;
-	};
 	int Lattice::get_no_units_v() { 
 		return _latt_v.size(); 
 	};
@@ -836,6 +848,50 @@ namespace bmla {
 		return count; 
 	};
 
+    /********************
+     No Markov chains
+     ********************/
+    
+    int Lattice::get_no_markov_chains() const {
+        return _no_markov_chains;
+    };
+    void Lattice::set_no_markov_chains(int no_chains) {
+        if (_no_markov_chains == no_chains) {
+            return;
+        };
+        
+        _no_markov_chains = no_chains;
+        for (auto &s: _latt_v) {
+            s->set_no_markov_chains(_no_markov_chains);
+        };
+        for (auto &pr: _latt_h) {
+            for (auto &s: pr.second) {
+                s->set_no_markov_chains(_no_markov_chains);
+            };
+        };
+    };
+    
+    void Lattice::switch_to_markov_chain_no(int no) {
+        for (auto &s: _latt_v) {
+            s->switch_to_markov_chain_no(no);
+        };
+        for (auto &pr: _latt_h) {
+            for (auto &s: pr.second) {
+                s->switch_to_markov_chain_no(no);
+            };
+        };
+    };
+    void Lattice::switch_to_awake_statistics() {
+        for (auto &s: _latt_v) {
+            s->switch_to_awake_statistics();
+        };
+        for (auto &pr: _latt_h) {
+            for (auto &s: pr.second) {
+                s->switch_to_awake_statistics();
+            };
+        };
+    };
+    
 	/********************
 	Apply funcs to all units
 	********************/
@@ -869,6 +925,17 @@ namespace bmla {
 	};
 
 	// Random
+    void Lattice::all_units_random(bool binary) {
+        all_units_v_random(binary);
+        all_units_h_random(binary);
+    };
+    void Lattice::all_units_h_random(bool binary) {
+        for (auto &it: _latt_h) {
+            for (auto &ptr: it.second) {
+                ptr->set_occ_random(binary);
+            };
+        };
+    };
 	void Lattice::all_units_v_random(bool binary) {
 		for (auto &ptr: _latt_v) {
 			ptr->set_occ_random(binary);
@@ -1325,6 +1392,9 @@ namespace bmla {
             
             // Not parallel
             
+            // Shuffle visible
+            std::random_shuffle ( _latt_v_idxs.begin(), _latt_v_idxs.end() );
+            
             // Visible
             for (auto const &idx: _latt_v_idxs)
             {
@@ -1334,6 +1404,9 @@ namespace bmla {
             
             // Hiddens
             for (auto &it: _latt_h) {
+                // Shuffle hidden
+                std::random_shuffle ( _latt_h_idxs[it.first].begin(), _latt_h_idxs[it.first].end() );
+                
                 for (auto const &idx: _latt_h_idxs[it.first]) {
                     it.second[idx]->prepare_sample(binary_hidden);
                     it.second[idx]->committ_sample();
@@ -1355,6 +1428,8 @@ namespace bmla {
                 {
                     it.second[idx]->prepare_sample(false); // false = probablistic
                 };
+            };
+            for (auto &it: _latt_h) {
                 for (auto const &idx: _latt_h_idxs[it.first])
                 {
                     it.second[idx]->committ_sample();

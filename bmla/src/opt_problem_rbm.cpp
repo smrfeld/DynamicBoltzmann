@@ -23,75 +23,16 @@ namespace bmla {
 	****************************************/
 	
 	/********************
-	Constructor
-	********************/
-
-	OptProblemRBM::OptProblemRBM(std::shared_ptr<Lattice> latt, std::vector<std::shared_ptr<IxnParam>> ixn_params) {
-		_latt = latt;
-        _ixn_params = ixn_params;
-	};
-	OptProblemRBM::OptProblemRBM(const OptProblemRBM& other) {
-		_copy(other);
-	};
-	OptProblemRBM::OptProblemRBM(OptProblemRBM&& other) {
-		_move(other);
-	};
-	OptProblemRBM& OptProblemRBM::operator=(const OptProblemRBM& other) {
-		if (this != &other) {
-			_clean_up();
-			_copy(other);
-		};
-		return *this;
-	};
-	OptProblemRBM& OptProblemRBM::operator=(OptProblemRBM&& other) {
-		if (this != &other) {
-			_clean_up();
-			_move(other);
-		};
-		return *this;
-	};
-	OptProblemRBM::~OptProblemRBM() {
-		_clean_up();
-	};
-
-	void OptProblemRBM::_clean_up() {};
-	void OptProblemRBM::_move(OptProblemRBM &other) {
-		_ixn_params = std::move(other._ixn_params);
-		_latt = std::move(other._latt);
-	};
-	void OptProblemRBM::_copy(const OptProblemRBM& other) {
-		_ixn_params = other._ixn_params;
-		_latt = other._latt;
-	};
-
-	/********************
-	Init structures
-	********************/
-
-	void OptProblemRBM::init_structures(int batch_size) {
-
-		// Ixn params
-		for (auto &ixn_param: _ixn_params) {
-
-			// Moment
-			ixn_param->get_moment()->set_batch_size(batch_size);
-		};
-	};
-
-	/********************
 	Wake/asleep loop
 	********************/
 
-	void OptProblemRBM::wake_sleep_loop(int batch_size, int no_cd_sampling_steps, FNameColl &fname_coll, OptionsWakeSleepRBM options) {
+	void OptProblemRBM::wake_sleep_loop(int batch_size, int no_markov_chains, int no_cd_sampling_steps, FNameColl &fname_coll, OptionsWakeSleepRBM options) {
 		if (options.verbose) {
 			std::cout << "--- Sampling lattice ---" << std::endl;
 		};
 
-		// Make a subset
-		std::vector<int> idx_subset;
-		if (!options.start_with_random_lattice) {
-			idx_subset = fname_coll.get_random_subset(batch_size);
-		};
+		// Make a batch (= subset of idxs for files)
+		std::vector<int> idx_subset = fname_coll.get_random_subset(batch_size);
 
 		// Reset all moments
 		for (auto &ixn_param: _ixn_params) {
@@ -101,6 +42,8 @@ namespace bmla {
 			ixn_param->get_moment()->reset_to_zero(MomentType::ASLEEP);
 		};
 
+        // Awake phase
+        
 		// Iterate over the batch
 		for (int i_batch=0; i_batch<batch_size; i_batch++)
 		{
@@ -110,62 +53,131 @@ namespace bmla {
 			};
 
 			// Read latt
-			if (!options.start_with_random_lattice) {
-				auto file = fname_coll.get_fname(idx_subset[i_batch]); 
-				_latt->read_layer_from_file(0,file.name,file.binary);
-			} else {
-				// Random lattice...
-				_latt->all_units_v_random(true); // binary by default
-			};
+            auto file = fname_coll.get_fname(idx_subset[i_batch]);
+            _latt->read_layer_from_file(0,file.name,file.binary);
 
 			// Sample hidden
-			// Hidden: prob (= false)
 			_latt->sample_rbm_up_v_to_h(options.is_awake_moment_hidden_binary, options.parallel);
 
 			// Reap awake
 			for (auto &ixn_param: _ixn_params) {
 				if (!ixn_param->get_moment()->get_is_awake_moment_fixed()) {
-					ixn_param->get_moment()->reap_in_batch(MomentType::AWAKE, i_batch);
+					ixn_param->get_moment()->reap_sample(MomentType::AWAKE, i_batch);
 				};
 			};
 
-			// Convert hidden units to be binary
-			if (!options.is_awake_moment_hidden_binary && options.should_binarize_hidden_after_awake_moment) {
-				_latt->all_units_h_binarize();
-			};
+            // Is START_FROM_DATA, also do the asleep phase
+            if (options.cd_mode_asleep == CDModeAsleep::START_FROM_DATA) {
+                
+                // Start from the current chain
+                
+                // Should we binarize?
+                if (options.is_awake_moment_hidden_binary == false && options.options_asleep_start_from_data.start_from_binary_hidden == true) {
+                    // Currently prob
+                    // Need to be binary
+                    // Therefore: binarize
+                    _latt->all_units_h_binarize();
+                } else if (options.is_awake_moment_hidden_binary == true && options.options_asleep_start_from_data.start_from_binary_hidden == false) {
+                    // Currently binary
+                    // Need to be prob
+                    // Therefore: resample as prob!
+                    _latt->sample_rbm_up_v_to_h(false, options.parallel);
+                };
+                
+                // Sample vis, hidden
+                for (int i_sampling_step=0; i_sampling_step<no_cd_sampling_steps; i_sampling_step++)
+                {
+                    // Sample down (hidden -> visible)
+                    _latt->sample_rbm_down_h_to_v(options.is_asleep_visible_binary,options.parallel);
+                    
+                    // Sample up (visible -> hidden)
+                    if (i_sampling_step != no_cd_sampling_steps-1) {
+                        _latt->sample_rbm_up_v_to_h(options.is_asleep_hidden_binary,options.parallel);
+                    } else {
+                        _latt->sample_rbm_up_v_to_h(options.is_asleep_hidden_binary_final,options.parallel);
+                    };
+                };
+                
+                // Reap asleep
+                for (auto &ixn_param: _ixn_params) {
+                    ixn_param->get_moment()->reap_sample(MomentType::ASLEEP, i_batch);
+                };
 
-			// Sample vis, hidden
-			for (int i_sampling_step=0; i_sampling_step<no_cd_sampling_steps; i_sampling_step++) 
-			{
-				// Sample down (hidden -> visible)
-				// Visible: binary (= true)
-				// Hiddens: binary (= true)
-				// _latt->sample_rbm_down_h_to_v(true, true);
-				_latt->sample_rbm_down_h_to_v(options.is_asleep_visible_binary,options.parallel);
+            };
+        };
+        
+        // If START_FROM_RANDOM or PERSISTENT_CD: run chains
+        if (options.cd_mode_asleep == CDModeAsleep::START_FROM_RANDOM) {
+            
+            // START_FROM_RANDOM
+            
+            // Run CD sampling
+            for (auto i_chain=0; i_chain<no_markov_chains; i_chain++) {
+                
+                // Switch to that chain
+                _latt->switch_to_markov_chain_no(i_chain);
+                
+                // Random
+                _latt->all_units_v_random(options.options_asleep_start_from_random.start_from_binary_visible);
+                _latt->all_units_h_random(options.options_asleep_start_from_random.start_from_binary_hidden);
 
-				// Sample up (visible -> hidden)
-				// If not last step:
-				// Hiddens: binary (= true)
-				// Else:
-				// Hiddens: prob (= false)
-				if (i_sampling_step != no_cd_sampling_steps-1) {
-					_latt->sample_rbm_up_v_to_h(options.is_asleep_hidden_binary,options.parallel); // binary hiddens
-				} else {
-					_latt->sample_rbm_up_v_to_h(options.is_asleep_hidden_binary_final,options.parallel); // prob hiddens
-				};
-			};
-
-			// Print
-			// latt.print_occupancy();
-
-			// Reap asleep
-			for (auto &ixn_param: _ixn_params) {
-				// Visible: prob (= false)
-				// Hiddens: prob (= false)
-				ixn_param->get_moment()->reap_in_batch(MomentType::ASLEEP, i_batch);
-			};
-		};
-		
+                // Sample vis, hidden
+                for (int i_sampling_step=0; i_sampling_step<no_cd_sampling_steps; i_sampling_step++)
+                {
+                    // Sample down (hidden -> visible)
+                    _latt->sample_rbm_down_h_to_v(options.is_asleep_visible_binary,options.parallel);
+                    
+                    // Sample up (visible -> hidden)
+                    if (i_sampling_step != no_cd_sampling_steps-1) {
+                        _latt->sample_rbm_up_v_to_h(options.is_asleep_hidden_binary,options.parallel);
+                    } else {
+                        _latt->sample_rbm_up_v_to_h(options.is_asleep_hidden_binary_final,options.parallel);
+                    };
+                };
+                
+                // Reap asleep
+                for (auto &ixn_param: _ixn_params) {
+                    ixn_param->get_moment()->reap_sample(MomentType::ASLEEP, i_chain);
+                };
+            };
+            
+            // Switch back to awake chain
+            _latt->switch_to_awake_statistics();
+            
+        } else if (options.cd_mode_asleep == CDModeAsleep::PERSISTENT_CD) {
+            
+            // PERSISTENT_CD
+            
+            // Run CD sampling
+            for (auto i_chain=0; i_chain<no_markov_chains; i_chain++) {
+                
+                // Switch to that chain
+                _latt->switch_to_markov_chain_no(i_chain);
+                                
+                // Sample vis, hidden
+                for (int i_sampling_step=0; i_sampling_step<no_cd_sampling_steps; i_sampling_step++)
+                {
+                    // Sample down (hidden -> visible)
+                    _latt->sample_rbm_down_h_to_v(options.is_asleep_visible_binary,options.parallel);
+                    
+                    // Sample up (visible -> hidden)
+                    if (i_sampling_step != no_cd_sampling_steps-1) {
+                        _latt->sample_rbm_up_v_to_h(options.is_asleep_hidden_binary,options.parallel);
+                    } else {
+                        _latt->sample_rbm_up_v_to_h(options.is_asleep_hidden_binary_final,options.parallel);
+                    };
+                };
+                
+                // Reap asleep
+                for (auto &ixn_param: _ixn_params) {
+                    ixn_param->get_moment()->reap_sample(MomentType::ASLEEP, i_chain);
+                };
+            };
+            
+            // Switch back to awake chain
+            _latt->switch_to_awake_statistics();
+        };
+        
 		// Average moments
 		for (auto &ixn_param: _ixn_params) {
 			if (!ixn_param->get_moment()->get_is_awake_moment_fixed()) {
@@ -189,26 +201,33 @@ namespace bmla {
 	********************/
 
 	// Check if options passed are valid
-	void OptProblemRBM::check_options(int batch_size, double dopt, int no_cd_sampling_steps, OptionsSolveRBM options) {
-		// ...
+	void OptProblemRBM::check_options(int batch_size, int no_markov_chains, double dopt, int no_cd_sampling_steps, OptionsSolve options, OptionsWakeSleepRBM options_wake_sleep) {
+        
+        if (options_wake_sleep.cd_mode_asleep == CDModeAsleep::START_FROM_DATA) {
+            // Must be equal sizes!
+            if (batch_size != no_markov_chains) {
+                std::cerr << ">>> OptProblemRBM::check_options <<< for CDModeAsleep::START_FROM_DATA, batch size = " << batch_size << " must equal no markov chains = " << no_markov_chains << " because they are initialized at the data." << std::endl;
+                exit(EXIT_FAILURE);
+            };
+        };
 	};
 
 	// One step
-	void OptProblemRBM::solve_one_step(int i_opt_step, int batch_size, double dopt, int no_cd_sampling_steps, FNameColl &fname_coll, OptionsSolveRBM options) {
+	void OptProblemRBM::solve_one_step(int i_opt_step, int batch_size, int no_markov_chains, double dopt, int no_cd_sampling_steps, FNameColl &fname_coll, OptionsSolve options, OptionsWakeSleepRBM options_wake_sleep) {
 
 		/*****
 		Check options
 		*****/
 
 		if (options.should_check_options) {
-			check_options(batch_size,dopt,no_cd_sampling_steps,options);
+			check_options(batch_size,no_markov_chains,dopt,no_cd_sampling_steps,options,options_wake_sleep);
 		};
 
 		/*****
 		Wake/asleep loop
 		*****/
 
-		wake_sleep_loop(batch_size,no_cd_sampling_steps,fname_coll,options.options_wake_sleep);
+		wake_sleep_loop(batch_size,no_markov_chains,no_cd_sampling_steps,fname_coll,options_wake_sleep);
 
 		if (options.verbose_moment) {
 			for (auto &ixn_param: _ixn_params) {
@@ -292,13 +311,13 @@ namespace bmla {
 	};
 
 	// Many steps
-	void OptProblemRBM::solve(int no_opt_steps, int batch_size, double dopt, int no_cd_sampling_steps, FNameColl &fname_coll, OptionsSolveRBM options) {
+	void OptProblemRBM::solve(int no_opt_steps, int batch_size, int no_markov_chains, double dopt, int no_cd_sampling_steps, FNameColl &fname_coll, OptionsSolve options, OptionsWakeSleepRBM options_wake_sleep) {
 
 		/*****
 		Init structures
 		*****/
 
-		init_structures(batch_size);
+		init_structures(batch_size, no_markov_chains);
 
 		/*****
 		Go...
@@ -312,7 +331,7 @@ namespace bmla {
 			std::cout << "------------------" << std::endl;
 
 			// Solve
-			solve_one_step(i_opt_step,batch_size,dopt,no_cd_sampling_steps,fname_coll,options);
+			solve_one_step(i_opt_step,batch_size,no_markov_chains,dopt,no_cd_sampling_steps,fname_coll,options,options_wake_sleep);
 		};
 
 	};

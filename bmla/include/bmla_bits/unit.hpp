@@ -44,8 +44,17 @@ namespace bmla {
 		int _dim;
 		int _x,_y,_z;
 
-		// Probabilistic mode
-		std::unordered_map<Sptr, double> _nonzero_occs, _nonzero_occs_tbc;
+		// Current occupancy
+        // Note: one af _awake_chain or _markov_chains, i.e. do not clean up
+        std::unordered_map<Sptr, double>* _nonzero_occs;
+        // New occupancy
+        std::unordered_map<Sptr, double> _nonzero_occs_tbc;
+        
+        // Markov chains
+        // Awake (data)
+        std::unordered_map<Sptr, double> _awake_markov_chain;
+        // For PERSISTENT_CD or START_FROM_RANDOM
+        std::vector<std::unordered_map<Sptr, double>> _asleep_markov_chains;
 
 		// Data structures for sampling
 		double _sampling_rand;
@@ -93,6 +102,16 @@ namespace bmla {
 		void print() const;
 		std::string print_str() const;
 
+        /********************
+        Markov chains
+         ********************/
+
+        void set_no_markov_chains(int no_markov_chains);
+        int get_no_markov_chains() const;
+        
+        void switch_to_markov_chain_no(int no);
+        void switch_to_awake_statistics();
+        
 		/********************
 		Location
 		********************/

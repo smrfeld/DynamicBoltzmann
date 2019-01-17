@@ -422,9 +422,11 @@ namespace bmla {
 
 	// Constructor
 	ConnHH::ConnHH(UnitHidden *uh1, UnitHidden *uh2) {
-		_uh1 = uh1;
-		_uh2 = uh2;
-	};
+		_uh0 = uh1;
+		_uh1 = uh2;
+        _multiplier_idx_0 = nullptr;
+        _multiplier_idx_1 = nullptr;
+    };
 	ConnHH::ConnHH(const ConnHH& other) {
 		_copy(other);
 	};
@@ -452,25 +454,56 @@ namespace bmla {
 		// Nothing....
 	};
 	void ConnHH::_move(ConnHH& other) {
+		_uh0 = std::move(other._uh0);
 		_uh1 = std::move(other._uh1);
-		_uh2 = std::move(other._uh2);
 		_ixn_dict = std::move(other._ixn_dict);
+        _multiplier_idx_0 = other._multiplier_idx_0;
+        _multiplier_idx_1 = other._multiplier_idx_1;
+
+        other._multiplier_idx_0 = nullptr;
+        other._multiplier_idx_1 = nullptr;
 	};
 	void ConnHH::_copy(const ConnHH& other) {
+		_uh0 = other._uh0;
 		_uh1 = other._uh1;
-		_uh2 = other._uh2;
 		_ixn_dict = other._ixn_dict;
+        if (other._multiplier_idx_0) {
+            _multiplier_idx_0 = new double(*other._multiplier_idx_0);
+        };
+        if (other._multiplier_idx_1) {
+            _multiplier_idx_1 = new double(*other._multiplier_idx_1);
+        };
 	};
 
+    /********************
+     Multiplier
+     ********************/
+    
+    void ConnHH::set_multiplier_for_unit(int idx, double multiplier) {
+        if (idx == 0) {
+            if (!_multiplier_idx_0) {
+                _multiplier_idx_0 = new double(multiplier);
+            } else {
+                *_multiplier_idx_0 = multiplier;
+            };
+        } else {
+            if (!_multiplier_idx_1) {
+                _multiplier_idx_1 = new double(multiplier);
+            } else {
+                *_multiplier_idx_1 = multiplier;
+            };
+        };
+    };
+    
 	/********************
 	Getters
 	********************/
 
 	UnitHidden* ConnHH::get_unit_h(int idx) const {
 		if (idx == 0) {
-			return _uh1;
+			return _uh0;
 		} else {
-			return _uh2;
+			return _uh1;
 		};
 	};
 
@@ -479,18 +512,18 @@ namespace bmla {
 	********************/
 
 	bool ConnHH::check_connects_unit(UnitHidden *uh) const {
-		if (_uh1 == uh || _uh2 == uh) {
+		if (_uh0 == uh || _uh1 == uh) {
 			return true;
 		};
 		return false;
 	};
 	bool ConnHH::check_connects_units(UnitHidden *uh1, UnitHidden *uh2, bool this_order) const {
 		if (this_order) {
-			if (_uh1 == uh1 && _uh2 == uh2) {
+			if (_uh0 == uh1 && _uh1 == uh2) {
 				return true;
 			};
 		} else {
-			if ((_uh1 == uh1 && _uh2 == uh2) || (_uh1 == uh2 && _uh2 == uh1)) {
+			if ((_uh0 == uh1 && _uh1 == uh2) || (_uh0 == uh2 && _uh1 == uh1)) {
 				return true;
 			};
 		};
@@ -510,7 +543,7 @@ namespace bmla {
 		// Prob
 		double count = 0.0;
 		for (auto const &sp: _ixn_dict->get_species_from_ixn(ixn_param_name)) {
-			count += _uh1->get_occ(sp.s1) * _uh2->get_occ(sp.s2);
+			count += _uh0->get_occ(sp.s1) * _uh1->get_occ(sp.s2);
 		};
 		return count;
 	};
@@ -537,9 +570,9 @@ namespace bmla {
 
 		UnitHidden *h_other=nullptr;
 		if (idx==0) {
-			h_other = _uh2;
-		} else if (idx==1) {
 			h_other = _uh1;
+		} else if (idx==1) {
+			h_other = _uh0;
 		};
 
 		double ixn;
@@ -554,6 +587,12 @@ namespace bmla {
 			// Add
 			act += ixn * pr.second; // * 1.0
 		};
+        
+        if (idx == 0 && _multiplier_idx_0) {
+            act *= *_multiplier_idx_0;
+        } else if (idx == 1 && _multiplier_idx_1) {
+            act *= *_multiplier_idx_1;
+        };
 
 		return act;
 	};

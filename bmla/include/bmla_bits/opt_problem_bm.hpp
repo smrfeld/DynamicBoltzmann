@@ -8,6 +8,11 @@
 #include "solver.hpp"
 #endif
 
+#ifndef OPT_PROBLEM_H
+#define OPT_PROBLEM_H
+#include "opt_problem.hpp"
+#endif
+
 /************************************
 * Namespace for bmla
 ************************************/
@@ -28,62 +33,31 @@ namespace bmla {
 		// Verbosity
 		bool verbose = false;
 
-		// Start with random lattice
-		bool start_with_random_lattice = false;
-        
-		// Awake phase
-		// Binarize hidden layer after awake moment?
-		bool should_binarize_hidden_after_awake_moment = true;
+        // Mode
+        CDModeAsleep cd_mode_asleep = CDModeAsleep::PERSISTENT_CD;
 
-		// Asleep phase
-		// Is the visible reconstruction binary?
-		bool is_asleep_visible_binary = true;
-		// Is the hidden reconstruction binary, EXCEPT in the last phase?
-		bool is_asleep_hidden_binary = true;
-		// Is the hidden reconstruction binary in the last phase?
-		bool is_asleep_hidden_binary_final = false;
+        // Sampling options
+        // Is the visible reconstruction binary?
+        bool is_asleep_visible_binary = true;
+        // Is the hidden reconstruction binary, EXCEPT in the last phase?
+        bool is_asleep_hidden_binary = true;
+        // Is the hidden reconstruction binary in the last phase?
+        bool is_asleep_hidden_binary_final = false;
+
+        // Options for CD
+        OptionsAsleepPersistentCD options_asleep_persistent_cd = OptionsAsleepPersistentCD();
+        OptionsAsleepStartFromRandom options_asleep_start_from_random = OptionsAsleepStartFromRandom();
+        OptionsAsleepStartFromData options_asleep_start_from_data = OptionsAsleepStartFromData();
 
 		// Parallel
 		bool parallel = true;
-	};
-
-	struct OptionsSolveBM {
-		// Should check options before starting
-		bool should_check_options = true;
-
-		// Verbosity
-		bool verbose_update = false;
-		bool verbose_moment = true;
-
-		// L2 Reg mode
-		bool l2_reg = false;
-		std::map<std::shared_ptr<IxnParam>,double> l2_lambda;
-		std::map<std::shared_ptr<IxnParam>,double> l2_center;
-
-		// Variable learning rate
-		bool var_learning_rates = false;
-		std::map<std::shared_ptr<IxnParam>,double> var_learning_rate_values;
-
-		// Options for Wake-Sleep loop
-		OptionsWakeSleepBM options_wake_sleep = OptionsWakeSleepBM();
-
-		// Options for the solvers
-		Solver solver = Solver::ADAM;
-
-		// Nesterov
-		double nesterov_acc = 0.5;
-
-		// Adam
-		double adam_beta_1 = 0.9;
-		double adam_beta_2 = 0.999;
-		double adam_eps = 0.00000001;
 	};
 
 	/****************************************
 	OptProblemBM
 	****************************************/
 
-	class OptProblemBM {
+    class OptProblemBM : public OptProblem {
 
 	private:
 
@@ -104,37 +78,26 @@ namespace bmla {
 		Constructor
 		********************/
 
-		OptProblemBM(std::shared_ptr<Lattice> latt, std::vector<std::shared_ptr<IxnParam>> ixn_params);
-		OptProblemBM(const OptProblemBM& other);
-		OptProblemBM(OptProblemBM&& other);
-		OptProblemBM& operator=(const OptProblemBM &other);
-		OptProblemBM& operator=(OptProblemBM &&other);
-		~OptProblemBM();
-
-		/********************
-		Init structures
-		********************/
-
-		void init_structures(int batch_size);
+        using OptProblem::OptProblem;
 
 		/********************
 		Wake/asleep loop
 		********************/
 
-		void wake_sleep_loop(int batch_size, int no_cd_sampling_steps, int no_mean_field_updates, FNameColl &fname_coll, OptionsWakeSleepBM options=OptionsWakeSleepBM());
+		void wake_sleep_loop(int batch_size, int no_markov_chains, int no_cd_sampling_steps, int no_mean_field_updates, FNameColl &fname_coll, OptionsWakeSleepBM options);
 
 		/********************
 		Solve
 		********************/
 
 		// Check if options passed are valid
-		void check_options(int batch_size, double dopt, int no_cd_sampling_steps, int no_mean_field_updates, OptionsSolveBM options);
+		void check_options(int batch_size, int no_markov_chains, double dopt, int no_cd_sampling_steps, int no_mean_field_updates, OptionsSolve options, OptionsWakeSleepBM options_wake_sleep);
 
 		// One step
-		void solve_one_step(int i_opt_step, int batch_size, double dopt, int no_cd_sampling_steps, int no_mean_field_updates, FNameColl &fname_coll, OptionsSolveBM options = OptionsSolveBM());
+		void solve_one_step(int i_opt_step, int batch_size, int no_markov_chains, double dopt, int no_cd_sampling_steps, int no_mean_field_updates, FNameColl &fname_coll, OptionsSolve options, OptionsWakeSleepBM options_wake_sleep);
 
 		// Many steps
-		void solve(int no_opt_steps, int batch_size, double dopt, int no_cd_sampling_steps, int no_mean_field_updates, FNameColl &fname_coll, OptionsSolveBM options = OptionsSolveBM());
+		void solve(int no_opt_steps, int batch_size, int no_markov_chains, double dopt, int no_cd_sampling_steps, int no_mean_field_updates, FNameColl &fname_coll, OptionsSolve options, OptionsWakeSleepBM options_wake_sleep);
 	};
 
 };

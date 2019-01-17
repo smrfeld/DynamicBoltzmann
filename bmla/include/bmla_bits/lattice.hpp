@@ -53,6 +53,9 @@ namespace bmla {
 		std::map<int, std::map<int, std::map<int, UnitHidden*>>> _hlookup_2;
 		std::map<int, std::map<int, std::map<int, std::map<int, UnitHidden*>>>> _hlookup_3;
 
+        // No Markov chains
+        int _no_markov_chains;
+        
 		// Connections
 		std::vector<ConnHH*> _conns_hh;
 		std::vector<ConnVV*> _conns_vv;
@@ -102,7 +105,24 @@ namespace bmla {
 
 		void print() const;
 
-		/********************
+        /********************
+        Getters
+         ********************/
+
+        int get_no_dims() const;
+        int get_box_length() const;
+        
+        /********************
+        Markov chains
+         ********************/
+
+        int get_no_markov_chains() const;
+        void set_no_markov_chains(int no_chains);
+        
+        void switch_to_markov_chain_no(int no);
+        void switch_to_awake_statistics();
+        
+        /********************
 		Helpers to setup all sites
 		********************/
 
@@ -203,7 +223,6 @@ namespace bmla {
 		Getters (general)
 		********************/
 
-		int get_no_dims() const;
 		int get_no_units_v();
 		int get_no_units_h();
 
@@ -218,6 +237,8 @@ namespace bmla {
 		void all_units_in_layer_set_empty(int layer);
 
 		// Random
+        void all_units_random(bool binary);
+        void all_units_h_random(bool binary);
 		void all_units_v_random(bool binary);
 		void all_units_in_layer_random(int layer, bool binary);
 

@@ -42,6 +42,8 @@ namespace bmla {
 		_y = y;
 		_z = z;
 
+        _nonzero_occs = &_awake_markov_chain;
+        
 		Act act_empty;
 		act_empty.sp = nullptr;
 		act_empty.act = 0.0;
@@ -86,9 +88,22 @@ namespace bmla {
 		_y = other._y;
 		_z = other._z;
 
-		_nonzero_occs = other._nonzero_occs;
 		_nonzero_occs_tbc = other._nonzero_occs_tbc;
-
+        _awake_markov_chain = other._awake_markov_chain;
+        _asleep_markov_chains = other._asleep_markov_chains;
+        
+        if (other._nonzero_occs == &other._awake_markov_chain) {
+            _nonzero_occs = &_awake_markov_chain;
+        } else {
+            _nonzero_occs = nullptr;
+            for (auto i=0; i<other._asleep_markov_chains.size(); i++) {
+                if (other._nonzero_occs == &other._asleep_markov_chains[i]) {
+                    _nonzero_occs = &_asleep_markov_chains[i];
+                    break;
+                };
+            };
+        };
+        
 		_sampling_rand = other._sampling_rand;
 		_sampling_i_chosen = other._sampling_i_chosen;
 
@@ -101,9 +116,11 @@ namespace bmla {
 		other._y = 0;
 		other._z = 0;
 
-		other._nonzero_occs.clear();
 		other._nonzero_occs_tbc.clear();
-
+        other._awake_markov_chain.clear();
+        other._asleep_markov_chains.clear();
+        other._nonzero_occs = &other._awake_markov_chain;
+        
 		other._sampling_rand = 0.0;
 		other._sampling_i_chosen = 0;
 
@@ -117,9 +134,22 @@ namespace bmla {
 		_y = other._y;
 		_z = other._z;
 
-		_nonzero_occs = other._nonzero_occs;
 		_nonzero_occs_tbc = other._nonzero_occs_tbc;
-
+        _awake_markov_chain = other._awake_markov_chain;
+        _asleep_markov_chains = other._asleep_markov_chains;
+        
+        if (other._nonzero_occs == &other._awake_markov_chain) {
+            _nonzero_occs = &_awake_markov_chain;
+        } else {
+            _nonzero_occs = nullptr;
+            for (auto i=0; i<other._asleep_markov_chains.size(); i++) {
+                if (other._nonzero_occs == &other._asleep_markov_chains[i]) {
+                    _nonzero_occs = &_asleep_markov_chains[i];
+                    break;
+                };
+            };
+        };
+        
 		_sampling_rand = other._sampling_rand;
 		_sampling_i_chosen = other._sampling_i_chosen;
 
@@ -171,16 +201,48 @@ namespace bmla {
 			s << _x << " " << _y << " " << _z << " ";
 		};
 
-		if (_nonzero_occs.size() == 0) {
+		if (_nonzero_occs->size() == 0) {
 			s << "empty";
 		} else {
-			for (auto pr: _nonzero_occs) {
+			for (auto pr: *_nonzero_occs) {
 				s << "(" << pr.first->get_name() << "," << pr.second << ") ";
 			};
 		};
 		return s.str();
 	};
 
+    /********************
+     Markov chains
+     ********************/
+    
+    void Unit::set_no_markov_chains(int no_markov_chains) {
+        while (_asleep_markov_chains.size() < no_markov_chains) {
+            _asleep_markov_chains.push_back(std::unordered_map<Sptr, double>());
+            // Random
+            std::unordered_map<Sptr, double>* curr = _nonzero_occs;
+            _nonzero_occs = &_asleep_markov_chains.back();
+            set_occ_random(false); // prob
+            _nonzero_occs = curr;
+        };
+        while (_asleep_markov_chains.size() > no_markov_chains) {
+            _asleep_markov_chains.pop_back();
+        };
+    };
+    int Unit::get_no_markov_chains() const {
+        return _asleep_markov_chains.size();
+    };
+    
+    void Unit::switch_to_markov_chain_no(int no) {
+        if (no >= _asleep_markov_chains.size()) {
+            std::cerr << ">>> Unit::switch_to_markov_chain_no <<< Error: requested chain # " << no << " does not exist; size is " << _asleep_markov_chains.size() << std::endl;
+            exit(EXIT_FAILURE);
+        };
+        _nonzero_occs = &_asleep_markov_chains[no];
+    };
+    void Unit::switch_to_awake_statistics() {
+        _nonzero_occs = &_awake_markov_chain;
+    };
+    
 	/********************
 	Location
 	********************/
@@ -232,7 +294,6 @@ namespace bmla {
 		_activations.push_back(act);
 	};
 	void Unit::set_possible_species(std::vector<Sptr> species) {
-		_nonzero_occs.clear();
 		_activations.clear();
 
 		Act act_empty;
@@ -262,13 +323,13 @@ namespace bmla {
 	double Unit::get_occ(Sptr sp) const {
 		if (!sp) {
 			double ret = 1.0;
-			for (auto pr: _nonzero_occs) {
+			for (auto pr: *_nonzero_occs) {
 				ret -= pr.second;
 			};
 			return ret;
 		} else {
-			auto it = _nonzero_occs.find(sp);
-			if (it != _nonzero_occs.end()) {
+			auto it = _nonzero_occs->find(sp);
+			if (it != _nonzero_occs->end()) {
 				return it->second;
 			} else {
 				return 0.0;
@@ -276,19 +337,19 @@ namespace bmla {
 		};
 	};
 	const std::unordered_map<Sptr, double>& Unit::get_nonzero_occs() const {
-		return _nonzero_occs;
+		return *_nonzero_occs;
 	};
 	void Unit::set_occ(Sptr sp, double prob) {
 		if (prob > 0.0) {
-			_nonzero_occs[sp] = prob;
+			(*_nonzero_occs)[sp] = prob;
 		};
 	};
 	void Unit::set_occ_random(bool binary) {
-		_nonzero_occs.clear();
+		_nonzero_occs->clear();
 		if (binary) {
 			int r = randI(1,_activations.size()-1);
 			if (r != _activations.size()) {
-				_nonzero_occs[_activations[r].sp] = 1.0;
+				(*_nonzero_occs)[_activations[r].sp] = 1.0;
 			};
 		} else {
 			double prob_tot = 0.0;
@@ -298,7 +359,7 @@ namespace bmla {
 			};
 			for (auto &act: _activations) {
 				if (act.sp != nullptr) {
-					_nonzero_occs[act.sp] = act.prob/prob_tot;
+					(*_nonzero_occs)[act.sp] = act.prob/prob_tot;
 					// std::cout << "Set: " << act.sp->get_name() << " to: " << _nonzero_occs[act.sp] << std::endl;
 				};
 			};
@@ -307,7 +368,7 @@ namespace bmla {
 
 	void Unit::binarize() {
 		// Check against empty
-		if (_nonzero_occs.size() == 0) {
+		if (_nonzero_occs->size() == 0) {
 			return; // already binary!
 		};
 
@@ -318,12 +379,12 @@ namespace bmla {
 		props_sp.push_back(nullptr);
 		// Empty
 		double ptot = 0.0;
-		for (auto pr: _nonzero_occs) {
+		for (auto pr: *_nonzero_occs) {
 			ptot += pr.second;
 		};
 		props.push_back(1.0-ptot);
 		// Others
-		for (auto pr: _nonzero_occs) {
+		for (auto pr: *_nonzero_occs) {
 			props.push_back(props.back() + pr.second);
 			props_sp.push_back(pr.first);
 		};
@@ -353,14 +414,14 @@ namespace bmla {
 	};
 
 	bool Unit::get_is_empty() const {
-		if (_nonzero_occs.size() == 0) {
+		if (_nonzero_occs->size() == 0) {
 			return true;
 		} else {
 			return false;
 		};
 	};
 	void Unit::set_empty() {
-		_nonzero_occs.clear();
+		_nonzero_occs->clear();
 	};
 
 	/********************
@@ -419,7 +480,7 @@ namespace bmla {
 	};
 
 	void Unit::committ_sample() {
-		_nonzero_occs = _nonzero_occs_tbc;
+		*_nonzero_occs = _nonzero_occs_tbc;
 	};
 
 	void Unit::_prepare_sample(bool binary) {

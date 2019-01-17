@@ -209,10 +209,13 @@ namespace bmla {
 	class ConnHH {
 	private:
 
+		UnitHidden *_uh0;
 		UnitHidden *_uh1;
-		UnitHidden *_uh2;
 
 		std::shared_ptr<O2IxnDict> _ixn_dict;
+
+        double *_multiplier_idx_0;
+        double *_multiplier_idx_1;
 
 		// Constructor helpers
 		void _clean_up();
@@ -232,6 +235,12 @@ namespace bmla {
 		ConnHH& operator=(ConnHH&& other);
 		~ConnHH();
 
+        /********************
+         Multiplier
+         ********************/
+        
+        void set_multiplier_for_unit(int idx, double multiplier);
+        
 		/********************
 		Getters
 		********************/

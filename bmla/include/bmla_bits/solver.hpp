@@ -6,7 +6,7 @@ namespace bmla {
 
     enum class Solver : unsigned int { SGD, NESTEROV, ADAM };
 
-    enum class CDModeAsleep : unsigned int {PERSISTENT_CD, START_FROM_DATA, START_FROM_RANDOM};
+    enum class CDModeAsleep : unsigned int { PERSISTENT_CD, START_FROM_DATA, START_FROM_RANDOM };
         
     struct OptionsAsleepPersistentCD {
                 

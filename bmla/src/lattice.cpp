@@ -1417,7 +1417,12 @@ namespace bmla {
             };
         };
     };
-    
+    void Lattice::sample_bm_up_v_to_h(bool binary_hidden, bool parallel) {
+        for (auto &layer: _latt_h) {
+            sample_layer(layer.first, layer.first-1, binary_hidden, parallel);
+        };
+    };
+
     // Variational inference in a BM
     void Lattice::sample_bm_variational_inference(bool parallel) {
         // Go through all hidden layers

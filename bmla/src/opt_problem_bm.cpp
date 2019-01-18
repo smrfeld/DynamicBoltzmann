@@ -71,21 +71,16 @@ namespace bmla {
             if (options.cd_mode_asleep == CDModeAsleep::START_FROM_DATA) {
                 
                 // Start from the current chain
-                
-                // Sample up
-                _latt->sample_rbm_up_v_to_h(options.options_asleep_start_from_data.start_from_binary_hidden, options.parallel);
+                // Activate up
+                _latt->sample_bm_up_v_to_h(options.options_asleep_start_from_data.start_from_binary_hidden, options.parallel);
                 
                 // Sample vis, hidden
                 for (int i_sampling_step=0; i_sampling_step<no_cd_sampling_steps; i_sampling_step++)
                 {
-                    // Sample down (hidden -> visible)
-                    _latt->sample_rbm_down_h_to_v(options.is_asleep_visible_binary,options.parallel);
-                    
-                    // Sample up (visible -> hidden)
                     if (i_sampling_step != no_cd_sampling_steps-1) {
-                        _latt->sample_rbm_up_v_to_h(options.is_asleep_hidden_binary,options.parallel);
+                        _latt->sample_bm(options.is_asleep_visible_binary, options.is_asleep_hidden_binary, options.parallel);
                     } else {
-                        _latt->sample_rbm_up_v_to_h(options.is_asleep_hidden_binary_final,options.parallel);
+                        _latt->sample_bm(options.is_asleep_visible_binary, options.is_asleep_hidden_binary_final, options.parallel);
                     };
                 };
                 
@@ -115,17 +110,13 @@ namespace bmla {
                 // Sample vis, hidden
                 for (int i_sampling_step=0; i_sampling_step<no_cd_sampling_steps; i_sampling_step++)
                 {
-                    // Sample down (hidden -> visible)
-                    _latt->sample_rbm_down_h_to_v(options.is_asleep_visible_binary,options.parallel);
-                    
-                    // Sample up (visible -> hidden)
                     if (i_sampling_step != no_cd_sampling_steps-1) {
-                        _latt->sample_rbm_up_v_to_h(options.is_asleep_hidden_binary,options.parallel);
+                        _latt->sample_bm(options.is_asleep_visible_binary, options.is_asleep_hidden_binary, options.parallel);
                     } else {
-                        _latt->sample_rbm_up_v_to_h(options.is_asleep_hidden_binary_final,options.parallel);
+                        _latt->sample_bm(options.is_asleep_visible_binary, options.is_asleep_hidden_binary_final, options.parallel);
                     };
                 };
-                
+
                 // Reap asleep
                 for (auto &ixn_param: _ixn_params) {
                     ixn_param->get_moment()->reap_sample(MomentType::ASLEEP, i_chain);
@@ -148,17 +139,13 @@ namespace bmla {
                 // Sample vis, hidden
                 for (int i_sampling_step=0; i_sampling_step<no_cd_sampling_steps; i_sampling_step++)
                 {
-                    // Sample down (hidden -> visible)
-                    _latt->sample_rbm_down_h_to_v(options.is_asleep_visible_binary,options.parallel);
-                    
-                    // Sample up (visible -> hidden)
                     if (i_sampling_step != no_cd_sampling_steps-1) {
-                        _latt->sample_rbm_up_v_to_h(options.is_asleep_hidden_binary,options.parallel);
+                        _latt->sample_bm(options.is_asleep_visible_binary, options.is_asleep_hidden_binary, options.parallel);
                     } else {
-                        _latt->sample_rbm_up_v_to_h(options.is_asleep_hidden_binary_final,options.parallel);
+                        _latt->sample_bm(options.is_asleep_visible_binary, options.is_asleep_hidden_binary_final, options.parallel);
                     };
                 };
-                
+
                 // Reap asleep
                 for (auto &ixn_param: _ixn_params) {
                     ixn_param->get_moment()->reap_sample(MomentType::ASLEEP, i_chain);

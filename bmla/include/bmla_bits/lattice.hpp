@@ -7,6 +7,8 @@
 #include "fwds/fwds_species.hpp"
 #endif
 
+#include <armadillo>
+
 /************************************
 * Namespace for bmla
 ************************************/
@@ -29,6 +31,9 @@ namespace bmla {
 	Lattice
 	****************************************/
 
+    typedef std::map<Sptr,arma::vec> layer_occ;
+    typedef std::map<int, layer_occ> layers_map;
+    
 	class Lattice
 	{
 	private:
@@ -39,47 +44,47 @@ namespace bmla {
 		// Size
 		int _box_length;
 
-		// Visible layer
-		std::vector<UnitVisible*> _latt_v;
-		std::vector<int> _latt_v_idxs;
-
-		// Hidden layers
-		std::map<int,std::vector<UnitHidden*>> _latt_h;
-		std::map<int,std::vector<int>> _latt_h_idxs;
-
-		// Hidden layer lookup
-		// Layer -> (x,y,z) -> unit 
-		std::map<int, std::map<int, UnitHidden*>> _hlookup_1;
-		std::map<int, std::map<int, std::map<int, UnitHidden*>>> _hlookup_2;
-		std::map<int, std::map<int, std::map<int, std::map<int, UnitHidden*>>>> _hlookup_3;
-
-        // No Markov chains
+        // No markov chains
         int _no_markov_chains;
         
-		// Connections
-		std::vector<ConnHH*> _conns_hh;
-		std::vector<ConnVV*> _conns_vv;
-		std::vector<ConnVVV*> _conns_vvv;
-		std::vector<ConnVH*> _conns_vh;
-
-		// IO: layer->species name->species
-		std::map<int,std::map<std::string,Sptr>> _IO_species_possible;
-		bool _IO_did_init;
+        // No layers
+        int _no_layers;
+        
+        // Markov chain idx
+        // -> Layer idx
+        // -> State vector
+        std::map<int,layers_map> _latt;
+        
+		// Hidden layer lookup
+		// Layer -> (x,y,z) -> unit 
+		std::map<int, std::map<int, int>> _hlookup_1;
+		std::map<int, std::map<int, std::map<int, int>>> _hlookup_2;
+		std::map<int, std::map<int, std::map<int, std::map<int, int>>>> _hlookup_3;
+        
+        // Adjacency matrices
+        // Idx 0 connects 0, 1
+        // Idx i connects i, i+1
+        std::map<int,arma::mat> _adj;
+        
+        // Bias/ixn dicts
+        std::map<int,std::shared_ptr<BiasDict>> _bias_dicts;
+        std::map<int,std::shared_ptr<O2IxnDict>> _ixn_dicts;
+        
+		// Species possible
+        // layer->species name->species
+		std::map<int,std::map<std::string,Sptr>> _species_possible;
 
 		// Lookup a site iterator from x,y,z
-		UnitVisible* _look_up_unit_v(int x) const;
-		UnitVisible* _look_up_unit_v(int x, int y) const;
-		UnitVisible* _look_up_unit_v(int x, int y, int z) const;
-		UnitHidden* _look_up_unit_h(int layer, int x) const;
-		UnitHidden* _look_up_unit_h(int layer, int x, int y) const;
-		UnitHidden* _look_up_unit_h(int layer, int x, int y, int z) const;
+		int _look_up_unit(int layer, int x) const;
+		int _look_up_unit(int layer, int x, int y) const;
+		int _look_up_unit(int layer, int x, int y, int z) const;
 
-		// Check dim
-		void _check_dim(int dim) const;
-
+        // Add hidden unit to layer
+        int _add_hidden_unit(int layer);
+        
 		// Count helpers
-		void _get_count(double &count, Sptr &sp1, Sptr &sp2, const UnitVisible *uv1, const UnitVisible *uv2, bool binary, bool reversibly) const;
-		void _get_count(double &count, Sptr &sp1, Sptr &sp2, Sptr &sp3, const UnitVisible *uv1, const UnitVisible *uv2, const UnitVisible *uv3, bool binary, bool reversibly) const;
+		void _get_count(double &count, Sptr &sp1, Sptr &sp2, const int &idx1, const int &idx2, const int &i_chain, bool binary, bool reversibly) const;
+		void _get_count(double &count, Sptr &sp1, Sptr &sp2, Sptr &sp3, const int &idx1, const int &idx2, const int &idx3, const int &i_chain, bool binary, bool reversibly) const;
 
 		// Contructor helpers
 		void _clean_up();
@@ -92,18 +97,12 @@ namespace bmla {
 		Constructor
 		********************/
 
-		Lattice(int dim, int box_length);
+        Lattice(int dim, int box_length, std::vector<Sptr> species_visible);
 		Lattice(const Lattice& other);
 		Lattice(Lattice&& other);
 		Lattice& operator=(const Lattice& other);
 		Lattice& operator=(Lattice&& other);
 		~Lattice();
-
-		/********************
-		Check setup
-		********************/
-
-		void print() const;
 
         /********************
         Getters
@@ -117,134 +116,56 @@ namespace bmla {
          ********************/
 
         int get_no_markov_chains() const;
-        void set_no_markov_chains(int no_chains);
-        
-        void switch_to_markov_chain_no(int no);
-        void switch_to_awake_statistics();
+        void set_no_markov_chains(int no_markov_chains);
         
         /********************
-		Helpers to setup all sites
-		********************/
+        Add a layer
+         ********************/
 
-		// Add possible species
-		void all_units_v_add_possible_species(Sptr species);
-		void all_units_h_add_possible_species(Sptr species);
+        void add_layer(int layer, int no_units, std::vector<Sptr> species);
+        
+        /********************
+		Biases/ixn params
+		********************/
 
 		// Biases
-		void all_units_v_set_bias_dict(std::shared_ptr<BiasDict> bias_dict);
-		void all_units_h_set_bias_dict(std::shared_ptr<BiasDict> bias_dict);
+		void set_bias_dict_all_units(std::shared_ptr<BiasDict> bias_dict);
+		void set_bias_dict_all_units_in_layer(int layer, std::shared_ptr<BiasDict> bias_dict);
 
-		// Make connections
-		void all_conns_vv_init();
-		void all_conns_vv_init(std::shared_ptr<O2IxnDict> ixn_dict);
-		void all_conns_vvv_init();
-		void all_conns_vvv_init(std::shared_ptr<O3IxnDict> ixn_dict);
-
-		// Set ixn dicts of connections
-		void all_conns_vv_set_ixn_dict(std::shared_ptr<O2IxnDict> ixn_dict);
-		void all_conns_vvv_set_ixn_dict(std::shared_ptr<O3IxnDict> ixn_dict);
-		void all_conns_vh_set_ixn_dict(std::shared_ptr<O2IxnDict> ixn_dict);
-
-		// Link units to moments
-		void all_units_v_add_to_moment_h(std::shared_ptr<Moment> moment);
-		void all_units_h_add_to_moment_b(std::shared_ptr<Moment> moment);
-		void all_conns_vv_add_to_moment_j(std::shared_ptr<Moment> moment);
-		void all_conns_vvv_add_to_moment_k(std::shared_ptr<Moment> moment);
-		void all_conns_vh_add_to_moment_w(std::shared_ptr<Moment> moment);
+		// Ixns
+        void set_ixn_dict_between_layers(int layer_1, int layer_2, std::shared_ptr<O2IxnDict> ixn_dict);
 
 		/********************
-		Add visible-visible connections
+		Add connections
 		********************/
 
-		ConnVV* add_conn_vv(UnitVisible *uv1, UnitVisible *uv2);
-		ConnVV* add_conn_vv(UnitVisible *uv1, UnitVisible *uv2, std::shared_ptr<O2IxnDict> ixn_dict);
-		ConnVVV* add_conn_vvv(UnitVisible *uv1, UnitVisible *uv2, UnitVisible *uv3);
-		ConnVVV* add_conn_vvv(UnitVisible *uv1, UnitVisible *uv2, UnitVisible *uv3, std::shared_ptr<O3IxnDict> ixn_dict);
+        void add_conn(int layer1, int x1, int layer2, int x2);
+        void add_conn(int layer1, int x1, int y1, int layer2, int x2, int y2);
+        void add_conn(int layer1, int x1, int y1, int z1, int layer2, int x2, int y2, int z2);
 
 		/********************
 		Add hidden units
 		********************/
 
-		UnitHidden* add_hidden_unit(int layer, int x);
-		UnitHidden* add_hidden_unit(int layer, int x, int y);
-		UnitHidden* add_hidden_unit(int layer, int x, int y, int z);
-
-		/********************
-		Add visible-hidden connections
-		********************/
-
-		ConnVH* add_conn_vh(UnitVisible *uv, UnitHidden *uh);
-		ConnVH* add_conn_vh(UnitVisible *uv, UnitHidden *uh, std::shared_ptr<O2IxnDict> ixn_dict);
-
-		/********************
-		Add hidden-hidden connections
-		********************/
-
-		ConnHH* add_conn_hh(UnitHidden *uh1, int layer_1, UnitHidden *uh2, int layer_2);
-		ConnHH* add_conn_hh(UnitHidden *uh1, int layer_1, UnitHidden *uh2, int layer_2, std::shared_ptr<O2IxnDict> ixn_dict);
-
-		/********************
-		Get unit
-		********************/
-
-		const std::vector<UnitVisible*>& get_all_units_v() const;
-		const std::vector<UnitHidden*>& get_all_units_h(int layer) const;
-		const std::map<int,std::vector<UnitHidden*>>& get_all_units_h() const;
-
-		UnitVisible* get_unit_v(int x) const;
-		UnitVisible* get_unit_v(int x, int y) const;
-		UnitVisible* get_unit_v(int x, int y, int z) const;
-
-		UnitHidden* get_unit_h(int layer, int x) const;
-		UnitHidden* get_unit_h(int layer, int x, int y) const;
-		UnitHidden* get_unit_h(int layer, int x, int y, int z) const;
-
-		/********************
-		Get connection
-		********************/
-
-		ConnVV* get_conn_vv(int x1, int x2) const;
-		ConnVV* get_conn_vv(int x1, int y1, int x2, int y2) const;
-		ConnVV* get_conn_vv(int x1, int y1, int z1, int x2, int y2, int z2) const;
-
-		ConnVVV* get_conn_vvv(int x1, int x2, int x3) const;
-		ConnVVV* get_conn_vvv(int x1, int y1, int x2, int y2, int x3, int y3) const;
-		ConnVVV* get_conn_vvv(int x1, int y1, int z1, int x2, int y2, int z2, int x3, int y3, int z3) const;
-
-		ConnVH* get_conn_vh(int x, int layer, int xh) const;
-		ConnVH* get_conn_vh(int x, int y, int layer, int xh, int yh) const;
-		ConnVH* get_conn_vh(int x, int y, int z, int layer, int xh, int yh, int zh) const;
-
-		ConnHH* get_conn_hh(int layer1, int x1, int layer2, int x2) const;
-		ConnHH* get_conn_hh(int layer1, int x1, int y1, int layer2, int x2, int y2) const;
-		ConnHH* get_conn_hh(int layer1, int x1, int y1, int z1, int layer2, int x2, int y2, int z2) const;
-
-		/********************
-		Getters (general)
-		********************/
-
-		int get_no_units_v();
-		int get_no_units_h();
+		void add_hidden_unit(int layer, int x);
+		void add_hidden_unit(int layer, int x, int y);
+		void add_hidden_unit(int layer, int x, int y, int z);
 
 		/********************
 		Apply funcs to all units
 		********************/
 
 		// Clear the lattice
-		void all_units_v_set_empty();
-		void all_units_h_set_empty();
-		void all_units_set_empty();
-		void all_units_in_layer_set_empty(int layer);
+        void set_empty_all_units();
+        void set_empty_all_units_in_layer(int layer);
 
 		// Random
-        void all_units_random(bool binary);
-        void all_units_h_random(bool binary);
-		void all_units_v_random(bool binary);
-		void all_units_in_layer_random(int layer, bool binary);
+        void set_random_all_units(bool binary);
+        void set_random_all_units_in_layer(int layer, bool binary);
 
 		// Binarize
-		void all_units_v_binarize();
-		void all_units_h_binarize();
+        void binarize_all_units();
+        void binarize_all_units_in_layer(int layer);
 
 		/********************
 		Write/read latt to a file
@@ -254,34 +175,23 @@ namespace bmla {
 
 		void init_file_reader(std::map<int,std::vector<Sptr>> layers_species_possible);
 		void read_layer_from_file(int layer, std::string fname, bool binary);
+        
+        /********************
+        Activate layer
+         ********************/
+        
+        // Activate a specific layer
+		void activate_layer(int layer, bool binary);
+		void activate_layer(int layer, int given_layer, bool binary);
 
 		/********************
-		Sample
+		Get counts for visibles
 		********************/
 
-        // Sample an RBM down/up
-		void sample_rbm_down_h_to_v(bool binary_visible, bool parallel);
-		void sample_rbm_up_v_to_h(bool binary_hidden, bool parallel);
-        
-        // Sample BM (NOT layer-wise)
-        void sample_bm(bool binary_visible, bool binary_hidden, bool parallel);
-        void sample_bm_up_v_to_h(bool binary_hidden, bool parallel);
-
-        // Variational inference in a BM
-        void sample_bm_variational_inference(bool parallel);
-        
-        // Sample a specific layer
-		void sample_layer(int layer, bool binary, bool parallel);
-		void sample_layer(int layer, int given_layer, bool binary, bool parallel);
-
-		/********************
-		Get counts
-		********************/
-
-		double get_count(Sptr &sp) const;
-		double get_count(Sptr &sp1, Sptr &sp2, bool reversibly) const;
-		double get_count(Sptr &sp1, Sptr &sp2, Sptr &sp3, bool reversibly) const;
-		double get_count(Sptr &sp1, Sptr &sp2, Sptr &sp3, Sptr &sp4, bool reversibly) const;
+		double get_count_vis(Sptr &sp) const;
+		double get_count_vis(Sptr &sp1, Sptr &sp2, bool reversibly) const;
+		double get_count_vis(Sptr &sp1, Sptr &sp2, Sptr &sp3, bool reversibly) const;
+		double get_count_vis(Sptr &sp1, Sptr &sp2, Sptr &sp3, Sptr &sp4, bool reversibly) const;
 	};
 
 };

@@ -16,13 +16,7 @@
 namespace bmla {
 
 	// Forwards
-	class UnitVisible;
-	class UnitHidden;
 	class BiasDict;
-	class ConnVH;
-	class ConnVV;
-	class ConnVVV;
-	class ConnHH;
 	class O2IxnDict;
 	class O3IxnDict;
 	class Moment;
@@ -50,16 +44,22 @@ namespace bmla {
         // No layers
         int _no_layers;
         
+        // Current markov chain
+        int _i_markov_chain;
+        
         // Markov chain idx
         // -> Layer idx
         // -> State vector
         std::map<int,layers_map> _latt;
         
-		// Hidden layer lookup
-		// Layer -> (x,y,z) -> unit 
-		std::map<int, std::map<int, int>> _hlookup_1;
-		std::map<int, std::map<int, std::map<int, int>>> _hlookup_2;
-		std::map<int, std::map<int, std::map<int, std::map<int, int>>>> _hlookup_3;
+		// Layer lookup
+		// Layer -> (x,y,z) -> idx
+		std::map<int, std::map<int, int>> _lookup_1;
+		std::map<int, std::map<int, std::map<int, int>>> _lookup_2;
+		std::map<int, std::map<int, std::map<int, std::map<int, int>>>> _lookup_3;
+        // Reverse
+        // Layer -> idx -> (x,y,z)
+        std::map<int, std::map<int, std::vector<int>>> _rlookup;
         
         // Adjacency matrices
         // Idx 0 connects 0, 1
@@ -78,14 +78,11 @@ namespace bmla {
 		int _look_up_unit(int layer, int x) const;
 		int _look_up_unit(int layer, int x, int y) const;
 		int _look_up_unit(int layer, int x, int y, int z) const;
-
+        std::vector<int> _look_up_pos(int layer, int idx) const;
+        
         // Add hidden unit to layer
         int _add_hidden_unit(int layer);
         
-		// Count helpers
-		void _get_count(double &count, Sptr &sp1, Sptr &sp2, const int &idx1, const int &idx2, const int &i_chain, bool binary, bool reversibly) const;
-		void _get_count(double &count, Sptr &sp1, Sptr &sp2, Sptr &sp3, const int &idx1, const int &idx2, const int &idx3, const int &i_chain, bool binary, bool reversibly) const;
-
 		// Contructor helpers
 		void _clean_up();
 		void _move(Lattice& other);
@@ -110,6 +107,7 @@ namespace bmla {
 
         int get_no_dims() const;
         int get_box_length() const;
+        int get_no_units_in_layer(int layer) const;
         
         /********************
         Markov chains
@@ -117,6 +115,7 @@ namespace bmla {
 
         int get_no_markov_chains() const;
         void set_no_markov_chains(int no_markov_chains);
+        void set_current_markov_chain(int i_markov_chain);
         
         /********************
         Add a layer
@@ -171,9 +170,7 @@ namespace bmla {
 		Write/read latt to a file
 		********************/
 
-		void write_layer_to_file(int layer, std::string fname, bool binary);
-
-		void init_file_reader(std::map<int,std::vector<Sptr>> layers_species_possible);
+		void write_layer_to_file(int layer, std::string fname, bool binary) const;
 		void read_layer_from_file(int layer, std::string fname, bool binary);
         
         /********************
@@ -189,9 +186,11 @@ namespace bmla {
 		********************/
 
 		double get_count_vis(Sptr &sp) const;
+        /*
 		double get_count_vis(Sptr &sp1, Sptr &sp2, bool reversibly) const;
 		double get_count_vis(Sptr &sp1, Sptr &sp2, Sptr &sp3, bool reversibly) const;
 		double get_count_vis(Sptr &sp1, Sptr &sp2, Sptr &sp3, Sptr &sp4, bool reversibly) const;
+         */
 	};
 
 };

@@ -132,11 +132,10 @@ namespace bmla {
         Markov chains
          ********************/
 
-        // Use idx 0 for awake stats
-        // Use other idxs for asleep stats
         int get_no_markov_chains_asleep() const;
         void set_no_markov_chains_asleep(int no_markov_chains_asleep);
-        void set_current_markov_chain(int i_markov_chain);
+        void switch_to_markov_chain_asleep(int i_markov_chain_asleep);
+        void switch_to_markov_chain_awake();
         
         /********************
         Add a layer

@@ -298,8 +298,15 @@ namespace bmla {
             };
         };
     };
-    void Lattice::set_current_markov_chain(int i_markov_chain) {
-        _i_markov_chain = i_markov_chain;
+    void Lattice::switch_to_markov_chain_asleep(int i_markov_chain_asleep) {
+        if (i_markov_chain_asleep > _no_markov_chains_asleep) {
+            std::cerr << ">>> Lattice::switch_to_markov_chain_asleep <<< there are only: " << _no_markov_chains_asleep << " asleep markov chains, but you tried to switch to: " << i_markov_chain_asleep << std::endl;
+            exit(EXIT_FAILURE);
+        };
+        _i_markov_chain = i_markov_chain_asleep+1;
+    };
+    void Lattice::switch_to_markov_chain_awake() {
+        _i_markov_chain = 0;
     };
     
     /********************

@@ -113,7 +113,7 @@ namespace bmla {
             };
             
             // Switch back to awake stats chain
-            _latt->set_current_markov_chain(0);
+            _latt->switch_to_markov_chain_awake();
             
             // Read latt
             auto file = fname_coll.get_fname(idx_subset[i_batch]);
@@ -156,10 +156,10 @@ namespace bmla {
             // START_FROM_RANDOM
             
             // Run CD sampling
-            for (auto i_chain=1; i_chain<=no_markov_chains; i_chain++) {
+            for (auto i_chain=0; i_chain<no_markov_chains; i_chain++) {
                 
                 // Switch to that chain
-                _latt->set_current_markov_chain(i_chain);
+                _latt->switch_to_markov_chain_asleep(i_chain);
                 
                 // Random
                 _latt->set_random_all_units_in_layer(0,options.options_asleep_start_from_random.start_from_binary_visible);
@@ -180,17 +180,17 @@ namespace bmla {
             };
             
             // Switch back to awake stats chain
-            _latt->set_current_markov_chain(0);
+            _latt->switch_to_markov_chain_awake();
             
         } else if (options.cd_mode_asleep == CDModeAsleep::PERSISTENT_CD) {
             
             // PERSISTENT_CD
             
             // Run CD sampling
-            for (auto i_chain=1; i_chain<=no_markov_chains; i_chain++) {
+            for (auto i_chain=0; i_chain<no_markov_chains; i_chain++) {
                 
                 // Switch to that chain
-                _latt->set_current_markov_chain(i_chain);
+                _latt->switch_to_markov_chain_asleep(i_chain);
                 
                 // Sample vis, hidden
                 for (int i_sampling_step=0; i_sampling_step<no_cd_sampling_steps; i_sampling_step++)
@@ -207,7 +207,7 @@ namespace bmla {
             };
             
             // Switch back to awake stats chain
-            _latt->set_current_markov_chain(0);
+            _latt->switch_to_markov_chain_awake();
         };
         
         // Average moments

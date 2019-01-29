@@ -97,6 +97,9 @@ namespace bmla {
 		int _look_up_unit(int layer, int x, int y, int z) const;
         std::vector<int> _look_up_pos(int layer, int idx) const;
         
+        // Binarize
+        void _binarize_all_units_in_layer(int layer, bool act);
+        
         // Activations
         void _reset_activations(int layer);
         void _calculate_activations(int layer, int given_layer);
@@ -181,6 +184,7 @@ namespace bmla {
 		// Clear the lattice
         void set_empty_all_units();
         void set_empty_all_units_in_layer(int layer);
+        void set_empty_all_hidden_units();
 
 		// Random
         void set_random_all_units(bool binary);
@@ -190,6 +194,7 @@ namespace bmla {
 		// Binarize
         void binarize_all_units();
         void binarize_all_units_in_layer(int layer);
+        void binarize_all_hidden_units();
 
 		/********************
 		Write/read latt to a file

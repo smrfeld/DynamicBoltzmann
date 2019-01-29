@@ -524,6 +524,11 @@ namespace bmla {
             _latt[_i_markov_chain][layer][sp_pair.second].fill(0.0);
         };
     };
+    void Lattice::set_empty_all_hidden_units() {
+        for (auto layer=1; layer<_no_layers; layer++) {
+            set_empty_all_units_in_layer(layer);
+        };
+    };
 
     // Random
     void Lattice::set_random_all_units(bool binary) {
@@ -553,10 +558,68 @@ namespace bmla {
             binarize_all_units_in_layer(layer);
         };
     };
+    void Lattice::_binarize_all_units_in_layer(int layer, bool act) {
+        // Random vec
+        int no_units = get_no_units_in_layer(layer);
+        auto r = arma::vec(no_units,arma::fill::randu);
+        
+        // Helpers
+        auto running = arma::vec(no_units,arma::fill::zeros);
+        auto flip = arma::vec(no_units,arma::fill::ones);
+        auto new_flip = flip;
+
+        // _latt or _latt_act?
+        if (act) {
+            
+            // Convert to propensities
+            for (auto &sp_pr: _species_possible.at(layer)) {
+                running += _latt_act[_i_markov_chain][layer][sp_pr.second];
+                _latt_act[_i_markov_chain][layer][sp_pr.second] = running;
+            };
+            
+            // Evaluate
+            // Initially: we are at zero, rand value is somewhere above
+            // Next: we are at some propensity, rand value may be somewhere above or below
+            // Finally: we are at max propensity = 1.0, rand value is below
+            // flip vector:
+            // 1 initially = rand is above current propensity
+            // 0 = rand is below current propensity
+            for (auto &sp_pr: _species_possible.at(layer)) {
+                // New flip vector
+                new_flip = 0.5*sign(r - _latt_act[_i_markov_chain][layer][sp_pr.second]) + 0.5;
+                // flip -> new_flip
+                // 1 -> 1 => not this species => (flip - new_flip) = 0
+                // 1 -> 0 => yes this species => (flip - new_flip) = 1
+                // 0 -> 0 => already assigned a previous species  => (flip - new_flip) = 0
+                _latt_act[_i_markov_chain][layer][sp_pr.second] = flip - new_flip;
+                
+                // Old flip vector = new flip vector
+                flip = new_flip;
+            };
+            // Finally: if still above the final propensity, it is the empty species! This means all are zero, so no further adjustment needed!
+            
+        } else {
+            
+            // As above but with _latt
+            for (auto &sp_pr: _species_possible.at(layer)) {
+                running += _latt[_i_markov_chain][layer][sp_pr.second];
+                _latt[_i_markov_chain][layer][sp_pr.second] = running;
+            };
+            
+            for (auto &sp_pr: _species_possible.at(layer)) {
+                new_flip = 0.5*sign(r - _latt[_i_markov_chain][layer][sp_pr.second]) + 0.5;
+                _latt[_i_markov_chain][layer][sp_pr.second] = flip - new_flip;
+                flip = new_flip;
+            };
+        };
+    };
     void Lattice::binarize_all_units_in_layer(int layer) {
-        // ...
-        std::cerr << ">>> Lattice::binarize_all_units_in_layer <<< not implemented!" << std::endl;
-        exit(EXIT_FAILURE);
+        _binarize_all_units_in_layer(layer,false);
+    };
+    void Lattice::binarize_all_hidden_units() {
+        for (auto layer=1; layer<_no_layers; layer++) {
+            binarize_all_units_in_layer(layer);
+        };
     };
 
 	/********************
@@ -791,38 +854,7 @@ namespace bmla {
         
         // Sample if binary
         if (binary) {
-            // Random vec
-            auto r = arma::vec(no_units,arma::fill::randu);
-            
-            // Convert to propensities
-            auto running = arma::vec(no_units,arma::fill::zeros);
-            for (auto &sp_pr: _species_possible.at(layer)) {
-                running += _latt_act[_i_markov_chain][layer][sp_pr.second];
-                _latt_act[_i_markov_chain][layer][sp_pr.second] = running;
-            };
-            
-            // Evaluate
-            // Initially: we are at zero, rand value is somewhere above
-            // Next: we are at some propensity, rand value may be somewhere above or below
-            // Finally: we are at max propensity = 1.0, rand value is below
-            // flip vector:
-            // 1 initially = rand is above current propensity
-            // 0 = rand is below current propensity
-            auto flip = arma::vec(no_units,arma::fill::ones);
-            auto new_flip = flip;
-            for (auto &sp_pr: _species_possible.at(layer)) {
-                // New flip vector
-                new_flip = 0.5*sign(r - _latt_act[_i_markov_chain][layer][sp_pr.second]) + 0.5;
-                // flip -> new_flip
-                // 1 -> 1 => not this species => (flip - new_flip) = 0
-                // 1 -> 0 => yes this species => (flip - new_flip) = 1
-                // 0 -> 0 => already assigned a previous species  => (flip - new_flip) = 0
-                _latt_act[_i_markov_chain][layer][sp_pr.second] = flip - new_flip;
-                
-                // Old flip vector = new flip vector
-                flip = new_flip;
-            };
-            // Finally: if still above the final propensity, it is the empty species! This means all are zero, so no further adjustment needed!
+            _binarize_all_units_in_layer(layer,true);
         };
     };
     

@@ -69,6 +69,9 @@ namespace bmla {
         // Reverse
         // Layer -> idx -> (x,y,z)
         std::map<int, std::map<int, std::vector<int>>> _rlookup;
+        // Next free idx
+        // Layer -> free idx
+        std::map<int, int> _free_idxs;
         
         // Adjacency matrices
         // Idx 0 connects 0, 1
@@ -80,6 +83,9 @@ namespace bmla {
         std::map<int,bias_dict> _bias_dicts;
         std::map<int,o2_ixn_dict> _o2_ixn_dicts;
         
+        // Multipliers between layers for ixns - NOT bidirectional
+        std::map<int, std::map<int, double>> _o2_mults;
+        
 		// Species possible
         // layer->species name->species
 		std::map<int,std::map<std::string,Sptr>> _species_possible;
@@ -89,9 +95,6 @@ namespace bmla {
 		int _look_up_unit(int layer, int x, int y) const;
 		int _look_up_unit(int layer, int x, int y, int z) const;
         std::vector<int> _look_up_pos(int layer, int idx) const;
-        
-        // Add hidden unit to layer
-        int _add_hidden_unit(int layer);
         
         // Activations
         void _reset_activations(int layer);
@@ -140,6 +143,10 @@ namespace bmla {
 
         void add_layer(int layer, int no_units, std::vector<Sptr> species);
         
+        void set_pos_of_hidden_unit(int layer, int x);
+        void set_pos_of_hidden_unit(int layer, int x, int y);
+        void set_pos_of_hidden_unit(int layer, int x, int y, int z);
+
         /********************
 		Biases/ixn params
 		********************/
@@ -148,12 +155,16 @@ namespace bmla {
 		void add_bias_all_layers(Sptr sp, Iptr bias);
         void add_bias_to_layer(int layer, Sptr sp, Iptr bias);
 
-		// Ixns between layer and layer + 1
-        void add_ixn_between_layer_and_layer_above(int layer, Sptr sp1, Sptr sp2, Iptr ixn);
+		// Ixns between layers
+        // Always bidirectional
+        void add_ixn_between_layers(int layer1, Sptr sp1, int layer2, Sptr sp2, Iptr ixn);
 
+        // Set multiplier
+        void set_multiplier_between_layers(int from_layer, int to_layer, double multiplier);
+        
         // Get ixns
         double get_bias_in_layer(int layer, Sptr sp) const;
-        double get_ixn_between_layer_and_layer_above(int layer, Sptr sp1, Sptr sp2) const;
+        double get_ixn_between_layers(int layer1, Sptr sp1, int layer2, Sptr sp2) const;
 
 		/********************
 		Add connections
@@ -162,14 +173,6 @@ namespace bmla {
         void add_conn(int layer1, int x1, int layer2, int x2);
         void add_conn(int layer1, int x1, int y1, int layer2, int x2, int y2);
         void add_conn(int layer1, int x1, int y1, int z1, int layer2, int x2, int y2, int z2);
-
-		/********************
-		Add hidden units
-		********************/
-
-		void add_hidden_unit(int layer, int x);
-		void add_hidden_unit(int layer, int x, int y);
-		void add_hidden_unit(int layer, int x, int y, int z);
 
 		/********************
 		Apply funcs to all units

@@ -77,6 +77,8 @@ namespace bmla {
                 };
             };
 		};
+        // No free idxs in first layer
+        _free_idxs[0] = pow(_box_length,_no_dims);
         
         // Possible species
         for (auto sp: species_visible) {
@@ -122,11 +124,13 @@ namespace bmla {
         _lookup_2 = other._lookup_2;
         _lookup_3 = other._lookup_3;
         _rlookup = other._rlookup;
+        _free_idxs = other._free_idxs;
         _adj = other._adj;
         
         _all_ixns = other._all_ixns;
         _bias_dicts = other._bias_dicts;
         _o2_ixn_dicts = other._o2_ixn_dicts;
+        _o2_mults = other._o2_mults;
         
         _species_possible = other._species_possible;
     };
@@ -142,11 +146,13 @@ namespace bmla {
         _lookup_2 = other._lookup_2;
         _lookup_3 = other._lookup_3;
         _rlookup = other._rlookup;
+        _free_idxs = other._free_idxs;
         _adj = other._adj;
         
         _all_ixns = other._all_ixns;
         _bias_dicts = other._bias_dicts;
         _o2_ixn_dicts = other._o2_ixn_dicts;
+        _o2_mults = other._o2_mults;
         
         _species_possible = other._species_possible;
 
@@ -162,11 +168,13 @@ namespace bmla {
 		other._lookup_2.clear();
 		other._lookup_3.clear();
         other._rlookup.clear();
+        other._free_idxs.clear();
         other._adj.clear();
         
         other._all_ixns.clear();
         other._bias_dicts.clear();
         other._o2_ixn_dicts.clear();
+        other._o2_mults.clear();
         
         other._species_possible.clear();
 	};
@@ -303,6 +311,9 @@ namespace bmla {
             };
         };
         
+        // Free idxs
+        _free_idxs[layer] = 0;
+        
         // Add species possible
         for (auto sp: species) {
             _species_possible[layer][sp->get_name()] = sp;
@@ -313,6 +324,40 @@ namespace bmla {
         _adj[layer-1] = arma::mat(size_below,no_units,arma::fill::zeros);
     };
     
+    void Lattice::set_pos_of_hidden_unit(int layer, int x) {
+        if (_free_idxs[layer] >= get_no_units_in_layer(layer)) {
+            std::cerr << ">>> Lattice::set_pos_of_hidden_unit <<< no more free units in layer: " << layer << " of size: " << get_no_units_in_layer(layer) << std::endl;
+            exit(EXIT_FAILURE);
+        };
+        
+        int new_idx = _free_idxs[layer];
+        _lookup_1[layer][x] = new_idx;
+        _rlookup[layer][new_idx] = std::vector<int>({x});
+        _free_idxs[layer] += 1;
+    };
+    void Lattice::set_pos_of_hidden_unit(int layer, int x, int y) {
+        if (_free_idxs[layer] >= get_no_units_in_layer(layer)) {
+            std::cerr << ">>> Lattice::set_pos_of_hidden_unit <<< no more free units in layer: " << layer << " of size: " << get_no_units_in_layer(layer) << std::endl;
+            exit(EXIT_FAILURE);
+        };
+
+        int new_idx = _free_idxs[layer];
+        _lookup_2[layer][x][y] = new_idx;
+        _rlookup[layer][new_idx] = std::vector<int>({x,y});
+        _free_idxs[layer] += 1;
+    };
+    void Lattice::set_pos_of_hidden_unit(int layer, int x, int y, int z) {
+        if (_free_idxs[layer] >= get_no_units_in_layer(layer)) {
+            std::cerr << ">>> Lattice::set_pos_of_hidden_unit <<< no more free units in layer: " << layer << " of size: " << get_no_units_in_layer(layer) << std::endl;
+            exit(EXIT_FAILURE);
+        };
+        
+        int new_idx = _free_idxs[layer];
+        _lookup_3[layer][x][y][z] = new_idx;
+        _rlookup[layer][new_idx] = std::vector<int>({x,y,z});
+        _free_idxs[layer] += 1;
+    };
+
 	/********************
 	Helpers to setup all sites - Biases
 	********************/
@@ -335,8 +380,13 @@ namespace bmla {
     };
 
     // Ixns
-    void Lattice::add_ixn_between_layer_and_layer_above(int layer, Sptr sp1, Sptr sp2, Iptr ixn) {
-        _o2_ixn_dicts[layer][sp1][sp2].push_back(ixn);
+    void Lattice::add_ixn_between_layers(int layer1, Sptr sp1, int layer2, Sptr sp2, Iptr ixn) {
+        if (layer2 != layer1+1 && layer2 != layer1-1) {
+            std::cerr << ">>> Lattice::add_ixn_between_layers <<< layer2 != layer1 +- 1; instead layer_2 = " << layer2 << " and layer1 = " << layer1 << std::endl;
+            exit(EXIT_FAILURE);
+        };
+        
+        _o2_ixn_dicts[layer1][sp1][sp2].push_back(ixn);
         
         // Add to all
         auto it = std::find(_all_ixns.begin(), _all_ixns.end(), ixn);
@@ -345,6 +395,16 @@ namespace bmla {
         };
     };
     
+    // Set multiplier
+    void Lattice::set_multiplier_between_layers(int from_layer, int to_layer, double multiplier) {
+        if (to_layer != from_layer+1 && to_layer != from_layer-1) {
+            std::cerr << ">>> Lattice::set_multiplier <<< to_layer != from_layer +- 1; instead layer_2 = " << to_layer << " and from_layer = " << from_layer << std::endl;
+            exit(EXIT_FAILURE);
+        };
+        
+        _o2_mults[from_layer][to_layer] = multiplier;
+    };
+
     // Get ixns
     double Lattice::get_bias_in_layer(int layer, Sptr sp) const {
         auto it = _bias_dicts.find(layer);
@@ -359,20 +419,54 @@ namespace bmla {
         };
         return val;
     };
-    double Lattice::get_ixn_between_layer_and_layer_above(int layer, Sptr sp1, Sptr sp2) const {
-        auto it = _o2_ixn_dicts.find(layer);
+    double Lattice::get_ixn_between_layers(int layer1, Sptr sp1, int layer2, Sptr sp2) const {
+        if (layer2 != layer1+1 && layer2 != layer1-1) {
+            std::cerr << ">>> Lattice::add_ixn_between_layers <<< layer2 != layer1 +- 1; instead layer_2 = " << layer2 << " and layer1 = " << layer1 << std::endl;
+            exit(EXIT_FAILURE);
+        };
+        
+        // Multiplier
+        double mult = 1.0;
+        auto itm = _o2_mults.find(layer1);
+        if (itm != _o2_mults.end()) {
+            auto itm2 = itm->second.find(layer2);
+            if (itm2 != itm->second.end()) {
+                mult = itm2->second;
+            };
+        };
+        
         double val = 0.0;
-        if (it != _o2_ixn_dicts.end()) {
-            auto it2 = it->second.find(sp1);
-            if (it2 != it->second.end()) {
-                auto it3 = it2->second.find(sp2);
-                if (it3 != it2->second.end()) {
-                    for (auto ixn: it3->second) {
-                        val += ixn->get_val();
+        if (layer1 < layer2) {
+            
+            auto it = _o2_ixn_dicts.find(layer1);
+            if (it != _o2_ixn_dicts.end()) {
+                auto it2 = it->second.find(sp1);
+                if (it2 != it->second.end()) {
+                    auto it3 = it2->second.find(sp2);
+                    if (it3 != it2->second.end()) {
+                        for (auto ixn: it3->second) {
+                            val += mult * ixn->get_val();
+                        };
+                    };
+                };
+            };
+            
+        } else {
+            
+            auto it = _o2_ixn_dicts.find(layer2);
+            if (it != _o2_ixn_dicts.end()) {
+                auto it2 = it->second.find(sp2);
+                if (it2 != it->second.end()) {
+                    auto it3 = it2->second.find(sp1);
+                    if (it3 != it2->second.end()) {
+                        for (auto ixn: it3->second) {
+                            val += mult * ixn->get_val();
+                        };
                     };
                 };
             };
         };
+        
         return val;
     };
 
@@ -394,55 +488,6 @@ namespace bmla {
         int idx1 = _look_up_unit(layer1, x1, y1, z1);
         int idx2 = _look_up_unit(layer2, x2, y2, z2);
         _adj[layer1](idx1,idx2) = 1.0;
-    };
-
-    /********************
-     Add hidden units
-     ********************/
-    
-    // Add hidden unit to layer
-    int Lattice::_add_hidden_unit(int layer) {
-        // Add unit (resize)
-        int size_current = 0;
-        for (auto i_chain=0; i_chain<_no_markov_chains; i_chain++) {
-            for (auto &sp_pair: _species_possible[layer]) {
-                size_current = _latt[i_chain][layer][sp_pair.second].size();
-                _latt[i_chain][layer][sp_pair.second].resize(size_current + 1);
-            };
-        };
-        
-        // Resize adjacency matrix
-        // The one below
-        int size1=0, size2=0;
-        if (layer != 0) {
-            size1 = _adj[layer-1].n_rows;
-            size2 = _adj[layer-1].n_cols;
-            _adj[layer-1].resize(size1, size2+1);
-        };
-        // The one above
-        if (layer != _no_layers-1) {
-            size1 = _adj[layer].n_rows;
-            size2 = _adj[layer].n_cols;
-            _adj[layer].resize(size1+1, size2);
-        };
-        
-        return size_current;
-    };
-    
-    void Lattice::add_hidden_unit(int layer, int x) {
-        int new_idx = _add_hidden_unit(layer);
-        _lookup_1[layer][x] = new_idx;
-        _rlookup[layer][new_idx] = std::vector<int>({x});
-    };
-    void Lattice::add_hidden_unit(int layer, int x, int y) {
-        int new_idx = _add_hidden_unit(layer);
-        _lookup_2[layer][x][y] = new_idx;
-        _rlookup[layer][new_idx] = std::vector<int>({x,y});
-    };
-    void Lattice::add_hidden_unit(int layer, int x, int y, int z) {
-        int new_idx = _add_hidden_unit(layer);
-        _lookup_3[layer][x][y][z] = new_idx;
-        _rlookup[layer][new_idx] = std::vector<int>({x,y,z});
     };
     
 	/********************
@@ -692,9 +737,9 @@ namespace bmla {
             _latt_act[_i_markov_chain][layer][sp_pr.second] += get_bias_in_layer(layer, sp_pr.second) * arma::vec(no_units,arma::fill::ones);
             for (auto &given_sp_pr: _species_possible.at(given_layer)) {
                 if (given_layer == layer-1) {
-                    _latt_act[_i_markov_chain][layer][sp_pr.second] += get_ixn_between_layer_and_layer_above(layer, given_sp_pr.second, sp_pr.second) * ( _adj[given_layer].t() * _latt_act[_i_markov_chain][given_layer][given_sp_pr.second] );
+                    _latt_act[_i_markov_chain][layer][sp_pr.second] += get_ixn_between_layers(given_layer, given_sp_pr.second, layer, sp_pr.second) * ( _adj[given_layer].t() * _latt_act[_i_markov_chain][given_layer][given_sp_pr.second] );
                 } else if (given_layer == layer+1) {
-                    _latt_act[_i_markov_chain][layer][sp_pr.second] += get_ixn_between_layer_and_layer_above(layer, sp_pr.second, given_sp_pr.second) * ( _adj[given_layer] * _latt_act[_i_markov_chain][given_layer][given_sp_pr.second] );
+                    _latt_act[_i_markov_chain][layer][sp_pr.second] += get_ixn_between_layers(given_layer, given_sp_pr.second, layer, sp_pr.second) * ( _adj[given_layer] * _latt_act[_i_markov_chain][given_layer][given_sp_pr.second] );
                 };
             };
         };

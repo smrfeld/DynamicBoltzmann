@@ -28,7 +28,7 @@ namespace bmla {
 		// Values
 		double _val;
 		double _update;
-
+        
 		// nesterov
 		// double _lambda_s, _lambda_sp1;
 		double *_nesterov_y_s, *_nesterov_y_sp1;
@@ -75,7 +75,7 @@ namespace bmla {
 
 		double get_val() const;
 		void set_val(double val);
-
+        
 		/********************
 		Fixed value
 		********************/
@@ -157,7 +157,7 @@ namespace bmla {
 
 		_val = init_guess;
 		_update = 0.0;
-
+        
 		// nesterov
 		// double lambda_0 = 0.0;
 		// _lambda_s = (1.0 + sqrt(1.0 + 4.0 * pow(lambda_0,2))) / 2.0;
@@ -273,7 +273,7 @@ namespace bmla {
 	********************/
 
 	double IxnParam::Impl::get_val() const {
-		return _val;
+		return  _val;
 	};
 	void IxnParam::Impl::set_val(double val) {
 		_val = val;

@@ -61,7 +61,7 @@ namespace bmla {
 
 		double get_val() const;
 		void set_val(double val);
-
+        
 		/********************
 		Fixed value
 		********************/

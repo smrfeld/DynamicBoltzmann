@@ -48,7 +48,8 @@ namespace bmla {
         // idx 0 = awake stats
         // Other idxs = asleep stats
         int _no_markov_chains;
-        
+        int _no_markov_chains_asleep; // = _no_markov_chains - 1
+
         // No layers
         int _no_layers;
         
@@ -133,8 +134,8 @@ namespace bmla {
 
         // Use idx 0 for awake stats
         // Use other idxs for asleep stats
-        int get_no_markov_chains() const;
-        void set_no_markov_chains(int no_markov_chains);
+        int get_no_markov_chains_asleep() const;
+        void set_no_markov_chains_asleep(int no_markov_chains_asleep);
         void set_current_markov_chain(int i_markov_chain);
         
         /********************

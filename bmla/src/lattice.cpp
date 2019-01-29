@@ -38,6 +38,7 @@ namespace bmla {
 		_no_dims = dim;
 		_box_length = box_length;
         _no_markov_chains = 1;
+        _no_markov_chains_asleep = 0;
         _no_layers = 1;
         _i_markov_chain = 0;
         
@@ -47,6 +48,7 @@ namespace bmla {
 		if (dim == 1) {
             for (auto sp: species_visible) {
                 _latt[i_chain][i_layer][sp] = arma::vec(_box_length,arma::fill::zeros);
+                _latt_act[i_chain][i_layer][sp] = arma::vec(_box_length,arma::fill::zeros);
             };
             for (auto x=1; x<=_box_length; x++) {
                 _lookup_1[0][x] = x-1;
@@ -55,6 +57,7 @@ namespace bmla {
         } else if (dim == 2) {
             for (auto sp: species_visible) {
                 _latt[i_chain][i_layer][sp] = arma::vec(pow(_box_length,2),arma::fill::zeros);
+                _latt_act[i_chain][i_layer][sp] = arma::vec(pow(_box_length,2),arma::fill::zeros);
             };
             int ctr=0;
             for (auto x=1; x<=_box_length; x++) {
@@ -66,6 +69,7 @@ namespace bmla {
 		} else if (dim == 3) {
             for (auto sp: species_visible) {
                 _latt[i_chain][i_layer][sp] = arma::vec(pow(_box_length,3),arma::fill::zeros);
+                _latt_act[i_chain][i_layer][sp] = arma::vec(pow(_box_length,3),arma::fill::zeros);
             };
             int ctr=0;
             for (auto x=1; x<=_box_length; x++) {
@@ -77,6 +81,7 @@ namespace bmla {
                 };
             };
 		};
+        
         // No free idxs in first layer
         _free_idxs[0] = pow(_box_length,_no_dims);
         
@@ -116,6 +121,7 @@ namespace bmla {
 		_no_dims = other._no_dims;
 		_box_length = other._box_length;
         _no_markov_chains = other._no_markov_chains;
+        _no_markov_chains_asleep = other._no_markov_chains_asleep;
         _no_layers = other._no_layers;
         _i_markov_chain = other._i_markov_chain;
         
@@ -138,6 +144,7 @@ namespace bmla {
         _no_dims = other._no_dims;
         _box_length = other._box_length;
         _no_markov_chains = other._no_markov_chains;
+        _no_markov_chains_asleep = other._no_markov_chains_asleep;
         _no_layers = other._no_layers;
         _i_markov_chain = other._i_markov_chain;
         
@@ -160,6 +167,7 @@ namespace bmla {
 		other._no_dims = 0;
 		other._box_length = 0;
         other._no_markov_chains = 0;
+        other._no_markov_chains_asleep = 0;
         other._no_layers = 0;
         other._i_markov_chain = 0;
         
@@ -270,20 +278,23 @@ namespace bmla {
      Markov chains
      ********************/
     
-    int Lattice::get_no_markov_chains() const {
-        return _no_markov_chains;
+    int Lattice::get_no_markov_chains_asleep() const {
+        return _no_markov_chains_asleep;
     };
-    void Lattice::set_no_markov_chains(int no_markov_chains) {
-        _no_markov_chains = no_markov_chains;
+    void Lattice::set_no_markov_chains_asleep(int no_markov_chains_asleep) {
+        _no_markov_chains_asleep = no_markov_chains_asleep;
+        _no_markov_chains = _no_markov_chains_asleep + 1;
         
         if (_latt.size() < _no_markov_chains) {
             for (auto i_chain=_latt.size(); i_chain < _no_markov_chains; i_chain++) {
                 _latt[i_chain] = _latt[i_chain-1];
+                _latt_act[i_chain] = _latt_act[i_chain-1];
             };
         };
         if (_latt.size() > _no_markov_chains) {
             for (auto i_chain=_latt.size(); i_chain > _no_markov_chains; i_chain--) {
                 _latt.erase(i_chain);
+                _latt_act.erase(i_chain);
             };
         };
     };
@@ -308,6 +319,7 @@ namespace bmla {
         for (auto i_chain=0; i_chain<_no_markov_chains; i_chain++) {
             for (auto sp: species) {
                 _latt[i_chain][layer][sp] = arma::vec(no_units,arma::fill::zeros);
+                _latt_act[i_chain][layer][sp] = arma::vec(no_units,arma::fill::zeros);
             };
         };
         
@@ -732,38 +744,47 @@ namespace bmla {
         };
     };
     void Lattice::_calculate_activations(int layer, int given_layer) {
+        // std::cout << "_calculate_activations: layer = " << layer << " given layer = " << given_layer << std::endl;
         int no_units = get_no_units_in_layer(layer);
         for (auto &sp_pr: _species_possible.at(layer)) {
+            // std::cout << arma::size( get_bias_in_layer(layer, sp_pr.second) * arma::vec(no_units,arma::fill::ones) ) << std::endl;
+            // std::cout << arma::size(_latt_act[_i_markov_chain][layer][sp_pr.second]) << std::endl;
+            
             _latt_act[_i_markov_chain][layer][sp_pr.second] += get_bias_in_layer(layer, sp_pr.second) * arma::vec(no_units,arma::fill::ones);
             for (auto &given_sp_pr: _species_possible.at(given_layer)) {
                 if (given_layer == layer-1) {
-                    _latt_act[_i_markov_chain][layer][sp_pr.second] += get_ixn_between_layers(given_layer, given_sp_pr.second, layer, sp_pr.second) * ( _adj[given_layer].t() * _latt_act[_i_markov_chain][given_layer][given_sp_pr.second] );
-                } else if (given_layer == layer+1) {
+                    // Activate from below
                     _latt_act[_i_markov_chain][layer][sp_pr.second] += get_ixn_between_layers(given_layer, given_sp_pr.second, layer, sp_pr.second) * ( _adj[given_layer] * _latt_act[_i_markov_chain][given_layer][given_sp_pr.second] );
+                } else if (given_layer == layer+1) {
+                    // Activate from above
+                    _latt_act[_i_markov_chain][layer][sp_pr.second] += get_ixn_between_layers(given_layer, given_sp_pr.second, layer, sp_pr.second) * ( _adj[layer].t() * _latt_act[_i_markov_chain][given_layer][given_sp_pr.second] );
                 };
             };
         };
+        // std::cout << "_calculate_activations: done!" << std::endl;
     };
     void Lattice::_convert_activations(int layer, bool binary) {
         
         // Convert activations to propensities via exp
         // Also calculate total propensity
         // Starts at 1.0 = exp(0) for empty
-        double prop_tot = 1.0;
+        int no_units = get_no_units_in_layer(layer);
+        auto prop_tot = arma::vec(no_units,arma::fill::ones);
         for (auto &sp_pr: _species_possible.at(layer)) {
             _latt_act[_i_markov_chain][layer][sp_pr.second] = exp(_latt_act[_i_markov_chain][layer][sp_pr.second]);
-            prop_tot += arma::sum(_latt_act[_i_markov_chain][layer][sp_pr.second]);
+            prop_tot += _latt_act[_i_markov_chain][layer][sp_pr.second];
         };
         
         // Divide by total to normalize
+        // std::cout << "_convert_activations: layer: " << layer << " binary: " << binary << std::endl;
         for (auto &sp_pr: _species_possible.at(layer)) {
             _latt_act[_i_markov_chain][layer][sp_pr.second] /= prop_tot;
+            // std::cout << sp_pr.first << " : " << _latt_act[_i_markov_chain][layer][sp_pr.second](0) << std::endl;
         };
         
         // Sample if binary
         if (binary) {
             // Random vec
-            int no_units = get_no_units_in_layer(layer);
             auto r = arma::vec(no_units,arma::fill::randu);
             
             // Convert to propensities
@@ -822,6 +843,17 @@ namespace bmla {
     
     // Commit the activations
     void Lattice::activate_layer_committ(int layer) {
+        /*
+        std::cout << "activate_layer_committ: layer: " << layer << " current size: " << std::endl;
+        for (auto &x: _latt[_i_markov_chain][layer]) {
+            std::cout << arma::size(x.second) << std::endl;
+        };
+        std::cout << "new size:" << std::endl;
+        for (auto &x: _latt_act[_i_markov_chain][layer]) {
+            std::cout << arma::size(x.second) << std::endl;
+        };
+         */
+        
         _latt[_i_markov_chain][layer] = _latt_act[_i_markov_chain][layer];
     };
     
@@ -869,7 +901,7 @@ namespace bmla {
             activate_layer(layer, layer-1, binary_hidden);
         };
     };
-
+    
     /*
     void Lattice::sample_bm_up_v_to_h(bool binary_hidden, bool parallel) {
         for (auto &layer: _latt_h) {

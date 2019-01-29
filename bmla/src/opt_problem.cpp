@@ -80,7 +80,7 @@ namespace bmla {
         };
         
         // Lattice
-        _latt->set_no_markov_chains(no_markov_chains);
+        _latt->set_no_markov_chains_asleep(no_markov_chains);
     };
     
     /********************
@@ -156,7 +156,7 @@ namespace bmla {
             // START_FROM_RANDOM
             
             // Run CD sampling
-            for (auto i_chain=1; i_chain<no_markov_chains; i_chain++) {
+            for (auto i_chain=1; i_chain<=no_markov_chains; i_chain++) {
                 
                 // Switch to that chain
                 _latt->set_current_markov_chain(i_chain);
@@ -187,7 +187,7 @@ namespace bmla {
             // PERSISTENT_CD
             
             // Run CD sampling
-            for (auto i_chain=1; i_chain<no_markov_chains; i_chain++) {
+            for (auto i_chain=1; i_chain<=no_markov_chains; i_chain++) {
                 
                 // Switch to that chain
                 _latt->set_current_markov_chain(i_chain);

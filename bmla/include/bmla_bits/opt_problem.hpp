@@ -3,11 +3,6 @@
 #include <memory>
 #include <map>
 
-#ifndef SOLVER_H
-#define SOLVER_H
-#include "solver.hpp"
-#endif
-
 /************************************
  * Namespace for bmla
  ************************************/
@@ -18,6 +13,29 @@ namespace bmla {
     class IxnParam;
     class Lattice;
     class FNameColl;
+    
+    /****************************************
+    Misc options
+     ****************************************/
+
+    enum class Solver : unsigned int { SGD, NESTEROV, ADAM };
+    
+    enum class CDModeAsleep : unsigned int { PERSISTENT_CD, START_FROM_DATA, START_FROM_RANDOM };
+    
+    struct OptionsAsleepPersistentCD {};
+    
+    struct OptionsAsleepStartFromRandom {
+        
+        // Init random - binary?
+        bool start_from_binary_visible = true;
+        // Binary hidden?
+        bool start_from_binary_hidden = true;
+    };
+    
+    struct OptionsAsleepStartFromData {
+        // Start from binary?
+        bool start_from_binary_hidden = true;
+    };
     
     /****************************************
     Options
@@ -54,7 +72,33 @@ namespace bmla {
     };
     
     /****************************************
-     OptProblemRBM
+     OptProblem Options
+     ****************************************/
+    
+    struct OptionsWakeSleep {
+        
+        // Verbosity
+        bool verbose = false;
+        
+        // Mode
+        CDModeAsleep cd_mode_asleep = CDModeAsleep::PERSISTENT_CD;
+        
+        // Sampling options
+        // Is the visible reconstruction binary?
+        bool is_asleep_visible_binary = true;
+        // Is the hidden reconstruction binary, EXCEPT in the last phase?
+        bool is_asleep_hidden_binary = true;
+        // Is the hidden reconstruction binary in the last phase?
+        bool is_asleep_hidden_binary_final = false;
+        
+        // Options for CD
+        OptionsAsleepPersistentCD options_asleep_persistent_cd = OptionsAsleepPersistentCD();
+        OptionsAsleepStartFromRandom options_asleep_start_from_random = OptionsAsleepStartFromRandom();
+        OptionsAsleepStartFromData options_asleep_start_from_data = OptionsAsleepStartFromData();
+    };
+
+    /****************************************
+     OptProblem
      ****************************************/
     
     class OptProblem {
@@ -90,6 +134,25 @@ namespace bmla {
          ********************/
         
         void init_structures(int batch_size, int no_markov_chains);
+        
+        /********************
+         Wake/asleep loop
+         ********************/
+        
+        void wake_sleep_loop(int batch_size, int no_markov_chains, int no_cd_sampling_steps, int no_mean_field_updates, FNameColl &fname_coll, OptionsWakeSleep options);
+        
+        /********************
+         Solve
+         ********************/
+        
+        // Check if options passed are valid
+        void check_options(int batch_size, int no_markov_chains, double dopt, int no_cd_sampling_steps, int no_mean_field_updates, OptionsSolve options, OptionsWakeSleep options_wake_sleep);
+        
+        // One step
+        void solve_one_step(int i_opt_step, int batch_size, int no_markov_chains, double dopt, int no_cd_sampling_steps, int no_mean_field_updates, FNameColl &fname_coll, OptionsSolve options, OptionsWakeSleep options_wake_sleep);
+        
+        // Many steps
+        void solve(int no_opt_steps, int batch_size, int no_markov_chains, double dopt, int no_cd_sampling_steps, int no_mean_field_updates, FNameColl &fname_coll, OptionsSolve options, OptionsWakeSleep options_wake_sleep);
     };
     
 };

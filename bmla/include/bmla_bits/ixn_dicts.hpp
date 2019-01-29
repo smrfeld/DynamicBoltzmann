@@ -18,6 +18,8 @@
 
 namespace bmla {
 
+    enum class MomentType: unsigned int;
+    
 	/****************************************
 	BiasDict
 	****************************************/
@@ -57,7 +59,11 @@ namespace bmla {
 		// Get species
 		const std::vector<Sptr>& get_species_from_ixn(Iptr ixn) const;
 		const std::vector<Sptr>& get_species_from_ixn(std::string ixn_param_name) const;
-	};
+        
+        // Reap
+        void reap_sample();
+        void set_moment_sample(MomentType type, int i_sample, double val);
+    };
 
 	/****************************************
 	O2IxnDict
@@ -81,7 +87,7 @@ namespace bmla {
 		~O2IxnDict();
 
 		// Add to the dict
-		void add_ixn(Sptr sp_of_site_1, Sptr sp_of_site_2, Iptr ixn, bool reversibly=true);
+		void add_ixn(Sptr sp_of_site_1, Sptr sp_of_site_2, Iptr ixn);
 
 		// Get from the dict
 		double get_ixn(Sptr sp_of_site_1, Sptr sp_of_site_2) const;
@@ -113,7 +119,7 @@ namespace bmla {
 		~O3IxnDict();
 
 		// Add to the dict
-		void add_ixn(Sptr sp_of_site_1, Sptr sp_of_site_2, Sptr sp_of_site_3, Iptr ixn, bool reversibly=true);
+		void add_ixn(Sptr sp_of_site_1, Sptr sp_of_site_2, Sptr sp_of_site_3, Iptr ixn);
 
 		// Get from the dict
 		double get_ixn(Sptr sp_of_site_1, Sptr sp_of_site_2, Sptr sp_of_site_3) const;

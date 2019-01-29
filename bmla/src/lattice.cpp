@@ -46,7 +46,7 @@ namespace bmla {
         int i_layer = 0;
 		if (dim == 1) {
             for (auto sp: species_visible) {
-                _latt[i_chain][i_layer][sp] = arma::vec(_box_length,0.0);
+                _latt[i_chain][i_layer][sp] = arma::vec(_box_length,arma::fill::zeros);
             };
             for (auto x=1; x<=_box_length; x++) {
                 _lookup_1[0][x] = x-1;
@@ -54,7 +54,7 @@ namespace bmla {
             };
         } else if (dim == 2) {
             for (auto sp: species_visible) {
-                _latt[i_chain][i_layer][sp] = arma::vec(pow(_box_length,2),0.0);
+                _latt[i_chain][i_layer][sp] = arma::vec(pow(_box_length,2),arma::fill::zeros);
             };
             int ctr=0;
             for (auto x=1; x<=_box_length; x++) {
@@ -65,7 +65,7 @@ namespace bmla {
             };
 		} else if (dim == 3) {
             for (auto sp: species_visible) {
-                _latt[i_chain][i_layer][sp] = arma::vec(pow(_box_length,3),0.0);
+                _latt[i_chain][i_layer][sp] = arma::vec(pow(_box_length,3),arma::fill::zeros);
             };
             int ctr=0;
             for (auto x=1; x<=_box_length; x++) {
@@ -296,7 +296,7 @@ namespace bmla {
         // Add empties
         for (auto i_chain=0; i_chain<_no_markov_chains; i_chain++) {
             for (auto sp: species) {
-                _latt[i_chain][layer][sp] = arma::vec(no_units,0.0);
+                _latt[i_chain][layer][sp] = arma::vec(no_units,arma::fill::zeros);
             };
         };
         
@@ -328,7 +328,7 @@ namespace bmla {
     // Ixns
     void Lattice::set_ixn_dict_between_layers(int layer_1, int layer_2, std::shared_ptr<O2IxnDict> ixn_dict) {
         if (layer_2 != layer_1 + 1) {
-            std::cerr << ">>> Lattice::set_ixn_dict_between_layers <<< only layer_2 = " << layer_2 << " = layer_1 + 1 = " << layer_1 + 1 << " is supported" << std::endl;
+            std::cerr << ">>> Lattice::set_ixn_dict_between_layers <<< only layer_2 (now = " << layer_2 << ") = layer_1 + 1 (now = " << layer_1 + 1 << ") is supported" << std::endl;
             exit(EXIT_FAILURE);
         };
         _ixn_dicts[layer_1] = ixn_dict;
@@ -426,10 +426,18 @@ namespace bmla {
         };
     };
     void Lattice::set_random_all_units_in_layer(int layer, bool binary) {
+        std::cerr << ">>> Lattice::set_random_all_units_in_layer <<< not implemented!" << std::endl;
+        exit(EXIT_FAILURE);
+
         if (binary) {
             // ...
         } else {
             // ...
+        };
+    };
+    void Lattice::set_random_all_hidden_units(bool binary) {
+        for (auto layer=1; layer<_no_layers; layer++) {
+            set_random_all_units_in_layer(layer,binary);
         };
     };
 
@@ -441,6 +449,8 @@ namespace bmla {
     };
     void Lattice::binarize_all_units_in_layer(int layer) {
         // ...
+        std::cerr << ">>> Lattice::binarize_all_units_in_layer <<< not implemented!" << std::endl;
+        exit(EXIT_FAILURE);
     };
 
 	/********************
@@ -628,72 +638,152 @@ namespace bmla {
 	Activate layer
 	********************/
 
-    // Activate a specific layer
-    void Lattice::activate_layer(int layer, bool binary) {
-        
+    // Activations
+    void Lattice::_reset_activations(int layer) {
+        for (auto &sp_pr: _species_possible.at(layer)) {
+            _latt_act[_i_markov_chain][layer][sp_pr.second].fill(0.0);
+        };
     };
-    void Lattice::activate_layer(int layer, int given_layer, bool binary) {
-        
-    };
-    
-    /*
-    // Sample BM (NOT layer-wise)
-    void Lattice::sample_bm(bool binary_visible, bool binary_hidden, bool parallel) {
-        
-        if (parallel) {
-            
-            // Parallel
-            
-            // Visible
-            for (auto const &idx: _latt_v_idxs)
-            {
-                _latt_v[idx]->prepare_sample(binary_visible);
-            };
-            
-            // Hiddens
-            for (auto &it: _latt_h) {
-                for (auto const &idx: _latt_h_idxs[it.first]) {
-                    it.second[idx]->prepare_sample(binary_hidden);
-                };
-            };
-            
-            // Committ
-            for (auto const &idx: _latt_v_idxs)
-            {
-                _latt_v[idx]->committ_sample();
-            };
-            for (auto &it: _latt_h) {
-                for (auto const &idx: _latt_h_idxs[it.first]) {
-                    it.second[idx]->committ_sample();
-                };
-            };
-
-        } else {
-            
-            // Not parallel
-            
-            // Shuffle visible
-            std::random_shuffle ( _latt_v_idxs.begin(), _latt_v_idxs.end() );
-            
-            // Visible
-            for (auto const &idx: _latt_v_idxs)
-            {
-                _latt_v[idx]->prepare_sample(binary_visible);
-                _latt_v[idx]->committ_sample();
-            };
-            
-            // Hiddens
-            for (auto &it: _latt_h) {
-                // Shuffle hidden
-                std::random_shuffle ( _latt_h_idxs[it.first].begin(), _latt_h_idxs[it.first].end() );
-                
-                for (auto const &idx: _latt_h_idxs[it.first]) {
-                    it.second[idx]->prepare_sample(binary_hidden);
-                    it.second[idx]->committ_sample();
+    void Lattice::_calculate_activations(int layer, int given_layer) {
+        int no_units = get_no_units_in_layer(layer);
+        for (auto &sp_pr: _species_possible.at(layer)) {
+            _latt_act[_i_markov_chain][layer][sp_pr.second] += _bias_dicts[layer]->get_ixn(sp_pr.second) * arma::vec(no_units,arma::fill::ones);
+            for (auto &given_sp_pr: _species_possible.at(given_layer)) {
+                if (given_layer == layer-1) {
+                    _latt_act[_i_markov_chain][layer][sp_pr.second] += _ixn_dicts[given_layer]->get_ixn(sp_pr.second, given_sp_pr.second) * ( _adj[given_layer].t() * _latt_act[_i_markov_chain][given_layer][given_sp_pr.second] );
+                } else if (given_layer == layer+1) {
+                    _latt_act[_i_markov_chain][layer][sp_pr.second] += _ixn_dicts[given_layer]->get_ixn(sp_pr.second, given_sp_pr.second) * ( _adj[given_layer] * _latt_act[_i_markov_chain][given_layer][given_sp_pr.second] );
                 };
             };
         };
     };
+    void Lattice::_convert_activations(int layer, bool binary) {
+        
+        // Convert activations to propensities via exp
+        // Also calculate total propensity
+        // Starts at 1.0 = exp(0) for empty
+        double prop_tot = 1.0;
+        for (auto &sp_pr: _species_possible.at(layer)) {
+            _latt_act[_i_markov_chain][layer][sp_pr.second] = exp(_latt_act[_i_markov_chain][layer][sp_pr.second]);
+            prop_tot += arma::sum(_latt_act[_i_markov_chain][layer][sp_pr.second]);
+        };
+        
+        // Divide by total to normalize
+        for (auto &sp_pr: _species_possible.at(layer)) {
+            _latt_act[_i_markov_chain][layer][sp_pr.second] /= prop_tot;
+        };
+        
+        // Sample if binary
+        if (binary) {
+            // Random vec
+            int no_units = get_no_units_in_layer(layer);
+            auto r = arma::vec(no_units,arma::fill::randu);
+            
+            // Convert to propensities
+            auto running = arma::vec(no_units,arma::fill::zeros);
+            for (auto &sp_pr: _species_possible.at(layer)) {
+                running += _latt_act[_i_markov_chain][layer][sp_pr.second];
+                _latt_act[_i_markov_chain][layer][sp_pr.second] = running;
+            };
+            
+            // Evaluate
+            // Initially: we are at zero, rand value is somewhere above
+            // Next: we are at some propensity, rand value may be somewhere above or below
+            // Finally: we are at max propensity = 1.0, rand value is below
+            // flip vector:
+            // 1 initially = rand is above current propensity
+            // 0 = rand is below current propensity
+            auto flip = arma::vec(no_units,arma::fill::ones);
+            auto new_flip = flip;
+            for (auto &sp_pr: _species_possible.at(layer)) {
+                // New flip vector
+                new_flip = 0.5*sign(r - _latt_act[_i_markov_chain][layer][sp_pr.second]) + 0.5;
+                // flip -> new_flip
+                // 1 -> 1 => not this species => (flip - new_flip) = 0
+                // 1 -> 0 => yes this species => (flip - new_flip) = 1
+                // 0 -> 0 => already assigned a previous species  => (flip - new_flip) = 0
+                _latt_act[_i_markov_chain][layer][sp_pr.second] = flip - new_flip;
+                
+                // Old flip vector = new flip vector
+                flip = new_flip;
+            };
+            // Finally: if still above the final propensity, it is the empty species! This means all are zero, so no further adjustment needed!
+        };
+    };
+    
+    // Prepare to activate a specific layer
+    void Lattice::activate_layer_prepare(int layer, bool binary) {
+        _reset_activations(layer);
+        if (layer != 0) {
+            _calculate_activations(layer, layer-1);
+        };
+        if (layer != _no_layers-1) {
+            _calculate_activations(layer, layer+1);
+        };
+        _convert_activations(layer,binary);
+    };
+    void Lattice::activate_layer_prepare(int layer, int given_layer, bool binary) {
+        if (given_layer != layer - 1 && given_layer != layer + 1) {
+            std::cerr << ">>> Lattice::activate_layer_prepare <<< given layer must be +- layer, but instead layer = " << layer << " and given layer = " << given_layer << std::endl;
+            exit(EXIT_FAILURE);
+        };
+        
+        _reset_activations(layer);
+        _calculate_activations(layer, given_layer);
+        _convert_activations(layer,binary);
+    };
+    
+    // Commit the activations
+    void Lattice::activate_layer_committ(int layer) {
+        _latt[_i_markov_chain][layer] = _latt_act[_i_markov_chain][layer];
+    };
+    
+    // Activate a specific layer
+    void Lattice::activate_layer(int layer, bool binary) {
+        activate_layer_prepare(layer, binary);
+        activate_layer_committ(layer);
+    };
+    void Lattice::activate_layer(int layer, int given_layer, bool binary) {
+        activate_layer_prepare(layer, given_layer, binary);
+        activate_layer_committ(layer);
+    };
+    
+    // Variational inference
+    void Lattice::variational_inference_hiddens() {
+        
+        // Prepare all layers
+        for (auto layer=1; layer<_no_layers; layer++) {
+            activate_layer_prepare(layer, false);
+        };
+        
+        // Committ
+        for (auto layer=1; layer<_no_layers; layer++) {
+            activate_layer_committ(layer);
+        };
+    };
+    
+    // Sample
+    void Lattice::sample(bool binary_visible, bool binary_hidden) {
+        // Prepare all layers
+        activate_layer_prepare(0, binary_visible);
+        for (auto layer=1; layer<_no_layers; layer++) {
+            activate_layer_prepare(layer, binary_hidden);
+        };
+        
+        // Committ
+        for (auto layer=0; layer<_no_layers; layer++) {
+            activate_layer_committ(layer);
+        };
+    };
+    
+    // Make a pass activating upwards
+    void Lattice::activate_upward_pass(bool binary_hidden) {
+        for (auto layer=1; layer<_no_layers; layer++) {
+            activate_layer(layer, layer-1, binary_hidden);
+        };
+    };
+
+    /*
     void Lattice::sample_bm_up_v_to_h(bool binary_hidden, bool parallel) {
         for (auto &layer: _latt_h) {
             sample_layer(layer.first, layer.first-1, binary_hidden, parallel);

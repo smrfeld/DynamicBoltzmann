@@ -13,13 +13,7 @@
 namespace bmla {
 
 	// Forward
-	class UnitVisible;
-	class UnitHidden;
-	class ConnVV;
-	class ConnVVV;
-	class ConnVH;
-	class ConnHH;
-	enum class IxnParamType: unsigned int;
+    enum class IxnParamType: unsigned int;
 
 	/****************************************
 	Moment
@@ -36,14 +30,6 @@ namespace bmla {
 
 		// Type = H, J, K, B, W
 		IxnParamType _type;
-
-		// Units to monitor
-		std::vector<UnitVisible*> _monitor_h;
-		std::vector<UnitHidden*> _monitor_b;
-		std::vector<ConnVV*> _monitor_j;
-		std::vector<ConnVVV*> _monitor_k;
-		std::vector<ConnVH*> _monitor_w;
-		std::vector<ConnHH*> _monitor_x;
 
 		// Visible batch size
 		int _batch_size;
@@ -88,18 +74,6 @@ namespace bmla {
 		void print_moment_comparison() const;
 
 		/********************
-		Finish setup
-		********************/
-
-		// Add units
-		void add_unit_to_monitor_h(UnitVisible *uv);
-		void add_unit_to_monitor_b(UnitHidden *uh);
-		void add_conn_to_monitor_j(ConnVV *conn);
-		void add_conn_to_monitor_k(ConnVVV *conn);
-		void add_conn_to_monitor_w(ConnVH *conn);
-		void add_conn_to_monitor_x(ConnHH *conn);
-
-		/********************
 		Name, type
 		********************/
 
@@ -140,17 +114,8 @@ namespace bmla {
 		double get_moment_sample(MomentType type, int i_sample) const;
 		void set_moment_sample(MomentType type, int i_sample, double val);
 
-		/********************
-		Reap from lattice
-		********************/
-
-		void reap_sample(MomentType type, int i_sample);
-		
-		/********************
-		Average reaps
-		********************/
-
-		void average_reaps(MomentType type);
+		// Average reaps
+		void average_samples(MomentType type);
 
 		/********************
 		Write

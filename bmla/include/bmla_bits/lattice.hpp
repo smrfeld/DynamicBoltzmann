@@ -39,6 +39,8 @@ namespace bmla {
 		int _box_length;
 
         // No markov chains
+        // idx 0 = awake stats
+        // Other idxs = asleep stats
         int _no_markov_chains;
         
         // No layers
@@ -51,7 +53,8 @@ namespace bmla {
         // -> Layer idx
         // -> State vector
         std::map<int,layers_map> _latt;
-        
+        std::map<int,layers_map> _latt_act;
+
 		// Layer lookup
 		// Layer -> (x,y,z) -> idx
 		std::map<int, std::map<int, int>> _lookup_1;
@@ -82,6 +85,11 @@ namespace bmla {
         
         // Add hidden unit to layer
         int _add_hidden_unit(int layer);
+        
+        // Activations
+        void _reset_activations(int layer);
+        void _calculate_activations(int layer, int given_layer);
+        void _convert_activations(int layer, bool binary);
         
 		// Contructor helpers
 		void _clean_up();
@@ -161,6 +169,7 @@ namespace bmla {
 		// Random
         void set_random_all_units(bool binary);
         void set_random_all_units_in_layer(int layer, bool binary);
+        void set_random_all_hidden_units(bool binary);
 
 		// Binarize
         void binarize_all_units();
@@ -177,10 +186,28 @@ namespace bmla {
         Activate layer
          ********************/
         
+        // Prepare to activate a specific layer
+        void activate_layer_prepare(int layer, bool binary);
+        void activate_layer_prepare(int layer, int given_layer, bool binary);
+
+        // Commit the activations
+        void activate_layer_committ(int layer);
+
         // Activate a specific layer
+        // First prepares
+        // Then committs
 		void activate_layer(int layer, bool binary);
 		void activate_layer(int layer, int given_layer, bool binary);
 
+        // Variational inference
+        void variational_inference_hiddens();
+        
+        // Sample
+        void sample(bool binary_visible, bool binary_hidden);
+    
+        // Make a pass activating upwards
+        void activate_upward_pass(bool binary_hidden);
+        
 		/********************
 		Get counts for visibles
 		********************/

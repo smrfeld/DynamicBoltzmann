@@ -153,7 +153,7 @@ namespace bmla {
 		~Impl();
 
 		// Add to the dict
-		void add_ixn(Sptr sp_of_site_1, Sptr sp_of_site_2, Iptr ixn, bool reversibly=false);
+		void add_ixn(Sptr sp_of_site_1, Sptr sp_of_site_2, Iptr ixn);
 
 		// Get from the dict
 		double get_ixn(Sptr sp_of_site_1, Sptr sp_of_site_2) const;
@@ -213,11 +213,9 @@ namespace bmla {
 		_i_dict[ixn].push_back(Sptr2(sp_of_site_1,sp_of_site_2));
 		_i_str_dict[ixn->get_name()].push_back(Sptr2(sp_of_site_1,sp_of_site_2));
 	};
-	void O2IxnDict::Impl::add_ixn(Sptr sp1, Sptr sp2, Iptr ixn, bool reversibly) {
+	void O2IxnDict::Impl::add_ixn(Sptr sp1, Sptr sp2, Iptr ixn) {
 		_add_ixn(sp1,sp2,ixn);
-		if (reversibly) {
-			_add_ixn(sp2,sp1,ixn);
-		};
+        _add_ixn(sp2,sp1,ixn);
 	};
 
 	// Get from the dict
@@ -271,8 +269,8 @@ namespace bmla {
 	O2IxnDict::~O2IxnDict() = default;
 
 	// Add to the dict forward
-	void O2IxnDict::add_ixn(Sptr sp_of_site_1, Sptr sp_of_site_2, Iptr ixn, bool reversibly) {
-		_impl->add_ixn(sp_of_site_1,sp_of_site_2,ixn,reversibly);
+	void O2IxnDict::add_ixn(Sptr sp_of_site_1, Sptr sp_of_site_2, Iptr ixn) {
+		_impl->add_ixn(sp_of_site_1,sp_of_site_2,ixn);
 	};
 
 	// Get from the dict forward
@@ -344,7 +342,7 @@ namespace bmla {
 		~Impl();
 
 		// Add to the dict
-		void add_ixn(Sptr sp_of_site_1, Sptr sp_of_site_2, Sptr sp_of_site_3, Iptr ixn, bool this_order);
+		void add_ixn(Sptr sp_of_site_1, Sptr sp_of_site_2, Sptr sp_of_site_3, Iptr ixn);
 
 		// Get from the dict
 		double get_ixn(Sptr sp_of_site_1, Sptr sp_of_site_2, Sptr sp_of_site_3) const;
@@ -406,11 +404,9 @@ namespace bmla {
 		_i_dict[ixn].push_back(Sptr3(sp_of_site_1,sp_of_site_2,sp_of_site_3));
 		_i_str_dict[ixn->get_name()].push_back(Sptr3(sp_of_site_1,sp_of_site_2,sp_of_site_3));
 	};
-	void O3IxnDict::Impl::add_ixn(Sptr sp1, Sptr sp2, Sptr sp3, Iptr ixn, bool this_order) {
+	void O3IxnDict::Impl::add_ixn(Sptr sp1, Sptr sp2, Sptr sp3, Iptr ixn) {
 		_add_ixn(sp1,sp2,sp3,ixn);
-		if (!this_order) {
-			_add_ixn(sp3,sp2,sp1,ixn);
-		};
+        _add_ixn(sp3,sp2,sp1,ixn);
 	};
 
 	// Get from the dict
@@ -468,8 +464,8 @@ namespace bmla {
 	O3IxnDict::~O3IxnDict() = default;
 
 	// Add to the dict forward
-	void O3IxnDict::add_ixn(Sptr sp_of_site_1, Sptr sp_of_site_2, Sptr sp_of_site_3, Iptr ixn, bool this_order) {
-		_impl->add_ixn(sp_of_site_1,sp_of_site_2,sp_of_site_3,ixn,this_order);
+	void O3IxnDict::add_ixn(Sptr sp_of_site_1, Sptr sp_of_site_2, Sptr sp_of_site_3, Iptr ixn) {
+		_impl->add_ixn(sp_of_site_1,sp_of_site_2,sp_of_site_3,ixn);
 	};
 
 	// Get from the dict forward

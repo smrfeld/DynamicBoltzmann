@@ -3,8 +3,6 @@
 // Other headers
 #include "../include/bmla_bits/general.hpp"
 #include "../include/bmla_bits/ixn_param.hpp"
-#include "../include/bmla_bits/unit.hpp"
-#include "../include/bmla_bits/connections.hpp"
 #include "../include/bmla_bits/species.hpp"
 
 #include <fstream>
@@ -74,13 +72,6 @@ namespace bmla {
 		_name = other._name;
 		_type = other._type;
 
-		_monitor_h = other._monitor_h; 
-		_monitor_b = other._monitor_b; 
-		_monitor_j = other._monitor_j; 
-		_monitor_k = other._monitor_k; 
-		_monitor_w = other._monitor_w; 
-		_monitor_x = other._monitor_x; 
-
 		_batch_size = other._batch_size;
         _no_markov_chains = other._no_markov_chains;
         
@@ -97,13 +88,6 @@ namespace bmla {
 		// Reset the other
 		other._name = "";
 
-		other._monitor_h.clear(); 
-		other._monitor_b.clear();
-		other._monitor_j.clear(); 
-		other._monitor_k.clear(); 
-		other._monitor_w.clear(); 
-		other._monitor_x.clear();
-
 		other._batch_size = 0;
         other._no_markov_chains = 0;
         
@@ -118,14 +102,7 @@ namespace bmla {
 	void Moment::_copy(const Moment& other) {
 		_name = other._name;
 		_type = other._type;
-
-		_monitor_h = other._monitor_h; 
-		_monitor_b = other._monitor_b;
-		_monitor_j = other._monitor_j; 
-		_monitor_k = other._monitor_k; 
-		_monitor_w = other._monitor_w; 
-		_monitor_x = other._monitor_x; 
-
+        
 		_batch_size = other._batch_size;
         _no_markov_chains = other._no_markov_chains;
         
@@ -149,54 +126,7 @@ namespace bmla {
 	void Moment::print_moment_comparison() const {
 		std::cout << "(" << _val_awake_averaged << "," << _val_asleep_averaged << ") " << std::endl;
 	};
-
-	/********************
-	Finish setup
-	********************/
-
-	void Moment::add_unit_to_monitor_h(UnitVisible *uv) {
-		if (_type != IxnParamType::H) {
-			std::cerr << ">>> Error: Moment::add_unit_to_monitor_h <<< tried to add visible unit but moment is not of type H" << std::endl;
-			exit(EXIT_FAILURE);
-		};
-		_monitor_h.push_back(uv);
-	};
-	void Moment::add_unit_to_monitor_b(UnitHidden *uh) {
-		if (_type != IxnParamType::B) {
-			std::cerr << ">>> Error: Moment::add_unit_to_monitor_b <<< tried to add visible unit but moment is not of type B" << std::endl;
-			exit(EXIT_FAILURE);
-		};
-		_monitor_b.push_back(uh);
-	};
-	void Moment::add_conn_to_monitor_j(ConnVV *conn) {
-		if (_type != IxnParamType::J) {
-			std::cerr << ">>> Error: Moment::add_conn_to_monitor_j <<< tried to add connVV but moment is not of type J" << std::endl;
-			exit(EXIT_FAILURE);
-		};
-		_monitor_j.push_back(conn);
-	};
-	void Moment::add_conn_to_monitor_k(ConnVVV *conn) {
-		if (_type != IxnParamType::K) {
-			std::cerr << ">>> Error: Moment::add_conn_to_monitor_k <<< tried to add connVVV but moment is not of type K" << std::endl;
-			exit(EXIT_FAILURE);
-		};
-		_monitor_k.push_back(conn);
-	};
-	void Moment::add_conn_to_monitor_w(ConnVH *conn) {
-		if (_type != IxnParamType::W) {
-			std::cerr << ">>> Error: Moment::add_conn_to_monitor_w <<< tried to add connVH but moment is not of type W" << std::endl;
-			exit(EXIT_FAILURE);
-		};
-		_monitor_w.push_back(conn);
-	};
-	void Moment::add_conn_to_monitor_x(ConnHH *conn) {
-		if (_type != IxnParamType::X) {
-			std::cerr << ">>> Error: Moment::add_conn_to_monitor_x <<< tried to add connHH but moment is not of type X" << std::endl;
-			exit(EXIT_FAILURE);
-		};
-		_monitor_x.push_back(conn);
-	};
-
+    
 	/********************
 	Name
 	********************/
@@ -321,67 +251,8 @@ namespace bmla {
 		};
 	};
 
-	/********************
-	Reap from sampler
-	********************/
-
-	void Moment::reap_sample(MomentType type, int i_sample) {
-
-        if (type == MomentType::AWAKE) {
-            if (i_sample >= _batch_size) {
-                std::cerr << ">>> Error Moment::reap_in_batch <<< Batch size for awake moment is: " << _batch_size << " but tried: " << i_sample << std::endl;
-                exit(EXIT_FAILURE);
-            };
-        } else {
-            if (i_sample >= _no_markov_chains) {
-                std::cerr << ">>> Error Moment::reap_in_batch <<< No markov chains for  asleep moment is: " << _no_markov_chains << " but tried: " << i_sample << std::endl;
-                exit(EXIT_FAILURE);
-            };
-        };
-
-		// Get all counts
-		double count = 0.0;
-		if (_type == IxnParamType::H) {
-			// H
-			for (auto const &unit: _monitor_h) {
-				count += unit->get_moment(_name);
-			};
-		} else if (_type == IxnParamType::B) {
-			// B
-			for (auto const &unit: _monitor_b) {
-				count += unit->get_moment(_name);
-			};
-		} else if (_type == IxnParamType::J) {
-			// J
-			for (auto const &conn: _monitor_j) {
-				count += conn->get_moment(_name);
-			};
-		} else if (_type == IxnParamType::K) {
-			// K
-			for (auto const &conn: _monitor_k) {
-				count += conn->get_moment(_name);
-			};
-		} else if (_type == IxnParamType::W) {
-			// K
-			for (auto const &conn: _monitor_w) {
-				count += conn->get_moment(_name);
-			};
-		} else if (_type == IxnParamType::X) {
-			// K
-			for (auto const &conn: _monitor_x) {
-				count += conn->get_moment(_name);
-			};
-		};
-
-		// Set
-		set_moment_sample(type,i_sample,count);
-	};
-
-	/********************
-	Average reaps
-	********************/
-
-	void Moment::average_reaps(MomentType type) {
+    // Average reaps
+	void Moment::average_samples(MomentType type) {
 		if (type == MomentType::AWAKE) {
 
 			// Awake moment

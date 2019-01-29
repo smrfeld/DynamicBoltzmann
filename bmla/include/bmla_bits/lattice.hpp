@@ -31,8 +31,8 @@ namespace bmla {
 
     typedef std::map<Sptr,arma::vec> layer_occ;
     typedef std::map<int, layer_occ> layers_map;
-    typedef std::map<Sptr,std::vector<Iptr>> bias_dict;
-    typedef std::map<Sptr,std::map<Sptr,std::vector<Iptr>>> o2_ixn_dict;
+    typedef std::map<int, std::map<Sptr,std::vector<Iptr>>> bias_dict;
+    typedef std::map<int, std::map<Sptr, std::map<int, std::map<Sptr,std::vector<Iptr>>>>> o2_ixn_dict;
 
 	class Lattice
 	{
@@ -70,9 +70,6 @@ namespace bmla {
         // Reverse
         // Layer -> idx -> (x,y,z)
         std::map<int, std::map<int, std::vector<int>>> _rlookup;
-        // Next free idx
-        // Layer -> free idx
-        std::map<int, int> _free_idxs;
         
         // Adjacency matrices
         // Idx 0 connects 0, 1
@@ -81,8 +78,8 @@ namespace bmla {
         
         // Bias/ixn dicts
         std::vector<Iptr> _all_ixns;
-        std::map<int,bias_dict> _bias_dicts;
-        std::map<int,o2_ixn_dict> _o2_ixn_dicts;
+        bias_dict _bias_dict;
+        o2_ixn_dict _o2_ixn_dict;
         
         // Multipliers between layers for ixns - NOT bidirectional
         std::map<int, std::map<int, double>> _o2_mults;
@@ -116,7 +113,7 @@ namespace bmla {
 		Constructor
 		********************/
 
-        Lattice(int dim, int box_length, std::vector<Sptr> species_visible);
+        Lattice(int no_dims, int box_length, std::vector<Sptr> species_visible);
 		Lattice(const Lattice& other);
 		Lattice(Lattice&& other);
 		Lattice& operator=(const Lattice& other);
@@ -144,12 +141,8 @@ namespace bmla {
         Add a layer
          ********************/
 
-        void add_layer(int layer, int no_units, std::vector<Sptr> species);
+        void add_layer(int layer, int box_length, std::vector<Sptr> species);
         
-        void set_pos_of_hidden_unit(int layer, int x);
-        void set_pos_of_hidden_unit(int layer, int x, int y);
-        void set_pos_of_hidden_unit(int layer, int x, int y, int z);
-
         /********************
 		Biases/ixn params
 		********************/

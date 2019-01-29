@@ -29,61 +29,21 @@ namespace bmla {
 	Constructor
 	********************/
 
-	Lattice::Lattice(int dim, int box_length, std::vector<Sptr> species_visible)
+	Lattice::Lattice(int no_dims, int box_length, std::vector<Sptr> species_visible)
 	{
-		if (dim != 1 && dim != 2 && dim != 3) {
+		if (no_dims != 1 && no_dims != 2 && no_dims != 3) {
 			std::cerr << "ERROR: only dimensions 1,2,3 are supported for Lattice." << std::endl;
 			exit(EXIT_FAILURE);
 		};
-		_no_dims = dim;
+		_no_dims = no_dims;
 		_box_length = box_length;
         _no_markov_chains = 1;
         _no_markov_chains_asleep = 0;
-        _no_layers = 1;
+        _no_layers = 0;
         _i_markov_chain = 0;
         
 		// Visible layer
-        int i_chain = 0;
-        int i_layer = 0;
-		if (dim == 1) {
-            for (auto sp: species_visible) {
-                _latt[i_chain][i_layer][sp] = arma::vec(_box_length,arma::fill::zeros);
-                _latt_act[i_chain][i_layer][sp] = arma::vec(_box_length,arma::fill::zeros);
-            };
-            for (auto x=1; x<=_box_length; x++) {
-                _lookup_1[0][x] = x-1;
-                _rlookup[0][x-1] = std::vector<int>({x});
-            };
-        } else if (dim == 2) {
-            for (auto sp: species_visible) {
-                _latt[i_chain][i_layer][sp] = arma::vec(pow(_box_length,2),arma::fill::zeros);
-                _latt_act[i_chain][i_layer][sp] = arma::vec(pow(_box_length,2),arma::fill::zeros);
-            };
-            int ctr=0;
-            for (auto x=1; x<=_box_length; x++) {
-                for (auto y=1; y<=_box_length; y++) {
-                    _lookup_2[0][x][y] = ctr;
-                    _rlookup[0][ctr++] = std::vector<int>({x,y});
-                };
-            };
-		} else if (dim == 3) {
-            for (auto sp: species_visible) {
-                _latt[i_chain][i_layer][sp] = arma::vec(pow(_box_length,3),arma::fill::zeros);
-                _latt_act[i_chain][i_layer][sp] = arma::vec(pow(_box_length,3),arma::fill::zeros);
-            };
-            int ctr=0;
-            for (auto x=1; x<=_box_length; x++) {
-                for (auto y=1; y<=_box_length; y++) {
-                    for (auto z=1; z<=_box_length; z++) {
-                        _lookup_3[0][x][y][z] = ctr;
-                        _rlookup[0][ctr++] = std::vector<int>({x,y,z});
-                    };
-                };
-            };
-		};
-        
-        // No free idxs in first layer
-        _free_idxs[0] = pow(_box_length,_no_dims);
+        add_layer(0, _box_length, species_visible);
         
         // Possible species
         for (auto sp: species_visible) {
@@ -130,12 +90,11 @@ namespace bmla {
         _lookup_2 = other._lookup_2;
         _lookup_3 = other._lookup_3;
         _rlookup = other._rlookup;
-        _free_idxs = other._free_idxs;
         _adj = other._adj;
         
         _all_ixns = other._all_ixns;
-        _bias_dicts = other._bias_dicts;
-        _o2_ixn_dicts = other._o2_ixn_dicts;
+        _bias_dict = other._bias_dict;
+        _o2_ixn_dict = other._o2_ixn_dict;
         _o2_mults = other._o2_mults;
         
         _species_possible = other._species_possible;
@@ -153,12 +112,11 @@ namespace bmla {
         _lookup_2 = other._lookup_2;
         _lookup_3 = other._lookup_3;
         _rlookup = other._rlookup;
-        _free_idxs = other._free_idxs;
         _adj = other._adj;
         
         _all_ixns = other._all_ixns;
-        _bias_dicts = other._bias_dicts;
-        _o2_ixn_dicts = other._o2_ixn_dicts;
+        _bias_dict = other._bias_dict;
+        _o2_ixn_dict = other._o2_ixn_dict;
         _o2_mults = other._o2_mults;
         
         _species_possible = other._species_possible;
@@ -176,12 +134,11 @@ namespace bmla {
 		other._lookup_2.clear();
 		other._lookup_3.clear();
         other._rlookup.clear();
-        other._free_idxs.clear();
         other._adj.clear();
         
         other._all_ixns.clear();
-        other._bias_dicts.clear();
-        other._o2_ixn_dicts.clear();
+        other._bias_dict.clear();
+        other._o2_ixn_dict.clear();
         other._o2_mults.clear();
         
         other._species_possible.clear();
@@ -313,7 +270,7 @@ namespace bmla {
      Add a layer
      ********************/
     
-    void Lattice::add_layer(int layer, int no_units, std::vector<Sptr> species) {
+    void Lattice::add_layer(int layer, int box_length, std::vector<Sptr> species) {
         if (layer != _no_layers) {
             std::cerr << ">>> Lattice::add_layer <<< error: next layer must be: " << _no_layers << " not: " << layer << std::endl;
             exit(EXIT_FAILURE);
@@ -323,6 +280,7 @@ namespace bmla {
         _no_layers += 1;
         
         // Add empties
+        int no_units = pow(box_length,_no_dims);
         for (auto i_chain=0; i_chain<_no_markov_chains; i_chain++) {
             for (auto sp: species) {
                 _latt[i_chain][layer][sp] = arma::vec(no_units,arma::fill::zeros);
@@ -330,8 +288,31 @@ namespace bmla {
             };
         };
         
-        // Free idxs
-        _free_idxs[layer] = 0;
+        // Lookups
+        if (_no_dims == 1) {
+            for (auto x=1; x<=_box_length; x++) {
+                _lookup_1[layer][x] = x-1;
+                _rlookup[layer][x-1] = std::vector<int>({x});
+            };
+        } else if (_no_dims == 2) {
+            int ctr=0;
+            for (auto x=1; x<=_box_length; x++) {
+                for (auto y=1; y<=_box_length; y++) {
+                    _lookup_2[layer][x][y] = ctr;
+                    _rlookup[layer][ctr++] = std::vector<int>({x,y});
+                };
+            };
+        } else if (_no_dims == 3) {
+            int ctr=0;
+            for (auto x=1; x<=_box_length; x++) {
+                for (auto y=1; y<=_box_length; y++) {
+                    for (auto z=1; z<=_box_length; z++) {
+                        _lookup_3[layer][x][y][z] = ctr;
+                        _rlookup[layer][ctr++] = std::vector<int>({x,y,z});
+                    };
+                };
+            };
+        };
         
         // Add species possible
         for (auto sp: species) {
@@ -339,42 +320,10 @@ namespace bmla {
         };
         
         // Add adjacency matrix
-        int size_below = get_no_units_in_layer(layer-1);
-        _adj[layer-1] = arma::mat(size_below,no_units,arma::fill::zeros);
-    };
-    
-    void Lattice::set_pos_of_hidden_unit(int layer, int x) {
-        if (_free_idxs[layer] >= get_no_units_in_layer(layer)) {
-            std::cerr << ">>> Lattice::set_pos_of_hidden_unit <<< no more free units in layer: " << layer << " of size: " << get_no_units_in_layer(layer) << std::endl;
-            exit(EXIT_FAILURE);
+        if (layer != 0) {
+            int size_below = get_no_units_in_layer(layer-1);
+            _adj[layer-1] = arma::mat(size_below,no_units,arma::fill::zeros);
         };
-        
-        int new_idx = _free_idxs[layer];
-        _lookup_1[layer][x] = new_idx;
-        _rlookup[layer][new_idx] = std::vector<int>({x});
-        _free_idxs[layer] += 1;
-    };
-    void Lattice::set_pos_of_hidden_unit(int layer, int x, int y) {
-        if (_free_idxs[layer] >= get_no_units_in_layer(layer)) {
-            std::cerr << ">>> Lattice::set_pos_of_hidden_unit <<< no more free units in layer: " << layer << " of size: " << get_no_units_in_layer(layer) << std::endl;
-            exit(EXIT_FAILURE);
-        };
-
-        int new_idx = _free_idxs[layer];
-        _lookup_2[layer][x][y] = new_idx;
-        _rlookup[layer][new_idx] = std::vector<int>({x,y});
-        _free_idxs[layer] += 1;
-    };
-    void Lattice::set_pos_of_hidden_unit(int layer, int x, int y, int z) {
-        if (_free_idxs[layer] >= get_no_units_in_layer(layer)) {
-            std::cerr << ">>> Lattice::set_pos_of_hidden_unit <<< no more free units in layer: " << layer << " of size: " << get_no_units_in_layer(layer) << std::endl;
-            exit(EXIT_FAILURE);
-        };
-        
-        int new_idx = _free_idxs[layer];
-        _lookup_3[layer][x][y][z] = new_idx;
-        _rlookup[layer][new_idx] = std::vector<int>({x,y,z});
-        _free_idxs[layer] += 1;
     };
 
 	/********************
@@ -389,7 +338,7 @@ namespace bmla {
     };
 
     void Lattice::add_bias_to_layer(int layer, Sptr sp, Iptr bias) {
-        _bias_dicts[layer][sp].push_back(bias);
+        _bias_dict[layer][sp].push_back(bias);
         
         // Add to all
         auto it = std::find(_all_ixns.begin(), _all_ixns.end(), bias);
@@ -405,8 +354,10 @@ namespace bmla {
             exit(EXIT_FAILURE);
         };
         
-        _o2_ixn_dicts[layer1][sp1][sp2].push_back(ixn);
-        
+        // Add both ways
+        _o2_ixn_dict[layer1][sp1][layer2][sp2].push_back(ixn);
+        _o2_ixn_dict[layer2][sp2][layer1][sp1].push_back(ixn);
+
         // Add to all
         auto it = std::find(_all_ixns.begin(), _all_ixns.end(), ixn);
         if (it == _all_ixns.end()) {
@@ -426,9 +377,9 @@ namespace bmla {
 
     // Get ixns
     double Lattice::get_bias_in_layer(int layer, Sptr sp) const {
-        auto it = _bias_dicts.find(layer);
+        auto it = _bias_dict.find(layer);
         double val = 0.0;
-        if (it != _bias_dicts.end()) {
+        if (it != _bias_dict.end()) {
             auto it2 = it->second.find(sp);
             if (it2 != it->second.end()) {
                 for (auto ixn: it2->second) {
@@ -455,30 +406,15 @@ namespace bmla {
         };
         
         double val = 0.0;
-        if (layer1 < layer2) {
-            
-            auto it = _o2_ixn_dicts.find(layer1);
-            if (it != _o2_ixn_dicts.end()) {
-                auto it2 = it->second.find(sp1);
-                if (it2 != it->second.end()) {
-                    auto it3 = it2->second.find(sp2);
-                    if (it3 != it2->second.end()) {
-                        for (auto ixn: it3->second) {
-                            val += mult * ixn->get_val();
-                        };
-                    };
-                };
-            };
-            
-        } else {
-            
-            auto it = _o2_ixn_dicts.find(layer2);
-            if (it != _o2_ixn_dicts.end()) {
-                auto it2 = it->second.find(sp2);
-                if (it2 != it->second.end()) {
-                    auto it3 = it2->second.find(sp1);
-                    if (it3 != it2->second.end()) {
-                        for (auto ixn: it3->second) {
+        auto it1 = _o2_ixn_dict.find(layer1);
+        if (it1 != _o2_ixn_dict.end()) {
+            auto it2 = it1->second.find(sp1);
+            if (it2 != it1->second.end()) {
+                auto it3 = it2->second.find(layer2);
+                if (it3 != it2->second.end()) {
+                    auto it4 = it3->second.find(sp2);
+                    if (it4 != it3->second.end()) {
+                        for (auto ixn: it4->second) {
                             val += mult * ixn->get_val();
                         };
                     };
@@ -962,206 +898,7 @@ namespace bmla {
             activate_layer(layer, layer-1, binary_hidden);
         };
     };
-    
-    /*
-    void Lattice::sample_bm_up_v_to_h(bool binary_hidden, bool parallel) {
-        for (auto &layer: _latt_h) {
-            sample_layer(layer.first, layer.first-1, binary_hidden, parallel);
-        };
-    };
-
-    // Variational inference in a BM
-    void Lattice::sample_bm_variational_inference(bool parallel) {
-        // Go through all hidden layers
-        // Probabilistic mean field
-        if (parallel) {
-            
-            // Parallel
-            
-            for (auto &it: _latt_h) {
-                for (auto const &idx: _latt_h_idxs[it.first])
-                {
-                    it.second[idx]->prepare_sample(false); // false = probablistic
-                };
-            };
-            for (auto &it: _latt_h) {
-                for (auto const &idx: _latt_h_idxs[it.first])
-                {
-                    it.second[idx]->committ_sample();
-                };
-            };
-        } else {
-            
-            // Not parallel
-            
-            for (auto &it: _latt_h) {
-                
-                // Shuffle
-                std::random_shuffle ( _latt_h_idxs[it.first].begin(), _latt_h_idxs[it.first].end() );
-                
-                for (auto const &idx: _latt_h_idxs[it.first])
-                {
-                    it.second[idx]->prepare_sample(false); // false = probablistic
-                    it.second[idx]->committ_sample();
-                };
-            };
-        };
-    };
-
-    // Sample a specific layer
-	void Lattice::sample_layer(int layer, bool binary, bool parallel) {
-
-		if (layer == 0) {
-
-			// Visible layer
-
-			if (parallel) {
-
-				// Parallel
-
-				for (auto const &idx: _latt_v_idxs) 
-				{
-					_latt_v[idx]->prepare_sample(binary);
-				};
-				for (auto const &idx: _latt_v_idxs) 
-				{
-					_latt_v[idx]->committ_sample();
-				};
-
-			} else {
-
-				// Not in parallel
-
-				// Shuffle
-				std::random_shuffle ( _latt_v_idxs.begin(), _latt_v_idxs.end() );		
-
-				for (auto const &idx: _latt_v_idxs) 
-				{
-					_latt_v[idx]->prepare_sample(binary);
-					_latt_v[idx]->committ_sample();
-				};
-
-			};
-
-		} else {
-
-			// Hidden layer
-			auto it = _latt_h.find(layer);
-			if (it == _latt_h.end()) {
-				return;
-			};
-
-			if (parallel) {
-
-				// Parallel
-
-				for (auto const &idx: _latt_h_idxs[it->first]) 
-				{
-					it->second[idx]->prepare_sample(binary);
-				};
-				for (auto const &idx: _latt_h_idxs[it->first]) 
-				{
-					it->second[idx]->committ_sample();
-				};
-
-			} else {
-
-				// Not in parallel
-
-				std::random_shuffle ( _latt_h_idxs[it->first].begin(), _latt_h_idxs[it->first].end() );
-
-				for (auto const &idx: _latt_h_idxs[it->first]) 
-				{
-					it->second[idx]->prepare_sample(binary);
-					it->second[idx]->committ_sample();
-				};
-			};
-		};
-	};
-
-	void Lattice::sample_layer(int layer, int given_layer, bool binary, bool parallel) {
-
-		if (layer == 0) {
-
-			// Visible layer
-
-			if (given_layer != 1) {
-				std::cerr << ">>> Lattice::sample_layer <<< Error: if sampling visible layer = 0, must specify given_layer = 1, instead of: " << given_layer << std::endl;
-				exit(EXIT_FAILURE);
-			};
-
-			if (parallel) {
-
-				// Parallel
-
-				for (auto const &idx: _latt_v_idxs) 
-				{
-					_latt_v[idx]->prepare_sample(binary,given_layer);
-				};
-				for (auto const &idx: _latt_v_idxs) 
-				{
-					_latt_v[idx]->committ_sample();
-				};
-
-			} else {
-
-				// Not in parallel
-
-				// Shuffle
-				std::random_shuffle ( _latt_v_idxs.begin(), _latt_v_idxs.end() );		
-
-				for (auto const &idx: _latt_v_idxs) 
-				{
-					_latt_v[idx]->prepare_sample(binary,given_layer);
-					_latt_v[idx]->committ_sample();
-				};
-
-			};
-
-		} else {
-
-			// Hidden layer
-
-			if (given_layer != layer - 1 && given_layer != layer + 1) {
-				std::cerr << ">>> Lattice::sample_layer <<< Error: sampling hidden layer: " << layer << " then given layer must be " << layer << " +- 1, instead of: " <<  given_layer << std::endl;
-				exit(EXIT_FAILURE);
-			};
-
-			auto it = _latt_h.find(layer);
-			if (it == _latt_h.end()) {
-				return;
-			};
-
-			if (parallel) {
-
-				// Parallel
-
-				for (auto const &idx: _latt_h_idxs[it->first]) 
-				{
-					it->second[idx]->prepare_sample(binary,given_layer);
-				};
-				for (auto const &idx: _latt_h_idxs[it->first]) 
-				{
-					it->second[idx]->committ_sample();
-				};
-
-			} else {
-
-				// Not in parallel
-
-				std::random_shuffle ( _latt_h_idxs[it->first].begin(), _latt_h_idxs[it->first].end() );
-
-				for (auto const &idx: _latt_h_idxs[it->first]) 
-				{
-					it->second[idx]->prepare_sample(binary,given_layer);
-					it->second[idx]->committ_sample();
-				};
-			};
-		};
-	};
-
-     */
-     
+         
     /********************
 	Get counts
 	********************/
@@ -1272,7 +1009,7 @@ namespace bmla {
         
         // Reap biases
         double val;
-        for (auto &bias_layer: _bias_dicts) {
+        for (auto &bias_layer: _bias_dict) {
             // Go through possible species in this layer
             for (auto &sp_pr: bias_layer.second) {
                 // Get the moment
@@ -1291,19 +1028,27 @@ namespace bmla {
         };
         
         // Reap ixns
-        for (auto &o2_ixn_layer: _o2_ixn_dicts) {
+        for (auto &o2_ixn_layer_1: _o2_ixn_dict) {
             // Go through possible species in this layer
-            for (auto &sp_pr_1: o2_ixn_layer.second) {
-                for (auto &sp_pr_2: sp_pr_1.second) {
-                    // Get the moment
-                    val = dot(_latt.at(_i_markov_chain).at(o2_ixn_layer.first).at(sp_pr_1.first), _adj.at(o2_ixn_layer.first) * _latt.at(_i_markov_chain).at(o2_ixn_layer.first + 1).at(sp_pr_2.first));
+            for (auto &sp_pr_1: o2_ixn_layer_1.second) {
+                for (auto &o2_ixn_layer_2: sp_pr_1.second) {
+                    // Be careful not to double count
+                    if (o2_ixn_layer_2.first <= o2_ixn_layer_1.first) {
+                        // skip
+                        continue;
+                    };
                     
-                    // Go through all ixns associated with this species
-                    for (auto ixn: sp_pr_2.second) {
-                        // Set the moment
-                        if (ixn->get_moment()) {
-                            if (type == MomentType::ASLEEP || !ixn->get_moment()->get_is_awake_moment_fixed()) {
-                                ixn->get_moment()->increment_moment_sample(type, i_sample, val);
+                    for (auto &sp_pr_2: o2_ixn_layer_2.second) {
+                        // Get the moment
+                        val = dot(_latt.at(_i_markov_chain).at(o2_ixn_layer_1.first).at(sp_pr_1.first), _adj.at(o2_ixn_layer_1.first) * _latt.at(_i_markov_chain).at(o2_ixn_layer_2.first).at(sp_pr_2.first));
+                        
+                        // Go through all ixns associated with this species
+                        for (auto ixn: sp_pr_2.second) {
+                            // Set the moment
+                            if (ixn->get_moment()) {
+                                if (type == MomentType::ASLEEP || !ixn->get_moment()->get_is_awake_moment_fixed()) {
+                                    ixn->get_moment()->increment_moment_sample(type, i_sample, val);
+                                };
                             };
                         };
                     };

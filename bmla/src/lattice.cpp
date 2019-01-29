@@ -3,8 +3,8 @@
 // Other headers
 #include "../include/bmla_bits/general.hpp"
 #include "../include/bmla_bits/species.hpp"
-#include "../include/bmla_bits/ixn_dicts.hpp"
 #include "../include/bmla_bits/moment.hpp"
+#include "../include/bmla_bits/ixn_param.hpp"
 
 #include <iostream>
 #include <fstream>
@@ -124,8 +124,9 @@ namespace bmla {
         _rlookup = other._rlookup;
         _adj = other._adj;
         
+        _all_ixns = other._all_ixns;
         _bias_dicts = other._bias_dicts;
-        _ixn_dicts = other._ixn_dicts;
+        _o2_ixn_dicts = other._o2_ixn_dicts;
         
         _species_possible = other._species_possible;
     };
@@ -143,8 +144,9 @@ namespace bmla {
         _rlookup = other._rlookup;
         _adj = other._adj;
         
+        _all_ixns = other._all_ixns;
         _bias_dicts = other._bias_dicts;
-        _ixn_dicts = other._ixn_dicts;
+        _o2_ixn_dicts = other._o2_ixn_dicts;
         
         _species_possible = other._species_possible;
 
@@ -162,8 +164,9 @@ namespace bmla {
         other._rlookup.clear();
         other._adj.clear();
         
+        other._all_ixns.clear();
         other._bias_dicts.clear();
-        other._ixn_dicts.clear();
+        other._o2_ixn_dicts.clear();
         
         other._species_possible.clear();
 	};
@@ -315,25 +318,64 @@ namespace bmla {
 	********************/
 
     // Biases
-	void Lattice::set_bias_dict_all_units(std::shared_ptr<BiasDict> bias_dict) {
+	void Lattice::add_bias_all_layers(Sptr sp, Iptr bias) {
         for (auto layer=0; layer<_no_layers; layer++) {
-            set_bias_dict_all_units_in_layer(layer, bias_dict);
+            add_bias_to_layer(layer, sp, bias);
         };
     };
 
-    void Lattice::set_bias_dict_all_units_in_layer(int layer, std::shared_ptr<BiasDict> bias_dict) {
-        _bias_dicts[layer] = bias_dict;
+    void Lattice::add_bias_to_layer(int layer, Sptr sp, Iptr bias) {
+        _bias_dicts[layer][sp].push_back(bias);
+        
+        // Add to all
+        auto it = std::find(_all_ixns.begin(), _all_ixns.end(), bias);
+        if (it == _all_ixns.end()) {
+            _all_ixns.push_back(bias);
+        };
     };
 
     // Ixns
-    void Lattice::set_ixn_dict_between_layers(int layer_1, int layer_2, std::shared_ptr<O2IxnDict> ixn_dict) {
-        if (layer_2 != layer_1 + 1) {
-            std::cerr << ">>> Lattice::set_ixn_dict_between_layers <<< only layer_2 (now = " << layer_2 << ") = layer_1 + 1 (now = " << layer_1 + 1 << ") is supported" << std::endl;
-            exit(EXIT_FAILURE);
+    void Lattice::add_ixn_between_layer_and_layer_above(int layer, Sptr sp1, Sptr sp2, Iptr ixn) {
+        _o2_ixn_dicts[layer][sp1][sp2].push_back(ixn);
+        
+        // Add to all
+        auto it = std::find(_all_ixns.begin(), _all_ixns.end(), ixn);
+        if (it == _all_ixns.end()) {
+            _all_ixns.push_back(ixn);
         };
-        _ixn_dicts[layer_1] = ixn_dict;
     };
     
+    // Get ixns
+    double Lattice::get_bias_in_layer(int layer, Sptr sp) const {
+        auto it = _bias_dicts.find(layer);
+        double val = 0.0;
+        if (it != _bias_dicts.end()) {
+            auto it2 = it->second.find(sp);
+            if (it2 != it->second.end()) {
+                for (auto ixn: it2->second) {
+                    val += ixn->get_val();
+                };
+            };
+        };
+        return val;
+    };
+    double Lattice::get_ixn_between_layer_and_layer_above(int layer, Sptr sp1, Sptr sp2) const {
+        auto it = _o2_ixn_dicts.find(layer);
+        double val = 0.0;
+        if (it != _o2_ixn_dicts.end()) {
+            auto it2 = it->second.find(sp1);
+            if (it2 != it->second.end()) {
+                auto it3 = it2->second.find(sp2);
+                if (it3 != it2->second.end()) {
+                    for (auto ixn: it3->second) {
+                        val += ixn->get_val();
+                    };
+                };
+            };
+        };
+        return val;
+    };
+
 	/********************
 	Helpers to setup all sites - Visible-Visible ixns
 	********************/
@@ -647,12 +689,12 @@ namespace bmla {
     void Lattice::_calculate_activations(int layer, int given_layer) {
         int no_units = get_no_units_in_layer(layer);
         for (auto &sp_pr: _species_possible.at(layer)) {
-            _latt_act[_i_markov_chain][layer][sp_pr.second] += _bias_dicts[layer]->get_ixn(sp_pr.second) * arma::vec(no_units,arma::fill::ones);
+            _latt_act[_i_markov_chain][layer][sp_pr.second] += get_bias_in_layer(layer, sp_pr.second) * arma::vec(no_units,arma::fill::ones);
             for (auto &given_sp_pr: _species_possible.at(given_layer)) {
                 if (given_layer == layer-1) {
-                    _latt_act[_i_markov_chain][layer][sp_pr.second] += _ixn_dicts[given_layer]->get_ixn(sp_pr.second, given_sp_pr.second) * ( _adj[given_layer].t() * _latt_act[_i_markov_chain][given_layer][given_sp_pr.second] );
+                    _latt_act[_i_markov_chain][layer][sp_pr.second] += get_ixn_between_layer_and_layer_above(layer, given_sp_pr.second, sp_pr.second) * ( _adj[given_layer].t() * _latt_act[_i_markov_chain][given_layer][given_sp_pr.second] );
                 } else if (given_layer == layer+1) {
-                    _latt_act[_i_markov_chain][layer][sp_pr.second] += _ixn_dicts[given_layer]->get_ixn(sp_pr.second, given_sp_pr.second) * ( _adj[given_layer] * _latt_act[_i_markov_chain][given_layer][given_sp_pr.second] );
+                    _latt_act[_i_markov_chain][layer][sp_pr.second] += get_ixn_between_layer_and_layer_above(layer, sp_pr.second, given_sp_pr.second) * ( _adj[given_layer] * _latt_act[_i_markov_chain][given_layer][given_sp_pr.second] );
                 };
             };
         };
@@ -1079,4 +1121,56 @@ namespace bmla {
 		return count;
 	};
      */
+    
+    /********************
+     Reap moments
+     ********************/
+    
+    void Lattice::reap_moments(MomentType type, int i_sample) const {
+        // Reset all ixns
+        for (auto ixn: _all_ixns) {
+            ixn->get_moment()->set_moment_sample(type, i_sample, 0.0);
+        };
+        
+        // Reap biases
+        double val;
+        for (auto &bias_layer: _bias_dicts) {
+            // Go through possible species in this layer
+            for (auto &sp_pr: bias_layer.second) {
+                // Get the moment
+                val = arma::sum(_latt.at(_i_markov_chain).at(bias_layer.first).at(sp_pr.first));
+        
+                // Go through all ixns associated with this species
+                for (auto ixn: sp_pr.second) {
+                    // Set the moment
+                    if (ixn->get_moment()) {
+                        if (type == MomentType::ASLEEP || !ixn->get_moment()->get_is_awake_moment_fixed()) {
+                            ixn->get_moment()->increment_moment_sample(type, i_sample, val);
+                        };
+                    };
+                };
+            };
+        };
+        
+        // Reap ixns
+        for (auto &o2_ixn_layer: _o2_ixn_dicts) {
+            // Go through possible species in this layer
+            for (auto &sp_pr_1: o2_ixn_layer.second) {
+                for (auto &sp_pr_2: sp_pr_1.second) {
+                    // Get the moment
+                    val = dot(_latt.at(_i_markov_chain).at(o2_ixn_layer.first).at(sp_pr_1.first), _adj.at(o2_ixn_layer.first) * _latt.at(_i_markov_chain).at(o2_ixn_layer.first + 1).at(sp_pr_2.first));
+                    
+                    // Go through all ixns associated with this species
+                    for (auto ixn: sp_pr_2.second) {
+                        // Set the moment
+                        if (ixn->get_moment()) {
+                            if (type == MomentType::ASLEEP || !ixn->get_moment()->get_is_awake_moment_fixed()) {
+                                ixn->get_moment()->increment_moment_sample(type, i_sample, val);
+                            };
+                        };
+                    };
+                };
+            };
+        };
+    };
 };

@@ -7,6 +7,11 @@
 #include "fwds/fwds_species.hpp"
 #endif
 
+#ifndef FWDS_IXN_PARAM_H
+#define FWDS_IXN_PARAM_H
+#include "fwds/fwds_ixn_param.hpp"
+#endif
+
 #include <armadillo>
 
 /************************************
@@ -16,10 +21,9 @@
 namespace bmla {
 
 	// Forwards
-	class BiasDict;
-	class O2IxnDict;
-	class O3IxnDict;
 	class Moment;
+
+    enum class MomentType: unsigned int;
 
 	/****************************************
 	Lattice
@@ -27,7 +31,9 @@ namespace bmla {
 
     typedef std::map<Sptr,arma::vec> layer_occ;
     typedef std::map<int, layer_occ> layers_map;
-    
+    typedef std::map<Sptr,std::vector<Iptr>> bias_dict;
+    typedef std::map<Sptr,std::map<Sptr,std::vector<Iptr>>> o2_ixn_dict;
+
 	class Lattice
 	{
 	private:
@@ -70,8 +76,9 @@ namespace bmla {
         std::map<int,arma::mat> _adj;
         
         // Bias/ixn dicts
-        std::map<int,std::shared_ptr<BiasDict>> _bias_dicts;
-        std::map<int,std::shared_ptr<O2IxnDict>> _ixn_dicts;
+        std::vector<Iptr> _all_ixns;
+        std::map<int,bias_dict> _bias_dicts;
+        std::map<int,o2_ixn_dict> _o2_ixn_dicts;
         
 		// Species possible
         // layer->species name->species
@@ -121,6 +128,8 @@ namespace bmla {
         Markov chains
          ********************/
 
+        // Use idx 0 for awake stats
+        // Use other idxs for asleep stats
         int get_no_markov_chains() const;
         void set_no_markov_chains(int no_markov_chains);
         void set_current_markov_chain(int i_markov_chain);
@@ -136,11 +145,15 @@ namespace bmla {
 		********************/
 
 		// Biases
-		void set_bias_dict_all_units(std::shared_ptr<BiasDict> bias_dict);
-		void set_bias_dict_all_units_in_layer(int layer, std::shared_ptr<BiasDict> bias_dict);
+		void add_bias_all_layers(Sptr sp, Iptr bias);
+        void add_bias_to_layer(int layer, Sptr sp, Iptr bias);
 
-		// Ixns
-        void set_ixn_dict_between_layers(int layer_1, int layer_2, std::shared_ptr<O2IxnDict> ixn_dict);
+		// Ixns between layer and layer + 1
+        void add_ixn_between_layer_and_layer_above(int layer, Sptr sp1, Sptr sp2, Iptr ixn);
+
+        // Get ixns
+        double get_bias_in_layer(int layer, Sptr sp) const;
+        double get_ixn_between_layer_and_layer_above(int layer, Sptr sp1, Sptr sp2) const;
 
 		/********************
 		Add connections
@@ -218,6 +231,12 @@ namespace bmla {
 		double get_count_vis(Sptr &sp1, Sptr &sp2, Sptr &sp3, bool reversibly) const;
 		double get_count_vis(Sptr &sp1, Sptr &sp2, Sptr &sp3, Sptr &sp4, bool reversibly) const;
          */
+        
+        /********************
+        Reap moments
+         ********************/
+
+        void reap_moments(MomentType type, int i_sample) const;
 	};
 
 };

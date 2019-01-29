@@ -5,7 +5,6 @@
 #include "bmla_bits/fwds/fwds_species.hpp"
 #include "bmla_bits/fname.hpp"
 #include "bmla_bits/general.hpp"
-#include "bmla_bits/ixn_dicts.hpp"
 #include "bmla_bits/ixn_param.hpp"
 #include "bmla_bits/lattice.hpp"
 #include "bmla_bits/moment.hpp"

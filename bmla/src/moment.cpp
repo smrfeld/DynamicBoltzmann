@@ -250,6 +250,13 @@ namespace bmla {
 			_vals_asleep_reaped[i_sample] = val;
 		};
 	};
+    void Moment::increment_moment_sample(MomentType type, int i_sample, double val) {
+        if (type == MomentType::AWAKE) {
+            _vals_awake_reaped[i_sample] += val;
+        } else {
+            _vals_asleep_reaped[i_sample] += val;
+        };
+    };
 
     // Average reaps
 	void Moment::average_samples(MomentType type) {

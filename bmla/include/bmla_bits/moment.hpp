@@ -113,6 +113,7 @@ namespace bmla {
 		// Sample
 		double get_moment_sample(MomentType type, int i_sample) const;
 		void set_moment_sample(MomentType type, int i_sample, double val);
+        void increment_moment_sample(MomentType type, int i_sample, double val);
 
 		// Average reaps
 		void average_samples(MomentType type);

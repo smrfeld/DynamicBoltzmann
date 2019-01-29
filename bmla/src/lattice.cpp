@@ -640,26 +640,46 @@ namespace bmla {
         auto slatt = _latt.at(_i_markov_chain).at(layer);
         auto sps = _species_possible.at(layer);
         std::vector<int> pos;
-        for (auto unit=0; unit<no_units; unit++) {
-            // Write pos
-            pos = _look_up_pos(layer,unit);
-            for (auto const &x: pos) {
-                f << x << " ";
-            };
-            
-            // Go through species possible
-            if (binary) {
+        if (binary) {
+
+            // Binary
+
+            // Go through all units
+            for (auto unit=0; unit<no_units; unit++) {
+                
+                // Go through species possible
                 for (auto sp: sps) {
-                    if (slatt.at(sp.second).at(unit) == 1.0) {
+                    if (abs(slatt.at(sp.second)(unit) - 1.0) < 1.0e-5) {
+                        // Write pos
+                        pos = _look_up_pos(layer,unit);
+                        for (auto const &x: pos) {
+                            f << x << " ";
+                        };
+                        
                         // Write species
                         f << sp.first << "\n";
                         break;
                     };
                 };
-            } else {
+            };
+                
+        } else {
+                
+            // Not binary
+            
+            // Go through all units
+            for (auto unit=0; unit<no_units; unit++) {
+                
+                // Write pos
+                pos = _look_up_pos(layer,unit);
+                for (auto const &x: pos) {
+                    f << x << " ";
+                };
+
+                // Go through species possible
                 for (auto sp: sps) {
                     // Write species
-                    f << sp.first << " ";
+                    f << sp.first << " " << slatt.at(sp.second)(unit) << " ";
                 };
                 f << "\n";
             };
@@ -817,17 +837,19 @@ namespace bmla {
         // std::cout << "_calculate_activations: layer = " << layer << " given layer = " << given_layer << std::endl;
         int no_units = get_no_units_in_layer(layer);
         for (auto &sp_pr: _species_possible.at(layer)) {
-            // std::cout << arma::size( get_bias_in_layer(layer, sp_pr.second) * arma::vec(no_units,arma::fill::ones) ) << std::endl;
-            // std::cout << arma::size(_latt_act[_i_markov_chain][layer][sp_pr.second]) << std::endl;
-            
+
+            // bias term
             _latt_act[_i_markov_chain][layer][sp_pr.second] += get_bias_in_layer(layer, sp_pr.second) * arma::vec(no_units,arma::fill::ones);
+            
+            // ixns
             for (auto &given_sp_pr: _species_possible.at(given_layer)) {
+                
                 if (given_layer == layer-1) {
                     // Activate from below
-                    _latt_act[_i_markov_chain][layer][sp_pr.second] += get_ixn_between_layers(given_layer, given_sp_pr.second, layer, sp_pr.second) * ( _adj[given_layer] * _latt_act[_i_markov_chain][given_layer][given_sp_pr.second] );
+                    _latt_act[_i_markov_chain][layer][sp_pr.second] += get_ixn_between_layers(given_layer, given_sp_pr.second, layer, sp_pr.second) * ( _adj[given_layer] * _latt[_i_markov_chain][given_layer][given_sp_pr.second] );
                 } else if (given_layer == layer+1) {
                     // Activate from above
-                    _latt_act[_i_markov_chain][layer][sp_pr.second] += get_ixn_between_layers(given_layer, given_sp_pr.second, layer, sp_pr.second) * ( _adj[layer].t() * _latt_act[_i_markov_chain][given_layer][given_sp_pr.second] );
+                    _latt_act[_i_markov_chain][layer][sp_pr.second] += get_ixn_between_layers(given_layer, given_sp_pr.second, layer, sp_pr.second) * ( _adj[layer].t() * _latt[_i_markov_chain][given_layer][given_sp_pr.second] );
                 };
             };
         };

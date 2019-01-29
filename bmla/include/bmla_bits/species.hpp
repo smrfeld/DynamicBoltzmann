@@ -48,55 +48,5 @@ namespace bmla {
 	};
 	// Comparator
 	bool operator <(const Species& a, const Species& b);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-	/****************************************
-	Doublets, Triplets of Species ptrs
-	****************************************/
-
-	// Two species
-	struct Sptr2 {
-		Sptr s1;
-		Sptr s2;
-		Sptr2(Sptr s1, Sptr s2);
-	};
-	bool operator <(const Sptr2& a, const Sptr2& b);
-
-	// Three species
-	struct Sptr3 {
-		Sptr s1;
-		Sptr s2;
-		Sptr s3;
-		Sptr3(Sptr s1, Sptr s2, Sptr s3);
-	};
-	bool operator <(const Sptr3& a, const Sptr3& b);
 };
 

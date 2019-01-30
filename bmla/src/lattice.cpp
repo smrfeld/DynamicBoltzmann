@@ -389,40 +389,41 @@ namespace bmla {
         };
         return val;
     };
-    double Lattice::get_ixn_between_layers(int layer1, Sptr sp1, int layer2, Sptr sp2) const {
-        if (layer2 != layer1+1 && layer2 != layer1-1) {
-            std::cerr << ">>> Lattice::add_ixn_between_layers <<< layer2 != layer1 +- 1; instead layer_2 = " << layer2 << " and layer1 = " << layer1 << std::endl;
+    double Lattice::get_ixn_between_layers(int from_layer, Sptr from_sp, int to_layer, Sptr to_sp) const {
+        if (to_layer != from_layer+1 && to_layer != from_layer-1) {
+            std::cerr << ">>> Lattice::add_ixn_between_layers <<< to_layer != from_layer +- 1; instead to_layer = " << to_layer << " and from_layer = " << from_layer << std::endl;
             exit(EXIT_FAILURE);
         };
         
         // Multiplier
         double mult = 1.0;
-        auto itm = _o2_mults.find(layer1);
+        auto itm = _o2_mults.find(from_layer);
         if (itm != _o2_mults.end()) {
-            auto itm2 = itm->second.find(layer2);
+            auto itm2 = itm->second.find(to_layer);
             if (itm2 != itm->second.end()) {
                 mult = itm2->second;
+                // std::cout << "Lattice::get_ixn_between_layers: from_layer = " << from_layer << " to to_layer = " << to_layer << " mult = " << mult << std::endl;
             };
         };
         
         double val = 0.0;
-        auto it1 = _o2_ixn_dict.find(layer1);
+        auto it1 = _o2_ixn_dict.find(from_layer);
         if (it1 != _o2_ixn_dict.end()) {
-            auto it2 = it1->second.find(sp1);
+            auto it2 = it1->second.find(from_sp);
             if (it2 != it1->second.end()) {
-                auto it3 = it2->second.find(layer2);
+                auto it3 = it2->second.find(to_layer);
                 if (it3 != it2->second.end()) {
-                    auto it4 = it3->second.find(sp2);
+                    auto it4 = it3->second.find(to_sp);
                     if (it4 != it3->second.end()) {
                         for (auto ixn: it4->second) {
-                            val += mult * ixn->get_val();
+                            val += ixn->get_val();
                         };
                     };
                 };
             };
         };
         
-        return val;
+        return mult * val;
     };
 
 	/********************

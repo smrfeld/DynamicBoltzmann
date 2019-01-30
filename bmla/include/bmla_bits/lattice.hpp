@@ -160,7 +160,7 @@ namespace bmla {
         
         // Get ixns
         double get_bias_in_layer(int layer, Sptr sp) const;
-        double get_ixn_between_layers(int layer1, Sptr sp1, int layer2, Sptr sp2) const;
+        double get_ixn_between_layers(int from_layer, Sptr from_sp, int to_layer, Sptr to_sp) const;
 
 		/********************
 		Add connections

@@ -236,6 +236,9 @@ namespace bmla {
         double get_bias_in_layer(int layer, Sptr sp) const;
         double get_ixn_between_layers(int from_layer, Sptr from_sp, int to_layer, Sptr to_sp) const;
 
+        // Get all ixns
+        const std::vector<Iptr>& get_all_ixn_params() const;
+        
         // ***************
         // MARK: Add connections
         // ***************

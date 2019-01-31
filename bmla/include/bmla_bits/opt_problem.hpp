@@ -83,9 +83,6 @@ namespace bmla {
         
         // No markov chains
         std::map<MCType,int> _no_markov_chains;
-
-        // Ixn params
-        std::vector<std::shared_ptr<IxnParam>> _ixn_params;
         
         // Lattice
         std::shared_ptr<Lattice> _latt;
@@ -101,7 +98,7 @@ namespace bmla {
          Constructor
          ********************/
         
-        OptProblem(std::shared_ptr<Lattice> latt, std::vector<std::shared_ptr<IxnParam>> ixn_params, int no_markov_chains_awake, int no_markov_chains_asleep);
+        OptProblem(std::shared_ptr<Lattice> latt, int no_markov_chains_awake, int no_markov_chains_asleep);
         OptProblem(const OptProblem& other);
         OptProblem(OptProblem&& other);
         OptProblem& operator=(const OptProblem &other);

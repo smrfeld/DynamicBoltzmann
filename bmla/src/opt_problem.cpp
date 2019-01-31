@@ -25,11 +25,10 @@ namespace bmla {
      Constructor
      ********************/
     
-    OptProblem::OptProblem(std::shared_ptr<Lattice> latt, std::vector<std::shared_ptr<IxnParam>> ixn_params, int no_markov_chains_awake, int no_markov_chains_asleep) {
+    OptProblem::OptProblem(std::shared_ptr<Lattice> latt, int no_markov_chains_awake, int no_markov_chains_asleep) {
         _no_markov_chains[MCType::AWAKE] = no_markov_chains_awake;
         _no_markov_chains[MCType::ASLEEP] = no_markov_chains_asleep;
         _latt = latt;
-        _ixn_params = ixn_params;
     };
     OptProblem::OptProblem(const OptProblem& other) {
         _copy(other);
@@ -58,12 +57,10 @@ namespace bmla {
     void OptProblem::_clean_up() {};
     void OptProblem::_move(OptProblem &other) {
         _no_markov_chains = other._no_markov_chains;
-        _ixn_params = std::move(other._ixn_params);
         _latt = std::move(other._latt);
     };
     void OptProblem::_copy(const OptProblem& other) {
         _no_markov_chains = other._no_markov_chains;
-        _ixn_params = other._ixn_params;
         if (other._latt) {
             _latt = std::make_shared<Lattice>(*other._latt);
         };
@@ -76,7 +73,7 @@ namespace bmla {
     void OptProblem::set_no_markov_chains(MCType chain, int no_markov_chains) {
         
         // Moments
-        for (auto &ixn_param: _ixn_params) {
+        for (auto &ixn_param: _latt->get_all_ixn_params()) {
             ixn_param->get_moment()->set_no_markov_chains(chain, no_markov_chains);
         };
         
@@ -94,7 +91,7 @@ namespace bmla {
         };
         
         // Reset all moments
-        for (auto &ixn_param: _ixn_params) {
+        for (auto &ixn_param: _latt->get_all_ixn_params()) {
             if (!ixn_param->get_moment()->get_is_awake_moment_fixed()) {
                 ixn_param->get_moment()->reset_to_zero(MCType::AWAKE);
             };
@@ -149,7 +146,7 @@ namespace bmla {
         _latt->reap_moments(MCType::ASLEEP);
 
         // Average moments
-        for (auto &ixn_param: _ixn_params) {
+        for (auto &ixn_param: _latt->get_all_ixn_params()) {
             if (!ixn_param->get_moment()->get_is_awake_moment_fixed()) {
                 ixn_param->get_moment()->average_moment_samples(MCType::AWAKE);
             };
@@ -192,7 +189,7 @@ namespace bmla {
         wake_sleep_loop(no_cd_sampling_steps,no_mean_field_updates,fname_coll,options_wake_sleep);
         
         if (options.verbose_moment) {
-            for (auto &ixn_param: _ixn_params) {
+            for (auto &ixn_param: _latt->get_all_ixn_params()) {
                 std::cout << ixn_param->get_name() << " " << std::flush;
                 ixn_param->get_moment()->print_moment_comparison();
             };
@@ -206,7 +203,7 @@ namespace bmla {
             std::cout << "--- Calculating update ---" << std::endl;
         };
         
-        for (auto &ixn_param: _ixn_params) {
+        for (auto &ixn_param: _latt->get_all_ixn_params()) {
             if (!ixn_param->get_is_val_fixed()) {
                 // Update
                 if (options.l2_reg) {
@@ -232,7 +229,7 @@ namespace bmla {
         
         double dopt_use = dopt;
         if (options.solver == Solver::SGD) {
-            for (auto &ixn_param: _ixn_params) {
+            for (auto &ixn_param: _latt->get_all_ixn_params()) {
                 if (!ixn_param->get_is_val_fixed()) {
                     // Learning rate
                     if (options.var_learning_rates) {
@@ -243,7 +240,7 @@ namespace bmla {
                 };
             };
         } else if (options.solver == Solver::NESTEROV) {
-            for (auto &ixn_param: _ixn_params) {
+            for (auto &ixn_param: _latt->get_all_ixn_params()) {
                 if (!ixn_param->get_is_val_fixed()) {
                     // Learning rate
                     if (options.var_learning_rates) {
@@ -254,7 +251,7 @@ namespace bmla {
                 };
             };
         } else if (options.solver == Solver::ADAM) {
-            for (auto &ixn_param: _ixn_params) {
+            for (auto &ixn_param: _latt->get_all_ixn_params()) {
                 if (!ixn_param->get_is_val_fixed()) {
                     // Learning rate
                     if (options.var_learning_rates) {

@@ -423,6 +423,11 @@ namespace bmla {
         return mult * val;
     };
 
+    // Get all ixns
+    const std::vector<Iptr>& Lattice::get_all_ixn_params() const {
+        return _all_ixns;
+    };
+    
 	/********************
 	Helpers to setup all sites - Visible-Visible ixns
 	********************/

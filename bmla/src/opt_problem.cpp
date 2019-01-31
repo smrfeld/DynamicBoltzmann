@@ -26,9 +26,10 @@ namespace bmla {
      ********************/
     
     OptProblem::OptProblem(std::shared_ptr<Lattice> latt, int no_markov_chains_awake, int no_markov_chains_asleep) {
-        _no_markov_chains[MCType::AWAKE] = no_markov_chains_awake;
-        _no_markov_chains[MCType::ASLEEP] = no_markov_chains_asleep;
         _latt = latt;
+        
+        set_no_markov_chains(MCType::AWAKE,no_markov_chains_awake);
+        set_no_markov_chains(MCType::ASLEEP,no_markov_chains_asleep);
     };
     OptProblem::OptProblem(const OptProblem& other) {
         _copy(other);
@@ -71,6 +72,9 @@ namespace bmla {
      ********************/
 
     void OptProblem::set_no_markov_chains(MCType chain, int no_markov_chains) {
+        
+        // Store
+        _no_markov_chains[chain] = no_markov_chains;
         
         // Moments
         for (auto &ixn_param: _latt->get_all_ixn_params()) {

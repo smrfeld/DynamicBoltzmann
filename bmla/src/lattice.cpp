@@ -47,12 +47,6 @@ namespace bmla {
     
 		// Visible layer
         add_layer(0, _box_length, species_visible);
-        
-        // Possible species
-        for (auto sp: species_visible) {
-            _species_possible_map[0][sp->get_name()] = sp;
-            _species_possible_vec[0].push_back(sp);
-        };
 	};
 	Lattice::Lattice(const Lattice& other) {
 		_copy(other);
@@ -279,12 +273,15 @@ namespace bmla {
     void Lattice::set_no_markov_chains(MCType type, int no_markov_chains) {
         _no_markov_chains[type] = no_markov_chains;
         
+        // Add chains
         if (_mc_chains[type].size() < _no_markov_chains[type]) {
             for (auto i_chain=_mc_chains[type].size(); i_chain < _no_markov_chains[type]; i_chain++) {
                 _mc_chains[type][i_chain] = _mc_chains[type][i_chain-1];
                 _mc_chains_act[type][i_chain] = _mc_chains_act[type][i_chain-1];
             };
         };
+        
+        // Remove chains
         if (_mc_chains[type].size() > _no_markov_chains[type]) {
             for (auto i_chain=_mc_chains[type].size(); i_chain > _no_markov_chains[type]; i_chain--) {
                 _mc_chains[type].erase(i_chain);
@@ -311,11 +308,6 @@ namespace bmla {
         for (auto &chain: _no_markov_chains) {
             for (auto i_chain=0; i_chain<chain.second; i_chain++) {
                 for (auto sp: species) {
-                    if (chain.first == MCType::AWAKE) {
-                        std::cout << "Made: awake " << i_chain << " " << layer << " " << sp->get_name() << std::endl;
-                    } else {
-                        std::cout << "Made: asleep " << i_chain << " " << layer << " " << sp->get_name() << std::endl;
-                    };
                     _mc_chains[chain.first][i_chain][layer][sp] = arma::vec(no_units,arma::fill::zeros);
                     _mc_chains_act[chain.first][i_chain][layer][sp] = arma::vec(no_units,arma::fill::zeros);
                 };
@@ -560,7 +552,13 @@ namespace bmla {
         auto r = arma::vec(no_units,arma::fill::randu);
         
         // Helpers
+        
+        // Running for evaluating propensities
         auto running = arma::vec(no_units,arma::fill::zeros);
+        
+        // flip vector:
+        // 1 initially = rand is above current propensity
+        // 0 = rand is below current propensity
         auto flip = arma::vec(no_units,arma::fill::ones);
         auto new_flip = flip;
 
@@ -574,12 +572,9 @@ namespace bmla {
             };
             
             // Evaluate
-            // Initially: we are at zero, rand value is somewhere above
-            // Next: we are at some propensity, rand value may be somewhere above or below
-            // Finally: we are at max propensity = 1.0, rand value is below
-            // flip vector:
-            // 1 initially = rand is above current propensity
-            // 0 = rand is below current propensity
+            // Initially: we (flip) are at zero, rand value is somewhere above
+            // Next: we (flip) are at some propensity, rand value may be somewhere above or below
+            // Finally: we (flip) are at max propensity = 1.0, rand value is below
             for (auto sp: _species_possible_vec.at(layer)) {
                 // New flip vector
                 new_flip = 0.5*sign(r - _mc_chains_act[chain][i_chain][layer][sp]) + 0.5;
@@ -984,14 +979,26 @@ namespace bmla {
         
         // Divide by total to normalize
         // std::cout << "_convert_activations_to_probs: layer: " << layer << " binary: " << binary << std::endl;
+        /*
+        if (chain == MCType::AWAKE) {
+            std::cout << "Lattice::activate_layer_convert_to_probs: awake " << i_chain << " " << layer << " " << binary << std::endl;
+        } else {
+            std::cout << "Lattice::activate_layer_convert_to_probs: asleep " << i_chain << " " << layer << " " << binary << std::endl;
+        };
+         */
         for (auto sp: _species_possible_vec.at(layer)) {
             _mc_chains_act[chain][i_chain][layer][sp] /= prop_tot;
-            // std::cout << sp_pr.first << " : " << _latt_act[_i_markov_chain][layer][sp_pr.second](0) << std::endl;
+            // std::cout << "prob: " << sp->get_name() << " : " << arma::sum(_mc_chains_act[chain][i_chain][layer][sp]) << std::endl;
         };
         
         // Sample if binary
         if (binary) {
             _binarize_all_units_in_layer(chain,i_chain,layer,true);
+            /*
+            for (auto sp: _species_possible_vec.at(layer)) {
+                std::cout << "binary " << sp->get_name() << " : " << arma::sum(_mc_chains_act[chain][i_chain][layer][sp]) << std::endl;
+            };
+             */
         };
     };
     
@@ -1269,6 +1276,8 @@ namespace bmla {
                             continue;
                         };
                         
+                        // Now ( layer 1 = o2_ixn_layer_1.first ) < ( layer 2 = o2_ixn_layer_2.first ) guaranteed
+                        
                         for (auto &sp_pr_2: o2_ixn_layer_2.second) {
                             // Get the moment
                             val = dot(_mc_chains.at(chain).at(i_chain).at(o2_ixn_layer_1.first).at(sp_pr_1.first), _adj.at(o2_ixn_layer_1.first) * _mc_chains.at(chain).at(i_chain).at(o2_ixn_layer_2.first).at(sp_pr_2.first));
@@ -1330,7 +1339,7 @@ namespace bmla {
     void Lattice::_bn_apply_affine_transform_to_all_chains(MCType chain, int layer) {
         for (auto i_chain=0; i_chain<_no_markov_chains[chain]; i_chain++) {
             for (auto sp: _species_possible_vec[layer]) {
-                _mc_chains_act[chain][i_chain][layer][sp] *= _bn_gamma_bar[chain][layer][sp];
+                _mc_chains_act[chain][i_chain][layer][sp] %= _bn_gamma_bar[chain][layer][sp];
                 _mc_chains_act[chain][i_chain][layer][sp] += _bn_beta_bar[chain][layer][sp];
             };
         };

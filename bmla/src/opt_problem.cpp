@@ -89,7 +89,7 @@ namespace bmla {
      Wake/asleep loop
      ********************/
     
-    void OptProblem::wake_sleep_loop(int no_cd_sampling_steps, int no_mean_field_updates, FNameColl &fname_coll, OptionsWakeSleep options) {
+    void OptProblem::wake_sleep_loop(int no_mean_field_updates, int no_gibbs_sampling_steps, FNameColl &fname_coll, OptionsWakeSleep options) {
         if (options.verbose) {
             std::cout << "--- Sampling lattice ---" << std::endl;
         };
@@ -135,9 +135,9 @@ namespace bmla {
         for (auto i_chain=0; i_chain<_no_markov_chains[MCType::ASLEEP]; i_chain++) {
             
             // Sample vis, hidden
-            for (int i_sampling_step=0; i_sampling_step<no_cd_sampling_steps; i_sampling_step++)
+            for (int i_sampling_step=0; i_sampling_step<no_gibbs_sampling_steps; i_sampling_step++)
             {
-                if (i_sampling_step != no_cd_sampling_steps-1) {
+                if (i_sampling_step != no_gibbs_sampling_steps-1) {
                     _latt->gibbs_sampling_step(options.is_asleep_visible_binary, options.is_asleep_hidden_binary);
                 } else {
                     _latt->gibbs_sampling_step(options.is_asleep_visible_binary, options.is_asleep_hidden_binary_final);
@@ -172,25 +172,25 @@ namespace bmla {
      ********************/
     
     // Check if options passed are valid
-    void OptProblem::check_options(double dopt, int no_cd_sampling_steps, int no_mean_field_updates, OptionsSolve options, OptionsWakeSleep options_wake_sleep) {
+    void OptProblem::check_options(double dopt, int no_mean_field_updates, int no_gibbs_sampling_steps, OptionsSolve options, OptionsWakeSleep options_wake_sleep) {
     };
     
     // One step
-    void OptProblem::solve_one_step(int i_opt_step, double dopt, int no_cd_sampling_steps, int no_mean_field_updates, FNameColl &fname_coll, OptionsSolve options, OptionsWakeSleep options_wake_sleep) {
+    void OptProblem::solve_one_step(int i_opt_step, double dopt, int no_mean_field_updates, int no_gibbs_sampling_steps, FNameColl &fname_coll, OptionsSolve options, OptionsWakeSleep options_wake_sleep) {
         
         /*****
          Check options
          *****/
         
         if (options.should_check_options) {
-            check_options(dopt,no_cd_sampling_steps,no_mean_field_updates,options,options_wake_sleep);
+            check_options(dopt,no_mean_field_updates,no_gibbs_sampling_steps,options,options_wake_sleep);
         };
         
         /*****
          Wake/asleep loop
          *****/
         
-        wake_sleep_loop(no_cd_sampling_steps,no_mean_field_updates,fname_coll,options_wake_sleep);
+        wake_sleep_loop(no_mean_field_updates,no_gibbs_sampling_steps,fname_coll,options_wake_sleep);
         
         if (options.verbose_moment) {
             for (auto &ixn_param: _latt->get_all_ixn_params()) {
@@ -274,7 +274,7 @@ namespace bmla {
     };
     
     // Many steps
-    void OptProblem::solve(int no_opt_steps, double dopt, int no_cd_sampling_steps, int no_mean_field_updates, FNameColl &fname_coll, OptionsSolve options, OptionsWakeSleep options_wake_sleep) {
+    void OptProblem::solve(int no_opt_steps, double dopt, int no_mean_field_updates, int no_gibbs_sampling_steps, FNameColl &fname_coll, OptionsSolve options, OptionsWakeSleep options_wake_sleep) {
         
         for (int i_opt_step=1; i_opt_step<=no_opt_steps; i_opt_step++)
         {
@@ -284,7 +284,7 @@ namespace bmla {
             std::cout << "------------------" << std::endl;
             
             // Solve
-            solve_one_step(i_opt_step,dopt,no_cd_sampling_steps,no_mean_field_updates,fname_coll,options,options_wake_sleep);
+            solve_one_step(i_opt_step,dopt,no_mean_field_updates,no_gibbs_sampling_steps,fname_coll,options,options_wake_sleep);
         };
     };
 };

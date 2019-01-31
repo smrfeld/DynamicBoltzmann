@@ -25,7 +25,7 @@ namespace bmla {
 	****************************************/
 
 	// Enumeration of type of dimension
-	enum class IxnParamType: unsigned int { H, J, K, W, B, X };
+	enum class IxnParamType: unsigned int { H, J, K, W, B, X, GAMMA, BETA };
 
 	class IxnParam {
 

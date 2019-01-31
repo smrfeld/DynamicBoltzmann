@@ -115,20 +115,20 @@ namespace bmla {
          Wake/asleep loop
          ********************/
         
-        void wake_sleep_loop(int no_cd_sampling_steps, int no_mean_field_updates, FNameColl &fname_coll, OptionsWakeSleep options);
+        void wake_sleep_loop(int no_mean_field_updates, int no_gibbs_sampling_steps, FNameColl &fname_coll, OptionsWakeSleep options);
         
         /********************
          Solve
          ********************/
         
         // Check if options passed are valid
-        void check_options(double dopt, int no_cd_sampling_steps, int no_mean_field_updates, OptionsSolve options, OptionsWakeSleep options_wake_sleep);
+        void check_options(double dopt, int no_mean_field_updates, int no_gibbs_sampling_steps, OptionsSolve options, OptionsWakeSleep options_wake_sleep);
         
         // One step
-        void solve_one_step(int i_opt_step, double dopt, int no_cd_sampling_steps, int no_mean_field_updates, FNameColl &fname_coll, OptionsSolve options, OptionsWakeSleep options_wake_sleep);
+        void solve_one_step(int i_opt_step, double dopt, int no_mean_field_updates, int no_gibbs_sampling_steps, FNameColl &fname_coll, OptionsSolve options, OptionsWakeSleep options_wake_sleep);
         
         // Many steps
-        void solve(int no_opt_steps, double dopt, int no_cd_sampling_steps, int no_mean_field_updates, FNameColl &fname_coll, OptionsSolve options, OptionsWakeSleep options_wake_sleep);
+        void solve(int no_opt_steps, double dopt, int no_mean_field_updates, int no_gibbs_sampling_steps, FNameColl &fname_coll, OptionsSolve options, OptionsWakeSleep options_wake_sleep);
     };
     
 };

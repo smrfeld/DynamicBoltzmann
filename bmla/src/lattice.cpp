@@ -46,7 +46,7 @@ namespace bmla {
         _bn_eps = 1.0e-8;
     
 		// Visible layer
-        add_layer(0, _box_length, species_visible);
+        add_layer(0, _box_length, species_visible, nullptr, nullptr);
 	};
 	Lattice::Lattice(const Lattice& other) {
 		_copy(other);
@@ -294,7 +294,7 @@ namespace bmla {
      Add a layer
      ********************/
     
-    void Lattice::add_layer(int layer, int box_length, std::vector<Sptr> species) {
+    void Lattice::add_layer(int layer, int box_length, std::vector<Sptr> species, Iptr beta, Iptr gamma) {
         if (layer != _no_layers) {
             std::cerr << ">>> Lattice::add_layer <<< error: next layer must be: " << _no_layers << " not: " << layer << std::endl;
             exit(EXIT_FAILURE);
@@ -356,9 +356,20 @@ namespace bmla {
         if (layer != 0) {
           
             for (auto sp: _species_possible_vec[layer]) {
-                _bn_beta[layer][sp] = 0.0;
-                _bn_gamma[layer][sp] = 0.0;
+                // Set params
+                _bn_beta[layer][sp] = beta;
+                _bn_gamma[layer][sp] = gamma;
                 
+                // Add to all
+                auto it1 = std::find(_all_ixns.begin(), _all_ixns.end(), beta);
+                if (it1 == _all_ixns.end()) {
+                    _all_ixns.push_back(beta);
+                };
+                auto it2 = std::find(_all_ixns.begin(), _all_ixns.end(), gamma);
+                if (it2 == _all_ixns.end()) {
+                    _all_ixns.push_back(gamma);
+                };
+
                 _bn_beta_bar[MCType::AWAKE][layer][sp] = arma::vec(no_units,arma::fill::zeros);
                 _bn_beta_bar[MCType::ASLEEP][layer][sp] = arma::vec(no_units,arma::fill::zeros);
                 _bn_gamma_bar[MCType::AWAKE][layer][sp] = arma::vec(no_units,arma::fill::zeros);
@@ -1230,7 +1241,7 @@ namespace bmla {
      Reap moments
      ********************/
     
-    void Lattice::reap_moments(MCType chain) const {
+    void Lattice::reap_moments(MCType chain) {
         // Reset all ixns
         for (auto ixn: _all_ixns) {
             for (auto i_chain=0; i_chain<_no_markov_chains.at(chain); i_chain++) {
@@ -1296,6 +1307,34 @@ namespace bmla {
                 };
             };
         };
+        
+        // Gamma, beta
+        // Activate all chains again first
+        for (auto layer=1; layer<_no_layers; layer++) {
+            for (auto i_chain=0; i_chain<_no_markov_chains.at(chain); i_chain++) {
+                activate_layer_calculate(chain, i_chain, layer);
+            };
+        };
+        // Affine transformations
+        for (auto layer=1; layer<_no_layers; layer++) {
+            _bn_calculate_means_vars_from_activations(chain,layer);
+            _bn_calculate_bar_params_from_means_vars(chain,layer);
+            _bn_apply_affine_transform_to_all_chains(chain,layer);
+        };
+        // Assign
+        double val_gamma,val_beta;
+        for (auto layer=1; layer<_no_layers; layer++) {
+            for (auto sp: _species_possible_vec.at(layer)) {
+                for (auto i_chain=0; i_chain<_no_markov_chains.at(chain); i_chain++) {
+                    // Calculate
+                    val_gamma = arma::sum(_mc_chains.at(chain).at(i_chain).at(layer).at(sp) % _mc_chains_act.at(chain).at(i_chain).at(layer).at(sp));
+                    val_beta = arma::sum(_mc_chains.at(chain).at(i_chain).at(layer).at(sp));
+                    // Assign
+                    _bn_gamma[layer][sp]->get_moment()->set_moment_sample(chain, i_chain, val_gamma);
+                    _bn_beta[layer][sp]->get_moment()->set_moment_sample(chain, i_chain, val_beta);
+                };
+            };
+        };
     };
     
     // *******************
@@ -1330,8 +1369,8 @@ namespace bmla {
     // Calculate bar parameters from means, vars
     void Lattice::_bn_calculate_bar_params_from_means_vars(MCType chain, int layer) {
         for (auto sp: _species_possible_vec[layer]) {
-            _bn_beta_bar[chain][layer][sp] = _bn_beta[layer][sp] - _bn_gamma[layer][sp] * _bn_means[chain][layer][sp] / sqrt(_bn_vars[chain][layer][sp] + _bn_eps);
-            _bn_gamma_bar[chain][layer][sp] = _bn_gamma[layer][sp] / sqrt(_bn_vars[chain][layer][sp] + _bn_eps);
+            _bn_beta_bar[chain][layer][sp] = _bn_beta[layer][sp]->get_val() - _bn_gamma[layer][sp]->get_val() * _bn_means[chain][layer][sp] / sqrt(_bn_vars[chain][layer][sp] + _bn_eps);
+            _bn_gamma_bar[chain][layer][sp] = _bn_gamma[layer][sp]->get_val() / sqrt(_bn_vars[chain][layer][sp] + _bn_eps);
         };
     };
 

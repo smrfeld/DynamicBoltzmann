@@ -108,7 +108,7 @@ namespace bmla {
         
         // Batch normalization parameters for the layers
         // (layer) -> (parameter)
-        std::map<int,std::map<Sptr,double>> _bn_beta, _bn_gamma;
+        std::map<int,std::map<Sptr,Iptr>> _bn_beta, _bn_gamma;
         
         // Same but for beta-bar and gamma-bar (calculated from beta, gamma, means, vars)
         // (chain type) -> (layer) -> (parameter)
@@ -121,7 +121,7 @@ namespace bmla {
         
         // Small epsilon to prevent div by zero
         double _bn_eps;
-                
+        
         // ***************
         // MARK: - Private methods
         // ***************
@@ -211,7 +211,7 @@ namespace bmla {
         // MARK: Add a layer
         // ***************
         
-        void add_layer(int layer, int box_length, std::vector<Sptr> species);
+        void add_layer(int layer, int box_length, std::vector<Sptr> species, Iptr beta, Iptr gamma);
         
         // ***************
         // MARK: Biases/ixn params
@@ -317,6 +317,6 @@ namespace bmla {
         // MARK: Reap moments
         // ***************
 
-        void reap_moments(MCType chain) const;
+        void reap_moments(MCType chain);
 	};
 };

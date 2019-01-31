@@ -170,9 +170,6 @@ namespace bmla {
         // See bullet pt 2 on p. 366
         void _calculate_activations_bn_LEGACY(MCType chain, int i_chain, int layer, bool from_below);
         
-        // Convert activations to probabilities and sample if necessary
-        void _convert_activations_to_probs(MCType chain, int i_chain, int layer, bool binary);
-        
         // ***************
         // MARK: - Constructor helpers
         // ***************
@@ -274,27 +271,34 @@ namespace bmla {
 		void read_layer_from_file(MCType chain, int i_chain, int layer, std::string fname, bool binary);
         
         // ***************
-        // MARK: Activate/sample layers
+        // MARK: Activate layer steps
         // ***************
         
-        // Prepare to activate a specific layer
-        void activate_layer_prepare(MCType chain, int i_chain, int layer, bool binary);
-        void activate_layer_prepare(MCType chain, int i_chain, int layer, int given_layer, bool binary);
+        // (1) Calculate activations for a specific layer
+        // Both directions
+        void activate_layer_calculate(MCType chain, int i_chain, int layer);
+        // Only one direction
+        void activate_layer_calculate(MCType chain, int i_chain, int layer, int given_layer);
+        
+        // (2) Convert activations to probs
+        void activate_layer_convert_to_probs(MCType chain, int i_chain, int layer, bool binary);
 
-        // Commit the activations
+        // (3) Commit the new probabilities
         void activate_layer_committ(MCType chain, int i_chain, int layer);
 
-        // Activate a specific layer
-        // First prepares
-        // Then committs
-		void activate_layer(MCType chain, int i_chain, int layer, bool binary);
-		void activate_layer(MCType chain, int i_chain, int layer, int given_layer, bool binary);
-
-        // Variational inference
-        void variational_inference_hiddens(MCType chain, int i_chain);
+        // ***************
+        // MARK: - Mean field / gibbs sampling
+        // ***************
         
-        // Sample
-        void sample(MCType chain, int i_chain, bool binary_visible, bool binary_hidden);
+        // All in one step, for a single layer
+        void activate_single_layer(MCType chain, int i_chain, int layer, bool binary);
+        void activate_single_layer(MCType chain, int i_chain, int layer, int given_layer, bool binary);
+        
+        // Variational inference ie mean field
+        void mean_field_hiddens_step();
+        
+        // Gibbs sampling
+        void gibbs_sampling_step(bool binary_visible, bool binary_hidden);
     
         // Make a pass activating upwards
         void activate_upward_pass(MCType chain, int i_chain, bool binary_hidden);
@@ -314,6 +318,6 @@ namespace bmla {
         // MARK: Reap moments
         // ***************
 
-        void reap_moments(MCType chain, int i_chain, int i_sample) const;
+        void reap_moments(MCType chain) const;
 	};
 };

@@ -107,7 +107,7 @@ namespace bmla {
         std::vector<int> idx_subset;
         idx_subset = fname_coll.get_random_subset(_no_markov_chains[MCType::AWAKE]);
         
-        // Iterate over the batch
+        // Read in the batch
         for (int i_chain=0; i_chain<_no_markov_chains[MCType::AWAKE]; i_chain++)
         {
             
@@ -118,15 +118,15 @@ namespace bmla {
             // Read latt
             auto file = fname_coll.get_fname(idx_subset[i_chain]);
             _latt->read_layer_from_file(MCType::AWAKE, i_chain, 0, file.name,file.binary);
-            
-            // Variational inference
-            for (auto i=0; i<no_mean_field_updates; i++) {
-                _latt->variational_inference_hiddens(MCType::AWAKE, i_chain);
-            };
-            
-            // Reap awake
-            _latt->reap_moments(MCType::AWAKE, i_chain, i_chain);
         };
+            
+        // Variational inference
+        for (auto i=0; i<no_mean_field_updates; i++) {
+            _latt->mean_field_hiddens_step();
+        };
+            
+        // Reap awake
+        _latt->reap_moments(MCType::AWAKE);
         
         // ASLEEP PHASE - PERSISTENT_CD
         
@@ -137,16 +137,17 @@ namespace bmla {
             for (int i_sampling_step=0; i_sampling_step<no_cd_sampling_steps; i_sampling_step++)
             {
                 if (i_sampling_step != no_cd_sampling_steps-1) {
-                    _latt->sample(MCType::ASLEEP, i_chain, options.is_asleep_visible_binary, options.is_asleep_hidden_binary);
+                    _latt->gibbs_sampling_step(options.is_asleep_visible_binary, options.is_asleep_hidden_binary);
                 } else {
-                    _latt->sample(MCType::ASLEEP, i_chain, options.is_asleep_visible_binary, options.is_asleep_hidden_binary_final);
+                    _latt->gibbs_sampling_step(options.is_asleep_visible_binary, options.is_asleep_hidden_binary_final);
                 };
             };
             
-            // Reap asleep
-            _latt->reap_moments(MCType::ASLEEP, i_chain, i_chain);
         };
         
+        // Reap asleep
+        _latt->reap_moments(MCType::ASLEEP);
+
         // Average moments
         for (auto &ixn_param: _ixn_params) {
             if (!ixn_param->get_moment()->get_is_awake_moment_fixed()) {

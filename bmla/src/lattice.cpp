@@ -758,7 +758,7 @@ namespace bmla {
 	};
 
     // ***************
-    // MARK: - Activations
+    // MARK: - Activate layer steps - PRIVATE
     // ***************
     
     // Reset activations to 0
@@ -878,25 +878,37 @@ namespace bmla {
             };
         };
     };
-
     
-    void Lattice::_convert_activations_to_probs(MCType chain, int i_chain, int layer, bool binary) {
-        
-        // TODO: - FIX THIS
-        
-        // Batch normalization
-        if (_bn_mode) {
-        
-            // No affine transformation for the visible layer
-            if (layer != 0) {
-                
-                // Transform all other layers
-                _bn_calculate_means_vars_from_activations(chain,layer);
-                _bn_calculate_bar_params_from_means_vars(chain,layer);
-                _bn_apply_affine_transform_to_all_chains(chain,layer);
-                
-            };
+    // ***************
+    // MARK: - Activate layer steps - PUBLIC
+    // ***************
+    
+    // (1) Calculate activations for a specific layer
+    // Both directions
+    void Lattice::activate_layer_calculate(MCType chain, int i_chain, int layer) {
+        _reset_activations(chain,i_chain,layer);
+        if (layer != 0) {
+            _calculate_activations(chain,i_chain,layer,true);
         };
+        if (layer != _no_layers-1) {
+            _calculate_activations(chain,i_chain,layer,false);
+        };
+    };
+    // Only one direction
+    void Lattice::activate_layer_calculate(MCType chain, int i_chain, int layer, int given_layer) {
+        _reset_activations(chain,i_chain,layer);
+        if (given_layer == layer - 1) {
+            _calculate_activations(chain,i_chain,layer,true);
+        } else if (given_layer == layer + 1) {
+            _calculate_activations(chain,i_chain,layer,false);
+        } else {
+            std::cerr << ">>> Lattice::activate_layer_prepare <<< given layer must be +- layer, but instead layer = " << layer << " and given layer = " << given_layer << std::endl;
+            exit(EXIT_FAILURE);
+        };
+    };
+    
+    // (2) Convert activations to probs
+    void Lattice::activate_layer_convert_to_probs(MCType chain, int i_chain, int layer, bool binary) {
         
         // Convert activations to propensities via exp
         // Also calculate total propensity
@@ -921,31 +933,7 @@ namespace bmla {
         };
     };
     
-    // Prepare to activate a specific layer
-    void Lattice::activate_layer_prepare(MCType chain, int i_chain, int layer, bool binary) {
-        _reset_activations(chain,i_chain,layer);
-        if (layer != 0) {
-            _calculate_activations(chain,i_chain,layer,true);
-        };
-        if (layer != _no_layers-1) {
-            _calculate_activations(chain,i_chain,layer,false);
-        };
-        _convert_activations_to_probs(chain,i_chain,layer,binary);
-    };
-    void Lattice::activate_layer_prepare(MCType chain, int i_chain, int layer, int given_layer, bool binary) {
-        _reset_activations(chain,i_chain,layer);
-        if (given_layer == layer - 1) {
-            _calculate_activations(chain,i_chain,layer,true);
-        } else if (given_layer == layer + 1) {
-            _calculate_activations(chain,i_chain,layer,false);
-        } else {
-            std::cerr << ">>> Lattice::activate_layer_prepare <<< given layer must be +- layer, but instead layer = " << layer << " and given layer = " << given_layer << std::endl;
-            exit(EXIT_FAILURE);
-        };
-        _convert_activations_to_probs(chain,i_chain,layer,binary);
-    };
-    
-    // Commit the activations
+    // (3) Commit the new probabilities
     void Lattice::activate_layer_committ(MCType chain, int i_chain, int layer) {
         /*
         std::cout << "activate_layer_committ: layer: " << layer << " current size: " << std::endl;
@@ -961,49 +949,113 @@ namespace bmla {
         _mc_chains[chain][i_chain][layer] = _mc_chains_act[chain][i_chain][layer];
     };
     
+    // ***************
+    // MARK: - Mean field / gibbs sampling
+    // ***************
+    
     // Activate a specific layer
-    void Lattice::activate_layer(MCType chain, int i_chain, int layer, bool binary) {
-        activate_layer_prepare(chain, i_chain, layer, binary);
+    void Lattice::activate_single_layer(MCType chain, int i_chain, int layer, bool binary) {
+        activate_layer_calculate(chain, i_chain, layer);
+        activate_layer_convert_to_probs(chain, i_chain, layer, binary);
         activate_layer_committ(chain, i_chain, layer);
     };
-    void Lattice::activate_layer(MCType chain, int i_chain, int layer, int given_layer, bool binary) {
-        activate_layer_prepare(chain, i_chain, layer, given_layer, binary);
+    void Lattice::activate_single_layer(MCType chain, int i_chain, int layer, int given_layer, bool binary) {
+        activate_layer_calculate(chain, i_chain, layer, given_layer);
+        activate_layer_convert_to_probs(chain, i_chain, layer, binary);
         activate_layer_committ(chain, i_chain, layer);
     };
     
     // Variational inference
-    void Lattice::variational_inference_hiddens(MCType chain, int i_chain) {
+    void Lattice::mean_field_hiddens_step() {
         
-        // Prepare all layers
-        // Use prob units, not binary
-        for (auto layer=1; layer<_no_layers; layer++) {
-            activate_layer_prepare(chain, i_chain, layer, false);
+        // Calculate activations for all chains, all layers
+        for (auto i_chain=0; i_chain<_no_markov_chains[MCType::AWAKE]; i_chain++) {
+            for (auto layer=1; layer<_no_layers; layer++) {
+                activate_layer_calculate(MCType::AWAKE, i_chain, layer);
+            };
         };
         
-        // Committ
-        for (auto layer=1; layer<_no_layers; layer++) {
-            activate_layer_committ(chain, i_chain, layer);
+        // Batch normalization
+        if (_bn_mode) {
+            
+            for (auto layer=1; layer<_no_layers; layer++) { // Only for hidden layers
+                
+                // Calculate means and variances
+                _bn_calculate_means_vars_from_activations(MCType::AWAKE, layer);
+                
+                // Calculate bar params
+                _bn_calculate_bar_params_from_means_vars(MCType::AWAKE, layer);
+                
+                // Apply affine transformations
+                _bn_apply_affine_transform_to_all_chains(MCType::AWAKE, layer);
+                
+            };
+        };
+
+        // Convert activations to probabilities
+        // Use prob units!
+        for (auto i_chain=0; i_chain<_no_markov_chains[MCType::AWAKE]; i_chain++) {
+            for (auto layer=1; layer<_no_layers; layer++) {
+                activate_layer_convert_to_probs(MCType::AWAKE, i_chain, layer, false);
+            };
+        };
+        
+        // Committ new probabilities
+        for (auto i_chain=0; i_chain<_no_markov_chains[MCType::AWAKE]; i_chain++) {
+            for (auto layer=1; layer<_no_layers; layer++) {
+                activate_layer_committ(MCType::AWAKE, i_chain, layer);
+            };
         };
     };
     
     // Sample
-    void Lattice::sample(MCType chain, int i_chain, bool binary_visible, bool binary_hidden) {
-        // Prepare all layers
-        activate_layer_prepare(chain, i_chain, 0, binary_visible);
-        for (auto layer=1; layer<_no_layers; layer++) {
-            activate_layer_prepare(chain, i_chain, layer, binary_hidden);
+    void Lattice::gibbs_sampling_step(bool binary_visible, bool binary_hidden) {
+        
+        // Calculate activations for all chains, all layers
+        for (auto i_chain=0; i_chain<_no_markov_chains[MCType::ASLEEP]; i_chain++) {
+            for (auto layer=0; layer<_no_layers; layer++) {
+                activate_layer_calculate(MCType::ASLEEP, i_chain, layer);
+            };
+        };
+
+        // Batch normalization
+        if (_bn_mode) {
+            
+            for (auto layer=1; layer<_no_layers; layer++) { // Only for hidden layers
+                
+                // Calculate means and variances
+                _bn_calculate_means_vars_from_activations(MCType::ASLEEP, layer);
+                
+                // Calculate bar params
+                _bn_calculate_bar_params_from_means_vars(MCType::ASLEEP, layer);
+                
+                // Apply affine transformations
+                _bn_apply_affine_transform_to_all_chains(MCType::ASLEEP, layer);
+                
+            };
+        };
+
+        // Convert activations to probabilities
+        // Use prob units!
+        for (auto i_chain=0; i_chain<_no_markov_chains[MCType::ASLEEP]; i_chain++) {
+            activate_layer_convert_to_probs(MCType::ASLEEP, i_chain, 0, binary_visible);
+            for (auto layer=1; layer<_no_layers; layer++) {
+                activate_layer_convert_to_probs(MCType::ASLEEP, i_chain, layer, binary_hidden);
+            };
         };
         
-        // Committ
-        for (auto layer=0; layer<_no_layers; layer++) {
-            activate_layer_committ(chain, i_chain, layer);
+        // Committ new probabilities
+        for (auto i_chain=0; i_chain<_no_markov_chains[MCType::ASLEEP]; i_chain++) {
+            for (auto layer=0; layer<_no_layers; layer++) {
+                activate_layer_committ(MCType::ASLEEP, i_chain, layer);
+            };
         };
     };
     
     // Make a pass activating upwards
     void Lattice::activate_upward_pass(MCType chain, int i_chain, bool binary_hidden) {
         for (auto layer=1; layer<_no_layers; layer++) {
-            activate_layer(chain, i_chain, layer, layer-1, binary_hidden);
+            activate_single_layer(chain, i_chain, layer, layer-1, binary_hidden);
         };
     };
          
@@ -1109,26 +1161,32 @@ namespace bmla {
      Reap moments
      ********************/
     
-    void Lattice::reap_moments(MCType chain, int i_chain, int i_sample) const {
+    void Lattice::reap_moments(MCType chain) const {
         // Reset all ixns
         for (auto ixn: _all_ixns) {
-            ixn->get_moment()->set_moment_sample(chain, i_sample, 0.0);
+            for (auto i_chain=0; i_chain<_no_markov_chains.at(chain); i_chain++) {
+                ixn->get_moment()->set_moment_sample(chain, i_chain, 0.0);
+            };
         };
         
         // Reap biases
         double val;
-        for (auto &bias_layer: _bias_dict) {
-            // Go through possible species in this layer
-            for (auto &sp_pr: bias_layer.second) {
-                // Get the moment
-                val = arma::sum(_mc_chains.at(chain).at(i_chain).at(bias_layer.first).at(sp_pr.first));
-        
-                // Go through all ixns associated with this species
-                for (auto ixn: sp_pr.second) {
-                    // Set the moment
-                    if (ixn->get_moment()) {
-                        if (chain == MCType::ASLEEP || !ixn->get_moment()->get_is_awake_moment_fixed()) {
-                            ixn->get_moment()->increment_moment_sample(chain, i_sample, val);
+        // Go over all chains
+        for (auto i_chain=0; i_chain<_no_markov_chains.at(chain); i_chain++) {
+            // All biases
+            for (auto &bias_layer: _bias_dict) {
+                // Go through possible species in this layer
+                for (auto &sp_pr: bias_layer.second) {
+                    // Get the moment
+                    val = arma::sum(_mc_chains.at(chain).at(i_chain).at(bias_layer.first).at(sp_pr.first));
+            
+                    // Go through all ixns associated with this species
+                    for (auto ixn: sp_pr.second) {
+                        // Set the moment
+                        if (ixn->get_moment()) {
+                            if (chain == MCType::ASLEEP || !ixn->get_moment()->get_is_awake_moment_fixed()) {
+                                ixn->get_moment()->increment_moment_sample(chain, i_chain, val);
+                            };
                         };
                     };
                 };
@@ -1136,26 +1194,30 @@ namespace bmla {
         };
         
         // Reap ixns
-        for (auto &o2_ixn_layer_1: _o2_ixn_dict) {
-            // Go through possible species in this layer
-            for (auto &sp_pr_1: o2_ixn_layer_1.second) {
-                for (auto &o2_ixn_layer_2: sp_pr_1.second) {
-                    // Be careful not to double count
-                    if (o2_ixn_layer_2.first <= o2_ixn_layer_1.first) {
-                        // skip
-                        continue;
-                    };
-                    
-                    for (auto &sp_pr_2: o2_ixn_layer_2.second) {
-                        // Get the moment
-                        val = dot(_mc_chains.at(chain).at(i_chain).at(o2_ixn_layer_1.first).at(sp_pr_1.first), _adj.at(o2_ixn_layer_1.first) * _mc_chains.at(chain).at(i_chain).at(o2_ixn_layer_2.first).at(sp_pr_2.first));
+        // Go over all chains
+        for (auto i_chain=0; i_chain<_no_markov_chains.at(chain); i_chain++) {
+            // All ixns
+            for (auto &o2_ixn_layer_1: _o2_ixn_dict) {
+                // Go through possible species in this layer
+                for (auto &sp_pr_1: o2_ixn_layer_1.second) {
+                    for (auto &o2_ixn_layer_2: sp_pr_1.second) {
+                        // Be careful not to double count
+                        if (o2_ixn_layer_2.first <= o2_ixn_layer_1.first) {
+                            // skip
+                            continue;
+                        };
                         
-                        // Go through all ixns associated with this species
-                        for (auto ixn: sp_pr_2.second) {
-                            // Set the moment
-                            if (ixn->get_moment()) {
-                                if (chain == MCType::ASLEEP || !ixn->get_moment()->get_is_awake_moment_fixed()) {
-                                    ixn->get_moment()->increment_moment_sample(chain, i_sample, val);
+                        for (auto &sp_pr_2: o2_ixn_layer_2.second) {
+                            // Get the moment
+                            val = dot(_mc_chains.at(chain).at(i_chain).at(o2_ixn_layer_1.first).at(sp_pr_1.first), _adj.at(o2_ixn_layer_1.first) * _mc_chains.at(chain).at(i_chain).at(o2_ixn_layer_2.first).at(sp_pr_2.first));
+                            
+                            // Go through all ixns associated with this species
+                            for (auto ixn: sp_pr_2.second) {
+                                // Set the moment
+                                if (ixn->get_moment()) {
+                                    if (chain == MCType::ASLEEP || !ixn->get_moment()->get_is_awake_moment_fixed()) {
+                                        ixn->get_moment()->increment_moment_sample(chain, i_chain, val);
+                                    };
                                 };
                             };
                         };
@@ -1180,7 +1242,7 @@ namespace bmla {
         // Mean
         for (auto sp: _species_possible_vec[layer]) {
             for (auto i_chain=0; i_chain<_no_markov_chains[chain]; i_chain++) {
-                _bn_means[chain][layer][sp] += _mc_chains[chain][i_chain][layer][sp];
+                _bn_means[chain][layer][sp] += _mc_chains_act[chain][i_chain][layer][sp];
             };
             _bn_means[chain][layer][sp] /= _no_markov_chains[chain];
         };
@@ -1188,7 +1250,7 @@ namespace bmla {
         // Variance
         for (auto sp: _species_possible_vec[layer]) {
             for (auto i_chain=0; i_chain<_no_markov_chains[chain]; i_chain++) {
-                _bn_vars[chain][layer][sp] += pow(_mc_chains[chain][i_chain][layer][sp] - _bn_means[chain][layer][sp],2);
+                _bn_vars[chain][layer][sp] += pow(_mc_chains_act[chain][i_chain][layer][sp] - _bn_means[chain][layer][sp],2);
             };
             _bn_vars[chain][layer][sp] /= _no_markov_chains[chain];
         };

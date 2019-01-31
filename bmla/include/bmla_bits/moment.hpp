@@ -1,5 +1,6 @@
 #include <vector>
 #include <string>
+#include <map>
 
 #ifndef FWDS_SPECIES_H
 #define FWDS_SPECIES_H
@@ -14,13 +15,12 @@ namespace bmla {
 
 	// Forward
     enum class IxnParamType: unsigned int;
+    enum class MCType: unsigned int { AWAKE, ASLEEP };
 
 	/****************************************
 	Moment
 	****************************************/
 	
-	enum class MomentType: unsigned int { AWAKE, ASLEEP };
-
 	class Moment {
 
 	private:
@@ -31,20 +31,15 @@ namespace bmla {
 		// Type = H, J, K, B, W
 		IxnParamType _type;
 
-		// Visible batch size
-		int _batch_size;
-        
-        // Asleep no markov chains
-        int _no_markov_chains;
+		// No chains
+        std::map<MCType, int> _no_markov_chains;
 
-		// Reaped values from the sampler
+        // Reaped values from the sampler
 		// Size = _batch_size
-		double *_vals_awake_reaped;
-		double *_vals_asleep_reaped;
+        std::map<MCType, double*> _vals_reaped;
 
 		// Averaged values
-		double _val_awake_averaged;
-		double _val_asleep_averaged;
+        std::map<MCType, double> _val_averaged;
 	
 		// If the awake moment is fixed
 		bool _is_awake_moment_fixed;
@@ -84,17 +79,14 @@ namespace bmla {
 		Batch size/no markov chains
 		********************/
 
-		int get_batch_size() const;
-		void set_batch_size(int batch_size);
-
-        int get_no_markov_chains() const;
-        void set_no_markov_chains(int no_markov_chains);
+        int get_no_markov_chains(MCType type) const;
+        void set_no_markov_chains(MCType type, int no_markov_chains);
         
 		/********************
 		Reset
 		********************/
 
-		void reset_to_zero(MomentType type);
+		void reset_to_zero(MCType type);
 
 		/********************
 		Fixed awake
@@ -107,16 +99,16 @@ namespace bmla {
 		Get/set moment
 		********************/
 
-		double get_moment(MomentType type) const;
-		void set_moment(MomentType type, double val);
+		double get_moment(MCType type) const;
+		void set_moment(MCType type, double val);
 
 		// Sample
-		double get_moment_sample(MomentType type, int i_sample) const;
-		void set_moment_sample(MomentType type, int i_sample, double val);
-        void increment_moment_sample(MomentType type, int i_sample, double val);
+		double get_moment_sample(MCType type, int i_sample) const;
+		void set_moment_sample(MCType type, int i_sample, double val);
+        void increment_moment_sample(MCType type, int i_sample, double val);
 
 		// Average reaps
-		void average_samples(MomentType type);
+		void average_moment_samples(MCType type);
 
 		/********************
 		Write

@@ -19,23 +19,7 @@ namespace bmla {
      ****************************************/
 
     enum class Solver : unsigned int { SGD, NESTEROV, ADAM };
-    
-    enum class CDModeAsleep : unsigned int { PERSISTENT_CD, START_FROM_DATA, START_FROM_RANDOM };
-    
-    struct OptionsAsleepPersistentCD {};
-    
-    struct OptionsAsleepStartFromRandom {
-        
-        // Init random - binary?
-        bool start_from_binary_visible = true;
-        // Binary hidden?
-        bool start_from_binary_hidden = true;
-    };
-    
-    struct OptionsAsleepStartFromData {
-        // Start from binary?
-        bool start_from_binary_hidden = true;
-    };
+    enum class MCType: unsigned int;
     
     /****************************************
     Options
@@ -80,9 +64,6 @@ namespace bmla {
         // Verbosity
         bool verbose = false;
         
-        // Mode
-        CDModeAsleep cd_mode_asleep = CDModeAsleep::PERSISTENT_CD;
-        
         // Sampling options
         // Is the visible reconstruction binary?
         bool is_asleep_visible_binary = true;
@@ -90,11 +71,6 @@ namespace bmla {
         bool is_asleep_hidden_binary = true;
         // Is the hidden reconstruction binary in the last phase?
         bool is_asleep_hidden_binary_final = false;
-        
-        // Options for CD
-        OptionsAsleepPersistentCD options_asleep_persistent_cd = OptionsAsleepPersistentCD();
-        OptionsAsleepStartFromRandom options_asleep_start_from_random = OptionsAsleepStartFromRandom();
-        OptionsAsleepStartFromData options_asleep_start_from_data = OptionsAsleepStartFromData();
     };
 
     /****************************************
@@ -105,6 +81,9 @@ namespace bmla {
         
     protected:
         
+        // No markov chains
+        std::map<MCType,int> _no_markov_chains;
+
         // Ixn params
         std::vector<std::shared_ptr<IxnParam>> _ixn_params;
         
@@ -122,7 +101,7 @@ namespace bmla {
          Constructor
          ********************/
         
-        OptProblem(std::shared_ptr<Lattice> latt, std::vector<std::shared_ptr<IxnParam>> ixn_params);
+        OptProblem(std::shared_ptr<Lattice> latt, std::vector<std::shared_ptr<IxnParam>> ixn_params, int no_markov_chains_awake, int no_markov_chains_asleep);
         OptProblem(const OptProblem& other);
         OptProblem(OptProblem&& other);
         OptProblem& operator=(const OptProblem &other);
@@ -133,26 +112,26 @@ namespace bmla {
          Init structures
          ********************/
         
-        void init_structures(int batch_size, int no_markov_chains);
+        void set_no_markov_chains(MCType chain, int no_markov_chains);
         
         /********************
          Wake/asleep loop
          ********************/
         
-        void wake_sleep_loop(int batch_size, int no_markov_chains, int no_cd_sampling_steps, int no_mean_field_updates, FNameColl &fname_coll, OptionsWakeSleep options);
+        void wake_sleep_loop(int no_cd_sampling_steps, int no_mean_field_updates, FNameColl &fname_coll, OptionsWakeSleep options);
         
         /********************
          Solve
          ********************/
         
         // Check if options passed are valid
-        void check_options(int batch_size, int no_markov_chains, double dopt, int no_cd_sampling_steps, int no_mean_field_updates, OptionsSolve options, OptionsWakeSleep options_wake_sleep);
+        void check_options(double dopt, int no_cd_sampling_steps, int no_mean_field_updates, OptionsSolve options, OptionsWakeSleep options_wake_sleep);
         
         // One step
-        void solve_one_step(int i_opt_step, int batch_size, int no_markov_chains, double dopt, int no_cd_sampling_steps, int no_mean_field_updates, FNameColl &fname_coll, OptionsSolve options, OptionsWakeSleep options_wake_sleep);
+        void solve_one_step(int i_opt_step, double dopt, int no_cd_sampling_steps, int no_mean_field_updates, FNameColl &fname_coll, OptionsSolve options, OptionsWakeSleep options_wake_sleep);
         
         // Many steps
-        void solve(int no_opt_steps, int batch_size, int no_markov_chains, double dopt, int no_cd_sampling_steps, int no_mean_field_updates, FNameColl &fname_coll, OptionsSolve options, OptionsWakeSleep options_wake_sleep);
+        void solve(int no_opt_steps, double dopt, int no_cd_sampling_steps, int no_mean_field_updates, FNameColl &fname_coll, OptionsSolve options, OptionsWakeSleep options_wake_sleep);
     };
     
 };

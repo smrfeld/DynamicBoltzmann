@@ -27,18 +27,18 @@ namespace bmla {
 		_name = name;
 		_type = type;
 
-		_batch_size = 1;
-        _no_markov_chains = 1;
+        _no_markov_chains[MCType::AWAKE] = 1;
+        _no_markov_chains[MCType::ASLEEP] = 1;
         
-		// reaped
-		_vals_awake_reaped = new double[_batch_size];
-		_vals_asleep_reaped = new double[_no_markov_chains];
-		std::fill_n(_vals_awake_reaped, _batch_size, 0.0);
-		std::fill_n(_vals_asleep_reaped, _no_markov_chains, 0.0);
+        // reaped
+        _vals_reaped[MCType::AWAKE] = new double[_no_markov_chains[MCType::AWAKE]];
+		std::fill_n(_vals_reaped[MCType::AWAKE], _no_markov_chains[MCType::AWAKE], 0.0);
+        _vals_reaped[MCType::ASLEEP] = new double[_no_markov_chains[MCType::ASLEEP]];
+        std::fill_n(_vals_reaped[MCType::ASLEEP], _no_markov_chains[MCType::ASLEEP], 0.0);
 
 		// averaged
-		_val_awake_averaged = 0.0;
-		_val_asleep_averaged = 0.0;
+        _val_averaged[MCType::AWAKE] = 0.0;
+        _val_averaged[MCType::ASLEEP] = 0.0;
 
 		// Fixed awake moment
 		_is_awake_moment_fixed = false;
@@ -72,30 +72,27 @@ namespace bmla {
 		_name = other._name;
 		_type = other._type;
 
-		_batch_size = other._batch_size;
         _no_markov_chains = other._no_markov_chains;
         
 		// reaped
-		_vals_awake_reaped = other._vals_awake_reaped;
-		_vals_asleep_reaped = other._vals_asleep_reaped;
+		_vals_reaped = other._vals_reaped;
 
 		// averaged
-		_val_awake_averaged = other._val_awake_averaged;
-		_val_asleep_averaged = other._val_asleep_averaged;
+		_val_averaged = other._val_averaged;
 		
 		_is_awake_moment_fixed = other._is_awake_moment_fixed;
 
 		// Reset the other
 		other._name = "";
 
-		other._batch_size = 0;
-        other._no_markov_chains = 0;
-        
-		other._vals_awake_reaped = nullptr;
-		other._vals_asleep_reaped = nullptr;
+        other._no_markov_chains[MCType::AWAKE] = 0;
+        other._no_markov_chains[MCType::ASLEEP] = 0;
 
-		other._val_awake_averaged = 0.0;
-		other._val_asleep_averaged = 0.0;
+		other._vals_reaped[MCType::AWAKE] = nullptr;
+        other._vals_reaped[MCType::ASLEEP] = nullptr;
+
+		other._val_averaged[MCType::AWAKE] = 0.0;
+        other._val_averaged[MCType::ASLEEP] = 0.0;
 
 		other._is_awake_moment_fixed = false;
 	};
@@ -103,18 +100,16 @@ namespace bmla {
 		_name = other._name;
 		_type = other._type;
         
-		_batch_size = other._batch_size;
         _no_markov_chains = other._no_markov_chains;
         
 		// reaped
-		_vals_awake_reaped = new double[_batch_size];
-		_vals_asleep_reaped = new double[_no_markov_chains];
-		std::copy(other._vals_awake_reaped, other._vals_awake_reaped+_batch_size,_vals_awake_reaped);
-		std::copy(other._vals_asleep_reaped, other._vals_asleep_reaped+_no_markov_chains,_vals_asleep_reaped);
+        _vals_reaped[MCType::AWAKE] = new double[_no_markov_chains[MCType::AWAKE]];
+		std::copy(other._vals_reaped.at(MCType::AWAKE), other._vals_reaped.at(MCType::AWAKE)+_no_markov_chains.at(MCType::AWAKE),_vals_reaped.at(MCType::AWAKE));
+        _vals_reaped[MCType::ASLEEP] = new double[_no_markov_chains[MCType::ASLEEP]];
+        std::copy(other._vals_reaped.at(MCType::ASLEEP), other._vals_reaped.at(MCType::ASLEEP)+_no_markov_chains.at(MCType::ASLEEP),_vals_reaped.at(MCType::ASLEEP));
 
 		// averaged
-		_val_awake_averaged = other._val_awake_averaged;
-		_val_asleep_averaged = other._val_asleep_averaged;
+		_val_averaged = other._val_averaged;
 
 		_is_awake_moment_fixed = other._is_awake_moment_fixed;
 	};
@@ -124,7 +119,7 @@ namespace bmla {
 	********************/
 
 	void Moment::print_moment_comparison() const {
-		std::cout << "(" << _val_awake_averaged << "," << _val_asleep_averaged << ") " << std::endl;
+        std::cout << "(" << _val_averaged.at(MCType::AWAKE) << "," << _val_averaged.at(MCType::ASLEEP) << ") " << std::endl;
 	};
     
 	/********************
@@ -142,48 +137,26 @@ namespace bmla {
 	Batch size
 	********************/
 
-	int Moment::get_batch_size() const {
-		return _batch_size;
-	};
-	void Moment::set_batch_size(int batch_size) {
-		// Clear old
-		
-		// reaped
-		safeDelArr(_vals_awake_reaped);
-
-		// New
-		
-		// Params
-		_batch_size = batch_size;
-
-		// Reaped vals
-		_vals_awake_reaped = new double[_batch_size];
-		std::fill_n(_vals_awake_reaped,_batch_size,0.0);
-
-		// Averaged vals
-		_val_awake_averaged = 0.0;
-	};
-
-    int Moment::get_no_markov_chains() const {
-        return _no_markov_chains;
+    int Moment::get_no_markov_chains(MCType type) const {
+        return _no_markov_chains.at(type);
     };
-    void Moment::set_no_markov_chains(int no_markov_chains) {
+    void Moment::set_no_markov_chains(MCType type, int no_markov_chains) {
         // Clear old
         
         // reaped
-        safeDelArr(_vals_asleep_reaped);
+        safeDelArr(_vals_reaped[type]);
         
         // New
         
         // Params
-        _no_markov_chains = no_markov_chains;
+        _no_markov_chains[type] = no_markov_chains;
         
         // Reaped vals
-        _vals_asleep_reaped = new double[_batch_size];
-        std::fill_n(_vals_asleep_reaped,_batch_size,0.0);
+        _vals_reaped[type] = new double[_no_markov_chains[type]];
+        std::fill_n(_vals_reaped[type],_no_markov_chains[type],0.0);
         
         // Averaged vals
-        _val_asleep_averaged = 0.0;
+        _val_averaged[type] = 0.0;
     };
 
     
@@ -191,18 +164,11 @@ namespace bmla {
 	Reset
 	********************/
 
-	void Moment::reset_to_zero(MomentType type) {
-		if (type == MomentType::AWAKE) {
-			for (auto i_batch=0; i_batch<_batch_size; i_batch++) {
-				set_moment_sample(MomentType::AWAKE, i_batch, 0.0);
-			};
-			set_moment(MomentType::AWAKE, 0.0);
-		} else {
-			for (auto i_chain=0; i_chain<_no_markov_chains; i_chain++) {
-				set_moment_sample(MomentType::ASLEEP, i_chain, 0.0);
-			};
-			set_moment(MomentType::ASLEEP, 0.0);
-		};
+	void Moment::reset_to_zero(MCType type) {
+        for (auto i_batch=0; i_batch<_no_markov_chains[type]; i_batch++) {
+            set_moment_sample(type, i_batch, 0.0);
+        };
+        set_moment(type, 0.0);
 	};
 
 	/********************
@@ -220,65 +186,31 @@ namespace bmla {
 	Get/set moment
 	********************/
 
-	double Moment::get_moment(MomentType type) const {
-		if (type == MomentType::AWAKE) {
-			return _val_awake_averaged;
-		} else {
-			return _val_asleep_averaged;
-		};
+	double Moment::get_moment(MCType type) const {
+        return _val_averaged.at(type);
 	};
-	void Moment::set_moment(MomentType type, double val) {
-		if (type == MomentType::AWAKE) {
-			_val_awake_averaged = val;
-		} else {
-			_val_asleep_averaged = val;
-		};
+	void Moment::set_moment(MCType type, double val) {
+        _val_averaged[type] = val;
 	};
 
 	// Batch
-	double Moment::get_moment_sample(MomentType type, int i_sample) const {
-		if (type == MomentType::AWAKE) {
-			return _vals_awake_reaped[i_sample];
-		} else {
-			return _vals_asleep_reaped[i_sample];
-		};	
+	double Moment::get_moment_sample(MCType type, int i_sample) const {
+        return _vals_reaped.at(type)[i_sample];
 	};
-	void Moment::set_moment_sample(MomentType type, int i_sample, double val) {
-		if (type == MomentType::AWAKE) {
-			_vals_awake_reaped[i_sample] = val;
-		} else {
-			_vals_asleep_reaped[i_sample] = val;
-		};
+	void Moment::set_moment_sample(MCType type, int i_sample, double val) {
+        _vals_reaped[type][i_sample] = val;
 	};
-    void Moment::increment_moment_sample(MomentType type, int i_sample, double val) {
-        if (type == MomentType::AWAKE) {
-            _vals_awake_reaped[i_sample] += val;
-        } else {
-            _vals_asleep_reaped[i_sample] += val;
-        };
+    void Moment::increment_moment_sample(MCType type, int i_sample, double val) {
+        _vals_reaped[type][i_sample] += val;
     };
 
     // Average reaps
-	void Moment::average_samples(MomentType type) {
-		if (type == MomentType::AWAKE) {
-
-			// Awake moment
-			_val_awake_averaged = 0.;
-			for (auto i=0; i<_batch_size; i++) {
-				_val_awake_averaged += _vals_awake_reaped[i];
-			};
-			_val_awake_averaged /= _batch_size;
-
-		} else {
-
-			// Asleep moment
-			_val_asleep_averaged = 0.;
-			for (auto i=0; i<_no_markov_chains; i++) {
-				_val_asleep_averaged += _vals_asleep_reaped[i];
-			};
-			_val_asleep_averaged /= _no_markov_chains;
-
-		};
+	void Moment::average_moment_samples(MCType type) {
+        _val_averaged[type] = 0.;
+        for (auto i=0; i<_no_markov_chains[type]; i++) {
+            _val_averaged[type] += _vals_reaped[type][i];
+        };
+        _val_averaged[type] /= _no_markov_chains[type];
 	};
 
 	/********************
@@ -302,7 +234,7 @@ namespace bmla {
 		};
 
 		// Go through all time
-		f << _val_awake_averaged << " " << _val_asleep_averaged << "\n";
+        f << _val_averaged.at(MCType::AWAKE) << " " << _val_averaged.at(MCType::ASLEEP) << "\n";
 
 		// Close
 		f.close();

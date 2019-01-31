@@ -22,9 +22,9 @@ namespace bmla {
 
 	// Forwards
 	class Moment;
-
-    enum class MomentType: unsigned int;
-
+    
+    enum class MCType: unsigned int;
+    
 	/****************************************
 	Lattice
 	****************************************/
@@ -38,30 +38,32 @@ namespace bmla {
 	{
 	private:
 
+        // ***************
+        // MARK: - Private data
+        // ***************
+        
 		// Dimensionality
 		int _no_dims;
 
 		// Size
 		int _box_length;
 
-        // No markov chains
-        // idx 0 = awake stats
-        // Other idxs = asleep stats
-        int _no_markov_chains;
-        int _no_markov_chains_asleep; // = _no_markov_chains - 1
+        // No markov chains for both awake and asleep
+        std::map<MCType,int> _no_markov_chains;
 
         // No layers
         int _no_layers;
         
-        // Current markov chain
-        int _i_markov_chain;
+        // ***************
+        // MARK: The actual layers
+        // ***************
         
         // Markov chain idx
         // -> Layer idx
         // -> State vector
-        std::map<int,layers_map> _latt;
-        std::map<int,layers_map> _latt_act;
-
+        std::map<MCType,std::map<int,layers_map>> _mc_chains;
+        std::map<MCType,std::map<int,layers_map>> _mc_chains_act;
+        
 		// Layer lookup
 		// Layer -> (x,y,z) -> idx
 		std::map<int, std::map<int, int>> _lookup_1;
@@ -71,82 +73,157 @@ namespace bmla {
         // Layer -> idx -> (x,y,z)
         std::map<int, std::map<int, std::vector<int>>> _rlookup;
         
+        // Species possible
+        // layer->species name->species
+        std::map<int,std::map<std::string,Sptr>> _species_possible_map;
+        std::map<int,std::vector<Sptr>> _species_possible_vec;
+
+        // ***************
+        // MARK: Adjacency matrix
+        // ***************
+        
         // Adjacency matrices
         // Idx 0 connects 0, 1
         // Idx i connects i, i+1
         std::map<int,arma::mat> _adj;
+        
+        // ***************
+        // MARK: Ixn params
+        // ***************
         
         // Bias/ixn dicts
         std::vector<Iptr> _all_ixns;
         bias_dict _bias_dict;
         o2_ixn_dict _o2_ixn_dict;
         
+        // ***************
+        // MARK: Batch normalization
+        // ***************
+        
+        // Mode
+        bool _bn_mode;
+        
+        // Batch normalization parameters for the layers
+        // (layer) -> (parameter)
+        std::map<int,std::map<Sptr,double>> _bn_beta, _bn_gamma;
+        
+        // Same but for beta-bar and gamma-bar (calculated from beta, gamma, means, vars)
+        // (chain type) -> (layer) -> (parameter)
+        std::map<MCType,std::map<int,std::map<Sptr,arma::vec>>> _bn_beta_bar, _bn_gamma_bar;
+        
+        // Means,vars over the current batch
+        // CHANGES over the steps of mean field / gibbs sampling
+        // (chain type) -> (layer) -> means/vars
+        std::map<MCType,std::map<int,std::map<Sptr,arma::vec>>> _bn_means, _bn_vars;
+        
+        // Small epsilon to prevent div by zero
+        double _bn_eps;
+        
+        // ***************
+        // MARK: Multipliers
+        // ***************
+        
         // Multipliers between layers for ixns - NOT bidirectional
         std::map<int, std::map<int, double>> _o2_mults;
         
-		// Species possible
-        // layer->species name->species
-		std::map<int,std::map<std::string,Sptr>> _species_possible;
+        // ***************
+        // MARK: - Private methods
+        // ***************
 
+        // Binarize
+        void _binarize_all_units_in_layer(MCType chain, int i_chain, int layer, bool act);
+
+        // ***************
+        // MARK: Look up sites
+        // ***************
+        
 		// Lookup a site iterator from x,y,z
 		int _look_up_unit(int layer, int x) const;
 		int _look_up_unit(int layer, int x, int y) const;
 		int _look_up_unit(int layer, int x, int y, int z) const;
         std::vector<int> _look_up_pos(int layer, int idx) const;
         
-        // Binarize
-        void _binarize_all_units_in_layer(int layer, bool act);
+        // ***************
+        // MARK: Batch normalization
+        // ***************
         
-        // Activations
-        void _reset_activations(int layer);
-        void _calculate_activations(int layer, int given_layer);
-        void _convert_activations(int layer, bool binary);
+        // Calculate means from activations
+        void _bn_calculate_means_vars_from_activations(MCType chain, int layer);
         
-		// Contructor helpers
+        // Calculate bar parameters from means, vars
+        void _bn_calculate_bar_params_from_means_vars(MCType chain, int layer);
+        
+        // Apply BN transform
+        void _bn_apply_affine_transform_to_all_chains(MCType chain, int layer);
+        
+        // ***************
+        // MARK: Activations
+        // ***************
+        
+        // Reset activations to 0
+        void _reset_activations(MCType chain, int i_chain, int layer);
+        
+        // Calculate activation given layer above or below
+        void _calculate_activations(MCType chain, int i_chain, int layer, bool from_below);
+        
+        // Calculate activations when the scale paramaters gamma in eqn (7) are not incorporated into th weights
+        // See bullet pt 2 on p. 366
+        void _calculate_activations_bn_LEGACY(MCType chain, int i_chain, int layer, bool from_below);
+        
+        // Convert activations to probabilities and sample if necessary
+        void _convert_activations_to_probs(MCType chain, int i_chain, int layer, bool binary);
+        
+        // ***************
+        // MARK: - Constructor helpers
+        // ***************
+        
 		void _clean_up();
 		void _move(Lattice& other);
 		void _copy(const Lattice& other);
 
 	public:
 
-		/********************
-		Constructor
-		********************/
-
-        Lattice(int no_dims, int box_length, std::vector<Sptr> species_visible);
+        // ***************
+        // MARK: - Public methods
+        // ***************
+        
+        // ***************
+        // MARK: Constructor
+        // ***************
+        
+        Lattice(int no_dims, int box_length, std::vector<Sptr> species_visible, bool batch_norm_mode);
 		Lattice(const Lattice& other);
 		Lattice(Lattice&& other);
 		Lattice& operator=(const Lattice& other);
 		Lattice& operator=(Lattice&& other);
 		~Lattice();
 
-        /********************
-        Getters
-         ********************/
+        // ***************
+        // MARK: Getters
+        // ***************
 
         int get_no_dims() const;
         int get_box_length() const;
         int get_no_units_in_layer(int layer) const;
-        
-        /********************
-        Markov chains
-         ********************/
 
-        int get_no_markov_chains_asleep() const;
-        void set_no_markov_chains_asleep(int no_markov_chains_asleep);
-        void switch_to_markov_chain_asleep(int i_markov_chain_asleep);
-        void switch_to_markov_chain_awake();
-        
-        /********************
-        Add a layer
-         ********************/
+        // ***************
+        // MARK: Markov chains
+        // ***************
 
+        int get_no_markov_chains(MCType type) const;
+
+        void set_no_markov_chains(MCType type, int no_markov_chains);
+        
+        // ***************
+        // MARK: Add a layer
+        // ***************
+        
         void add_layer(int layer, int box_length, std::vector<Sptr> species);
         
-        /********************
-		Biases/ixn params
-		********************/
-
+        // ***************
+        // MARK: Biases/ixn params
+        // ***************
+        
 		// Biases
 		void add_bias_all_layers(Sptr sp, Iptr bias);
         void add_bias_to_layer(int layer, Sptr sp, Iptr bias);
@@ -162,82 +239,81 @@ namespace bmla {
         double get_bias_in_layer(int layer, Sptr sp) const;
         double get_ixn_between_layers(int from_layer, Sptr from_sp, int to_layer, Sptr to_sp) const;
 
-		/********************
-		Add connections
-		********************/
+        // ***************
+        // MARK: Add connections
+        // ***************
 
         void add_conn(int layer1, int x1, int layer2, int x2);
         void add_conn(int layer1, int x1, int y1, int layer2, int x2, int y2);
         void add_conn(int layer1, int x1, int y1, int z1, int layer2, int x2, int y2, int z2);
 
-		/********************
-		Apply funcs to all units
-		********************/
+        // ***************
+        // MARK: Clear/Random/Binarize to all units
+        // ***************
 
 		// Clear the lattice
-        void set_empty_all_units();
-        void set_empty_all_units_in_layer(int layer);
-        void set_empty_all_hidden_units();
+        void set_empty_all_units(MCType chain, int i_chain);
+        void set_empty_all_units_in_layer(MCType chain, int i_chain, int layer);
+        void set_empty_all_hidden_units(MCType chain, int i_chain);
 
 		// Random
-        void set_random_all_units(bool binary);
-        void set_random_all_units_in_layer(int layer, bool binary);
-        void set_random_all_hidden_units(bool binary);
+        void set_random_all_units(MCType chain, int i_chain, bool binary);
+        void set_random_all_units_in_layer(MCType chain, int i_chain, int layer, bool binary);
+        void set_random_all_hidden_units(MCType chain, int i_chain, bool binary);
 
 		// Binarize
-        void binarize_all_units();
-        void binarize_all_units_in_layer(int layer);
-        void binarize_all_hidden_units();
+        void binarize_all_units(MCType chain, int i_chain);
+        void binarize_all_units_in_layer(MCType chain, int i_chain, int layer);
+        void binarize_all_hidden_units(MCType chain, int i_chain);
 
-		/********************
-		Write/read latt to a file
-		********************/
-
-		void write_layer_to_file(int layer, std::string fname, bool binary) const;
-		void read_layer_from_file(int layer, std::string fname, bool binary);
+        // ***************
+        // MARK: Write/read
+        // ***************
         
-        /********************
-        Activate layer
-         ********************/
+		void write_layer_to_file(MCType chain, int i_chain, int layer, std::string fname, bool binary) const;
+		void read_layer_from_file(MCType chain, int i_chain, int layer, std::string fname, bool binary);
+        
+        // ***************
+        // MARK: Activate/sample layers
+        // ***************
         
         // Prepare to activate a specific layer
-        void activate_layer_prepare(int layer, bool binary);
-        void activate_layer_prepare(int layer, int given_layer, bool binary);
+        void activate_layer_prepare(MCType chain, int i_chain, int layer, bool binary);
+        void activate_layer_prepare(MCType chain, int i_chain, int layer, int given_layer, bool binary);
 
         // Commit the activations
-        void activate_layer_committ(int layer);
+        void activate_layer_committ(MCType chain, int i_chain, int layer);
 
         // Activate a specific layer
         // First prepares
         // Then committs
-		void activate_layer(int layer, bool binary);
-		void activate_layer(int layer, int given_layer, bool binary);
+		void activate_layer(MCType chain, int i_chain, int layer, bool binary);
+		void activate_layer(MCType chain, int i_chain, int layer, int given_layer, bool binary);
 
         // Variational inference
-        void variational_inference_hiddens();
+        void variational_inference_hiddens(MCType chain, int i_chain);
         
         // Sample
-        void sample(bool binary_visible, bool binary_hidden);
+        void sample(MCType chain, int i_chain, bool binary_visible, bool binary_hidden);
     
         // Make a pass activating upwards
-        void activate_upward_pass(bool binary_hidden);
+        void activate_upward_pass(MCType chain, int i_chain, bool binary_hidden);
         
-		/********************
-		Get counts for visibles
-		********************/
+        // ***************
+        // MARK: Get counts for visible layer
+        // ***************
 
-		double get_count_vis(Sptr &sp) const;
         /*
+        double get_count_vis(Sptr &sp) const;
 		double get_count_vis(Sptr &sp1, Sptr &sp2, bool reversibly) const;
 		double get_count_vis(Sptr &sp1, Sptr &sp2, Sptr &sp3, bool reversibly) const;
 		double get_count_vis(Sptr &sp1, Sptr &sp2, Sptr &sp3, Sptr &sp4, bool reversibly) const;
          */
         
-        /********************
-        Reap moments
-         ********************/
+        // ***************
+        // MARK: Reap moments
+        // ***************
 
-        void reap_moments(MomentType type, int i_sample) const;
+        void reap_moments(MCType chain, int i_chain, int i_sample) const;
 	};
-
 };

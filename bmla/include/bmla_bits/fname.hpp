@@ -41,6 +41,7 @@ namespace bmla {
 
 		const std::vector<FName>& get_fnames_all() const;
 		const FName& get_fname(int idx) const;
+        std::vector<FName> get_fnames_batch(std::vector<int> idxs) const;
 
 		/********************
 		Add fname

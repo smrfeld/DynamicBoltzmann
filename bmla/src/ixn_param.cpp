@@ -303,7 +303,7 @@ namespace bmla {
 	********************/
 
 	void IxnParam::Impl::update_calculate_and_store(bool l2_mode, double l2_lambda, double l2_center) {
-		_update = _moment->get_moment(MomentType::ASLEEP) - _moment->get_moment(MomentType::AWAKE);
+		_update = _moment->get_moment(MCType::ASLEEP) - _moment->get_moment(MCType::AWAKE);
 		if (l2_mode) {
 			_update += 2.0 * l2_lambda * (_val - l2_center);
 		};

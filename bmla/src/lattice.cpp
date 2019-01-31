@@ -40,8 +40,11 @@ namespace bmla {
         _no_markov_chains[MCType::AWAKE] = 1;
         _no_markov_chains[MCType::ASLEEP] = 1;
         _no_layers = 0;
-        _bn_mode = batch_norm_mode;
         
+        // Batch norm
+        _bn_mode = batch_norm_mode;
+        _bn_eps = 1.0e-8;
+    
 		// Visible layer
         add_layer(0, _box_length, species_visible);
         
@@ -91,15 +94,25 @@ namespace bmla {
         _lookup_2 = other._lookup_2;
         _lookup_3 = other._lookup_3;
         _rlookup = other._rlookup;
+        
+        _species_possible_map = other._species_possible_map;
+        _species_possible_vec = other._species_possible_vec;
+        
         _adj = other._adj;
         
         _all_ixns = other._all_ixns;
         _bias_dict = other._bias_dict;
         _o2_ixn_dict = other._o2_ixn_dict;
         _o2_mults = other._o2_mults;
-        
-        _species_possible_map = other._species_possible_map;
-        _species_possible_vec = other._species_possible_vec;
+      
+        _bn_mode = other._bn_mode;
+        _bn_beta = other._bn_beta;
+        _bn_gamma = other._bn_gamma;
+        _bn_beta_bar = other._bn_beta_bar;
+        _bn_gamma_bar = other._bn_gamma_bar;
+        _bn_means = other._bn_means;
+        _bn_vars = other._bn_vars;
+        _bn_eps = other._bn_eps;
     };
 	void Lattice::_move(Lattice& other) {
         _no_dims = other._no_dims;
@@ -114,6 +127,10 @@ namespace bmla {
         _lookup_2 = other._lookup_2;
         _lookup_3 = other._lookup_3;
         _rlookup = other._rlookup;
+        
+        _species_possible_map = other._species_possible_map;
+        _species_possible_vec = other._species_possible_vec;
+        
         _adj = other._adj;
         
         _all_ixns = other._all_ixns;
@@ -121,8 +138,14 @@ namespace bmla {
         _o2_ixn_dict = other._o2_ixn_dict;
         _o2_mults = other._o2_mults;
         
-        _species_possible_map = other._species_possible_map;
-        _species_possible_vec = other._species_possible_vec;
+        _bn_mode = other._bn_mode;
+        _bn_beta = other._bn_beta;
+        _bn_gamma = other._bn_gamma;
+        _bn_beta_bar = other._bn_beta_bar;
+        _bn_gamma_bar = other._bn_gamma_bar;
+        _bn_means = other._bn_means;
+        _bn_vars = other._bn_vars;
+        _bn_eps = other._bn_eps;
 
 		// Reset other
 		other._no_dims = 0;
@@ -137,6 +160,10 @@ namespace bmla {
 		other._lookup_2.clear();
 		other._lookup_3.clear();
         other._rlookup.clear();
+        
+        other._species_possible_map.clear();
+        other._species_possible_vec.clear();
+        
         other._adj.clear();
         
         other._all_ixns.clear();
@@ -144,8 +171,14 @@ namespace bmla {
         other._o2_ixn_dict.clear();
         other._o2_mults.clear();
         
-        other._species_possible_map.clear();
-        other._species_possible_vec.clear();
+        other._bn_mode = true;
+        other._bn_beta.clear();
+        other._bn_gamma.clear();
+        other._bn_beta_bar.clear();
+        other._bn_gamma_bar.clear();
+        other._bn_means.clear();
+        other._bn_vars.clear();
+        other._bn_eps = 0.0;
 	};
     
     /****************************************
@@ -278,6 +311,11 @@ namespace bmla {
         for (auto &chain: _no_markov_chains) {
             for (auto i_chain=0; i_chain<chain.second; i_chain++) {
                 for (auto sp: species) {
+                    if (chain.first == MCType::AWAKE) {
+                        std::cout << "Made: awake " << i_chain << " " << layer << " " << sp->get_name() << std::endl;
+                    } else {
+                        std::cout << "Made: asleep " << i_chain << " " << layer << " " << sp->get_name() << std::endl;
+                    };
                     _mc_chains[chain.first][i_chain][layer][sp] = arma::vec(no_units,arma::fill::zeros);
                     _mc_chains_act[chain.first][i_chain][layer][sp] = arma::vec(no_units,arma::fill::zeros);
                 };
@@ -320,6 +358,25 @@ namespace bmla {
         if (layer != 0) {
             int size_below = get_no_units_in_layer(layer-1);
             _adj[layer-1] = arma::mat(size_below,no_units,arma::fill::zeros);
+        };
+        
+        // Batch norm
+        if (layer != 0) {
+          
+            for (auto sp: _species_possible_vec[layer]) {
+                _bn_beta[layer][sp] = 0.0;
+                _bn_gamma[layer][sp] = 0.0;
+                
+                _bn_beta_bar[MCType::AWAKE][layer][sp] = arma::vec(no_units,arma::fill::zeros);
+                _bn_beta_bar[MCType::ASLEEP][layer][sp] = arma::vec(no_units,arma::fill::zeros);
+                _bn_gamma_bar[MCType::AWAKE][layer][sp] = arma::vec(no_units,arma::fill::zeros);
+                _bn_gamma_bar[MCType::ASLEEP][layer][sp] = arma::vec(no_units,arma::fill::zeros);
+
+                _bn_means[MCType::AWAKE][layer][sp] = arma::vec(no_units,arma::fill::zeros);
+                _bn_means[MCType::ASLEEP][layer][sp] = arma::vec(no_units,arma::fill::zeros);
+                _bn_vars[MCType::AWAKE][layer][sp] = arma::vec(no_units,arma::fill::zeros);
+                _bn_vars[MCType::ASLEEP][layer][sp] = arma::vec(no_units,arma::fill::zeros);
+            };
         };
     };
 

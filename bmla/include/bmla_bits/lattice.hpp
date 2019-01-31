@@ -96,6 +96,9 @@ namespace bmla {
         bias_dict _bias_dict;
         o2_ixn_dict _o2_ixn_dict;
         
+        // Multipliers between layers for ixns - NOT bidirectional
+        std::map<int, std::map<int, double>> _o2_mults;
+
         // ***************
         // MARK: Batch normalization
         // ***************
@@ -118,14 +121,7 @@ namespace bmla {
         
         // Small epsilon to prevent div by zero
         double _bn_eps;
-        
-        // ***************
-        // MARK: Multipliers
-        // ***************
-        
-        // Multipliers between layers for ixns - NOT bidirectional
-        std::map<int, std::map<int, double>> _o2_mults;
-        
+                
         // ***************
         // MARK: - Private methods
         // ***************

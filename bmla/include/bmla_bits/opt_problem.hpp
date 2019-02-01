@@ -71,6 +71,12 @@ namespace bmla {
         bool is_asleep_hidden_binary = true;
         // Is the hidden reconstruction binary in the last phase?
         bool is_asleep_hidden_binary_final = false;
+        
+        // Write after awake/asleep
+        bool write_after_awake = false;
+        bool write_after_asleep = false;
+        std::string write_after_awake_dir = "";
+        std::string write_after_asleep_dir = "";
     };
 
     /****************************************
@@ -115,7 +121,7 @@ namespace bmla {
          Wake/asleep loop
          ********************/
         
-        void wake_sleep_loop(int no_mean_field_updates, int no_gibbs_sampling_steps, FNameColl &fname_coll, OptionsWakeSleep options);
+        void wake_sleep_loop(int i_opt_step, int no_mean_field_updates, int no_gibbs_sampling_steps, FNameColl &fname_coll, OptionsWakeSleep options);
         
         /********************
          Solve

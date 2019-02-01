@@ -64,6 +64,9 @@ namespace bmla {
         std::map<MCType,std::map<int,layers_map>> _mc_chains;
         std::map<MCType,std::map<int,layers_map>> _mc_chains_act;
         
+        // No units per layer
+        std::map<int,int> _no_units_per_layer;
+        
 		// Layer lookup
 		// Layer -> (x,y,z) -> idx
 		std::map<int, std::map<int, int>> _lookup_1;
@@ -160,12 +163,14 @@ namespace bmla {
         void _reset_activations(MCType chain, int i_chain, int layer);
         
         // Calculate activation given layer above or below
-        void _calculate_activations(MCType chain, int i_chain, int layer, bool from_below);
-        
+        void _calculate_activations_from_below(MCType chain, int i_chain, int layer);
+        void _calculate_activations_from_above(MCType chain, int i_chain, int layer);
+
         // Calculate activations when the scale paramaters gamma in eqn (7) are not incorporated into th weights
         // See bullet pt 2 on p. 366
-        void _calculate_activations_bn_LEGACY(MCType chain, int i_chain, int layer, bool from_below);
-        
+        void _calculate_activations_from_above_bn(MCType chain, int i_chain, int layer);
+        void _calculate_activations_from_below_bn(MCType chain, int i_chain, int layer);
+
         // ***************
         // MARK: - Constructor helpers
         // ***************
@@ -198,7 +203,8 @@ namespace bmla {
         int get_no_dims() const;
         int get_box_length() const;
         int get_no_units_in_layer(int layer) const;
-
+        int get_no_layers() const;
+        
         // ***************
         // MARK: Markov chains
         // ***************
@@ -211,8 +217,9 @@ namespace bmla {
         // MARK: Add a layer
         // ***************
         
+        void add_layer(int layer, int box_length, std::vector<Sptr> species);
         void add_layer(int layer, int box_length, std::vector<Sptr> species, Iptr beta, Iptr gamma);
-        
+
         // ***************
         // MARK: Biases/ixn params
         // ***************

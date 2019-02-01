@@ -5,6 +5,7 @@
 #include "../include/bmla_bits/lattice.hpp"
 #include "../include/bmla_bits/moment.hpp"
 #include "../include/bmla_bits/fname.hpp"
+#include "../include/bmla_bits/general.hpp"
 
 #include <random>
 #include <algorithm>
@@ -89,7 +90,7 @@ namespace bmla {
      Wake/asleep loop
      ********************/
     
-    void OptProblem::wake_sleep_loop(int no_mean_field_updates, int no_gibbs_sampling_steps, FNameColl &fname_coll, OptionsWakeSleep options) {
+    void OptProblem::wake_sleep_loop(int i_opt_step, int no_mean_field_updates, int no_gibbs_sampling_steps, FNameColl &fname_coll, OptionsWakeSleep options) {
         if (options.verbose) {
             std::cout << "--- Sampling lattice ---" << std::endl;
         };
@@ -118,9 +119,12 @@ namespace bmla {
             
             // Read latt
             auto file = fname_coll.get_fname(idx_subset[i_chain]);
-            _latt->read_layer_from_file(MCType::AWAKE, i_chain, 0, file.name,file.binary);
-        };
+            _latt->read_layer_from_file(MCType::AWAKE, i_chain, 0, file.name, file.binary);
             
+            // Set hidden layers to random
+            _latt->set_random_all_hidden_units(MCType::AWAKE, i_chain, false);
+        };
+        
         // Variational inference
         for (auto i=0; i<no_mean_field_updates; i++) {
             _latt->mean_field_hiddens_step();
@@ -129,7 +133,31 @@ namespace bmla {
         // Reap awake
         _latt->reap_moments(MCType::AWAKE);
         
+        // Write out the lattices
+        if (options.write_after_awake) {
+            for (auto i_chain=0; i_chain<_no_markov_chains[MCType::AWAKE]; i_chain++) {
+                for (auto layer=0; layer<_latt->get_no_layers(); layer++) {
+                    bool write_binary = false;
+                    if (layer == 0) {
+                        write_binary = true;
+                    };
+                    _latt->write_layer_to_file(MCType::AWAKE, i_chain, layer, options.write_after_awake_dir+"/"+pad_str(i_chain,2)+"_"+pad_str(layer,2)+".txt", write_binary);
+                };
+            };
+        };
+        
         // ASLEEP PHASE - PERSISTENT_CD
+        
+        // Init PCD chain
+        /*
+        if (i_opt_step == 1) {
+            idx_subset = fname_coll.get_random_subset(_no_markov_chains[MCType::ASLEEP]);
+            for (auto i_chain=0; i_chain<_no_markov_chains[MCType::ASLEEP]; i_chain++) {
+                auto file = fname_coll.get_fname(idx_subset[i_chain]);
+                _latt->read_layer_from_file(MCType::ASLEEP, i_chain, 0, file.name, file.binary);
+            };
+        };
+         */
         
         // Run CD sampling
         for (auto i_chain=0; i_chain<_no_markov_chains[MCType::ASLEEP]; i_chain++) {
@@ -149,8 +177,22 @@ namespace bmla {
         // Reap asleep
         _latt->reap_moments(MCType::ASLEEP);
 
+        // Write out the lattices
+        if (options.write_after_asleep) {
+            for (auto i_chain=0; i_chain<_no_markov_chains[MCType::ASLEEP]; i_chain++) {
+                for (auto layer=0; layer<_latt->get_no_layers(); layer++) {
+                    bool write_binary = false;
+                    if (layer == 0) {
+                        write_binary = true;
+                    };
+                    _latt->write_layer_to_file(MCType::ASLEEP, i_chain, layer, options.write_after_asleep_dir+"/"+pad_str(i_chain,2)+"_"+pad_str(layer,2)+".txt", write_binary);
+                };
+            };
+        };
+        
         // Average moments
         for (auto &ixn_param: _latt->get_all_ixn_params()) {
+            // std::cout << "averaging: " << ixn_param->get_name() << std::endl;
             if (!ixn_param->get_moment()->get_is_awake_moment_fixed()) {
                 ixn_param->get_moment()->average_moment_samples(MCType::AWAKE);
             };
@@ -190,7 +232,7 @@ namespace bmla {
          Wake/asleep loop
          *****/
         
-        wake_sleep_loop(no_mean_field_updates,no_gibbs_sampling_steps,fname_coll,options_wake_sleep);
+        wake_sleep_loop(i_opt_step,no_mean_field_updates,no_gibbs_sampling_steps,fname_coll,options_wake_sleep);
         
         if (options.verbose_moment) {
             for (auto &ixn_param: _latt->get_all_ixn_params()) {

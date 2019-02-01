@@ -36,7 +36,7 @@ namespace bmla {
 
         // Reaped values from the sampler
 		// Size = _batch_size
-        std::map<MCType, double*> _vals_reaped;
+        std::map<MCType, std::vector<double>> _vals_reaped;
 
 		// Averaged values
         std::map<MCType, double> _val_averaged;

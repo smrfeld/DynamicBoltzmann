@@ -121,8 +121,11 @@ namespace bmla {
             auto file = fname_coll.get_fname(idx_subset[i_chain]);
             _latt->read_layer_from_file(MCType::AWAKE, i_chain, 0, file.name, file.binary);
             
-            // Set hidden layers to random
-            _latt->set_random_all_hidden_units(MCType::AWAKE, i_chain, false);
+            // Option (1): init MF with random hidden layers with prob units
+            // _latt->set_random_all_hidden_units(MCType::AWAKE, i_chain, false);
+            // Option (2): upward pass with 2x weights (DBM) to activate probabilitsic units
+            // (faster to converge!!!)
+            _latt->activate_upward_pass_with_2x_weights(MCType::AWAKE, i_chain, false);
         };
         
         // Variational inference
@@ -148,17 +151,6 @@ namespace bmla {
         
         // ASLEEP PHASE - PERSISTENT_CD
         
-        // Init PCD chain
-        /*
-        if (i_opt_step == 1) {
-            idx_subset = fname_coll.get_random_subset(_no_markov_chains[MCType::ASLEEP]);
-            for (auto i_chain=0; i_chain<_no_markov_chains[MCType::ASLEEP]; i_chain++) {
-                auto file = fname_coll.get_fname(idx_subset[i_chain]);
-                _latt->read_layer_from_file(MCType::ASLEEP, i_chain, 0, file.name, file.binary);
-            };
-        };
-         */
-        
         // Run CD sampling
         for (auto i_chain=0; i_chain<_no_markov_chains[MCType::ASLEEP]; i_chain++) {
             
@@ -168,10 +160,15 @@ namespace bmla {
                 if (i_sampling_step != no_gibbs_sampling_steps-1) {
                     _latt->gibbs_sampling_step(options.is_asleep_visible_binary, options.is_asleep_hidden_binary);
                 } else {
-                    _latt->gibbs_sampling_step(options.is_asleep_visible_binary, options.is_asleep_hidden_binary_final);
+                    if (options.is_asleep_visible_binary_final && options.is_asleep_hidden_binary_final) {
+                        // All binary
+                        _latt->gibbs_sampling_step(options.is_asleep_visible_binary_final, options.is_asleep_hidden_binary_final);
+                    } else {
+                        // Parallel for non-binary options
+                        _latt->gibbs_sampling_step_parallel(options.is_asleep_visible_binary_final, options.is_asleep_hidden_binary_final);
+                    };
                 };
             };
-            
         };
         
         // Reap asleep

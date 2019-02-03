@@ -162,6 +162,9 @@ namespace bmla {
         // Reset activations to 0
         void _reset_activations(MCType chain, int i_chain, int layer);
         
+        // Calculate bias
+        void _calculate_bias(MCType chain, int i_chain, int layer);
+        
         // Calculate activation given layer above or below
         void _calculate_activations_from_below(MCType chain, int i_chain, int layer);
         void _calculate_activations_from_above(MCType chain, int i_chain, int layer);
@@ -302,13 +305,15 @@ namespace bmla {
         
         // Variational inference ie mean field
         void mean_field_hiddens_step();
-        
+
         // Gibbs sampling
         void gibbs_sampling_step(bool binary_visible, bool binary_hidden);
-    
+        void gibbs_sampling_step_parallel(bool binary_visible, bool binary_hidden);
+
         // Make a pass activating upwards
         void activate_upward_pass(MCType chain, int i_chain, bool binary_hidden);
-        
+        void activate_upward_pass_with_2x_weights(MCType chain, int i_chain, bool binary_hidden);
+
         // ***************
         // MARK: Get counts for visible layer
         // ***************

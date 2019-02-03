@@ -65,13 +65,15 @@ namespace bmla {
         bool verbose = false;
         
         // Sampling options
-        // Is the visible reconstruction binary?
+        // Is the visible reconstruction binary, EXCEPT in the last phase?
         bool is_asleep_visible_binary = true;
         // Is the hidden reconstruction binary, EXCEPT in the last phase?
         bool is_asleep_hidden_binary = true;
+        // Is the visible reconstruction binary in the last phase?
+        bool is_asleep_visible_binary_final = true;
         // Is the hidden reconstruction binary in the last phase?
         bool is_asleep_hidden_binary_final = false;
-        
+
         // Write after awake/asleep
         bool write_after_awake = false;
         bool write_after_asleep = false;

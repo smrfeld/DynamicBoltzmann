@@ -101,7 +101,8 @@ namespace bmla {
         
         // Multipliers between layers for ixns - NOT bidirectional
         std::map<int, std::map<int, double>> _o2_mults;
-
+        std::map<int, double> _bias_mults;
+        
         // ***************
         // MARK: Batch normalization
         // ***************
@@ -237,7 +238,8 @@ namespace bmla {
 
         // Set multiplier
         void set_multiplier_between_layers(int from_layer, int to_layer, double multiplier);
-        
+        void set_multiplier_for_bias_in_layer(int layer, double multiplier);
+
         // Get ixns
         double get_bias_in_layer(int layer, Sptr sp) const;
         double get_ixn_between_layers(int from_layer, Sptr from_sp, int to_layer, Sptr to_sp) const;

@@ -102,7 +102,8 @@ namespace bmla {
         _bias_dict = other._bias_dict;
         _o2_ixn_dict = other._o2_ixn_dict;
         _o2_mults = other._o2_mults;
-      
+        _bias_mults = other._bias_mults;
+        
         _bn_mode = other._bn_mode;
         _bn_beta = other._bn_beta;
         _bn_gamma = other._bn_gamma;
@@ -136,7 +137,8 @@ namespace bmla {
         _bias_dict = other._bias_dict;
         _o2_ixn_dict = other._o2_ixn_dict;
         _o2_mults = other._o2_mults;
-        
+        _bias_mults = other._bias_mults;
+
         _bn_mode = other._bn_mode;
         _bn_beta = other._bn_beta;
         _bn_gamma = other._bn_gamma;
@@ -170,6 +172,7 @@ namespace bmla {
         other._bias_dict.clear();
         other._o2_ixn_dict.clear();
         other._o2_mults.clear();
+        other._bias_mults.clear();
         
         other._bn_mode = true;
         other._bn_beta.clear();
@@ -461,9 +464,20 @@ namespace bmla {
         
         _o2_mults[from_layer][to_layer] = multiplier;
     };
-
+    void Lattice::set_multiplier_for_bias_in_layer(int layer, double multiplier) {
+        _bias_mults[layer] = multiplier;
+    };
+    
     // Get ixns
     double Lattice::get_bias_in_layer(int layer, Sptr sp) const {
+        
+        // Multiplier
+        double mult = 1.0;
+        auto itm = _bias_mults.find(layer);
+        if (itm != _bias_mults.end()) {
+            mult = itm->second;
+        };
+        
         auto it = _bias_dict.find(layer);
         double val = 0.0;
         if (it != _bias_dict.end()) {
@@ -474,7 +488,7 @@ namespace bmla {
                 };
             };
         };
-        return val;
+        return mult * val;
     };
     double Lattice::get_ixn_between_layers(int from_layer, Sptr from_sp, int to_layer, Sptr to_sp) const {
         if (to_layer != from_layer+1 && to_layer != from_layer-1) {

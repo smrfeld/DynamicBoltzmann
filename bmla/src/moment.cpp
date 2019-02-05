@@ -1,9 +1,9 @@
-#include "../include/bmla_bits/moment.hpp"
+#include "../include/dblz_bits/moment.hpp"
 
 // Other headers
-#include "../include/bmla_bits/general.hpp"
-#include "../include/bmla_bits/ixn_param.hpp"
-#include "../include/bmla_bits/species.hpp"
+#include "../include/dblz_bits/general.hpp"
+#include "../include/dblz_bits/ixn_param.hpp"
+#include "../include/dblz_bits/species.hpp"
 
 #include <fstream>
 #include <iostream>
@@ -13,7 +13,7 @@
 * Namespace for bmla
 ************************************/
 
-namespace bmla {
+namespace dblz {
 
 	/****************************************
 	Moment

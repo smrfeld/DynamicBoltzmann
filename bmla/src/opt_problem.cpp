@@ -1,11 +1,11 @@
-#include "../include/bmla_bits/opt_problem.hpp"
+#include "../include/dblz_bits/opt_problem.hpp"
 
 // Other headers
-#include "../include/bmla_bits/ixn_param.hpp"
-#include "../include/bmla_bits/lattice.hpp"
-#include "../include/bmla_bits/moment.hpp"
-#include "../include/bmla_bits/fname.hpp"
-#include "../include/bmla_bits/general.hpp"
+#include "../include/dblz_bits/ixn_param.hpp"
+#include "../include/dblz_bits/lattice.hpp"
+#include "../include/dblz_bits/moment.hpp"
+#include "../include/dblz_bits/fname.hpp"
+#include "../include/dblz_bits/general.hpp"
 
 #include <random>
 #include <algorithm>
@@ -16,7 +16,7 @@
  * Namespace for bmla
  ************************************/
 
-namespace bmla {
+namespace dblz {
     
     /****************************************
      OptProblem

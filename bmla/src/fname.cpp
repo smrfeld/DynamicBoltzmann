@@ -1,4 +1,4 @@
-#include "../include/bmla_bits/fname.hpp"
+#include "../include/dblz_bits/fname.hpp"
 
 #include <random>
 #include <algorithm>
@@ -9,7 +9,7 @@
 * Namespace for bmla
 ************************************/
 
-namespace bmla {
+namespace dblz {
 
 	/****************************************
 	Filename

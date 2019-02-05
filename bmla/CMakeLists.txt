@@ -13,26 +13,71 @@ include_directories(/usr/local/include)
 
 AUX_SOURCE_DIRECTORY(src SRC_FILES) 
 
-file (GLOB HEADER_FILES "include/bmla_bits/*.hpp")
-file (GLOB HEADER_FILES_FWDS "include/bmla_bits/fwds/*.hpp")
+file (GLOB HEADER_FILES "include/dblz_bits/*.hpp")
+file (GLOB HEADER_FILES_FWDS "include/dblz_bits/fwds/*.hpp")
 
 add_library(bmla SHARED 
-	${SRC_FILES}
-	${HEADER_FILES}
+	src/fname.cpp
+	src/general.cpp
+	src/ixn_param.cpp
+	src/lattice.cpp
+	src/moment.cpp
+	src/opt_problem.cpp
+	src/species.cpp
+	include/dblz_bits/fname.hpp
+	include/dblz_bits/general.hpp
+	include/dblz_bits/ixn_param.hpp
+	include/dblz_bits/lattice.hpp
+	include/dblz_bits/moment.hpp
+	include/dblz_bits/opt_problem.hpp
+	include/dblz_bits/species.hpp
 	${HEADER_FILES_FWDS}
 )
 
-target_include_directories(bmla PRIVATE include/bmla_bits include/bmla_bits/fwds)
+add_library(dblz SHARED 
+	src/adjoint.cpp
+	src/diff_eq_rhs.cpp
+	src/fname.cpp
+	src/general.cpp
+	src/ixn_param.cpp
+	src/ixn_param_traj.cpp
+	src/lattice.cpp
+	src/lattice_traj.cpp
+	src/moment.cpp
+	src/opt_problem.cpp
+	src/species.cpp
+	include/dblz_bits/adjoint.hpp
+	include/dblz_bits/diff_eq_rhs.hpp
+	include/dblz_bits/fname.hpp
+	include/dblz_bits/general.hpp
+	include/dblz_bits/ixn_param.hpp
+	include/dblz_bits/ixn_param_traj.hpp
+	include/dblz_bits/lattice.hpp
+	include/dblz_bits/lattice_traj.hpp
+	include/dblz_bits/moment.hpp
+	include/dblz_bits/opt_problem.hpp
+	include/dblz_bits/species.hpp
+	${HEADER_FILES_FWDS}
+)
+
+target_include_directories(bmla PRIVATE include/dblz_bits include/dblz_bits/fwds)
+target_include_directories(dblz PRIVATE include/dblz_bits include/dblz_bits/fwds)
 
 find_library(ARMADILLO_LIB armadillo HINTS /usr/local/lib/)
 target_link_libraries(bmla PUBLIC ${ARMADILLO_LIB})
+target_link_libraries(dblz PUBLIC ${ARMADILLO_LIB})
 
 install(TARGETS bmla DESTINATION lib)
+install(TARGETS dblz DESTINATION lib)
 
 install(FILES 
 	include/bmla 
 	DESTINATION include)
 
+install(FILES 
+	include/dblz 
+	DESTINATION include)
+
 install(DIRECTORY 
-	include/bmla_bits 
+	include/dblz_bits 
 	DESTINATION include)

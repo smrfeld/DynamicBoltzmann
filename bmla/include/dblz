@@ -1,5 +1,5 @@
-#ifndef BMLA_H
-#define BMLA_H
+#ifndef DBLZ_H
+#define DBLZ_H
 
 #include "dblz_bits/fwds/fwds_ixn_param.hpp"
 #include "dblz_bits/fwds/fwds_species.hpp"

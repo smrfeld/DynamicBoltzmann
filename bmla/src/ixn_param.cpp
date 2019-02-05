@@ -1,9 +1,9 @@
-#include "../include/bmla_bits/ixn_param.hpp"
+#include "../include/dblz_bits/ixn_param.hpp"
 
 // Other headers
-#include "../include/bmla_bits/general.hpp"
-#include "../include/bmla_bits/species.hpp"
-#include "../include/bmla_bits/moment.hpp"
+#include "../include/dblz_bits/general.hpp"
+#include "../include/dblz_bits/species.hpp"
+#include "../include/dblz_bits/moment.hpp"
 
 #include <iostream>
 #include <fstream>
@@ -15,145 +15,17 @@
 * Namespace for bmla
 ************************************/
 
-namespace bmla {
+namespace dblz {
 
 	/****************************************
-	Ixn Param Traj Implementation
+	IxnFunc
 	****************************************/
 
-	class IxnParam::Impl {
-
-	private:
-
-		// Values
-		double _val;
-		double _update;
-        
-		// nesterov
-		// double _lambda_s, _lambda_sp1;
-		double *_nesterov_y_s, *_nesterov_y_sp1;
-
-		// adam
-		double *_adam_m;
-		double *_adam_v;
-
-		// Fixed value
-		bool _is_val_fixed;
-
-		// Moment
-		std::shared_ptr<Moment> _moment;
-
-		// Copy, clean up
-		void _clean_up();
-		void _copy(const Impl& other);
-		void _move(Impl &other);
-
-	public:
-
-		/********************
-		Constructor
-		********************/
-
-		Impl(std::string name, IxnParamType type, double init_guess); 
-		Impl(const Impl& other);
-		Impl(Impl&& other);
-		Impl& operator=(const Impl& other);
-		Impl& operator=(Impl&& other);
-		~Impl();
-
-		/********************
-		Name, type
-		********************/
-
-		std::string get_name() const;
-
-		IxnParamType get_type() const;
-
-		/********************
-		Value
-		********************/
-
-		double get_val() const;
-		void set_val(double val);
-        
-		/********************
-		Fixed value
-		********************/
-
-		void set_fix_value(bool fixed);
-		bool get_is_val_fixed() const;
-
-		/********************
-		Moment
-		********************/
-
-		std::shared_ptr<Moment> get_moment() const;
-
-		/********************
-		Update
-		********************/
-
-		void update_calculate_and_store(bool l2_mode=false, double l2_lambda=0.0, double l2_center=0.0);
-		void update_committ_stored_sgd(double dopt);
-		void update_committ_stored_nesterov(double dopt, double nesterov_acc);
-		void update_committ_stored_adam(double dopt, int opt_step, double beta_1, double beta_2, double eps);
-
-		/********************
-		Write to file
-		********************/
-
-		void write_to_file(std::string fname, bool append=false) const;
-
-	};
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-	/****************************************
-	IxnFunc - IMPLEMENTATION DEFINITIONS
-	****************************************/
-
-	/********************
-	Constructor
-	********************/
-
-	IxnParam::Impl::Impl(std::string name, IxnParamType type, double init_guess) {
+    // ***************
+    // MARK: - Constructor
+    // ***************
+    
+	IxnParam::IxnParam(std::string name, IxnParamType type, double init_guess) {
 
 		_val = init_guess;
 		_update = 0.0;
@@ -174,31 +46,31 @@ namespace bmla {
 
 		_is_val_fixed = false;
 	};
-	IxnParam::Impl::Impl(const Impl& other) {
+	IxnParam::IxnParam(const IxnParam& other) {
 		_copy(other);
 	};
-	IxnParam::Impl::Impl(Impl&& other) {
+	IxnParam::IxnParam(IxnParam&& other) {
 		_move(other);
 	};
-    IxnParam::Impl& IxnParam::Impl::operator=(const Impl& other) {
+    IxnParam& IxnParam::operator=(const IxnParam& other) {
 		if (this != &other) {
 			_clean_up();
 			_copy(other);
 		};
 		return *this;
     };
-    IxnParam::Impl& IxnParam::Impl::operator=(Impl&& other) {
+    IxnParam& IxnParam::operator=(IxnParam&& other) {
 		if (this != &other) {
 			_clean_up();
 			_move(other);
 		};
 		return *this;
     };
-	IxnParam::Impl::~Impl()
+	IxnParam::~IxnParam()
 	{
 		_clean_up();
 	};
-	void IxnParam::Impl::_clean_up() {
+	void IxnParam::_clean_up() {
 		if (_nesterov_y_s) {
 			delete _nesterov_y_s;
 			_nesterov_y_s = nullptr;
@@ -216,7 +88,7 @@ namespace bmla {
 			_adam_v = nullptr;
 		};	
 	};
-	void IxnParam::Impl::_copy(const Impl& other) {
+	void IxnParam::_copy(const IxnParam& other) {
 		_val = other._val;
 		_update = other._update;
 		// _lambda_s = other._lambda_s;
@@ -230,7 +102,7 @@ namespace bmla {
 
 		_is_val_fixed = other._is_val_fixed;
 	};
-	void IxnParam::Impl::_move(Impl& other) {
+	void IxnParam::_move(IxnParam& other) {
 		_val = other._val;
 		_update = other._update;
 		// _lambda_s = other._lambda_s;
@@ -260,11 +132,11 @@ namespace bmla {
 	Name, type
 	********************/
 
-	std::string IxnParam::Impl::get_name() const {
+	std::string IxnParam::get_name() const {
 		return _moment->get_name();
 	};
 
-	IxnParamType IxnParam::Impl::get_type() const {
+	IxnParamType IxnParam::get_type() const {
 		return _moment->get_type();
 	};
 
@@ -272,10 +144,10 @@ namespace bmla {
 	Value
 	********************/
 
-	double IxnParam::Impl::get_val() const {
+	double IxnParam::get_val() const {
 		return  _val;
 	};
-	void IxnParam::Impl::set_val(double val) {
+	void IxnParam::set_val(double val) {
 		_val = val;
 	};
 
@@ -283,10 +155,10 @@ namespace bmla {
 	Fixed value
 	********************/
 
-	void IxnParam::Impl::set_fix_value(bool fixed) {
+	void IxnParam::set_fix_value(bool fixed) {
 		_is_val_fixed = fixed;
 	};
-	bool IxnParam::Impl::get_is_val_fixed() const {
+	bool IxnParam::get_is_val_fixed() const {
 		return _is_val_fixed;
 	};
 
@@ -294,7 +166,7 @@ namespace bmla {
 	Moment
 	********************/
 
-	std::shared_ptr<Moment> IxnParam::Impl::get_moment() const {
+	std::shared_ptr<Moment> IxnParam::get_moment() const {
 		return _moment;
 	};
 
@@ -302,17 +174,17 @@ namespace bmla {
 	Update
 	********************/
 
-	void IxnParam::Impl::update_calculate_and_store(bool l2_mode, double l2_lambda, double l2_center) {
+	void IxnParam::update_calculate_and_store(bool l2_mode, double l2_lambda, double l2_center) {
 		_update = _moment->get_moment(MCType::ASLEEP) - _moment->get_moment(MCType::AWAKE);
 		if (l2_mode) {
 			_update += 2.0 * l2_lambda * (_val - l2_center);
 		};
 	};
-	void IxnParam::Impl::update_committ_stored_sgd(double dopt) {
+	void IxnParam::update_committ_stored_sgd(double dopt) {
 		// Just update
 		_val -= dopt*_update;
 	};
-	void IxnParam::Impl::update_committ_stored_nesterov(double dopt, double nesterov_acc) {
+	void IxnParam::update_committ_stored_nesterov(double dopt, double nesterov_acc) {
 
 		// ysp1, lambda sp1
 		if (!_nesterov_y_sp1) {
@@ -340,7 +212,7 @@ namespace bmla {
 		*_nesterov_y_s = *_nesterov_y_sp1;
 		// _lambda_s = _lambda_sp1;
 	};
-	void IxnParam::Impl::update_committ_stored_adam(double dopt, int opt_step, double beta_1, double beta_2, double eps) {
+	void IxnParam::update_committ_stored_adam(double dopt, int opt_step, double beta_1, double beta_2, double eps) {
 		if (!_adam_m) {
 			_adam_m = new double(0.0);
 		};
@@ -368,7 +240,7 @@ namespace bmla {
 	Write to file
 	********************/
 
-	void IxnParam::Impl::write_to_file(std::string fname, bool append) const {
+	void IxnParam::write_to_file(std::string fname, bool append) const {
 		std::ofstream f;
 
 		// Open
@@ -380,7 +252,7 @@ namespace bmla {
 
 		// Make sure we found it
 		if (!f.is_open()) {
-			std::cerr << ">>> Error: IxnParam::Impl::write_to_file <<< could not write to file: " << fname << std::endl;
+			std::cerr << ">>> Error: IxnParam::write_to_file <<< could not write to file: " << fname << std::endl;
 			exit(EXIT_FAILURE);
 		};
 
@@ -390,126 +262,6 @@ namespace bmla {
 		// Close
 		f.close();
 	};
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-	/****************************************
-	IxnFuncSpec - Impl forwards
-	****************************************/
-
-	/********************
-	Constructor
-	********************/
-
-	IxnParam::IxnParam(std::string name, IxnParamType type, double init_guess) : _impl(new Impl(name,type,init_guess)) {};
-	IxnParam::IxnParam(const IxnParam& other) : _impl(new Impl(*other._impl)) {};
-	IxnParam::IxnParam(IxnParam&& other) : _impl(std::move(other._impl)) {};
-	IxnParam& IxnParam::operator=(const IxnParam &other) {
-        _impl.reset( new Impl( *other._impl ) );
-        return *this; 
-	};
-	IxnParam& IxnParam::operator=(IxnParam &&other) {
-        _impl = std::move(other._impl);
-        return *this; 
-	};
-	IxnParam::~IxnParam() = default;
-
-	/********************
-	Name, type
-	********************/
-
-	std::string IxnParam::get_name() const {
-		return _impl->get_name();
-	};
-
-	IxnParamType IxnParam::get_type() const {
-		return _impl->get_type();
-	};
-
-	/********************
-	Fixed value
-	********************/
-
-	void IxnParam::set_fix_value(bool fixed) {
-		_impl->set_fix_value(fixed);
-	};
-	bool IxnParam::get_is_val_fixed() const {
-		return _impl->get_is_val_fixed();
-	};
-
-	/********************
-	Value
-	********************/
-
-	double IxnParam::get_val() const {
-		return _impl->get_val();
-	};
-	void IxnParam::set_val(double val) {
-		_impl->set_val(val);
-	};
-
-	/********************
-	Moment
-	********************/
-
-	std::shared_ptr<Moment> IxnParam::get_moment() const {
-		return _impl->get_moment();
-	};
-
-	/********************
-	Update
-	********************/
-
-	void IxnParam::update_calculate_and_store(bool l2_mode, double l2_lambda, double l2_center) {
-		_impl->update_calculate_and_store(l2_mode,l2_lambda,l2_center);
-	};
-	void IxnParam::update_committ_stored_sgd(double dopt) {
-		_impl->update_committ_stored_sgd(dopt);
-	};
-	void IxnParam::update_committ_stored_nesterov(double dopt, double nesterov_acc) {
-		_impl->update_committ_stored_nesterov(dopt,nesterov_acc);
-	};
-	void IxnParam::update_committ_stored_adam(double dopt, int opt_step, double beta_1, double beta_2, double eps) {
-		_impl->update_committ_stored_adam(dopt,opt_step,beta_1,beta_2,eps);
-	};
-
-	/********************
-	Write to file
-	********************/
-
-	void IxnParam::write_to_file(std::string fname, bool append) const {
-		_impl->write_to_file(fname, append);
-	};
-
 };
 
 

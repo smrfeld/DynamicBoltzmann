@@ -1,4 +1,4 @@
-#include "../include/bmla_bits/species.hpp"
+#include "../include/dblz_bits/species.hpp"
 
 #include <iostream>
 
@@ -6,7 +6,7 @@
 * Namespace for bmla
 ************************************/
 
-namespace bmla {
+namespace dblz {
 
 	/****************************************
 	Species

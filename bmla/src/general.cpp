@@ -1,4 +1,4 @@
-#include "../include/bmla_bits/general.hpp"
+#include "../include/dblz_bits/general.hpp"
 
 #include <iomanip>
 #include <sstream>
@@ -7,7 +7,7 @@
 * Namespace for bmla
 ************************************/
 
-namespace bmla {
+namespace dblz {
 
 	/********************
 	Sign function

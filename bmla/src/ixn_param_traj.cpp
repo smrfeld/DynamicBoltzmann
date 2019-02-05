@@ -27,10 +27,11 @@ namespace dblz {
     // ***************
 
 	IxnParamTraj::IxnParamTraj(std::string name, IxnParamType type, double init_cond) {
-        _name = name;
-        _type = type;
 		_init_cond = init_cond;
 
+        // First element
+        _ixn_params.push_back(std::make_shared<IxnParam>(name,type,init_cond));
+        
         // Adjoint
         _adjoint = nullptr;
 
@@ -71,9 +72,6 @@ namespace dblz {
         // Nothing...
     };
 	void IxnParamTraj::_copy(const IxnParamTraj& other) {
-        _name = other._name;
-        _type = other._type;
-        
         _adjoint = other._adjoint;
         
         _is_val_fixed_to_init_cond = other._is_val_fixed_to_init_cond;
@@ -91,9 +89,6 @@ namespace dblz {
         _no_timepoints = other._no_timepoints;
     };
 	void IxnParamTraj::_move(IxnParamTraj& other) {
-        _name = other._name;
-        _type = other._type;
-        
         _adjoint = other._adjoint;
         
         _is_val_fixed_to_init_cond = other._is_val_fixed_to_init_cond;
@@ -111,7 +106,6 @@ namespace dblz {
         _no_timepoints = other._no_timepoints;
 
 		// Reset the other
-        other._name = "";
         other._adjoint = nullptr;
         other._is_val_fixed_to_init_cond = false;
         other._are_vals_fixed = false;
@@ -145,6 +139,11 @@ namespace dblz {
 		_no_timesteps = no_timesteps;
 		_no_timepoints = _no_timesteps + 1;
 
+        if (_no_timepoints <= 0) {
+            std::cerr << ">>> IxnParamTraj::set_no_timesteps <<< Error: no_timepoints must be > 0. Currently, it is: " << _no_timepoints << std::endl;
+            exit(EXIT_FAILURE);
+        };
+        
         // TODO: THIS!
 		// If fixed, fill with IC
         // ... !!!!
@@ -158,7 +157,7 @@ namespace dblz {
 		// Adjust ixn params
         while (_ixn_params.size() < _no_timepoints) {
             // Add
-            _ixn_params.push_back(std::make_shared<IxnParam>(_name,_type,_init_cond));
+            _ixn_params.push_back(std::make_shared<IxnParam>(*_ixn_params.back()));
         };
         while (_ixn_params.size() > _no_timepoints) {
             // Remove
@@ -222,22 +221,11 @@ namespace dblz {
     // ***************
 
 	std::string IxnParamTraj::get_name() const {
-        return _name;
+        return _ixn_params.front()->get_name();
 	};
 
 	IxnParamType IxnParamTraj::get_type() const {
-        return _type;
-	};
-
-    // ***************
-    // MARK: - Value
-    // ***************
-    
-	void IxnParamTraj::set_val_at_timepoint(int timepoint, double val) {
-        _ixn_params.at(timepoint)->set_val(val);
-	};
-	double IxnParamTraj::get_val_at_timepoint(int timepoint) const {
-        return _ixn_params.at(timepoint)->get_val();
+        return _ixn_params.front()->get_type();
 	};
 
     // ***************
@@ -267,7 +255,7 @@ namespace dblz {
 			exit(EXIT_FAILURE);
 		};
 
-        set_val_at_timepoint(timepoint+1, _ixn_params.at(timepoint)->get_val() + dt * _diff_eq->get_val_at_timepoint(timepoint));
+        _ixn_params.at(timepoint+1)->set_val(_ixn_params.at(timepoint)->get_val() + dt * _diff_eq->get_val_at_timepoint(timepoint));
 	};
 
     // ***************
@@ -278,14 +266,6 @@ namespace dblz {
         return _ixn_params.at(timepoint);
     };
     
-    // ***************
-    // MARK: - Moment
-    // ***************
-    
-	std::shared_ptr<Moment> IxnParamTraj::get_moment_at_timepoint(int timepoint) const {
-		return _ixn_params.at(timepoint)->get_moment();
-	};
-
     // ***************
     // MARK: - Adjoint
     // ***************

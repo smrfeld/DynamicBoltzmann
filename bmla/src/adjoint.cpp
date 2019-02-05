@@ -2,6 +2,7 @@
 
 // Other headers
 #include "../include/dblz_bits/ixn_param_traj.hpp"
+#include "../include/dblz_bits/ixn_param.hpp"
 #include "../include/dblz_bits/general.hpp"
 #include "../include/dblz_bits/diff_eq_rhs.hpp"
 #include "../include/dblz_bits/moment.hpp"
@@ -207,14 +208,14 @@ namespace dblz {
 		*/
 
 		// Difference in moments
-        auto moment = _ixn_param_traj->get_moment_at_timepoint(timepoint);
+        auto moment = _ixn_param_traj->get_ixn_param_at_timepoint(timepoint)->get_moment();
         double moment_delta = moment->get_moment(MCType::ASLEEP) - moment->get_moment(MCType::AWAKE);
         
 		// L2 reg
 		if (l2_mode) {
 			// L2 mode
 
-			double ixn_param_val = _ixn_param_traj->get_val_at_timepoint(timepoint);
+            double ixn_param_val = _ixn_param_traj->get_ixn_param_at_timepoint(timepoint)->get_val();
 			double l2_term = 2.0 * l2_lambda.at(_ixn_param_traj) * (ixn_param_val-l2_center.at(_ixn_param_traj));
 			std::cout << _name << " " << timepoint << " " << moment_delta << " " << l2_term << std::endl;
 

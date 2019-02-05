@@ -3,6 +3,7 @@
 // Other headers
 #include "../include/dblz_bits/general.hpp"
 #include "../include/dblz_bits/ixn_param_traj.hpp"
+#include "../include/dblz_bits/ixn_param.hpp"
 #include "../include/dblz_bits/adjoint.hpp"
 
 #include <iostream>
@@ -251,7 +252,7 @@ namespace dblz {
 	std::vector<double> DiffEqRHS::_form_abscissas(int timepoint) const {
 		std::vector<double> abscissas;
 		for (auto dim=0; dim<_domain.size(); dim++) {
-			abscissas.push_back(_domain[dim]->get_ixn_param_traj()->get_val_at_timepoint(timepoint));
+			abscissas.push_back(_domain[dim]->get_ixn_param_traj()->get_ixn_param_at_timepoint(timepoint)->get_val());
 		};
 		return abscissas;
 	};

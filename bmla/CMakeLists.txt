@@ -67,6 +67,9 @@ find_library(ARMADILLO_LIB armadillo HINTS /usr/local/lib/)
 target_link_libraries(bmla PUBLIC ${ARMADILLO_LIB})
 target_link_libraries(dblz PUBLIC ${ARMADILLO_LIB})
 
+find_library(Q3C1_LIB q3c1 HINTS /usr/local/lib)
+target_link_libraries(dblz PUBLIC ${Q3C1_LIB})
+
 install(TARGETS bmla DESTINATION lib)
 install(TARGETS dblz DESTINATION lib)
 

@@ -26,10 +26,6 @@ namespace dblz {
 
 	private:
         
-        // Name, type
-        std::string _name;
-        IxnParamType _type;
-        
         // Adjoint
         std::shared_ptr<Adjoint> _adjoint;
 
@@ -112,13 +108,6 @@ namespace dblz {
 		IxnParamType get_type() const;
 
         // ***************
-        // MARK: - Value
-        // ***************
-        
-		void set_val_at_timepoint(int timepoint, double val);
-		double get_val_at_timepoint(int timepoint) const;
-
-        // ***************
         // MARK: - Diff eq
         // ***************
         
@@ -133,12 +122,6 @@ namespace dblz {
 
         std::shared_ptr<IxnParam> get_ixn_param_at_timepoint(int timepoint) const;
         
-        // ***************
-        // MARK: - Moment
-        // ***************
-        
-		std::shared_ptr<Moment> get_moment_at_timepoint(int timepoint) const;
-
         // ***************
         // MARK: - Adjoint
         // ***************

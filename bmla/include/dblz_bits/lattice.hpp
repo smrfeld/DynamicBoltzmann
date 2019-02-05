@@ -12,9 +12,6 @@
 ************************************/
 
 namespace dblz {
-
-	// Forwards
-	class Moment;
     
     enum class MCType: unsigned int;
     

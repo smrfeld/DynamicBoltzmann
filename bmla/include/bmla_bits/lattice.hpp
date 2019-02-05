@@ -285,25 +285,34 @@ namespace bmla {
         // MARK: Activate layer steps
         // ***************
         
-        // (1) Calculate activations for a specific layer
+        // For all chains:
+        
+        // (1.a) Calculate activations for a specific layer
         // Both directions
-        void activate_layer_calculate(MCType chain, int i_chain, int layer);
+        void activate_layer_calculate(MCType chain, int layer);
         // Only one direction
-        void activate_layer_calculate(MCType chain, int i_chain, int layer, int given_layer);
+        void activate_layer_calculate(MCType chain, int layer, int given_layer);
+        // (1.b) Alternatively, include batch norm params
+        // NOTE: For these two, BN params must already exist! See below to calculate!
+        void activate_layer_calculate_bn(MCType chain, int layer);
+        void activate_layer_calculate_bn(MCType chain, int layer, int given_layer);
         
         // (2) Convert activations to probs
-        void activate_layer_convert_to_probs(MCType chain, int i_chain, int layer, bool binary);
+        void activate_layer_convert_to_probs(MCType chain, int layer, bool binary);
 
         // (3) Commit the new probabilities
-        void activate_layer_committ(MCType chain, int i_chain, int layer);
+        void activate_layer_committ(MCType chain, int layer);
 
+        // ***************
+        // MARK: - Calculate params in BN mode
+        // ***************
+        
+        // Calculate BN params
+        void calculate_bn_params(MCType chain);
+        
         // ***************
         // MARK: - Mean field / gibbs sampling
         // ***************
-        
-        // All in one step, for a single layer
-        void activate_single_layer(MCType chain, int i_chain, int layer, bool binary);
-        void activate_single_layer(MCType chain, int i_chain, int layer, int given_layer, bool binary);
         
         // Variational inference ie mean field
         void mean_field_hiddens_step();
@@ -313,8 +322,8 @@ namespace bmla {
         void gibbs_sampling_step_parallel(bool binary_visible, bool binary_hidden);
 
         // Make a pass activating upwards
-        void activate_upward_pass(MCType chain, int i_chain, bool binary_hidden);
-        void activate_upward_pass_with_2x_weights(MCType chain, int i_chain, bool binary_hidden);
+        void activate_upward_pass(MCType chain, bool binary_hidden);
+        void activate_upward_pass_with_2x_weights_1x_bias(MCType chain, bool binary_hidden);
 
         // ***************
         // MARK: Get counts for visible layer

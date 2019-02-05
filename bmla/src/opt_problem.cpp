@@ -112,21 +112,20 @@ namespace bmla {
         // Read in the batch
         for (int i_chain=0; i_chain<_no_markov_chains[MCType::AWAKE]; i_chain++)
         {
-            
-            if (options.verbose) {
-                std::cout << "." << std::flush;
-            };
-            
-            // Read latt
             auto file = fname_coll.get_fname(idx_subset[i_chain]);
             _latt->read_layer_from_file(MCType::AWAKE, i_chain, 0, file.name, file.binary);
             
-            // Option (1): init MF with random hidden layers with prob units
-            // _latt->set_random_all_hidden_units(MCType::AWAKE, i_chain, false);
-            // Option (2): upward pass with 2x weights (DBM) to activate probabilitsic units
-            // (faster to converge!!!)
-            _latt->activate_upward_pass_with_2x_weights(MCType::AWAKE, i_chain, false);
         };
+        
+        // Option (1): init MF with random hidden layers with prob units
+        /*
+        for (int i_chain=0; i_chain<_no_markov_chains[MCType::AWAKE]; i_chain++) {
+            _latt->set_random_all_hidden_units(MCType::AWAKE, i_chain, false);
+        };
+         */
+        // Option (2): upward pass with 2x weights (DBM) to activate probabilitsic units
+        // (faster to converge!!!)
+        _latt->activate_upward_pass_with_2x_weights_1x_bias(MCType::AWAKE, false);
         
         // Variational inference
         for (auto i=0; i<no_mean_field_updates; i++) {

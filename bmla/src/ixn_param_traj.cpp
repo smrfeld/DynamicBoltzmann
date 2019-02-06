@@ -144,15 +144,11 @@ namespace dblz {
             exit(EXIT_FAILURE);
         };
         
-        // TODO: THIS!
-		// If fixed, fill with IC
-        // ... !!!!
-		// set_is_val_fixed_to_init_cond(_is_val_fixed_to_init_cond);
+        // If the value is fixed to the initial condition, update
+        set_is_val_fixed_to_init_cond(_is_val_fixed_to_init_cond);
 
-        // TODO: THIS!
-		// If fixed, set val
-        // ... !!!!
-		// set_are_vals_fixed(_are_vals_fixed);
+        // If the value is fixed, update
+		set_are_vals_fixed(_are_vals_fixed);
 
 		// Adjust ixn params
         while (_ixn_params.size() < _no_timepoints) {
@@ -178,8 +174,7 @@ namespace dblz {
             _ixn_params.front()->set_val(_init_cond);
         };
         
-        // TODO: THIS!!
-		// update if fixed
+		// If value is fixed to initial condition, update the value now
 		set_is_val_fixed_to_init_cond(_is_val_fixed_to_init_cond);
 	};
 

@@ -136,6 +136,44 @@ namespace dblz {
 			std::cerr << ">>> Error: DiffEqRHS::DiffEqRHS <<< Only dims 1,2,3 are supported" << std::endl;
 			exit(EXIT_FAILURE);
 		};
+        
+        // Number coeffs
+        _no_coeffs = pow(2,_no_dims);
+        
+        // Coefficient order
+        if (_no_dims == 1) {
+            // Val
+            _coeff_order.push_back({q3c1::DimType::VAL});
+            // Deriv
+            _coeff_order.push_back({q3c1::DimType::DERIV});
+        } else if (_no_dims == 2) {
+            // Val-val
+            _coeff_order.push_back({q3c1::DimType::VAL,q3c1::DimType::VAL});
+            // Val-Deriv
+            _coeff_order.push_back({q3c1::DimType::VAL,q3c1::DimType::DERIV});
+            // Deriv-Val
+            _coeff_order.push_back({q3c1::DimType::DERIV,q3c1::DimType::VAL});
+            // Deriv-Deriv
+            _coeff_order.push_back({q3c1::DimType::DERIV,q3c1::DimType::DERIV});
+        } else if (_no_dims == 3) {
+            // Val-val-val
+            _coeff_order.push_back({q3c1::DimType::VAL,q3c1::DimType::VAL,q3c1::DimType::VAL});
+            // Val-Val-Deriv
+            _coeff_order.push_back({q3c1::DimType::VAL,q3c1::DimType::VAL,q3c1::DimType::DERIV});
+            // Val-Deriv-Val
+            _coeff_order.push_back({q3c1::DimType::VAL,q3c1::DimType::DERIV,q3c1::DimType::VAL});
+            // Deriv-Val-Val
+            _coeff_order.push_back({q3c1::DimType::DERIV,q3c1::DimType::VAL,q3c1::DimType::VAL});
+            // Val-deriv-deriv
+            _coeff_order.push_back({q3c1::DimType::VAL,q3c1::DimType::DERIV,q3c1::DimType::DERIV});
+            // Deriv-Val-Deriv
+            _coeff_order.push_back({q3c1::DimType::DERIV,q3c1::DimType::VAL,q3c1::DimType::DERIV});
+            // Deriv-Deriv-Val
+            _coeff_order.push_back({q3c1::DimType::DERIV,q3c1::DimType::DERIV,q3c1::DimType::VAL});
+            // Deriv-Deriv-Deriv
+            _coeff_order.push_back({q3c1::DimType::DERIV,q3c1::DimType::DERIV,q3c1::DimType::DERIV});
+        };
+
 	};
 	DiffEqRHS::DiffEqRHS(const DiffEqRHS& other) : Grid(other) {
 		_copy(other);
@@ -170,6 +208,8 @@ namespace dblz {
 	void DiffEqRHS::_copy(const DiffEqRHS& other) {
 		_name = other._name;
 		_no_dims = other._no_dims;
+        _no_coeffs = other._no_coeffs;
+        _coeff_order = other._coeff_order;
 		_domain = other._domain;
 		_parent_ixn_param_traj = other._parent_ixn_param_traj;
 		_updates = other._updates;
@@ -190,6 +230,8 @@ namespace dblz {
 	void DiffEqRHS::_move(DiffEqRHS& other) {
 		_name = other._name;
 		_no_dims = other._no_dims;
+        _no_coeffs = other._no_coeffs;
+        _coeff_order = other._coeff_order;
 		_domain = other._domain;
 		_parent_ixn_param_traj = other._parent_ixn_param_traj;
 		_updates = other._updates;
@@ -203,6 +245,8 @@ namespace dblz {
 		// Reset other
 		other._name = "";
 		other._no_dims = 0;
+        other._no_coeffs = 0;
+        other._coeff_order.clear();
 		other._domain.clear();
 		other._parent_ixn_param_traj = nullptr;
 		other._updates.clear();
@@ -329,6 +373,8 @@ namespace dblz {
     void DiffEqRHS::update_committ_stored_nesterov(double dopt, double nesterov_acc) {
     };
     void DiffEqRHS::update_committ_stored_adam(double dopt, int opt_step, double beta_1, double beta_2, double eps) {
+
+        // Create adam variables if necessary
         if (!_adam_m) {
             _adam_m = new std::map<q3c1::Vertex*,std::vector<double>>();
         };
@@ -348,13 +394,13 @@ namespace dblz {
             auto itm = _adam_m->find(pr.first);
             if (itm != _adam_m->end()) {
                 // Exists, increment
-                for (auto i=0; i<pr.second.size(); i++) {
+                for (auto i=0; i<_no_coeffs; i++) {
                     (*_adam_m)[pr.first][i] = beta_1*itm->second[i] + (1.0 - beta_1)*pr.second[i];
                 };
             } else {
                 // Is zero
-                (*_adam_m)[pr.first] = std::vector<double>(pr.second.size(),0.0);
-                for (auto i=0; i<pr.second.size(); i++) {
+                (*_adam_m)[pr.first] = std::vector<double>(_no_coeffs,0.0);
+                for (auto i=0; i<_no_coeffs; i++) {
                     (*_adam_m)[pr.first][i] = (1.0 - beta_1)*pr.second[i];
                 };
             };
@@ -363,78 +409,27 @@ namespace dblz {
             auto itv  = _adam_v->find(pr.first);
             if (itv != _adam_v->end()) {
                 // Exists, increment
-                for (auto i=0; i<pr.second.size(); i++) {
+                for (auto i=0; i<_no_coeffs; i++) {
                     (*_adam_v)[pr.first][i] = beta_2*itm->second[i] + (1.0 - beta_2)*pow(pr.second[i],2);
                 };
             } else {
                 // Is zero
-                (*_adam_v)[pr.first] = std::vector<double>(pr.second.size(),0.0);
-                for (auto i=0; i<pr.second.size(); i++) {
+                (*_adam_v)[pr.first] = std::vector<double>(_no_coeffs,0.0);
+                for (auto i=0; i<_no_coeffs; i++) {
                     (*_adam_v)[pr.first][i] = (1.0 - beta_2)*pow(pr.second[i],2);
                 };
             };
             
             // Corrections and update
-            for (auto i=0; i<pr.second.size(); i++) {
+            for (auto i=0; i<_no_coeffs; i++) {
+                
                 // Corrections
                 mhat = (*_adam_m)[pr.first][i] / (1.0 - pow(beta_1,opt_step_use));
                 vhat = (*_adam_v)[pr.first][i] / (1.0 - pow(beta_2,opt_step_use));
                 
-                // Update val
-                std::vector<q3c1::DimType> dims;
-                if (_no_dims == 1) {
-                    if (i==0) {
-                        // Val
-                        dims = {q3c1::DimType::VAL};
-                    } else if (i==1) {
-                        // Deriv
-                        dims = {q3c1::DimType::DERIV};
-                    };
-                } else if (_no_dims == 2) {
-                    if (i==0) {
-                        // Val-val
-                        dims = {q3c1::DimType::VAL,q3c1::DimType::VAL};
-                    } else if (i==1) {
-                        // Val-deriv
-                        dims = {q3c1::DimType::VAL,q3c1::DimType::DERIV};
-                    } else if (i==2) {
-                        // Deriv-val
-                        dims = {q3c1::DimType::DERIV,q3c1::DimType::VAL};
-                    } else if (i==3) {
-                        // Deriv-deriv
-                        dims = {q3c1::DimType::DERIV,q3c1::DimType::DERIV};
-                    };
-                } else if (_no_dims == 3) {
-                    if (i==0) {
-                        // Val-val-val
-                        dims = {q3c1::DimType::VAL,q3c1::DimType::VAL,q3c1::DimType::VAL};
-                    } else if (i==1) {
-                        // Val-val-deriv
-                        dims = {q3c1::DimType::VAL,q3c1::DimType::VAL,q3c1::DimType::DERIV};
-                    } else if (i==2) {
-                        // Val-deriv-val
-                        dims = {q3c1::DimType::VAL,q3c1::DimType::DERIV,q3c1::DimType::VAL};
-                    } else if (i==3) {
-                        // Deriv-val-val
-                        dims = {q3c1::DimType::DERIV,q3c1::DimType::VAL,q3c1::DimType::VAL};
-                    } else if (i==4) {
-                        // Val-deriv-deriv
-                        dims = {q3c1::DimType::VAL,q3c1::DimType::DERIV,q3c1::DimType::DERIV};
-                    } else if (i==5) {
-                        // Deriv-val-deriv
-                        dims = {q3c1::DimType::DERIV,q3c1::DimType::VAL,q3c1::DimType::DERIV};
-                    } else if (i==6) {
-                        // Deriv-deriv-val
-                        dims = {q3c1::DimType::DERIV,q3c1::DimType::DERIV,q3c1::DimType::VAL};
-                    } else if (i==7) {
-                        // Deriv-deriv-deriv
-                        dims = {q3c1::DimType::DERIV,q3c1::DimType::DERIV,q3c1::DimType::DERIV};
-                    };
-                };
-                
                 // Update
                 // _val -= dopt * mhat / (sqrt(vhat) + eps);
-                pr.first->get_bf(dims)->increment_coeff(- dopt * mhat / (sqrt(vhat) + eps));
+                pr.first->get_bf(_coeff_order[i])->increment_coeff(- dopt * mhat / (sqrt(vhat) + eps));
             };
             
             // Set the updates to zero

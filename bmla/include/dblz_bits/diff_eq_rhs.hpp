@@ -92,6 +92,12 @@ namespace dblz {
 		// No dims
 		int _no_dims;
 
+        // No coeffs
+        int _no_coeffs;
+        
+        // Coefficient order
+        std::vector<std::vector<q3c1::DimType>> _coeff_order;
+        
 		// Domain - the domain in dcu::Grid does not store the ixn funcs
 		std::vector<Domain1D*> _domain;
 

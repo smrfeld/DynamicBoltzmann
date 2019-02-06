@@ -435,7 +435,7 @@ namespace dblz {
     };
 
     void Lattice::add_bias_to_layer(int layer, Sptr sp, Iptr bias) {
-        _bias_dict[layer][sp].push_back(bias);
+        _bias_dict[layer][sp] = bias;
         
         // Add to all
         auto it = std::find(_all_ixns.begin(), _all_ixns.end(), bias);
@@ -452,8 +452,8 @@ namespace dblz {
         };
         
         // Add both ways
-        _o2_ixn_dict[layer1][sp1][layer2][sp2].push_back(ixn);
-        _o2_ixn_dict[layer2][sp2][layer1][sp1].push_back(ixn);
+        _o2_ixn_dict[layer1][sp1][layer2][sp2] = ixn;
+        _o2_ixn_dict[layer2][sp2][layer1][sp1] = ixn;
 
         // Add to all
         auto it = std::find(_all_ixns.begin(), _all_ixns.end(), ixn);
@@ -490,9 +490,7 @@ namespace dblz {
         if (it != _bias_dict.end()) {
             auto it2 = it->second.find(sp);
             if (it2 != it->second.end()) {
-                for (auto ixn: it2->second) {
-                    val += ixn->get_val();
-                };
+                val = it2->second->get_val();
             };
         };
         return mult * val;
@@ -523,9 +521,7 @@ namespace dblz {
                 if (it3 != it2->second.end()) {
                     auto it4 = it3->second.find(to_sp);
                     if (it4 != it3->second.end()) {
-                        for (auto ixn: it4->second) {
-                            val += ixn->get_val();
-                        };
+                        val = it4->second->get_val();
                     };
                 };
             };
@@ -1513,13 +1509,10 @@ namespace dblz {
                     // Get the moment
                     val = arma::sum(_mc_chains.at(chain).at(i_chain).at(bias_layer.first).at(sp_pr.first));
             
-                    // Go through all ixns associated with this species
-                    for (auto ixn: sp_pr.second) {
-                        // Set the moment
-                        if (ixn->get_moment()) {
-                            if (chain == MCType::ASLEEP || !ixn->get_moment()->get_is_awake_moment_fixed()) {
-                                ixn->get_moment()->increment_moment_sample(chain, i_chain, val);
-                            };
+                    // Set the moment
+                    if (sp_pr.second->get_moment()) {
+                        if (chain == MCType::ASLEEP || !sp_pr.second->get_moment()->get_is_awake_moment_fixed()) {
+                            sp_pr.second->get_moment()->increment_moment_sample(chain, i_chain, val);
                         };
                     };
                 };
@@ -1546,13 +1539,10 @@ namespace dblz {
                             // Get the moment
                             val = dot(_mc_chains.at(chain).at(i_chain).at(o2_ixn_layer_1.first).at(sp_pr_1.first), _adj.at(o2_ixn_layer_1.first) * _mc_chains.at(chain).at(i_chain).at(o2_ixn_layer_2.first).at(sp_pr_2.first));
                             
-                            // Go through all ixns associated with this species
-                            for (auto ixn: sp_pr_2.second) {
-                                // Set the moment
-                                if (ixn->get_moment()) {
-                                    if (chain == MCType::ASLEEP || !ixn->get_moment()->get_is_awake_moment_fixed()) {
-                                        ixn->get_moment()->increment_moment_sample(chain, i_chain, val);
-                                    };
+                            // Set the moment
+                            if (sp_pr_2.second->get_moment()) {
+                                if (chain == MCType::ASLEEP || !sp_pr_2.second->get_moment()->get_is_awake_moment_fixed()) {
+                                    sp_pr_2.second->get_moment()->increment_moment_sample(chain, i_chain, val);
                                 };
                             };
                         };

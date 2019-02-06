@@ -83,12 +83,6 @@ namespace dblz {
 		void solve_diff_eq_at_timepoint_to_minus_one(int timepoint, double dt, bool l2_mode=false, const std::map<ITptr,double> &l2_lambda = std::map<ITptr,double>(), const std::map<ITptr,double> &l2_center = std::map<ITptr,double>());
 
         // ***************
-        // MARK: - Reset to zero
-        // ***************
-
-		void reset_to_zero();
-
-        // ***************
         // MARK: - Write to file
         // ***************
         

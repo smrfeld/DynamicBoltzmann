@@ -29,12 +29,10 @@ namespace dblz {
         double _update;
         
         // nesterov
-        // double _lambda_s, _lambda_sp1;
         double *_nesterov_y_s, *_nesterov_y_sp1;
         
         // adam
-        double *_adam_m;
-        double *_adam_v;
+        double *_adam_m, *_adam_v;
         
         // Fixed value
         bool _is_val_fixed;

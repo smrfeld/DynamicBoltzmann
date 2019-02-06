@@ -21,8 +21,6 @@ namespace dblz {
 
     typedef std::map<Sptr,arma::vec> layer_occ;
     typedef std::map<int, layer_occ> layers_map;
-    typedef std::map<int, std::map<Sptr,std::vector<Iptr>>> bias_dict;
-    typedef std::map<int, std::map<Sptr, std::map<int, std::map<Sptr,std::vector<Iptr>>>>> o2_ixn_dict;
 
 	class Lattice
 	{
@@ -86,8 +84,8 @@ namespace dblz {
         
         // Bias/ixn dicts
         std::vector<Iptr> _all_ixns;
-        bias_dict _bias_dict;
-        o2_ixn_dict _o2_ixn_dict;
+        std::map<int, std::map<Sptr,Iptr>> _bias_dict;
+        std::map<int, std::map<Sptr, std::map<int, std::map<Sptr,Iptr>>>> _o2_ixn_dict;
         
         // Multipliers between layers for ixns - NOT bidirectional
         std::map<int, std::map<int, double>> _o2_mults;
@@ -218,7 +216,7 @@ namespace dblz {
         // MARK: Biases/ixn params
         // ***************
         
-		// Biases
+        // Biases
 		void add_bias_all_layers(Sptr sp, Iptr bias);
         void add_bias_to_layer(int layer, Sptr sp, Iptr bias);
 

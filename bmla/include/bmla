@@ -8,7 +8,7 @@
 #include "dblz_bits/ixn_param.hpp"
 #include "dblz_bits/lattice.hpp"
 #include "dblz_bits/moment.hpp"
-#include "dblz_bits/opt_problem.hpp"
+#include "dblz_bits/opt_problem_static.hpp"
 #include "dblz_bits/species.hpp"
 
 #endif

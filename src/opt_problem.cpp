@@ -306,8 +306,6 @@ namespace dblz {
 	// One step
 	void OptProblem::solve_one_step(int i_opt_step, int no_timesteps, int batch_size, double dt, double dopt, int no_latt_sampling_steps, FNameSeriesColl &fname_coll, OptionsSolve options) {
 
-		int no_timepoints = no_timesteps + 1;
-
 		/*****
 		Check options
 		*****/

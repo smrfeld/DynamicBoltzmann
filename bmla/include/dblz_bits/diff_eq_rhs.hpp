@@ -102,8 +102,10 @@ namespace dblz {
 		std::map<q3c1::Vertex*,std::vector<double>> _updates;
 
 		// Nesterov
-		// double _lambda_s, _lambda_sp1;
-		std::map<q3c1::Vertex*,std::vector<double>> *_y_s, *_y_sp1;
+		std::map<q3c1::Vertex*,std::vector<double>> *_nesterov_y_s, *_nesterov_y_sp1;
+        
+        // Adam
+        std::map<q3c1::Vertex*,std::vector<double>> *_adam_m, *_adam_v;
 
 		// Internal
 		std::vector<double> _form_abscissas(int timepoint) const;
@@ -158,13 +160,17 @@ namespace dblz {
 		// Calculate the update
 		// t_start = inclusive
 		// t_end = non-inclusive
-		void update_calculate_and_store(int timepoint_start, int timepoint_end, double dt, double dopt);
-
-		// Verbose
-		void print_update_stored() const;
+		// void update_calculate_and_store(int timepoint_start, int timepoint_end, double dt, double dopt);
+        void update_calculate_and_store(int timepoint_start, int timepoint_end, double dt);
 
 		// Committ the update
-		void update_committ_stored(bool nesterov_mode=true, double nesterov_acc=0.5);
-	};
+		// void update_committ_stored(bool nesterov_mode=true, double nesterov_acc=0.5);
+        void update_committ_stored_sgd(double dopt);
+        void update_committ_stored_nesterov(double dopt, double nesterov_acc);
+        void update_committ_stored_adam(double dopt, int opt_step, double beta_1, double beta_2, double eps);
+
+        // Verbose
+        void print_update_stored() const;
+    };
 
 };

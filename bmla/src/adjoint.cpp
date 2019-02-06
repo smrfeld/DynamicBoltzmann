@@ -231,16 +231,6 @@ namespace dblz {
 	};
 
 	/********************
-	Reset to zero
-	********************/
-
-	void Adjoint::reset_to_zero() {
-		for (auto timepoint=0; timepoint<_no_timepoints; timepoint++) {
-			_vals[timepoint] = 0.0;
-		};
-	};
-
-	/********************
 	Write to file
 	********************/
 

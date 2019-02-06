@@ -22,14 +22,14 @@ add_library(bmla SHARED
 	src/ixn_param.cpp
 	src/lattice.cpp
 	src/moment.cpp
-	src/opt_problem.cpp
+	src/opt_problem_static.cpp
 	src/species.cpp
 	include/dblz_bits/fname.hpp
 	include/dblz_bits/general.hpp
 	include/dblz_bits/ixn_param.hpp
 	include/dblz_bits/lattice.hpp
 	include/dblz_bits/moment.hpp
-	include/dblz_bits/opt_problem.hpp
+	include/dblz_bits/opt_problem_static.hpp
 	include/dblz_bits/species.hpp
 	${HEADER_FILES_FWDS}
 )
@@ -37,25 +37,25 @@ add_library(bmla SHARED
 add_library(dblz SHARED 
 	src/adjoint.cpp
 	src/diff_eq_rhs.cpp
-	src/fname.cpp
+	src/fname_traj.cpp
 	src/general.cpp
 	src/ixn_param.cpp
 	src/ixn_param_traj.cpp
 	src/lattice.cpp
 	src/lattice_traj.cpp
 	src/moment.cpp
-	src/opt_problem.cpp
+	src/opt_problem_dynamic.cpp
 	src/species.cpp
 	include/dblz_bits/adjoint.hpp
 	include/dblz_bits/diff_eq_rhs.hpp
-	include/dblz_bits/fname.hpp
+	include/dblz_bits/fname_traj.hpp
 	include/dblz_bits/general.hpp
 	include/dblz_bits/ixn_param.hpp
 	include/dblz_bits/ixn_param_traj.hpp
 	include/dblz_bits/lattice.hpp
 	include/dblz_bits/lattice_traj.hpp
 	include/dblz_bits/moment.hpp
-	include/dblz_bits/opt_problem.hpp
+	include/dblz_bits/opt_problem_dynamic.hpp
 	include/dblz_bits/species.hpp
 	${HEADER_FILES_FWDS}
 )

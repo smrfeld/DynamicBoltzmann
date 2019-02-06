@@ -60,9 +60,11 @@ namespace dblz {
         // MARK: - End condition
         // ***************
         
+        /*
 		int get_timepoint_zero_end_cond() const;
 		void set_timepoint_zero_end_cond(int timepoint);
-
+         */
+        
         // ***************
         // MARK: - Getters (general)
         // ***************

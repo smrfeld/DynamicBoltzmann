@@ -99,12 +99,16 @@ namespace dblz {
         while (_vals.size() > _no_timepoints) {
             _vals.pop_back();
         };
+        
+        _timepoint_zero_end_cond = _no_timepoints;
+        _vals[_timepoint_zero_end_cond] = 0.0;
 	};
 
     // ***************
     // MARK: - Init cond
     // ***************
     
+    /*
 	int Adjoint::get_timepoint_zero_end_cond() const {
 		return _timepoint_zero_end_cond;
 	};
@@ -117,6 +121,7 @@ namespace dblz {
 		_timepoint_zero_end_cond = timepoint;
 		_vals[_timepoint_zero_end_cond] = 0.0;
 	};
+    */
     
     // ***************
     // MARK: - Name, type

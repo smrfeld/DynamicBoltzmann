@@ -225,14 +225,26 @@ namespace dblz {
          Check options
          *****/
         
+        if (options.verbose) {
+            std::cout << "--- Checking options ---" << std::endl;
+        };
+        
         if (options.should_check_options) {
             check_options(dopt,dt,no_mean_field_updates,no_gibbs_sampling_steps,options,options_wake_sleep);
+        };
+        
+        if (options.verbose) {
+            std::cout << "--- [Finished] ---" << std::endl;
         };
         
         /*****
          Solve diff eq for F
          *****/
         
+        if (options.verbose) {
+            std::cout << "--- Solving diff eqs ---" << std::endl;
+        };
+
         // Solve over all time
         for (auto timepoint=0; timepoint<_no_timesteps_ixn_params; timepoint++) {
             for (auto ixn_param_traj: _latt_traj->get_all_ixn_param_trajs()) {
@@ -242,16 +254,31 @@ namespace dblz {
             };
         };
         
+        if (options.verbose) {
+            std::cout << "--- [Finished] ---" << std::endl;
+        };
+
         /*****
          Wake/asleep loop
          *****/
         
-        wake_sleep_loop(i_opt_step,no_mean_field_updates,no_gibbs_sampling_steps,fname_traj_coll,options_wake_sleep);
+        if (options.verbose) {
+            std::cout << "--- Wake-sleep ---" << std::endl;
+        };
+    wake_sleep_loop(i_opt_step,no_mean_field_updates,no_gibbs_sampling_steps,fname_traj_coll,options_wake_sleep);
         
+        if (options.verbose) {
+            std::cout << "--- [Finished] ---" << std::endl;
+        };
+
         /********************
          Solve diff eq for adjoint
          ********************/
         
+        if (options.verbose) {
+            std::cout << "--- Solving adjoints ---" << std::endl;
+        };
+
         if (options.l2_reg) {
             for (auto timepoint=_timepoint_start_lattice+_no_timesteps_lattice; timepoint>_timepoint_start_lattice; timepoint--) {
                 for (auto ixn_param_traj: _latt_traj->get_all_ixn_param_trajs()) {
@@ -270,21 +297,37 @@ namespace dblz {
             };
         };
         
+        if (options.verbose) {
+            std::cout << "--- [Finished] ---" << std::endl;
+        };
+
         /********************
          Form the update
          ********************/
         
+        if (options.verbose) {
+            std::cout << "--- Forming update ---" << std::endl;
+        };
+
         for (auto ixn_param_traj: _latt_traj->get_all_ixn_param_trajs()) {
             if (!ixn_param_traj->get_is_val_fixed_to_init_cond() && !ixn_param_traj->get_are_vals_fixed()) {
                 
                 ixn_param_traj->get_diff_eq_rhs()->update_calculate_and_store(_timepoint_start_lattice,_timepoint_start_lattice+_no_timepoints_lattice,dt);
             };
         };
+        
+        if (options.verbose) {
+            std::cout << "--- [Finished] ---" << std::endl;
+        };
 
         /********************
          Committ the update
          ********************/
         
+        if (options.verbose) {
+            std::cout << "--- Committing update ---" << std::endl;
+        };
+
         double dopt_use = dopt;
         if (options.solver == Solver::ADAM) {
             for (auto &ixn_param_traj: _latt_traj->get_all_ixn_param_trajs()) {
@@ -297,6 +340,10 @@ namespace dblz {
                     ixn_param_traj->get_diff_eq_rhs()->update_committ_stored_adam(dopt_use,i_opt_step,options.adam_beta_1,options.adam_beta_2,options.adam_eps);
                 };
             };
+        };
+        
+        if (options.verbose) {
+            std::cout << "--- [Finished] ---" << std::endl;
         };
     };
     

@@ -31,8 +31,7 @@ namespace dblz {
         bool should_check_options = true;
         
         // Verbosity
-        bool verbose_update = false;
-        bool verbose_moment = true;
+        bool verbose = false;
         
         // Integral start
         bool integral_limit_mode = false;

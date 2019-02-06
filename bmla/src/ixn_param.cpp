@@ -91,12 +91,18 @@ namespace dblz {
 	void IxnParam::_copy(const IxnParam& other) {
 		_val = other._val;
 		_update = other._update;
-		// _lambda_s = other._lambda_s;
-		// _lambda_sp1 = other._lambda_sp1;
-		_nesterov_y_s = new double(*other._nesterov_y_s);
-		_nesterov_y_sp1 = new double(*other._nesterov_y_sp1);
-		_adam_m = new double(*other._adam_m);
-		_adam_v = new double(*other._adam_v);
+        if (other._nesterov_y_s) {
+            _nesterov_y_s = new double(*other._nesterov_y_s);
+        };
+        if (other._nesterov_y_sp1) {
+            _nesterov_y_sp1 = new double(*other._nesterov_y_sp1);
+        };
+        if (other._adam_m) {
+            _adam_m = new double(*other._adam_m);
+        };
+        if (other._adam_v) {
+            _adam_v = new double(*other._adam_v);
+        };
 
 		_moment = other._moment;
 
@@ -105,13 +111,19 @@ namespace dblz {
 	void IxnParam::_move(IxnParam& other) {
 		_val = other._val;
 		_update = other._update;
-		// _lambda_s = other._lambda_s;
-		// _lambda_sp1 = other._lambda_sp1;
-		_nesterov_y_s = other._nesterov_y_s;
-		_nesterov_y_sp1 = other._nesterov_y_sp1;
-		_adam_m = other._adam_m;
-		_adam_v = other._adam_v;
-
+        if (other._nesterov_y_s) {
+            _nesterov_y_s = new double(*other._nesterov_y_s);
+        };
+        if (other._nesterov_y_sp1) {
+            _nesterov_y_sp1 = new double(*other._nesterov_y_sp1);
+        };
+        if (other._adam_m) {
+            _adam_m = new double(*other._adam_m);
+        };
+        if (other._adam_v) {
+            _adam_v = new double(*other._adam_v);
+        };
+        
 		_moment = std::move(other._moment);
 
 		_is_val_fixed = other._is_val_fixed;
@@ -119,8 +131,6 @@ namespace dblz {
 		// Reset the other
 		other._val = 0.0;
 		other._update = 0.0;
-		// other._lambda_s = 0.0;
-		// other._lambda_sp1 = 0.0;
 		other._nesterov_y_s = nullptr;
 		other._nesterov_y_sp1 = nullptr;
 		other._is_val_fixed = false;

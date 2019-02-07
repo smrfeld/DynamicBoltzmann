@@ -1,10 +1,10 @@
-#include "../include/dynamicboltz_bits/general.hpp"
+#include "../include/dblz_bits/general.hpp"
 
 #include <iomanip>
 #include <sstream>
 
 /************************************
-* Namespace for dblz
+* Namespace for bmla
 ************************************/
 
 namespace dblz {

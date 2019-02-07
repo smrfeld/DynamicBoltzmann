@@ -2,14 +2,17 @@
 
 ## Dependencies
 
-q3c1 library for the Q3 C1 finite elements.
+`armadillo` library.
 
-Get it from [here](https://github.com/smrfeld/Q3-C1-Finite-Elements).
+`q3c1` library for the Q3 C1 finite elements. Get it from [here](https://github.com/smrfeld/Q3-C1-Finite-Elements).
 
 ## Installation
 
-There now is a convenient makefile:
+Use `cmake`:
 ```
+mkdir build
+cd build
+cmake ..
 make
 make install
 ```
@@ -23,11 +26,12 @@ In this case, you will also need to specify using `-L` the location of the libra
 
 ## Usage
 
-To access the headers, simply use: `include <dynamicboltz>`. 
+To access the headers, simply use: `include <dblz>` or `include <bmla>. 
 
 Link your program using:
 ```
-g++ -std=c++14 -O3 -ldynamicboltz -lq3c1 myprogram.cpp -o myprogram.o
+g++ -std=c++14 -O3 -ldblz -lq3c1 myprogram.cpp -o myprogram.o
+g++ -std=c++14 -O3 -lbmla myprogram.cpp -o myprogram.o
 ```
 (this assumes you have install `-lq3c1`).
 
@@ -35,7 +39,7 @@ g++ -std=c++14 -O3 -ldynamicboltz -lq3c1 myprogram.cpp -o myprogram.o
 
 The namespace is `dblz` ("DynamicBoltzmann").
 
-## Technical notes
+## Technical notes (POSSIBLY OUTDATED!)
 
 ### Binary vs probabilistic units
 

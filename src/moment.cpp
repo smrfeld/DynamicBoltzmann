@@ -1,18 +1,16 @@
-#include "../include/dynamicboltz_bits/moment.hpp"
+#include "../include/dblz_bits/moment.hpp"
 
 // Other headers
-#include "../include/dynamicboltz_bits/general.hpp"
-#include "../include/dynamicboltz_bits/ixn_param.hpp"
-#include "../include/dynamicboltz_bits/unit.hpp"
-#include "../include/dynamicboltz_bits/connections.hpp"
-#include "../include/dynamicboltz_bits/species.hpp"
+#include "../include/dblz_bits/general.hpp"
+#include "../include/dblz_bits/ixn_param.hpp"
+#include "../include/dblz_bits/species.hpp"
 
 #include <fstream>
 #include <iostream>
 #include <sstream>
 
 /************************************
-* Namespace for dblz
+* Namespace for bmla
 ************************************/
 
 namespace dblz {
@@ -29,22 +27,11 @@ namespace dblz {
 		_name = name;
 		_type = type;
 
-		_no_timesteps = 0;
-		_no_timepoints = 1;
+        set_no_markov_chains(MCType::AWAKE,1);
+        set_no_markov_chains(MCType::ASLEEP,1);
 
-		_batch_size = 1;
-
-		// reaped
-		_vals_awake_reaped = new double[_no_timepoints*_batch_size];
-		_vals_asleep_reaped = new double[_no_timepoints*_batch_size];
-		std::fill_n(_vals_awake_reaped, _batch_size*_no_timepoints, 0.0);
-		std::fill_n(_vals_asleep_reaped, _batch_size*_no_timepoints, 0.0);
-
-		// averaged
-		_vals_awake_averaged = new double[_no_timepoints];
-		_vals_asleep_averaged = new double[_no_timepoints];
-		std::fill_n(_vals_awake_averaged, _no_timepoints, 0.0);
-		std::fill_n(_vals_asleep_averaged, _no_timepoints, 0.0);
+		// Fixed awake moment
+		_is_awake_moment_fixed = false;
 	};
 	Moment::Moment(const Moment& other) {
 		_copy(other);
@@ -75,77 +62,43 @@ namespace dblz {
 		_name = other._name;
 		_type = other._type;
 
-		_monitor_h = other._monitor_h; 
-		_monitor_b = other._monitor_b; 
-		_monitor_j = other._monitor_j; 
-		_monitor_k = other._monitor_k; 
-		_monitor_w = other._monitor_w; 
-		_monitor_x = other._monitor_x; 
-
-		_no_timesteps = other._no_timesteps;
-		_no_timepoints = other._no_timepoints;
-		_batch_size = other._batch_size;
-
+        _no_markov_chains = other._no_markov_chains;
+        
 		// reaped
-		_vals_awake_reaped = other._vals_awake_reaped;
-		_vals_asleep_reaped = other._vals_asleep_reaped;
+		_vals_reaped = other._vals_reaped;
 
 		// averaged
-		_vals_awake_averaged = other._vals_awake_averaged;
-		_vals_asleep_averaged = other._vals_asleep_averaged;
+		_val_averaged = other._val_averaged;
 		
-		_vals_awake_fixed = other._vals_awake_fixed;
+		_is_awake_moment_fixed = other._is_awake_moment_fixed;
 
 		// Reset the other
 		other._name = "";
 
-		other._monitor_h.clear(); 
-		other._monitor_b.clear();
-		other._monitor_j.clear(); 
-		other._monitor_k.clear(); 
-		other._monitor_w.clear(); 
-		other._monitor_x.clear(); 
+        other._no_markov_chains[MCType::AWAKE] = 0;
+        other._no_markov_chains[MCType::ASLEEP] = 0;
 
-		other._no_timesteps = 0;
-		other._no_timepoints = 0;
-		other._batch_size = 0;
+		other._vals_reaped[MCType::AWAKE].clear();
+        other._vals_reaped[MCType::ASLEEP].clear();
 
-		other._vals_awake_reaped = nullptr;
-		other._vals_asleep_reaped = nullptr;
+		other._val_averaged[MCType::AWAKE] = 0.0;
+        other._val_averaged[MCType::ASLEEP] = 0.0;
 
-		other._vals_awake_averaged = nullptr;
-		other._vals_asleep_averaged = nullptr;
-
-		other._vals_awake_fixed.clear();
+		other._is_awake_moment_fixed = false;
 	};
 	void Moment::_copy(const Moment& other) {
 		_name = other._name;
 		_type = other._type;
-
-		_monitor_h = other._monitor_h; 
-		_monitor_b = other._monitor_b;
-		_monitor_j = other._monitor_j; 
-		_monitor_k = other._monitor_k; 
-		_monitor_w = other._monitor_w; 
-		_monitor_x = other._monitor_x; 
-
-		_no_timesteps = other._no_timesteps;
-		_no_timepoints = other._no_timepoints;
-		_batch_size = other._batch_size;
-
+        
+        _no_markov_chains = other._no_markov_chains;
+        
 		// reaped
-		_vals_awake_reaped = new double[_no_timepoints*_batch_size];
-		_vals_asleep_reaped = new double[_no_timepoints*_batch_size];
-		std::copy(other._vals_awake_reaped, other._vals_awake_reaped+_no_timepoints*_batch_size,_vals_awake_reaped);
-		std::copy(other._vals_asleep_reaped, other._vals_asleep_reaped+_no_timepoints*_batch_size,_vals_asleep_reaped);
+        _vals_reaped = other._vals_reaped;
 
 		// averaged
-		_vals_awake_averaged = new double[_no_timepoints];
-		std::copy( other._vals_awake_averaged, other._vals_awake_averaged + _no_timepoints, _vals_awake_averaged );
-		_vals_asleep_averaged = new double[_no_timepoints];
-		std::copy( other._vals_asleep_averaged, other._vals_asleep_averaged + _no_timepoints, _vals_asleep_averaged );
+		_val_averaged = other._val_averaged;
 
-		_vals_awake_fixed = other._vals_awake_fixed;
+		_is_awake_moment_fixed = other._is_awake_moment_fixed;
 	};
 
 	/********************
@@ -153,60 +106,15 @@ namespace dblz {
 	********************/
 
 	void Moment::print_moment_comparison() const {
-		// eg timesteps = 2; timepoints = 3; 0->1, 1->2; three loops
-		for (auto timepoint=0; timepoint<=_no_timepoints-1; timepoint++) {
-			std::cout << "(" << _vals_awake_averaged[timepoint] << "," << _vals_asleep_averaged[timepoint] << ") ";
-		};
-		std::cout << std::endl;
+        std::cout << "(" << _val_averaged.at(MCType::AWAKE) << "," << _val_averaged.at(MCType::ASLEEP) << ") " << std::endl;
 	};
-
-	/********************
-	Finish setup
-	********************/
-
-	void Moment::add_unit_to_monitor_h(UnitVisible *uv) {
-		if (_type != IxnParamType::H) {
-			std::cerr << ">>> Error: Moment::add_unit_to_monitor_h <<< tried to add visible unit but moment is not of type H" << std::endl;
-			exit(EXIT_FAILURE);
-		};
-		_monitor_h.push_back(uv);
-	};
-	void Moment::add_unit_to_monitor_b(UnitHidden *uh) {
-		if (_type != IxnParamType::B) {
-			std::cerr << ">>> Error: Moment::add_unit_to_monitor_b <<< tried to add visible unit but moment is not of type B" << std::endl;
-			exit(EXIT_FAILURE);
-		};
-		_monitor_b.push_back(uh);
-	};
-	void Moment::add_conn_to_monitor_j(ConnVV *conn) {
-		if (_type != IxnParamType::J) {
-			std::cerr << ">>> Error: Moment::add_conn_to_monitor_j <<< tried to add connVV but moment is not of type J" << std::endl;
-			exit(EXIT_FAILURE);
-		};
-		_monitor_j.push_back(conn);
-	};
-	void Moment::add_conn_to_monitor_k(ConnVVV *conn) {
-		if (_type != IxnParamType::K) {
-			std::cerr << ">>> Error: Moment::add_conn_to_monitor_k <<< tried to add connVVV but moment is not of type K" << std::endl;
-			exit(EXIT_FAILURE);
-		};
-		_monitor_k.push_back(conn);
-	};
-	void Moment::add_conn_to_monitor_w(ConnVH *conn) {
-		if (_type != IxnParamType::W) {
-			std::cerr << ">>> Error: Moment::add_conn_to_monitor_w <<< tried to add connVH but moment is not of type W" << std::endl;
-			exit(EXIT_FAILURE);
-		};
-		_monitor_w.push_back(conn);
-	};
-	void Moment::add_conn_to_monitor_x(ConnHH *conn) {
-		if (_type != IxnParamType::X) {
-			std::cerr << ">>> Error: Moment::add_conn_to_monitor_x <<< tried to add connHH but moment is not of type X" << std::endl;
-			exit(EXIT_FAILURE);
-		};
-		_monitor_x.push_back(conn);
-	};
-
+    
+    std::string Moment::get_moment_comparison_str() const {
+        std::stringstream s;
+        s << "(" << _val_averaged.at(MCType::AWAKE) << "," << _val_averaged.at(MCType::ASLEEP) << ")";
+        return s.str();
+    };
+    
 	/********************
 	Name
 	********************/
@@ -219,229 +127,90 @@ namespace dblz {
 	};
 
 	/********************
-	Number timesteps
-	********************/
-
-	int Moment::get_no_timesteps() const {
-		return _no_timesteps;
-	};
-	void Moment::set_no_timesteps(int no_timesteps) {
-		// Clear old
-		
-		// reaped
-		safeDelArr(_vals_awake_reaped);
-		safeDelArr(_vals_asleep_reaped);
-
-		// averaged
-		safeDelArr(_vals_awake_averaged);
-		safeDelArr(_vals_asleep_averaged);
-
-		// New
-		
-		// Params
-		_no_timesteps = no_timesteps;
-		_no_timepoints = _no_timesteps+1;
-
-		// Reaped vals
-		_vals_awake_reaped = new double[_no_timepoints*_batch_size];
-		_vals_asleep_reaped = new double[_no_timepoints*_batch_size];
-		std::fill_n(_vals_awake_reaped,_no_timepoints*_batch_size,0.0);
-		std::fill_n(_vals_asleep_reaped,_no_timepoints*_batch_size,0.0);
-
-		// Averaged vals
-		_vals_awake_averaged = new double[_no_timepoints];
-		_vals_asleep_averaged = new double[_no_timepoints];
-		std::fill_n(_vals_awake_averaged,_no_timepoints,0.0);
-		std::fill_n(_vals_asleep_averaged,_no_timepoints,0.0);
-	};
-
-	/********************
 	Batch size
 	********************/
 
-	int Moment::get_batch_size() const {
-		return _batch_size;
-	};
-	void Moment::set_batch_size(int batch_size) {
-		// Clear old
-		
-		// reaped
-		safeDelArr(_vals_awake_reaped);
-		safeDelArr(_vals_asleep_reaped);
+    int Moment::get_no_markov_chains(MCType type) const {
+        return _no_markov_chains.at(type);
+    };
+    void Moment::set_no_markov_chains(MCType type, int no_markov_chains) {
+        // Params
+        _no_markov_chains[type] = no_markov_chains;
+        
+        // Reaped vals
+        _vals_reaped[type] = std::vector<double>(_no_markov_chains[type]);
+        
+        // Reset averaged vals
+        _val_averaged[type] = 0.0;
+    };
 
-		// averaged
-		safeDelArr(_vals_awake_averaged);
-		safeDelArr(_vals_asleep_averaged);
-
-		// New
-		
-		// Params
-		_batch_size = batch_size;
-
-		// Reaped vals
-		_vals_awake_reaped = new double[_no_timepoints*_batch_size];
-		_vals_asleep_reaped = new double[_no_timepoints*_batch_size];
-		std::fill_n(_vals_awake_reaped,_no_timepoints*_batch_size,0.0);
-		std::fill_n(_vals_asleep_reaped,_no_timepoints*_batch_size,0.0);
-
-		// Averaged vals
-		_vals_awake_averaged = new double[_no_timepoints];
-		_vals_asleep_averaged = new double[_no_timepoints];
-		std::fill_n(_vals_awake_averaged,_no_timepoints,0.0);
-		std::fill_n(_vals_asleep_averaged,_no_timepoints,0.0);
-	};
-
+    
 	/********************
 	Reset
 	********************/
 
-	void Moment::reset_to_zero() {
-		for (auto timepoint=0; timepoint<_no_timepoints; timepoint++) {
-			for (auto i_batch=0; i_batch<_batch_size; i_batch++) {
-				set_moment_at_timepoint_in_batch(MomentType::AWAKE, timepoint, i_batch, 0.0);
-				set_moment_at_timepoint_in_batch(MomentType::ASLEEP, timepoint, i_batch, 0.0);
-			};
-			set_moment_at_timepoint(MomentType::AWAKE, timepoint, 0.0);
-			set_moment_at_timepoint(MomentType::ASLEEP, timepoint, 0.0);
-		};
+	void Moment::reset_to_zero(MCType type) {
+        for (auto i_chain=0; i_chain<_no_markov_chains[type]; i_chain++) {
+            set_moment_sample(type, i_chain, 0.0);
+        };
+        set_moment(type, 0.0);
+	};
+
+	/********************
+	Fixed awake
+	********************/
+
+	void Moment::set_is_awake_moment_fixed(bool flag) {
+		_is_awake_moment_fixed = flag;
+	};
+	bool Moment::get_is_awake_moment_fixed() const {
+		return _is_awake_moment_fixed;
 	};
 
 	/********************
 	Get/set moment
 	********************/
 
-	double Moment::get_moment_at_timepoint(MomentType type, int timepoint) const {
-		if (type == MomentType::AWAKE) {
-			auto it = _vals_awake_fixed.find(timepoint);
-			if (it == _vals_awake_fixed.end()) {
-				return _vals_awake_averaged[timepoint];
-			} else {
-				return it->second;
-			};
-		} else {
-			return _vals_asleep_averaged[timepoint];
-		};
-
+	double Moment::get_moment(MCType type) const {
+        return _val_averaged.at(type);
 	};
-	void Moment::set_moment_at_timepoint(MomentType type, int timepoint, double val) {
-		if (type == MomentType::AWAKE) {
-			_vals_awake_averaged[timepoint] = val;
-		} else {
-			_vals_asleep_averaged[timepoint] = val;
-		};
+	void Moment::set_moment(MCType type, double val) {
+        _val_averaged[type] = val;
 	};
 
 	// Batch
-	double Moment::get_moment_at_timepoint_in_batch(MomentType type, int timepoint, int i_batch) const {
-		if (type == MomentType::AWAKE) {
-			return _vals_awake_reaped[timepoint*_batch_size + i_batch];
-		} else {
-			return _vals_asleep_reaped[timepoint*_batch_size + i_batch];
-		};	
+	double Moment::get_moment_sample(MCType type, int i_sample) const {
+        return _vals_reaped.at(type).at(i_sample);
 	};
-	void Moment::set_moment_at_timepoint_in_batch(MomentType type, int timepoint, int i_batch, double val) {
-		if (type == MomentType::AWAKE) {
-			_vals_awake_reaped[timepoint*_batch_size + i_batch] = val;
-		} else {
-			_vals_asleep_reaped[timepoint*_batch_size + i_batch] = val;
-		};
+	void Moment::set_moment_sample(MCType type, int i_sample, double val) {
+        _vals_reaped[type][i_sample] = val;
 	};
+    void Moment::increment_moment_sample(MCType type, int i_sample, double val) {
+        _vals_reaped[type][i_sample] += val;
+    };
 
-	// Fix
-	void Moment::set_fixed_awake_moment_at_timepoint(int timepoint, double val) {
-		_vals_awake_fixed[timepoint] = val;
-	};
-
-	/********************
-	Reap from sampler
-	********************/
-
-	void Moment::reap_as_timepoint_in_batch(MomentType type, int timepoint, int i_batch) {
-
-		/*
-		if (timepoint >= _no_timepoints) {
-			std::cerr << ">>> Error Moment::reap_as_timepoint <<< Max timepoint for moment is: " << _no_timepoints << " but tried: " << timepoint << std::endl;
-			exit(EXIT_FAILURE);
-		};
-		if (i_batch >= _batch_size) {
-			std::cerr << ">>> Error Moment::reap_as_timepoint <<< Batch size for moment is: " << _batch_size << " but tried: " << i_batch << std::endl;
-			exit(EXIT_FAILURE);
-		};
-		*/
-
-		// Get all counts
-		double count = 0.0;
-		if (_type == IxnParamType::H) {
-			// H
-			for (auto const &unit: _monitor_h) {
-				count += unit->get_moment(_name);
-			};
-		} else if (_type == IxnParamType::B) {
-			// B
-			for (auto const &unit: _monitor_b) {
-				count += unit->get_moment(_name);
-			};
-		} else if (_type == IxnParamType::J) {
-			// J
-			for (auto const &conn: _monitor_j) {
-				count += conn->get_moment(_name);
-			};
-		} else if (_type == IxnParamType::K) {
-			// K
-			for (auto const &conn: _monitor_k) {
-				count += conn->get_moment(_name);
-			};
-		} else if (_type == IxnParamType::W) {
-			// W
-			for (auto const &conn: _monitor_w) {
-				count += conn->get_moment(_name);
-			};
-		} else if (_type == IxnParamType::X) {
-			// X
-			for (auto const &conn: _monitor_x) {
-				count += conn->get_moment(_name);
-			};
-		};
-
-		// Set
-		set_moment_at_timepoint_in_batch(type,timepoint,i_batch,count);
-	};
-
-	/********************
-	Average reaps
-	********************/
-
-	void Moment::average_reaps_as_timepoint(MomentType type, int timepoint) {
-		if (type == MomentType::AWAKE) {
-
-			// Awake moment
-			_vals_awake_averaged[timepoint] = 0.;
-			for (auto i=0; i<_batch_size; i++) {
-				_vals_awake_averaged[timepoint] += _vals_awake_reaped[timepoint*_batch_size + i];
-			};
-			_vals_awake_averaged[timepoint] /= _batch_size;
-
-		} else {
-
-			// Asleep moment
-			_vals_asleep_averaged[timepoint] = 0.;
-			for (auto i=0; i<_batch_size; i++) {
-				_vals_asleep_averaged[timepoint] += _vals_asleep_reaped[timepoint*_batch_size + i];
-			};
-			_vals_asleep_averaged[timepoint] /= _batch_size;
-
-		};
+    // Average reaps
+	void Moment::average_moment_samples(MCType type) {
+        _val_averaged[type] = 0.0;
+        for (auto i=0; i<_no_markov_chains[type]; i++) {
+            _val_averaged[type] += _vals_reaped[type][i];
+        };
+        _val_averaged[type] /= _no_markov_chains[type];
 	};
 
 	/********************
 	Write
 	********************/
 
-	void Moment::write_to_file(std::string fname) const {
+	void Moment::write_to_file(std::string fname, bool append) const {
 		std::ofstream f;
 
 		// Open
-		f.open(fname);
+		if (append) {
+			f.open(fname, std::ofstream::out | std::ofstream::app);
+		} else {
+			f.open(fname);
+		};
 
 		// Make sure we found it
 		if (!f.is_open()) {
@@ -450,9 +219,7 @@ namespace dblz {
 		};
 
 		// Go through all time
-		for (auto timepoint=0; timepoint<_no_timepoints; timepoint++) {
-			f << _vals_awake_averaged[timepoint] << " " << _vals_asleep_averaged[timepoint] << "\n";
-		};
+        f << _val_averaged.at(MCType::AWAKE) << " " << _val_averaged.at(MCType::ASLEEP) << "\n";
 
 		// Close
 		f.close();

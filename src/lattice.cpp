@@ -1,12 +1,10 @@
-#include "../include/dynamicboltz_bits/lattice.hpp"
+#include "../include/dblz_bits/lattice.hpp"
 
 // Other headers
-#include "../include/dynamicboltz_bits/general.hpp"
-#include "../include/dynamicboltz_bits/species.hpp"
-#include "../include/dynamicboltz_bits/unit.hpp"
-#include "../include/dynamicboltz_bits/connections.hpp"
-#include "../include/dynamicboltz_bits/ixn_dicts.hpp"
-#include "../include/dynamicboltz_bits/moment.hpp"
+#include "../include/dblz_bits/general.hpp"
+#include "../include/dblz_bits/species.hpp"
+#include "../include/dblz_bits/moment.hpp"
+#include "../include/dblz_bits/ixn_param.hpp"
 
 #include <iostream>
 #include <fstream>
@@ -18,7 +16,7 @@
 #include <algorithm>
 
 /************************************
-* Namespace for dblz
+* Namespace for bmla
 ************************************/
 
 namespace dblz {
@@ -31,40 +29,32 @@ namespace dblz {
 	Constructor
 	********************/
 
-	Lattice::Lattice(int dim, int box_length)
+	Lattice::Lattice(int no_dims, int box_length, std::vector<Sptr> species_visible, bool batch_norm_mode)
 	{
-		if (dim != 1 && dim != 2 && dim != 3) {
+        if (batch_norm_mode) {
+            std::cerr << "ERROR: Batch norm mode is presently fucked and therefore forbidden" << std::endl;
+            exit(EXIT_FAILURE);
+        };
+        
+		if (no_dims != 1 && no_dims != 2 && no_dims != 3) {
 			std::cerr << "ERROR: only dimensions 1,2,3 are supported for Lattice." << std::endl;
 			exit(EXIT_FAILURE);
 		};
-		_no_dims = dim;
+        
+		_no_dims = no_dims;
 		_box_length = box_length;
+        _no_layers = 0;
+        
+        // Batch norm
+        _bn_mode = batch_norm_mode;
+        _bn_eps = 1.0e-8;
 
-		// Make a fully linked list of sites
-		if (dim == 1) {
-			for (int x=1; x<=box_length; x++) {
-				_latt_v.push_back(new UnitVisible(x));
-				_latt_v_idxs.push_back(_latt_v.size()-1);					
-			};
-		} else if (dim == 2) {
-			for (int x=1; x<=box_length; x++) {
-				for (int y=1; y<=box_length; y++) {
-					_latt_v.push_back(new UnitVisible(x,y));	
-					_latt_v_idxs.push_back(_latt_v.size()-1);									
-				};
-			};
-		} else if (dim == 3) {
-			for (int x=1; x<=box_length; x++) {
-				for (int y=1; y<=box_length; y++) {
-					for (int z=1; z<=box_length; z++) {
-						_latt_v.push_back(new UnitVisible(x,y,z));
-						_latt_v_idxs.push_back(_latt_v.size()-1);										
-					};
-				};
-			};
-		};
-
-		_IO_did_init = false;
+        // Set no chains
+        set_no_markov_chains(MCType::AWAKE, 1);
+        set_no_markov_chains(MCType::ASLEEP, 1);
+    
+		// Visible layer
+        add_layer(0, _box_length, species_visible, nullptr, nullptr);
 	};
 	Lattice::Lattice(const Lattice& other) {
 		_copy(other);
@@ -91,1110 +81,1325 @@ namespace dblz {
 	};
 
 	void Lattice::_clean_up() {
-		for (auto i=0; i<_latt_v.size(); i++) {
-			delete _latt_v[i];
-			_latt_v[i] = nullptr;
-		};
-		for (auto &pr: _latt_h) {
-			for (auto i=0; i<pr.second.size(); i++) {
-				delete pr.second[i];
-				pr.second[i] = nullptr;
-			};
-		};
-		for (auto i=0; i<_conns_hh.size(); i++) {
-			delete _conns_hh[i];
-			_conns_hh[i] = nullptr;
-		};
-		for (auto i=0; i<_conns_vv.size(); i++) {
-			delete _conns_vv[i];
-			_conns_vv[i] = nullptr;
-		};
-		for (auto i=0; i<_conns_vvv.size(); i++) {
-			delete _conns_vvv[i];
-			_conns_vvv[i] = nullptr;
-		};
-		for (auto i=0; i<_conns_vh.size(); i++) {
-			delete _conns_vh[i];
-			_conns_vh[i] = nullptr;
-		};
+        // Nothing...
 	};
 	void Lattice::_copy(const Lattice& other) {
 		_no_dims = other._no_dims;
 		_box_length = other._box_length;
-		for (auto i=0; i<other._latt_v.size(); i++) {
-			_latt_v.push_back(new UnitVisible(*other._latt_v[i]));
-		};
-		for (auto &pr: other._latt_h) {
-			for (auto i=0; i<pr.second.size(); i++) {
-				_latt_h[pr.first].push_back(new UnitHidden(*pr.second[i]));
-			};
-		};
-		_latt_v_idxs = other._latt_v_idxs;
-		_latt_h_idxs = other._latt_h_idxs;
-		for (auto i=0; i<other._conns_hh.size(); i++) {
-			_conns_hh.push_back(new ConnHH(*other._conns_hh[i]));
-		};
-		for (auto i=0; i<other._conns_vv.size(); i++) {
-			_conns_vv.push_back(new ConnVV(*other._conns_vv[i]));
-		};
-		for (auto i=0; i<other._conns_vvv.size(); i++) {
-			_conns_vvv.push_back(new ConnVVV(*other._conns_vvv[i]));
-		};
-		for (auto i=0; i<other._conns_vv.size(); i++) {
-			_conns_vh.push_back(new ConnVH(*other._conns_vh[i]));
-		};
-		_IO_species_possible = other._IO_species_possible;
-		_IO_did_init = other._IO_did_init;
-	};
+        _no_markov_chains = other._no_markov_chains;
+        _no_layers = other._no_layers;
+        
+        _mc_chains = other._mc_chains;
+        _mc_chains_act = other._mc_chains_act;
+        _no_units_per_layer = other._no_units_per_layer;
+        
+        _lookup_1 = other._lookup_1;
+        _lookup_2 = other._lookup_2;
+        _lookup_3 = other._lookup_3;
+        _rlookup = other._rlookup;
+        
+        _species_possible_map = other._species_possible_map;
+        _species_possible_vec = other._species_possible_vec;
+        
+        _adj = other._adj;
+        
+        _all_ixns = other._all_ixns;
+        _bias_dict = other._bias_dict;
+        _o2_ixn_dict = other._o2_ixn_dict;
+        _o2_mults = other._o2_mults;
+        _bias_mults = other._bias_mults;
+        
+        _bn_mode = other._bn_mode;
+        _bn_beta = other._bn_beta;
+        _bn_gamma = other._bn_gamma;
+        _bn_beta_bar = other._bn_beta_bar;
+        _bn_gamma_bar = other._bn_gamma_bar;
+        _bn_means = other._bn_means;
+        _bn_vars = other._bn_vars;
+        _bn_eps = other._bn_eps;
+    };
 	void Lattice::_move(Lattice& other) {
-		_no_dims = other._no_dims;
-		_box_length = other._box_length;
-		_latt_v = other._latt_v;
-		_latt_h = other._latt_h;
-		_latt_v_idxs = other._latt_v_idxs;
-		_latt_h_idxs = other._latt_h_idxs;
-		_conns_hh = other._conns_hh;
-		_conns_vv = other._conns_vv;
-		_conns_vvv = other._conns_vvv;
-		_conns_vh = other._conns_vh;
-		_IO_species_possible = other._IO_species_possible;
-		_IO_did_init = other._IO_did_init;
+        _no_dims = other._no_dims;
+        _box_length = other._box_length;
+        _no_markov_chains = other._no_markov_chains;
+        _no_layers = other._no_layers;
+
+        _mc_chains = other._mc_chains;
+        _mc_chains_act = other._mc_chains_act;
+        _no_units_per_layer = other._no_units_per_layer;
+        
+        _lookup_1 = other._lookup_1;
+        _lookup_2 = other._lookup_2;
+        _lookup_3 = other._lookup_3;
+        _rlookup = other._rlookup;
+        
+        _species_possible_map = other._species_possible_map;
+        _species_possible_vec = other._species_possible_vec;
+        
+        _adj = other._adj;
+        
+        _all_ixns = other._all_ixns;
+        _bias_dict = other._bias_dict;
+        _o2_ixn_dict = other._o2_ixn_dict;
+        _o2_mults = other._o2_mults;
+        _bias_mults = other._bias_mults;
+
+        _bn_mode = other._bn_mode;
+        _bn_beta = other._bn_beta;
+        _bn_gamma = other._bn_gamma;
+        _bn_beta_bar = other._bn_beta_bar;
+        _bn_gamma_bar = other._bn_gamma_bar;
+        _bn_means = other._bn_means;
+        _bn_vars = other._bn_vars;
+        _bn_eps = other._bn_eps;
 
 		// Reset other
 		other._no_dims = 0;
 		other._box_length = 0;
-		other._latt_v.clear();
-		other._latt_h.clear();
-		other._latt_v_idxs.clear();
-		other._latt_h_idxs.clear();
-		other._conns_hh.clear();
-		other._conns_vv.clear();
-		other._conns_vvv.clear();
-		other._conns_vh.clear();
-		other._IO_species_possible.clear();
-		other._IO_did_init = false;
+        other._no_markov_chains.clear();
+        other._no_layers = 0;
+        
+        other._mc_chains.clear();
+        other._mc_chains_act.clear();
+        other._no_units_per_layer.clear();
+        
+		other._lookup_1.clear();
+		other._lookup_2.clear();
+		other._lookup_3.clear();
+        other._rlookup.clear();
+        
+        other._species_possible_map.clear();
+        other._species_possible_vec.clear();
+        
+        other._adj.clear();
+        
+        other._all_ixns.clear();
+        other._bias_dict.clear();
+        other._o2_ixn_dict.clear();
+        other._o2_mults.clear();
+        other._bias_mults.clear();
+        
+        other._bn_mode = true;
+        other._bn_beta.clear();
+        other._bn_gamma.clear();
+        other._bn_beta_bar.clear();
+        other._bn_gamma_bar.clear();
+        other._bn_means.clear();
+        other._bn_vars.clear();
+        other._bn_eps = 0.0;
 	};
+    
+    /****************************************
+    PRIVATE METHODS
+     ****************************************/
 
-	/********************
-	Check setup
-	********************/
+    // Lookup a site iterator from x,y,z
+    int Lattice::_look_up_unit(int layer, int x) const {
+        auto it = _lookup_1.find(layer);
+        if (it != _lookup_1.end()) {
+            auto it2 = it->second.find(x);
+            if (it2 != it->second.end()) {
+                return it2->second;
+            };
+        };
+        
+        std::cerr << ">>> Lattice::_look_up_unit <<< could not find layer: " << layer << " x: " << x << std::endl;
+        exit(EXIT_FAILURE);
+    };
+    int Lattice::_look_up_unit(int layer, int x, int y) const {
+        auto it = _lookup_2.find(layer);
+        if (it != _lookup_2.end()) {
+            auto it2 = it->second.find(x);
+            if (it2 != it->second.end()) {
+                auto it3 = it2->second.find(y);
+                if (it3 != it2->second.end()) {
+                    return it3->second;
+                };
+            };
+        };
+        
+        std::cerr << ">>> Lattice::_look_up_unit <<< could not find layer: " << layer << " x: " << x << " y: " << y << std::endl;
+        exit(EXIT_FAILURE);
+    };
+    int Lattice::_look_up_unit(int layer, int x, int y, int z) const {
+        auto it = _lookup_3.find(layer);
+        if (it != _lookup_3.end()) {
+            auto it2 = it->second.find(x);
+            if (it2 != it->second.end()) {
+                auto it3 = it2->second.find(y);
+                if (it3 != it2->second.end()) {
+                    auto it4 = it3->second.find(z);
+                    if (it4 != it3->second.end()) {
+                        return it4->second;
+                    };
+                };
+            };
+        };
+        
+        std::cerr << ">>> Lattice::_look_up_unit <<< could not find layer: " << layer << " x: " << x << " y: " << y << " z: " << z << std::endl;
+        exit(EXIT_FAILURE);
+    };
+    
+    std::vector<int> Lattice::_look_up_pos(int layer, int idx) const {
+        auto it = _rlookup.find(layer);
+        if (it != _rlookup.end()) {
+            auto it2 = it->second.find(idx);
+            if (it2 != it->second.end()) {
+                return it2->second;
+            };
+        };
 
-	void Lattice::print() const {
-		// Go through all sites
-		for (auto const &s: _latt_v) {
-			s->print();
-		};
-		for (auto const &pr: _latt_h) {
-			std::cout << "Layer: " << pr.first << std::endl;
-			for (auto const &s: pr.second) {
-				s->print();
-			};
-		};
-	};
+        return std::vector<int>();
+    };
+    
+    /****************************************
+    PUBLIC METHODS
+     ****************************************/
 
-	/********************
-	Helpers to setup all sites - Add possible species to all sites
-	********************/
+    /********************
+     Getters
+     ********************/
+    
+    int Lattice::get_no_dims() const {
+        return _no_dims;
+    };
+    int Lattice::get_box_length() const {
+        return _box_length;
+    };
+    
+    int Lattice::get_no_units_in_layer(int layer) const {
+        return _no_units_per_layer.at(layer);
+    };
+    
+    int Lattice::get_no_layers() const {
+        return _no_layers;
+    };
+    
+    /********************
+     Markov chains
+     ********************/
+    
+    int Lattice::get_no_markov_chains(MCType type) const {
+        return _no_markov_chains.at(type);
+    };
 
-	void Lattice::all_units_v_add_possible_species(Sptr species) {
-		if (!species) {
-			std::cerr << ">>> Error: Lattice::all_units_v_add_possible_species <<< nullptr is not allowed!" << std::endl;
-			exit(EXIT_FAILURE);
-		};
+    void Lattice::set_no_markov_chains(MCType type, int no_markov_chains) {
+        _no_markov_chains[type] = no_markov_chains;
+        
+        // Add chains
+        int no_units;
+        if (_mc_chains[type].size() < _no_markov_chains[type]) {
+            for (auto i_chain=_mc_chains[type].size(); i_chain < _no_markov_chains[type]; i_chain++) {
+                for (auto layer=0; layer<_no_layers; layer++) {
+                    no_units = get_no_units_in_layer(layer);
+                    for (auto sp: _species_possible_vec[layer]) {
+                        _mc_chains[type][i_chain][layer][sp] = arma::vec(no_units,arma::fill::randu);
+                        _mc_chains_act[type][i_chain][layer][sp] = arma::vec(no_units,arma::fill::randu);
+                    };
+                };
+            };
+        };
+        
+        // Remove chains
+        if (_mc_chains[type].size() > _no_markov_chains[type]) {
+            for (auto i_chain=_mc_chains[type].size(); i_chain > _no_markov_chains[type]; i_chain--) {
+                _mc_chains[type].erase(i_chain);
+                _mc_chains_act[type].erase(i_chain);
+            };
+        };
+    };
+    
+    /********************
+     Add a layer
+     ********************/
+    
+    void Lattice::add_layer(int layer, int box_length, std::vector<Sptr> species) {
+        if (_bn_mode) {
+            std::cerr << ">>> Lattice::add_layer <<< in batch norm mode; must specify scale and shift parameters" << std::endl;
+            exit(EXIT_FAILURE);
+        };
+        
+        add_layer(layer,box_length,species,nullptr,nullptr);
+    };
+    
+    void Lattice::add_layer(int layer, int box_length, std::vector<Sptr> species, Iptr beta, Iptr gamma) {
+        if (!_bn_mode && beta != nullptr && gamma != nullptr) {
+            std::cerr << ">>> Lattice::add_layer <<< NOT in batch norm mode; cannot specify scale and shift parameters" << std::endl;
+            exit(EXIT_FAILURE);
+        };
+        
+        if (layer != _no_layers) {
+            std::cerr << ">>> Lattice::add_layer <<< error: next layer must be: " << _no_layers << " not: " << layer << std::endl;
+            exit(EXIT_FAILURE);
+        };
+        
+        // Increment no layers
+        _no_layers += 1;
+        
+        // Add random
+        int no_units = pow(box_length,_no_dims);
+        for (auto &chain: _no_markov_chains) {
+            for (auto i_chain=0; i_chain<chain.second; i_chain++) {
+                for (auto sp: species) {
+                    _mc_chains[chain.first][i_chain][layer][sp] = arma::vec(no_units,arma::fill::randu);
+                    _mc_chains_act[chain.first][i_chain][layer][sp] = arma::vec(no_units,arma::fill::randu);
+                };
+            };
+        };
+        
+        // No units
+        _no_units_per_layer[layer] = no_units;
 
-		for (auto &s: _latt_v) {
-			s->add_possible_species(species);
-		};
-	};
+        // Lookups
+        if (_no_dims == 1) {
+            for (auto x=1; x<=_box_length; x++) {
+                _lookup_1[layer][x] = x-1;
+                _rlookup[layer][x-1] = std::vector<int>({x});
+            };
+        } else if (_no_dims == 2) {
+            int ctr=0;
+            for (auto x=1; x<=_box_length; x++) {
+                for (auto y=1; y<=_box_length; y++) {
+                    _lookup_2[layer][x][y] = ctr;
+                    _rlookup[layer][ctr++] = std::vector<int>({x,y});
+                };
+            };
+        } else if (_no_dims == 3) {
+            int ctr=0;
+            for (auto x=1; x<=_box_length; x++) {
+                for (auto y=1; y<=_box_length; y++) {
+                    for (auto z=1; z<=_box_length; z++) {
+                        _lookup_3[layer][x][y][z] = ctr;
+                        _rlookup[layer][ctr++] = std::vector<int>({x,y,z});
+                    };
+                };
+            };
+        };
+        
+        // Add species possible
+        for (auto sp: species) {
+            _species_possible_map[layer][sp->get_name()] = sp;
+            _species_possible_vec[layer].push_back(sp);
+        };
+        
+        // Add adjacency matrix
+        if (layer != 0) {
+            int size_below = get_no_units_in_layer(layer-1);
+            _adj[layer-1] = arma::mat(size_below,no_units,arma::fill::zeros);
+        };
+        
+        // Batch norm
+        if (_bn_mode) {
+            if (layer != 0) {
+              
+                for (auto sp: _species_possible_vec[layer]) {
+                    // Set params
+                    _bn_beta[layer][sp] = beta;
+                    _bn_gamma[layer][sp] = gamma;
+                    
+                    // Add to all
+                    auto it1 = std::find(_all_ixns.begin(), _all_ixns.end(), beta);
+                    if (it1 == _all_ixns.end()) {
+                        _all_ixns.push_back(beta);
+                    };
+                    auto it2 = std::find(_all_ixns.begin(), _all_ixns.end(), gamma);
+                    if (it2 == _all_ixns.end()) {
+                        _all_ixns.push_back(gamma);
+                    };
 
-	void Lattice::all_units_h_add_possible_species(Sptr species) {
-		if (!species) {
-			std::cerr << ">>> Error: Lattice::all_units_h_add_possible_species <<< nullptr is not allowed!" << std::endl;
-			exit(EXIT_FAILURE);
-		};
+                    _bn_beta_bar[MCType::AWAKE][layer][sp] = arma::vec(no_units,arma::fill::zeros);
+                    _bn_beta_bar[MCType::ASLEEP][layer][sp] = arma::vec(no_units,arma::fill::zeros);
+                    _bn_gamma_bar[MCType::AWAKE][layer][sp] = arma::vec(no_units,arma::fill::zeros);
+                    _bn_gamma_bar[MCType::ASLEEP][layer][sp] = arma::vec(no_units,arma::fill::zeros);
 
-		for (auto &pr: _latt_h) {
-			for (auto &s: pr.second) {
-				s->add_possible_species(species);
-			};
-		};	
-	};
+                    std::cout << "Filling _bn_means with zeros: no_units: " << no_units << " layer: " << layer << " species: " << sp->get_name() << std::endl;
+                    
+                    _bn_means[MCType::AWAKE][layer][sp] = arma::vec(no_units,arma::fill::zeros);
+                    _bn_means[MCType::ASLEEP][layer][sp] = arma::vec(no_units,arma::fill::zeros);
+                    _bn_vars[MCType::AWAKE][layer][sp] = arma::vec(no_units,arma::fill::zeros);
+                    _bn_vars[MCType::ASLEEP][layer][sp] = arma::vec(no_units,arma::fill::zeros);
+                };
+            };
+        };
+    };
 
 	/********************
 	Helpers to setup all sites - Biases
 	********************/
 
-	void Lattice::all_units_v_set_bias_dict(std::shared_ptr<BiasDict> bias_dict) {
-		for (auto &s: _latt_v) {
-			s->set_bias_dict(bias_dict);
-		};
-	};
+    // Biases
+	void Lattice::add_bias_all_layers(Sptr sp, Iptr bias) {
+        for (auto layer=0; layer<_no_layers; layer++) {
+            add_bias_to_layer(layer, sp, bias);
+        };
+    };
 
-	void Lattice::all_units_h_set_bias_dict(std::shared_ptr<BiasDict> bias_dict) {
-		for (auto &pr: _latt_h) {
-			for (auto &s: pr.second) {
-				s->set_bias_dict(bias_dict);
-			};
-		};
-	};
+    void Lattice::add_bias_to_layer(int layer, Sptr sp, Iptr bias) {
+        _bias_dict[layer][sp] = bias;
+        
+        // Add to all
+        auto it = std::find(_all_ixns.begin(), _all_ixns.end(), bias);
+        if (it == _all_ixns.end()) {
+            _all_ixns.push_back(bias);
+        };
+    };
 
+    // Ixns
+    void Lattice::add_ixn_between_layers(int layer1, Sptr sp1, int layer2, Sptr sp2, Iptr ixn) {
+        if (layer2 != layer1+1 && layer2 != layer1-1) {
+            std::cerr << ">>> Lattice::add_ixn_between_layers <<< layer2 != layer1 +- 1; instead layer_2 = " << layer2 << " and layer1 = " << layer1 << std::endl;
+            exit(EXIT_FAILURE);
+        };
+        
+        // Add both ways
+        _o2_ixn_dict[layer1][sp1][layer2][sp2] = ixn;
+        _o2_ixn_dict[layer2][sp2][layer1][sp1] = ixn;
+
+        // Add to all
+        auto it = std::find(_all_ixns.begin(), _all_ixns.end(), ixn);
+        if (it == _all_ixns.end()) {
+            _all_ixns.push_back(ixn);
+        };
+    };
+    
+    // Set multiplier
+    void Lattice::set_multiplier_between_layers(int from_layer, int to_layer, double multiplier) {
+        if (to_layer != from_layer+1 && to_layer != from_layer-1) {
+            std::cerr << ">>> Lattice::set_multiplier <<< to_layer != from_layer +- 1; instead layer_2 = " << to_layer << " and from_layer = " << from_layer << std::endl;
+            exit(EXIT_FAILURE);
+        };
+        
+        _o2_mults[from_layer][to_layer] = multiplier;
+    };
+    void Lattice::set_multiplier_for_bias_in_layer(int layer, double multiplier) {
+        _bias_mults[layer] = multiplier;
+    };
+    
+    // Get ixns
+    double Lattice::get_bias_in_layer(int layer, Sptr sp) const {
+        
+        // Multiplier
+        double mult = 1.0;
+        auto itm = _bias_mults.find(layer);
+        if (itm != _bias_mults.end()) {
+            mult = itm->second;
+        };
+        
+        auto it = _bias_dict.find(layer);
+        double val = 0.0;
+        if (it != _bias_dict.end()) {
+            auto it2 = it->second.find(sp);
+            if (it2 != it->second.end()) {
+                val = it2->second->get_val();
+            };
+        };
+        return mult * val;
+    };
+    double Lattice::get_ixn_between_layers(int from_layer, Sptr from_sp, int to_layer, Sptr to_sp) const {
+        if (to_layer != from_layer+1 && to_layer != from_layer-1) {
+            std::cerr << ">>> Lattice::add_ixn_between_layers <<< to_layer != from_layer +- 1; instead to_layer = " << to_layer << " and from_layer = " << from_layer << std::endl;
+            exit(EXIT_FAILURE);
+        };
+        
+        // Multiplier
+        double mult = 1.0;
+        auto itm = _o2_mults.find(from_layer);
+        if (itm != _o2_mults.end()) {
+            auto itm2 = itm->second.find(to_layer);
+            if (itm2 != itm->second.end()) {
+                mult = itm2->second;
+                // std::cout << "Lattice::get_ixn_between_layers: from_layer = " << from_layer << " to to_layer = " << to_layer << " mult = " << mult << std::endl;
+            };
+        };
+        
+        double val = 0.0;
+        auto it1 = _o2_ixn_dict.find(from_layer);
+        if (it1 != _o2_ixn_dict.end()) {
+            auto it2 = it1->second.find(from_sp);
+            if (it2 != it1->second.end()) {
+                auto it3 = it2->second.find(to_layer);
+                if (it3 != it2->second.end()) {
+                    auto it4 = it3->second.find(to_sp);
+                    if (it4 != it3->second.end()) {
+                        val = it4->second->get_val();
+                    };
+                };
+            };
+        };
+        
+        return mult * val;
+    };
+
+    // Get all ixns
+    const std::vector<Iptr>& Lattice::get_all_ixn_params() const {
+        return _all_ixns;
+    };
+    
 	/********************
 	Helpers to setup all sites - Visible-Visible ixns
 	********************/
 
-	void Lattice::all_conns_vv_init() {
-		all_conns_vv_init(nullptr);
-	};
-	void Lattice::all_conns_vv_init(std::shared_ptr<O2IxnDict> ixn_dict) {
-		// Neighbor
-		UnitVisible *nbr = nullptr;
-
-		// Lattice sites
-		for (auto const &s: _latt_v) {
-
-			// Only connect to "plus one" (not minus one) => no duplicates!
-
-			// Dim 1,2,3
-			if (s->x()+1 <= _box_length) {
-				if (_no_dims == 1) {
-					nbr = _look_up_unit_v(s->x()+1);
-				} else if (_no_dims == 2) {
-					nbr = _look_up_unit_v(s->x()+1,s->y());
-				} else if (_no_dims == 3) {
-					nbr = _look_up_unit_v(s->x()+1,s->y(),s->z());
-				};
-				add_conn_vv(s,nbr,ixn_dict);
-			};
-
-			// Dim 2,3
-			if (_no_dims == 2 || _no_dims == 3) {
-				if (s->y()+1 <= _box_length) {
-					if (_no_dims == 2) {
-						nbr = _look_up_unit_v(s->x(),s->y()+1);
-					} else if (_no_dims == 3) {
-						nbr = _look_up_unit_v(s->x(),s->y()+1,s->z());
-					};
-					add_conn_vv(s,nbr,ixn_dict);
-				};
-			};
-
-			// Dim 3
-			if (_no_dims == 3) {
-				if (s->z()+1 <= _box_length) {
-					if (_no_dims == 3) {
-						nbr = _look_up_unit_v(s->x(),s->y(),s->z()+1);
-					};
-					add_conn_vv(s,nbr,ixn_dict);
-				};
-			};
-		};
-	};
-
-	void Lattice::all_conns_vvv_init() {
-		all_conns_vvv_init(nullptr);
-	};
-
-	void Lattice::all_conns_vvv_init(std::shared_ptr<O3IxnDict> ixn_dict) {
-
-		// Neighbors
-		UnitVisible *nbr1 = nullptr, *nbr2 = nullptr;
-
-		// Go through all lattice sites
-		for (auto const &s: _latt_v) {
-
-			// Only connect to "plus one/two" (not minus one/two) => no duplicates!
-
-			// Dim 1,2,3
-			// Right 1, Right 1
-			if (s->x()+2 <= _box_length) {
-				if (_no_dims == 1) {
-					nbr1 = _look_up_unit_v(s->x()+1);
-					nbr2 = _look_up_unit_v(s->x()+2);
-				} else if (_no_dims == 2) {
-					nbr1 = _look_up_unit_v(s->x()+1,s->y());
-					nbr2 = _look_up_unit_v(s->x()+2,s->y());
-				} else if (_no_dims == 3) {
-					nbr1 = _look_up_unit_v(s->x()+1,s->y(),s->z());
-					nbr2 = _look_up_unit_v(s->x()+2,s->y(),s->z());
-				};
-				add_conn_vvv(s,nbr1,nbr2,ixn_dict);
-			};
-
-			// Dim 2,3
-			if (_no_dims == 2 || _no_dims == 3) {
-				// Up 1, up 1
-				if (s->y()+2 <= _box_length) {
-					if (_no_dims == 2) {
-						nbr1 = _look_up_unit_v(s->x(),s->y()+1);
-						nbr2 = _look_up_unit_v(s->x(),s->y()+2);
-					} else if (_no_dims == 3) {
-						nbr1 = _look_up_unit_v(s->x(),s->y()+1,s->z());
-						nbr2 = _look_up_unit_v(s->x(),s->y()+2,s->z());
-					};
-					add_conn_vvv(s,nbr1,nbr2,ixn_dict);
-				};
-				// Up 1, right 1
-				if (s->x()+1 <= _box_length && s->y()+1 <= _box_length) {
-					if (_no_dims == 2) {
-						nbr1 = _look_up_unit_v(s->x(),s->y()+1);
-						nbr2 = _look_up_unit_v(s->x()+1,s->y()+1);
-					} else if (_no_dims == 3) {
-						nbr1 = _look_up_unit_v(s->x(),s->y()+1,s->z());
-						nbr2 = _look_up_unit_v(s->x()+1,s->y()+1,s->z());
-					};
-					add_conn_vvv(s,nbr1,nbr2,ixn_dict);
-				};
-				// Right 1, up 1
-				if (s->x()+1 <= _box_length && s->y()+1 <= _box_length) {
-					if (_no_dims == 2) {
-						nbr1 = _look_up_unit_v(s->x()+1,s->y());
-						nbr2 = _look_up_unit_v(s->x()+1,s->y()+1);
-					} else if (_no_dims == 3) {
-						nbr1 = _look_up_unit_v(s->x()+1,s->y(),s->z());
-						nbr2 = _look_up_unit_v(s->x()+1,s->y()+1,s->z());
-					};
-					add_conn_vvv(s,nbr1,nbr2,ixn_dict);
-				};
-			};
-
-			// Dim 3
-			if (_no_dims == 3) {
-				// Forward 1, forward 1
-				if (s->z()+2 <= _box_length) {
-					if (_no_dims == 3) {
-						nbr1 = _look_up_unit_v(s->x(),s->y(),s->z()+1);
-						nbr2 = _look_up_unit_v(s->x(),s->y(),s->z()+2);
-					};
-					add_conn_vvv(s,nbr1,nbr2,ixn_dict);
-				};
-				// Forward 1, right 1
-				if (s->x()+1 <= _box_length && s->z()+1 <= _box_length) {
-					if (_no_dims == 3) {
-						nbr1 = _look_up_unit_v(s->x(),s->y(),s->z()+1);
-						nbr2 = _look_up_unit_v(s->x()+1,s->y(),s->z()+1);
-					};
-					add_conn_vvv(s,nbr1,nbr2,ixn_dict);
-				};
-				// Right 1, forward 1
-				if (s->x()+1 <= _box_length && s->z()+1 <= _box_length) {
-					if (_no_dims == 3) {
-						nbr1 = _look_up_unit_v(s->x()+1,s->y(),s->z());
-						nbr2 = _look_up_unit_v(s->x()+1,s->y(),s->z()+1);
-					};
-					add_conn_vvv(s,nbr1,nbr2,ixn_dict);
-				};
-				// Forward 1, up 1
-				if (s->y()+1 <= _box_length && s->z()+1 <= _box_length) {
-					if (_no_dims == 3) {
-						nbr1 = _look_up_unit_v(s->x(),s->y(),s->z()+1);
-						nbr2 = _look_up_unit_v(s->x(),s->y()+1,s->z()+1);
-					};
-					add_conn_vvv(s,nbr1,nbr2,ixn_dict);
-				};
-				// Up 1, forward 1
-				if (s->y()+1 <= _box_length && s->z()+1 <= _box_length) {
-					if (_no_dims == 3) {
-						nbr1 = _look_up_unit_v(s->x(),s->y()+1,s->z());
-						nbr2 = _look_up_unit_v(s->x(),s->y()+1,s->z()+1);
-					};
-					add_conn_vvv(s,nbr1,nbr2,ixn_dict);
-				};
-			};
-		};
-	};
-
-	/********************
-	Helpers to setup all sites - Set ixn dicts of connections
-	********************/
-
-	void Lattice::all_conns_vv_set_ixn_dict(std::shared_ptr<O2IxnDict> ixn_dict) {
-		for (auto &conn: _conns_vv) {
-			conn->set_ixn_dict(ixn_dict);
-		};
-	};
-	void Lattice::all_conns_vvv_set_ixn_dict(std::shared_ptr<O3IxnDict> ixn_dict) {
-		for (auto &conn: _conns_vvv) {
-			conn->set_ixn_dict(ixn_dict);
-		};
-	};
-	void Lattice::all_conns_vh_set_ixn_dict(std::shared_ptr<O2IxnDict> ixn_dict) {
-		for (auto &conn: _conns_vh) {
-			conn->set_ixn_dict(ixn_dict);
-		};
-	};
-
-	/********************
-	Helpers to setup all sites - Link units to moments
-	********************/
-
-	void Lattice::all_units_v_add_to_moment_h(std::shared_ptr<Moment> moment) {
-		for (auto &s: _latt_v) {
-			moment->add_unit_to_monitor_h(s);
-		};
-	};
-	void Lattice::all_units_h_add_to_moment_b(std::shared_ptr<Moment> moment) {
-		for (auto &pr: _latt_h) {
-			for (auto &s: pr.second) {
-				moment->add_unit_to_monitor_b(s);
-			};
-		};
-	};
-	void Lattice::all_conns_vv_add_to_moment_j(std::shared_ptr<Moment> moment) {
-		for (auto &c: _conns_vv) {
-			moment->add_conn_to_monitor_j(c);
-		};
-	};
-	void Lattice::all_conns_vvv_add_to_moment_k(std::shared_ptr<Moment> moment) {
-		for (auto &c: _conns_vvv) {
-			moment->add_conn_to_monitor_k(c);
-		};
-	};
-	void Lattice::all_conns_vh_add_to_moment_w(std::shared_ptr<Moment> moment) {
-		for (auto &c: _conns_vh) {
-			moment->add_conn_to_monitor_w(c);
-		};
-	};
-
-	/********************
-	Add visible-visible connections
-	********************/
-
-	ConnVV* Lattice::add_conn_vv(UnitVisible *uv1, UnitVisible *uv2) {
-		_conns_vv.push_back(new ConnVV(uv1,uv2));
-		uv1->add_conn(_conns_vv.back(),0);
-		uv2->add_conn(_conns_vv.back(),1);
-		return _conns_vv.back();
-	};
-	ConnVV* Lattice::add_conn_vv(UnitVisible *uv1, UnitVisible *uv2, std::shared_ptr<O2IxnDict> ixn_dict) {
-		add_conn_vv(uv1,uv2);
-		if (ixn_dict) {
-			_conns_vv.back()->set_ixn_dict(ixn_dict);
-		};
-		return _conns_vv.back();
-	};
-	ConnVVV* Lattice::add_conn_vvv(UnitVisible *uv1, UnitVisible *uv2, UnitVisible *uv3) {
-		_conns_vvv.push_back(new ConnVVV(uv1,uv2,uv3));
-		uv1->add_conn(_conns_vvv.back(),0);
-		uv2->add_conn(_conns_vvv.back(),1);
-		uv3->add_conn(_conns_vvv.back(),2);
-		return _conns_vvv.back();
-	};
-	ConnVVV* Lattice::add_conn_vvv(UnitVisible *uv1, UnitVisible *uv2, UnitVisible *uv3, std::shared_ptr<O3IxnDict> ixn_dict) {
-		add_conn_vvv(uv1,uv2,uv3);
-		if (ixn_dict) {
-			_conns_vvv.back()->set_ixn_dict(ixn_dict);
-		};
-		return _conns_vvv.back();
-	};
-
-	/********************
-	Add hidden units
-	********************/
-
-	UnitHidden* Lattice::add_hidden_unit(int layer) {
-		return add_hidden_unit(layer,{});
-	};
-	UnitHidden* Lattice::add_hidden_unit(int layer, std::vector<Sptr> species_possible) {
-		auto it = _latt_h.find(layer);
-		int idx;
-		if (it != _latt_h.end()) {
-			idx = it->second.size();
-		} else {
-			idx = 0;
-		};
-		_latt_h[layer].push_back(new UnitHidden(layer,idx,species_possible));
-		_latt_h_idxs[layer].push_back(_latt_h[layer].size()-1);
-		return _latt_h[layer].back();
-	};
-
-	/********************
-	Add visible-hidden connections
-	********************/
-
-	ConnVH* Lattice::add_conn_vh(UnitVisible *uv, UnitHidden *uh) { 
-		_conns_vh.push_back(new ConnVH(uv,uh));
-		uv->add_conn(_conns_vh.back());
-		uh->add_conn(_conns_vh.back());
-		return _conns_vh.back();
-	};
-	ConnVH* Lattice::add_conn_vh(UnitVisible *uv, UnitHidden *uh, std::shared_ptr<O2IxnDict> ixn_dict) {
-		add_conn_vh(uv,uh);
-		if (ixn_dict) {
-			_conns_vh.back()->set_ixn_dict(ixn_dict);
-		};
-		return _conns_vh.back();
-	};
-
-	/********************
-	Add hidden-hidden connections
-	********************/
-
-	ConnHH* Lattice::add_conn_hh(UnitHidden *uh1, int layer_1, UnitHidden *uh2, int layer_2) {
-		_conns_hh.push_back(new ConnHH(uh1,uh2));
-		uh1->add_conn(_conns_hh.back(),0,layer_2);
-		uh2->add_conn(_conns_hh.back(),1,layer_1);
-		return _conns_hh.back();
-	};
-	ConnHH* Lattice::add_conn_hh(UnitHidden *uh1, int layer_1, UnitHidden *uh2, int layer_2, std::shared_ptr<O2IxnDict> ixn_dict) {
-		add_conn_hh(uh1,layer_1,uh2,layer_2);
-		if (ixn_dict) {
-			_conns_hh.back()->set_ixn_dict(ixn_dict);
-		};
-		return _conns_hh.back();
-	};
-
-	/********************
-	Get unit
-	********************/
-
-	const std::vector<UnitVisible*>& Lattice::get_all_units_v() const {
-		return _latt_v;
-	};
-	const std::vector<UnitHidden*>& Lattice::get_all_units_h(int layer) const {
-		auto it = _latt_h.find(layer);
-		if (it != _latt_h.end()) {
-			return it->second;
-		};
-
-		// Never get here
-		std::cerr << ">>> Error: Lattice::get_all_units_h <<< no units in layer: " << layer << std::endl;
-		exit(EXIT_FAILURE);
-	};
-	const std::map<int,std::vector<UnitHidden*>>& Lattice::get_all_units_h() const {
-		return _latt_h;
-	};
-
-	UnitVisible* Lattice::get_unit_v(int x) const {
-		_check_dim(1);
-		return _look_up_unit_v(x);
-	};
-	UnitVisible* Lattice::get_unit_v(int x, int y) const {
-		_check_dim(2);
-		return _look_up_unit_v(x,y);
-	};
-	UnitVisible* Lattice::get_unit_v(int x, int y, int z) const {
-		_check_dim(3);
-		return _look_up_unit_v(x,y,z);
-	};
-
-	UnitHidden* Lattice::get_unit_h(int layer, int idx) const {
-		return _look_up_unit_h(layer,idx);
-	};
-
-	/********************
-	Get connection
-	********************/
-
-	ConnVV* Lattice::get_conn_vv(int x1, int x2) const {
-		_check_dim(1);
-
-		UnitVisible *uv1 = _look_up_unit_v(x1);
-		UnitVisible *uv2 = _look_up_unit_v(x2);
-
-		std::vector<std::pair<ConnVV*,int>> conns = uv1->get_conns_vv();
-		for (auto &conn: conns) {
-			if (conn.first->check_connects_units(uv1,uv2)) {
-				return conn.first;
-			};
-		};
-
-		// Never get here
-		std::cerr << ">>> Error: Lattice::get_conn_vv <<< Connection: " << x1 << " to " << x2 << " not found!" << std::endl;
-		exit(EXIT_FAILURE);
-	};
-	ConnVV* Lattice::get_conn_vv(int x1, int y1, int x2, int y2) const {
-		_check_dim(2);
-
-		UnitVisible *uv1 = _look_up_unit_v(x1,y1);
-		UnitVisible *uv2 = _look_up_unit_v(x2,y2);
-
-		std::vector<std::pair<ConnVV*,int>> conns = uv1->get_conns_vv();
-		for (auto &conn: conns) {
-			if (conn.first->check_connects_units(uv1,uv2)) {
-				return conn.first;
-			};
-		};
-
-		// Never get here
-		std::cerr << ">>> Error: Lattice::get_conn_vv <<< Connection: " << x1 << " " << y1 << " to " << x2 << " " << y2 << " not found!" << std::endl;
-		exit(EXIT_FAILURE);
-	};
-	ConnVV* Lattice::get_conn_vv(int x1, int y1, int z1, int x2, int y2, int z2) const {
-		_check_dim(3);
-
-		UnitVisible *uv1 = _look_up_unit_v(x1,y1,z1);
-		UnitVisible *uv2 = _look_up_unit_v(x2,y2,z2);
-
-		std::vector<std::pair<ConnVV*,int>> conns = uv1->get_conns_vv();
-		for (auto &conn: conns) {
-			if (conn.first->check_connects_units(uv1,uv2)) {
-				return conn.first;
-			};
-		};
-
-		// Never get here
-		std::cerr << ">>> Error: Lattice::get_conn_vv <<< Connection: " << x1 << " " << y1 << " " << z1 << " to " << x2 << " " << y2 << " " << z2 << " not found!" << std::endl;
-		exit(EXIT_FAILURE);
-	};
-
-	ConnVVV* Lattice::get_conn_vvv(int x1, int x2, int x3) const {
-		_check_dim(1);
-
-		UnitVisible *uv1 = _look_up_unit_v(x1);
-		UnitVisible *uv2 = _look_up_unit_v(x2);
-		UnitVisible *uv3 = _look_up_unit_v(x3);
-
-		std::vector<std::pair<ConnVVV*,int>> conns = uv1->get_conns_vvv();
-		for (auto &conn: conns) {
-			if (conn.first->check_connects_units(uv1,uv2,uv3)) {
-				return conn.first;
-			};
-		};
-
-		// Never get here
-		std::cerr << ">>> Error: Lattice::get_conn_vvv <<< Connection: " << x1 << " to " << x2 << " to " << x3 << " not found!" << std::endl;
-		exit(EXIT_FAILURE);
-	};
-	ConnVVV* Lattice::get_conn_vvv(int x1, int y1, int x2, int y2, int x3, int y3) const {
-		_check_dim(2);
-
-		UnitVisible *uv1 = _look_up_unit_v(x1,y1);
-		UnitVisible *uv2 = _look_up_unit_v(x2,y2);
-		UnitVisible *uv3 = _look_up_unit_v(x3,y3);
-
-		std::vector<std::pair<ConnVVV*,int>> conns = uv1->get_conns_vvv();
-		for (auto &conn: conns) {
-			if (conn.first->check_connects_units(uv1,uv2,uv3)) {
-				return conn.first;
-			};
-		};
-
-		// Never get here
-		std::cerr << ">>> Error: Lattice::get_conn_vvv <<< Connection: " << x1 << " " << y1 << " to " << x2 << " " << y2 << " to " << x3 << " " << y3 << " not found!" << std::endl;
-		exit(EXIT_FAILURE);	
-	};
-	ConnVVV* Lattice::get_conn_vvv(int x1, int y1, int z1, int x2, int y2, int z2, int x3, int y3, int z3) const {
-		_check_dim(3);
-
-		UnitVisible *uv1 = _look_up_unit_v(x1,y1,z1);
-		UnitVisible *uv2 = _look_up_unit_v(x2,y2,z2);
-		UnitVisible *uv3 = _look_up_unit_v(x3,y3,z3);
-
-		std::vector<std::pair<ConnVVV*,int>> conns = uv1->get_conns_vvv();
-		for (auto &conn: conns) {
-			if (conn.first->check_connects_units(uv1,uv2,uv3)) {
-				return conn.first;
-			};
-		};
-
-		// Never get here
-		std::cerr << ">>> Error: Lattice::get_conn_vvv <<< Connection: " << x1 << " " << y1 << " " << z1 << " to " << x2 << " " << y2 << " " << z2 << " to " << x3 << " " << y3 << " " << z3 << " not found!" << std::endl;
-		exit(EXIT_FAILURE);
-	};
-
-	ConnVH* Lattice::get_conn_vh(int x, int layer, int idx) const {
-		_check_dim(1);
-
-		UnitVisible *uv = _look_up_unit_v(x);
-		UnitHidden *uh = _look_up_unit_h(layer,idx);
-
-		std::vector<ConnVH*> conns = uv->get_conns_vh();
-		for (auto &conn: conns) {
-			if (conn->check_connects_units(uv,uh)) {
-				return conn;
-			};
-		};
-
-		// Never get here
-		std::cerr << ">>> Error: Lattice::get_conn_vh <<< Connection: " << x << " to " << layer << " " << idx << " not found!" << std::endl;
-		exit(EXIT_FAILURE);
-	};
-	ConnVH* Lattice::get_conn_vh(int x, int y, int layer, int idx) const {
-		_check_dim(2);
-
-		UnitVisible *uv = _look_up_unit_v(x,y);
-		UnitHidden *uh = _look_up_unit_h(layer,idx);
-
-		std::vector<ConnVH*> conns = uv->get_conns_vh();
-		for (auto &conn: conns) {
-			if (conn->check_connects_units(uv,uh)) {
-				return conn;
-			};
-		};
-
-		// Never get here
-		std::cerr << ">>> Error: Lattice::get_conn_vh <<< Connection: " << x << " " << y << " to " << layer << " " << idx << " not found!" << std::endl;
-		exit(EXIT_FAILURE);
-	};
-	ConnVH* Lattice::get_conn_vh(int x, int y, int z, int layer, int idx) const {
-		_check_dim(3);
-
-		UnitVisible *uv = _look_up_unit_v(x,y,z);
-		UnitHidden *uh = _look_up_unit_h(layer,idx);
-
-		std::vector<ConnVH*> conns = uv->get_conns_vh();
-		for (auto &conn: conns) {
-			if (conn->check_connects_units(uv,uh)) {
-				return conn;
-			};
-		};
-
-		// Never get here
-		std::cerr << ">>> Error: Lattice::get_conn_vh <<< Connection: " << x << " " << y << " " << z << " to " << layer << " " << idx << " not found!" << std::endl;
-		exit(EXIT_FAILURE);
-	};
-
-	ConnHH* Lattice::get_conn_hh(int layer1, int idx1, int layer2, int idx2) const {
-		UnitHidden *uh1 = _look_up_unit_h(layer1,idx1);
-		UnitHidden *uh2 = _look_up_unit_h(layer2,idx2);
-
-		std::map<int,std::vector<std::pair<ConnHH*,int>>> conns = uh1->get_conns_hh();
-		auto it = conns.find(layer1);
-		if (it != conns.end()) {
-			for (auto &conn: it->second) {
-				if (conn.first->check_connects_units(uh1,uh2)) {
-					return conn.first;
-				};
-			};
-		};
-
-		// Never get here
-		std::cerr << ">>> Error: Lattice::get_conn_hh <<< Connection: " << layer1 << " " << idx1 << " to " << layer2 << " " << idx2 << " not found!" << std::endl;
-		exit(EXIT_FAILURE);
-	};
-
-	/********************
-	Getters
-	********************/
-
-	int Lattice::get_no_dims() const {
-		return _no_dims;
-	};
-	int Lattice::get_no_units_v() { 
-		return _latt_v.size(); 
-	};
-	int Lattice::get_no_units_h() { 
-		int count=0;
-		for (auto const &pr: _latt_h) {
-			count += pr.second.size();
-		};
-		return count; 
-	};
-
+    void Lattice::add_conn(int layer1, int x1, int layer2, int x2) {
+        int idx1 = _look_up_unit(layer1, x1);
+        int idx2 = _look_up_unit(layer2, x2);
+        _adj[layer1](idx1,idx2) = 1.0;
+    };
+    void Lattice::add_conn(int layer1, int x1, int y1, int layer2, int x2, int y2) {
+        int idx1 = _look_up_unit(layer1, x1, y1);
+        int idx2 = _look_up_unit(layer2, x2, y2);
+        _adj[layer1](idx1,idx2) = 1.0;
+    };
+    void Lattice::add_conn(int layer1, int x1, int y1, int z1, int layer2, int x2, int y2, int z2) {
+        int idx1 = _look_up_unit(layer1, x1, y1, z1);
+        int idx2 = _look_up_unit(layer2, x2, y2, z2);
+        _adj[layer1](idx1,idx2) = 1.0;
+    };
+    
 	/********************
 	Apply funcs to all units
 	********************/
 
 	// Clear the lattice
-	void Lattice::all_units_v_set_empty() {
-		for (auto &s: _latt_v) {
-			s->set_empty();
-		};
+	void Lattice::set_empty_all_units(MCType chain, int i_chain) {
+        for (auto layer=0; layer<_no_layers; layer++) {
+            set_empty_all_units_in_layer(chain, i_chain, layer);
+        };
 	};
-	void Lattice::all_units_h_set_empty() {
-		for (auto &pr: _latt_h) {
-			for (auto &s: pr.second) {
-				s->set_empty();
-			};
-		};
-	};
-	void Lattice::all_units_set_empty() {
-		all_units_v_set_empty();
-		all_units_h_set_empty();
-	};
+    void Lattice::set_empty_all_units_in_layer(MCType chain, int i_chain, int layer) {
+        for (auto sp: _species_possible_vec[layer]) {
+            _mc_chains[chain][i_chain][layer][sp].fill(0.0);
+        };
+    };
+    void Lattice::set_empty_all_hidden_units(MCType chain, int i_chain) {
+        for (auto layer=1; layer<_no_layers; layer++) {
+            set_empty_all_units_in_layer(chain, i_chain, layer);
+        };
+    };
 
-	// Binarize
-	void Lattice::all_units_v_binarize() {
-		for (auto &ptr: _latt_v) {
-			ptr->binarize();
-		};
-	};
-	void Lattice::all_units_h_binarize() {
-		for (auto &pr: _latt_h) {
-			for (auto &s: pr.second) {
-				s->binarize();
-			};
-		};
-	};
+    // Random
+    void Lattice::set_random_all_units(MCType chain, int i_chain, bool binary) {
+        for (auto layer=0; layer<_no_layers; layer++) {
+            set_random_all_units_in_layer(chain, i_chain, layer,binary);
+        };
+    };
+    void Lattice::set_random_all_units_in_layer(MCType chain, int i_chain, int layer, bool binary) {
+        // Random probs
+        for (auto sp: _species_possible_vec.at(layer)) {
+            _mc_chains[chain][i_chain][layer][sp].fill(arma::fill::randu);
+        };
+        
+        if (binary) {
+            binarize_all_units_in_layer(chain, i_chain, layer);
+        };
+    };
+    void Lattice::set_random_all_hidden_units(MCType chain, int i_chain, bool binary) {
+        for (auto layer=1; layer<_no_layers; layer++) {
+            set_random_all_units_in_layer(chain,i_chain,layer,binary);
+        };
+    };
+
+    // Binarize
+    void Lattice::binarize_all_units(MCType chain, int i_chain) {
+        for (auto layer=0; layer<_no_layers; layer++) {
+            binarize_all_units_in_layer(chain,i_chain,layer);
+        };
+    };
+    void Lattice::_binarize_all_units_in_layer(MCType chain, int i_chain, int layer, bool act) {
+        // Random vec
+        int no_units = get_no_units_in_layer(layer);
+        auto r = arma::vec(no_units,arma::fill::randu);
+        
+        // Helpers
+        
+        // Running for evaluating propensities
+        auto running = arma::vec(no_units,arma::fill::zeros);
+        
+        // flip vector:
+        // 1 initially = rand is above current propensity
+        // 0 = rand is below current propensity
+        auto flip = arma::vec(no_units,arma::fill::ones);
+        auto new_flip = flip;
+
+        // _latt or _latt_act?
+        if (act) {
+            
+            // Convert to propensities
+            for (auto sp: _species_possible_vec.at(layer)) {
+                running += _mc_chains_act[chain][i_chain][layer][sp];
+                _mc_chains_act[chain][i_chain][layer][sp] = running;
+            };
+            
+            // Evaluate
+            // Initially: we (flip) are at zero, rand value is somewhere above
+            // Next: we (flip) are at some propensity, rand value may be somewhere above or below
+            // Finally: we (flip) are at max propensity = 1.0, rand value is below
+            for (auto sp: _species_possible_vec.at(layer)) {
+                // New flip vector
+                new_flip = 0.5*sign(r - _mc_chains_act[chain][i_chain][layer][sp]) + 0.5;
+                // flip -> new_flip
+                // 1 -> 1 => not this species => (flip - new_flip) = 0
+                // 1 -> 0 => yes this species => (flip - new_flip) = 1
+                // 0 -> 0 => already assigned a previous species  => (flip - new_flip) = 0
+                _mc_chains_act[chain][i_chain][layer][sp] = flip - new_flip;
+                
+                // Old flip vector = new flip vector
+                flip = new_flip;
+            };
+            // Finally: if still above the final propensity, it is the empty species! This means all are zero, so no further adjustment needed!
+            
+        } else {
+            
+            // As above but with _latt
+            for (auto sp: _species_possible_vec.at(layer)) {
+                running += _mc_chains[chain][i_chain][layer][sp];
+                _mc_chains[chain][i_chain][layer][sp] = running;
+            };
+            
+            for (auto sp: _species_possible_vec.at(layer)) {
+                new_flip = 0.5*sign(r - _mc_chains[chain][i_chain][layer][sp]) + 0.5;
+                _mc_chains[chain][i_chain][layer][sp] = flip - new_flip;
+                flip = new_flip;
+            };
+        };
+    };
+    void Lattice::binarize_all_units_in_layer(MCType chain, int i_chain, int layer) {
+        _binarize_all_units_in_layer(chain,i_chain,layer,false);
+    };
+    void Lattice::binarize_all_hidden_units(MCType chain, int i_chain) {
+        for (auto layer=1; layer<_no_layers; layer++) {
+            binarize_all_units_in_layer(chain,i_chain,layer);
+        };
+    };
 
 	/********************
 	Write/read Latt to a file
 	********************/
 
-	void Lattice::write_to_file(std::string fname, bool binary) 
+	void Lattice::write_layer_to_file(MCType chain, int i_chain, int layer, std::string fname, bool binary) const
 	{
 		std::ofstream f;
 		f.open (fname);
-		for (auto const &l: _latt_v) {
-			auto nonzero_map = l->get_nonzero_occs();
-			// Only write nonzero
-			if (nonzero_map.size() != 0) {
-
-				if (_no_dims == 1) {
-					f << l->x();
-				} else if (_no_dims == 2) {
-					f << l->x() << " " << l->y();
-				} else if (_no_dims == 3) {
-					f << l->x() << " " << l->y() << " " << l->z();
-				};
-
-				if (binary) {
-
-					// Ensure binary
-					if (nonzero_map.size() != 1) {
-						std::cerr << ">>> Lattice::write_to_file <<< Error: indicated to write binary mode, but site is not binary!" << std::endl;
-						exit(EXIT_FAILURE);
-					};
-
-					// binary
-					for (auto const &pr: nonzero_map) {
-						f << " " << pr.first->get_name();
-					};
-				} else {
-					// multiple
-					for (auto const &pr: nonzero_map) {
-						f << " " << pr.first->get_name() << " " << pr.second;
-					};
-				};
-				f << "\n";
-			};
+		if (!f.is_open()) { // make sure we found it
+			std::cerr << ">>> Lattice::write_layer_to_file <<< Error: could not open file: " << fname << " for writing" << std::endl;
+			exit(EXIT_FAILURE);
 		};
+        
+        // Go through all units
+        int no_units = get_no_units_in_layer(layer);
+        auto slatt = _mc_chains.at(chain).at(i_chain).at(layer);
+        auto sps = _species_possible_vec.at(layer);
+        std::vector<int> pos;
+        if (binary) {
+
+            // Binary
+
+            // Go through all units
+            for (auto unit=0; unit<no_units; unit++) {
+                
+                // Go through species possible
+                for (auto sp: sps) {
+                    if (abs(slatt.at(sp)(unit) - 1.0) < 1.0e-5) {
+                        // Write pos
+                        pos = _look_up_pos(layer,unit);
+                        for (auto const &x: pos) {
+                            f << x << " ";
+                        };
+                        
+                        // Write species
+                        f << sp->get_name() << "\n";
+                        break;
+                    };
+                };
+            };
+                
+        } else {
+                
+            // Not binary
+            
+            // Go through all units
+            for (auto unit=0; unit<no_units; unit++) {
+                
+                // Write pos
+                pos = _look_up_pos(layer,unit);
+                for (auto const &x: pos) {
+                    f << x << " ";
+                };
+
+                // Go through species possible
+                for (auto sp: sps) {
+                    // Write species
+                    f << sp->get_name() << " " << slatt.at(sp)(unit) << " ";
+                };
+                f << "\n";
+            };
+        };
+        
 		f.close();
 	};
 
-	void Lattice::init_file_reader(std::vector<Sptr> species_possible) {
-		for (auto sp: species_possible) {
-			_IO_species_possible[sp->get_name()] = sp;
-		};
-		_IO_did_init = true;
-	};
-	void Lattice::read_from_file(std::string fname, bool binary)
+	void Lattice::read_layer_from_file(MCType chain, int i_chain, int layer, std::string fname, bool binary)
 	{
-		if (!_IO_did_init) {
-			std::cerr << ">>> Lattice::read_from_file <<< Error: run init_file_reader first!" << std::endl;
+		// Clear the layer
+        set_empty_all_units_in_layer(chain, i_chain, layer);
+
+		// Open
+		std::ifstream f;
+		f.open(fname);
+		if (!f.is_open()) { // make sure we found it
+			std::cerr << ">>> Error: Lattice::read_layer_from_file <<< could not find file: " << fname << std::endl;
 			exit(EXIT_FAILURE);
 		};
 
-		// Clear the current lattice
-		all_units_set_empty();
+        std::map<std::string, std::vector<int>> occs_to_write_binary;
+        std::map<std::string, std::vector<std::pair<int,double>>> occs_to_write_prob;
 
-		// Map: species to sites
-		std::map<std::string, std::vector<UnitVisible*>> occs_to_write_binary;
-		std::map<std::string, std::vector<std::pair<UnitVisible*,double>>> occs_to_write_prob;
+        std::string x="",y="",z="";
+        std::string sp="";
+        std::string line;
+        std::istringstream iss;
+        int s;
+        std::string prob="";
+        double prob_val;
 
-		std::ifstream f;
-		f.open(fname);
-		std::string x="",y="",z="";
-		std::string sp="";
-		std::string line;
-		std::istringstream iss;
-		UnitVisible* s;
-		std::string prob="";
-		double prob_val;
-		if (f.is_open()) { // make sure we found it
+        if (_no_dims == 1 && binary) {
+            while (getline(f,line)) {
+                if (line == "") { continue; };
+                iss = std::istringstream(line);
+                iss >> x >> sp;
+                s = _look_up_unit(layer,atoi(x.c_str()));
+                occs_to_write_binary[sp].push_back(s);
+                // Reset
+                sp=""; x="";
+            };
+        } else if (_no_dims == 1 && !binary) {
+            while (getline(f,line)) {
+                if (line == "") { continue; };
+                iss = std::istringstream(line);
+                iss >> x;
+                s = _look_up_unit(layer,atoi(x.c_str()));
+                for (auto i=0; i<_species_possible_vec[layer].size(); i++) {
+                    iss >> sp >> prob;
+                    prob_val = atof(prob.c_str());
+                    occs_to_write_prob[sp].push_back(std::make_pair(s,prob_val));
+                    // Reset
+                    sp=""; prob="";
+                };
+                // Reset
+                x="";
+            };
+        } else if (_no_dims == 2 && binary) {
+            while (getline(f,line)) {
+                if (line == "") { continue; };
+                iss = std::istringstream(line);
+                iss >> x >> y >> sp;
+                s = _look_up_unit(layer,atoi(x.c_str()),atoi(y.c_str()));
+                occs_to_write_binary[sp].push_back(s);
+                // Reset
+                sp=""; x=""; y="";
+            };
+        } else if (_no_dims == 2 && !binary) {
+            while (getline(f,line)) {
+                if (line == "") { continue; };
+                iss = std::istringstream(line);
+                iss >> x >> y;
+                s = _look_up_unit(layer,atoi(x.c_str()),atoi(y.c_str()));
+                for (auto i=0; i<_species_possible_vec[layer].size(); i++) {
+                    iss >> sp >> prob;
+                    prob_val = atof(prob.c_str());
+                    occs_to_write_prob[sp].push_back(std::make_pair(s,prob_val));
+                    // Reset
+                    sp=""; prob="";
+                };
+                // Reset
+                x=""; y="";
+            };
+        } else if (_no_dims == 3 && binary) {
+            while (getline(f,line)) {
+                if (line == "") { continue; };
+                iss = std::istringstream(line);
+                iss >> x >> y >> z >> sp;
+                s = _look_up_unit(layer,atoi(x.c_str()),atoi(y.c_str()),atoi(z.c_str()));
+                occs_to_write_binary[sp].push_back(s);
+                // Reset
+                sp=""; x=""; y=""; z="";
+            };
+        } else if (_no_dims == 3 && !binary) {
+            while (getline(f,line)) {
+                if (line == "") { continue; };
+                iss = std::istringstream(line);
+                iss >> x >> y >> z;
+                s = _look_up_unit(layer,atoi(x.c_str()),atoi(y.c_str()),atoi(z.c_str()));
+                for (auto i=0; i<_species_possible_vec[layer].size(); i++) {
+                    iss >> sp >> prob;
+                    prob_val = atof(prob.c_str());
+                    occs_to_write_prob[sp].push_back(std::make_pair(s,prob_val));
+                    // Reset
+                    sp=""; prob="";
+                };
+                // Reset
+                x=""; y=""; z="";
+            };
+        };
 
-			if (_no_dims == 1 && binary) {
-				while (getline(f,line)) {
-					if (line == "") { continue; };
-					iss = std::istringstream(line);				
-					iss >> x >> sp;
-		    		s = _look_up_unit_v(atoi(x.c_str()));
-		    		occs_to_write_binary[sp].push_back(s);
-		    		// Reset
-			    	sp=""; x="";
-			    };
-			} else if (_no_dims == 1 && !binary) {
-				while (getline(f,line)) {
-					if (line == "") { continue; };
-					iss = std::istringstream(line);				
-					iss >> x;
-		    		s = _look_up_unit_v(atoi(x.c_str()));
-					for (auto i=0; i<_IO_species_possible.size(); i++) {
-						iss >> sp >> prob;
-			    		prob_val = atof(prob.c_str());
-			    		occs_to_write_prob[sp].push_back(std::make_pair(s,prob_val));
-			    		// Reset
-				    	sp=""; prob="";
-				    };
-					// Reset
-			    	x="";
-			    };			    
-			} else if (_no_dims == 2 && binary) {
-				while (getline(f,line)) {
-					if (line == "") { continue; };
-					iss = std::istringstream(line);				
-					iss >> x >> y >> sp;
-		    		s = _look_up_unit_v(atoi(x.c_str()),atoi(y.c_str()));
-		    		occs_to_write_binary[sp].push_back(s);
-		    		// Reset
-			    	sp=""; x=""; y="";
-			    };
-			} else if (_no_dims == 2 && !binary) {
-				while (getline(f,line)) {
-					if (line == "") { continue; };
-					iss = std::istringstream(line);				
-					iss >> x >> y;
-		    		s = _look_up_unit_v(atoi(x.c_str()),atoi(y.c_str()));
-					for (auto i=0; i<_IO_species_possible.size(); i++) {
-						iss >> sp >> prob;
-			    		prob_val = atof(prob.c_str());
-			    		occs_to_write_prob[sp].push_back(std::make_pair(s,prob_val));
-			    		// Reset
-				    	sp=""; prob="";
-				    };
-					// Reset
-			    	x=""; y="";
-			    };
-			} else if (_no_dims == 3 && binary) {
-				while (getline(f,line)) {
-					if (line == "") { continue; };
-					iss = std::istringstream(line);				
-					iss >> x >> y >> z >> sp;
-			    	s = _look_up_unit_v(atoi(x.c_str()),atoi(y.c_str()),atoi(z.c_str()));
-		    		occs_to_write_binary[sp].push_back(s);
-		    		// Reset
-			    	sp=""; x=""; y=""; z="";
-			    };
-			} else if (_no_dims == 3 && !binary) {
-				while (getline(f,line)) {
-					if (line == "") { continue; };
-					iss = std::istringstream(line);				
-					iss >> x >> y >> z;
-			    	s = _look_up_unit_v(atoi(x.c_str()),atoi(y.c_str()),atoi(z.c_str()));
-					for (auto i=0; i<_IO_species_possible.size(); i++) {
-						iss >> sp >> prob;
-			    		prob_val = atof(prob.c_str());
-			    		occs_to_write_prob[sp].push_back(std::make_pair(s,prob_val));
-			    		// Reset
-				    	sp=""; prob="";
-				    };
-					// Reset
-			    	x=""; y=""; z="";
-			    };
-			};		
-		};
+        if (binary) {
+            // Binary mode
+            for (auto const &pr: occs_to_write_binary) {
+                // find the species
+                auto it = _species_possible_map[layer].find(pr.first);
+                if (it == _species_possible_map[layer].end()) {
+                    std::cerr << ">>> Lattice::read_from_file <<< Error: could not find species (binary): " << pr.first << std::endl;
+                    exit(EXIT_FAILURE);
+                };
+                for (auto const &site: pr.second) {
+                    _mc_chains[chain][i_chain][layer][it->second][site] = 1.0;
+                };
+            };
+        } else {
+            // Prob mode
+            for (auto const &pr: occs_to_write_prob) {
+                // find the species
+                auto it = _species_possible_map[layer].find(pr.first);
+                if (it == _species_possible_map[layer].end()) {
+                    std::cerr << ">>> Lattice::read_from_file <<< Error: could not find species (prob): " << pr.first << std::endl;
+                    exit(EXIT_FAILURE);
+                };
+                for (auto const &site_pr: pr.second) {
+                    _mc_chains[chain][i_chain][layer][it->second][site_pr.first] = site_pr.second;
+                };
+            };
+        };
+        
 		f.close();
-
-		if (binary) {
-			// Binary mode
-			for (auto const &pr: occs_to_write_binary) {
-				// find the species
-				auto it = _IO_species_possible.find(pr.first);
-				if (it == _IO_species_possible.end()) {
-					std::cerr << ">>> Lattice::read_from_file <<< Error: could not find species: " << pr.first << std::endl;
-					exit(EXIT_FAILURE);
-				};
-				for (auto const &site: pr.second) {
-					site->set_occ(it->second,1.0);
-				};
-			};
-		} else {
-			// Prob mode
-			for (auto const &pr: occs_to_write_prob) {
-				// find the species
-				auto it = _IO_species_possible.find(pr.first);
-				if (it == _IO_species_possible.end()) {
-					std::cerr << ">>> Lattice::read_from_file <<< Error: could not find species: " << pr.first << std::endl;
-					exit(EXIT_FAILURE);
-				};
-				for (auto const &site_pr: pr.second) {
-					site_pr.first->set_occ(it->second,site_pr.second);
-				};
-			};
-		};
-
-		// std::cout << "Read: " << fname << std::endl;
 	};
 
-	/********************
-	Sample
-	********************/
+    // ***************
+    // MARK: - Activate layer steps - PRIVATE
+    // ***************
+    
+    // Reset activations to 0
+    void Lattice::_reset_activations(MCType chain, int i_chain, int layer) {
+        for (auto sp: _species_possible_vec.at(layer)) {
+            _mc_chains_act[chain][i_chain][layer][sp].fill(0.0);
+        };
+    };
+    
+    // Calculate bias
+    void Lattice::_calculate_bias(MCType chain, int i_chain, int layer) {
+        
+        // Get no units
+        int no_units = get_no_units_in_layer(layer);
+        
+        // Activate from below
+        for (auto sp: _species_possible_vec.at(layer)) {
+            
+            // bias term
+            _mc_chains_act[chain][i_chain][layer][sp] += get_bias_in_layer(layer, sp) * arma::vec(no_units,arma::fill::ones);
+            
+        };
+    };
+    
+    // Calculate activation given layer above or below
+    void Lattice::_calculate_activations_from_below(MCType chain, int i_chain, int layer) {
+        
+        // Activate from below
+        for (auto sp: _species_possible_vec.at(layer)) {
+            
+            // ixns
+            for (auto &given_sp: _species_possible_vec.at(layer-1)) {
+                // std::cout << "_calculate_activations_from_below: i_chain " << i_chain << " layer " << layer << " species below: " << given_sp->get_name() << " species above: " << sp->get_name() << " ixn: " << get_ixn_between_layers(layer-1, given_sp, layer, sp) << " adj: ... " << std::endl;
+                
+                // Activate from below
+                _mc_chains_act[chain][i_chain][layer][sp] += get_ixn_between_layers(layer-1, given_sp, layer, sp) * ( _adj[layer-1] * _mc_chains[chain][i_chain][layer-1][given_sp] );
+            };
+        };
+    };
+    
+    void Lattice::_calculate_activations_from_above(MCType chain, int i_chain, int layer) {
 
-	void Lattice::sample_down_h_to_v_at_timepoint(int timepoint, bool layer_wise, bool binary_visible, bool binary_hidden, bool parallel) {
+        // Activate from above
+        for (auto sp: _species_possible_vec.at(layer)) {
+            
+            // ixns
+            for (auto given_sp: _species_possible_vec.at(layer+1)) {
+                
+                // Activate from above
+                _mc_chains_act[chain][i_chain][layer][sp] += get_ixn_between_layers(layer+1, given_sp, layer, sp) * ( _adj[layer].t() * _mc_chains[chain][i_chain][layer+1][given_sp] );
+            };
+        };
+    };
 
-		// Go through hidden layers top to bottom (reverse)
-		auto rit_begin = _latt_h.rbegin();
-		rit_begin++; // Skip the first
+    // Calculate activation given layer above or below
+    void Lattice::_calculate_activations_from_below_bn(MCType chain, int i_chain, int layer) {
+        
+        // Activate from below and use batch norm
+        if (layer == 1) {
+            
+            // First hidden layer = eqn (7), part 1, terms 1 and 2
+            
+            for (auto sp: _species_possible_vec.at(layer)) {
+                
+                // ixns
+                for (auto &given_sp: _species_possible_vec.at(layer-1)) {
+                    
+                    // Activate from below
+                    _mc_chains_act[chain][i_chain][layer][sp] += get_ixn_between_layers(layer-1, given_sp, layer, sp) * ( _adj[layer-1] * _mc_chains[chain][i_chain][layer-1][given_sp] );
+                };
+            };
+            
+        } else {
+            
+            // Not the first layer = eqn (7), part 2, both terms
+            
+            for (auto sp: _species_possible_vec.at(layer)) {
+                
+                // ixns
+                for (auto given_sp: _species_possible_vec.at(layer-1)) {
+                    
+                    // Activate from below
+                    _mc_chains_act[chain][i_chain][layer][sp] += _bn_gamma_bar[chain][layer-1][given_sp] % ( get_ixn_between_layers(layer-1, given_sp, layer, sp) * ( _adj[layer-1] * _mc_chains[chain][i_chain][layer-1][given_sp] ) );
+                };
+            };
+        };
+    };
+    void Lattice::_calculate_activations_from_above_bn(MCType chain, int i_chain, int layer) {
+        
+        // Activate from above and use batch norm
+        
+        // Eqn (7), part 1, terms 1 and 3
+        // Note: this is equivalent to eqn (4)
+        
+        for (auto sp: _species_possible_vec.at(layer)) {
+            
+            // ixns
+            for (auto given_sp: _species_possible_vec.at(layer+1)) {
+                
+                // Activate from above
+                _mc_chains_act[chain][i_chain][layer][sp] += _bn_gamma_bar[chain][layer+1][given_sp] % ( get_ixn_between_layers(layer+1, given_sp, layer, sp) * ( _adj[layer].t() * _mc_chains[chain][i_chain][layer+1][given_sp] ) );
+            };
+        };
+    };
+    
+    // ***************
+    // MARK: - Activate layer steps - PUBLIC
+    // ***************
+    
+    // (1) Calculate activations for a specific layer
+    // Both directions
+    void Lattice::activate_layer_calculate(MCType chain, int layer) {
+        
+        // Calculate activations for all chains
+        for (auto i_chain=0; i_chain<_no_markov_chains.at(chain); i_chain++) {
+            // Reset
+            _reset_activations(chain,i_chain,layer);
+            
+            // Bias
+            _calculate_bias(chain, i_chain, layer);
+            
+            // Weights
+            if (layer != 0) {
+                _calculate_activations_from_below(chain,i_chain,layer);
+            };
+            if (layer != _no_layers-1) {
+                _calculate_activations_from_above(chain,i_chain,layer);
+            };
+        };
+    };
+    // Only one direction
+    void Lattice::activate_layer_calculate(MCType chain, int layer, int given_layer) {
+        
+        // Calculate activations for all chains
+        for (auto i_chain=0; i_chain<_no_markov_chains.at(chain); i_chain++) {
+            // Reset
+            _reset_activations(chain,i_chain,layer);
+            
+            // Bias
+            _calculate_bias(chain, i_chain, layer);
+            
+            // Weights
+            if (given_layer == layer - 1) {
+                _calculate_activations_from_below(chain,i_chain,layer);
+            } else if (given_layer == layer + 1) {
+                _calculate_activations_from_above(chain,i_chain,layer);
+            } else {
+                std::cerr << ">>> Lattice::activate_layer_calculate <<< given layer must be +- layer, but instead layer = " << layer << " and given layer = " << given_layer << std::endl;
+                exit(EXIT_FAILURE);
+            };
+        };
+    };
+    // (1) Calculate activations for a specific layer
+    // Both directions
+    void Lattice::activate_layer_calculate_bn(MCType chain, int layer) {
+        
+        // Calculate activations for all chains
+        for (auto i_chain=0; i_chain<_no_markov_chains.at(chain); i_chain++) {
+            // Reset
+            _reset_activations(chain,i_chain,layer);
+            
+            // Bias
+            _calculate_bias(chain, i_chain, layer);
+            
+            // Weights
+            if (layer != 0) {
+                _calculate_activations_from_below_bn(chain,i_chain,layer);
+            };
+            if (layer != _no_layers-1) {
+                _calculate_activations_from_above_bn(chain,i_chain,layer);
+            };
+        };
+    };
+    // Only one direction
+    void Lattice::activate_layer_calculate_bn(MCType chain, int layer, int given_layer) {
+        
+        // Calculate activations for all chains
+        for (auto i_chain=0; i_chain<_no_markov_chains.at(chain); i_chain++) {
+            // Reset
+            _reset_activations(chain,i_chain,layer);
+            
+            // Bias
+            _calculate_bias(chain, i_chain, layer);
+            
+            // Weights
+            if (given_layer == layer - 1) {
+                _calculate_activations_from_below_bn(chain,i_chain,layer);
+            } else if (given_layer == layer + 1) {
+                _calculate_activations_from_above_bn(chain,i_chain,layer);
+            } else {
+                std::cerr << ">>> Lattice::activate_layer_calculate <<< given layer must be +- layer, but instead layer = " << layer << " and given layer = " << given_layer << std::endl;
+                exit(EXIT_FAILURE);
+            };
+        };
+    };
 
-		if (layer_wise && parallel) {
+    // (2) Convert activations to probs
+    void Lattice::activate_layer_convert_to_probs(MCType chain, int layer, bool binary) {
+        
+        // All chains
+        for (auto i_chain=0; i_chain<_no_markov_chains.at(chain); i_chain++) {
+        
+            // Convert activations to propensities via exp
+            // Also calculate total propensity
+            // Starts at 1.0 = exp(0) for empty
+            int no_units = get_no_units_in_layer(layer);
+            auto prop_tot = arma::vec(no_units,arma::fill::ones);
+            for (auto sp: _species_possible_vec.at(layer)) {
+                _mc_chains_act[chain][i_chain][layer][sp] = exp(_mc_chains_act[chain][i_chain][layer][sp]);
+                prop_tot += _mc_chains_act[chain][i_chain][layer][sp];
+            };
+            
+            // Divide by total to normalize
+            // std::cout << "_convert_activations_to_probs: layer: " << layer << " binary: " << binary << std::endl;
+            /*
+            if (chain == MCType::AWAKE) {
+                std::cout << "Lattice::activate_layer_convert_to_probs: awake " << i_chain << " " << layer << " " << binary << std::endl;
+            } else {
+                std::cout << "Lattice::activate_layer_convert_to_probs: asleep " << i_chain << " " << layer << " " << binary << std::endl;
+            };
+             */
+            for (auto sp: _species_possible_vec.at(layer)) {
+                _mc_chains_act[chain][i_chain][layer][sp] /= prop_tot;
+                // std::cout << "prob: " << sp->get_name() << " : " << arma::sum(_mc_chains_act[chain][i_chain][layer][sp]) << std::endl;
+            };
+            
+            // Sample if binary
+            if (binary) {
+                _binarize_all_units_in_layer(chain,i_chain,layer,true);
+                /*
+                for (auto sp: _species_possible_vec.at(layer)) {
+                    std::cout << "binary " << sp->get_name() << " : " << arma::sum(_mc_chains_act[chain][i_chain][layer][sp]) << std::endl;
+                };
+                 */
+            };
+        };
+    };
+    
+    // (3) Commit the new probabilities
+    void Lattice::activate_layer_committ(MCType chain, int layer) {
+        /*
+        std::cout << "activate_layer_committ: layer: " << layer << " current size: " << std::endl;
+        for (auto &x: _latt[_i_markov_chain][layer]) {
+            std::cout << arma::size(x.second) << std::endl;
+        };
+        std::cout << "new size:" << std::endl;
+        for (auto &x: _latt_act[_i_markov_chain][layer]) {
+            std::cout << arma::size(x.second) << std::endl;
+        };
+         */
+        
+        // All chains
+        for (auto i_chain=0; i_chain<_no_markov_chains.at(chain); i_chain++) {
+            for (auto sp: _species_possible_vec.at(layer)) {
+                _mc_chains[chain][i_chain][layer][sp] = arma::vec(_mc_chains_act[chain][i_chain][layer][sp]);
+            };
+        };
+    };
+    
+    // ***************
+    // MARK: - Calculate activations in BN mode
+    // ***************
+    
+    void Lattice::calculate_bn_params(MCType chain) {
+        
+        // First: activate all layers (no BN params)
+        for (auto layer=0; layer<_no_layers; layer++) {
+            activate_layer_calculate(chain, layer);
+        };
+        
+        // Next: compute all means/vars, and from that beta-bar, gamma-bar
+        for (auto layer=1; layer<_no_layers; layer++) { // only for hidden layers
+            // Calculate means, vars
+            _bn_calculate_means_vars_from_activations(chain, layer);
+            
+            // Calculate beta, gamma
+            _bn_calculate_bar_params_from_means_vars(chain, layer);
+        };
+    };
+    
+    // ***************
+    // MARK: - Mean field / gibbs sampling
+    // ***************
+    
+    // Variational inference
+    void Lattice::mean_field_hiddens_step() {
+        
+        // Calculate BN params
+        /*
+        if (_bn_mode) {
+            calculate_bn_params(MCType::AWAKE);
+        };
+         */
+        
+        // Go through all layers
+        for (auto layer=1; layer<_no_layers; layer++) {
+            
+            // Calculate activations for all chains
+            /*
+            if (_bn_mode) {
+                activate_layer_calculate_bn(MCType::AWAKE, layer);
+            } else {
+                activate_layer_calculate(MCType::AWAKE, layer);
+            };
+             */
+            activate_layer_calculate(MCType::AWAKE, layer);
 
-			// Layer wise and in parallel
+            // Batch normalization
+            /*
+            if (_bn_mode && layer != 0) { // only hidden layers
+                
+                // Already have means, vars, beta-bar and gamma-bar from activate_layer_calculate
+                
+                // Apply affine transformations
+                _bn_apply_affine_transform_to_all_chains(MCType::AWAKE, layer);
+            };
+             */
+            
+            // Convert activations to probabilities and committ
+            // Use prob units!
+            activate_layer_convert_to_probs(MCType::AWAKE, layer, false);
+            activate_layer_committ(MCType::AWAKE, layer);
+        };
+    };
 
-			for (auto rit=rit_begin; rit!=_latt_h.rend(); ++rit)
-			{
-				for (auto const &idx: _latt_h_idxs[rit->first]) 
-				{
-					rit->second[idx]->prepare_sample_at_timepoint(timepoint, binary_hidden, rit->first+1);
-				};
-				for (auto const &idx: _latt_h_idxs[rit->first]) 
-				{
-					rit->second[idx]->committ_sample();
-				};
-			};			
+    // Sample
+    void Lattice::gibbs_sampling_step(bool binary_visible, bool binary_hidden) {
+        
+        // Activate in two blocks: odds and evens!
+        
+        // First the odd layers
 
-		} else if (layer_wise && !parallel) {
+        // Calculate BN params
+        /*
+        if (_bn_mode) {
+            calculate_bn_params(MCType::ASLEEP);
+        };
+         */
+        
+        for (auto layer=1; layer<_no_layers; layer += 2) {
 
-			// Layer wise and not in parallel
+            // Calculate activations for all chains, hidden layers
+            /*
+            if (_bn_mode) {
+                activate_layer_calculate_bn(MCType::ASLEEP, layer);
+            } else {
+                activate_layer_calculate(MCType::ASLEEP, layer);
+            };
+             */
+            activate_layer_calculate(MCType::ASLEEP, layer);
 
-			for (auto rit=rit_begin; rit!=_latt_h.rend(); ++rit)
-			{
-				// Shuffle
-				std::random_shuffle ( _latt_h_idxs[rit->first].begin(), _latt_h_idxs[rit->first].end() );
+            // Batch normalization
+            /*
+            if (_bn_mode && layer != 0) { // only hidden layers
+                
+                // Already have means, vars, beta-bar and gamma-bar from activate_layer_calculate
 
-				for (auto const &idx: _latt_h_idxs[rit->first]) 
-				{
-					rit->second[idx]->prepare_sample_at_timepoint(timepoint, binary_hidden, rit->first+1);
-					rit->second[idx]->committ_sample();
-				};
-			};
+                // Apply affine transformations
+                _bn_apply_affine_transform_to_all_chains(MCType::ASLEEP, layer);
+            };
+             */
 
-		} else if (!layer_wise && parallel) {
+            // Convert activations to probabilities and committ
+            activate_layer_convert_to_probs(MCType::ASLEEP, layer, binary_hidden);
+            activate_layer_committ(MCType::ASLEEP, layer);
+        };
+        
+        // Next the even layers
+        
+        // Calculate BN params AGAIN!
+        /*
+        if (_bn_mode) {
+            calculate_bn_params(MCType::ASLEEP);
+        };
+         */
+        
+        for (auto layer=0; layer<_no_layers; layer += 2) {
+            
+            // Calculate activations for all chains, hidden layers
+            /*
+            if (_bn_mode) {
+                activate_layer_calculate_bn(MCType::ASLEEP, layer);
+            } else {
+                activate_layer_calculate(MCType::ASLEEP, layer);
+            };
+             */
+            activate_layer_calculate(MCType::ASLEEP, layer);
 
-			// Not layer wise and in parallel
+            // Batch normalization
+            /*
+            if (_bn_mode && layer != 0) { // only hidden layers
+                
+                // Already have means, vars, beta-bar and gamma-bar from activate_layer_calculate
 
-			for (auto rit=rit_begin; rit!=_latt_h.rend(); ++rit)
-			{
-				for (auto const &idx: _latt_h_idxs[rit->first]) 
-				{
-					rit->second[idx]->prepare_sample_at_timepoint(timepoint, binary_hidden);
-				};
-				for (auto const &idx: _latt_h_idxs[rit->first]) 
-				{
-					rit->second[idx]->committ_sample();
-				};
-			};
+                // Apply affine transformations
+                _bn_apply_affine_transform_to_all_chains(MCType::ASLEEP, layer);
+            };
+            */
+            
+            // Convert activations to probabilities and committ
+            if (layer == 0) {
+                activate_layer_convert_to_probs(MCType::ASLEEP, layer, binary_visible);
+            } else {
+                activate_layer_convert_to_probs(MCType::ASLEEP, layer, binary_hidden);
+            };
+            activate_layer_committ(MCType::ASLEEP, layer);
+        };
+    };
+    void Lattice::gibbs_sampling_step_parallel(bool binary_visible, bool binary_hidden) {
+        
+        // Calculate BN params
+        /*
+        if (_bn_mode) {
+            calculate_bn_params(MCType::ASLEEP);
+        };
+         */
+        
+        // Activate in parallel
+        for (auto layer=0; layer<_no_layers; layer++) {
+            // Calculate activations for all chains, hidden layers
+            /*
+            if (_bn_mode) {
+                activate_layer_calculate_bn(MCType::ASLEEP, layer);
+            } else {
+                activate_layer_calculate(MCType::ASLEEP, layer);
+            };
+             */
+            activate_layer_calculate(MCType::ASLEEP, layer);
+        };
+        
+        // Batch normalization
+        /*
+        if (_bn_mode) {
+            
+            for (auto layer=1; layer<_no_layers; layer++) { // only hidden layers
 
-		} else if (!layer_wise && !parallel) {
+                // Already have means, vars, beta-bar and gamma-bar from activate_layer_calculate
 
-			// Not layer wise and not in parallel
+                // Apply affine transformations
+                _bn_apply_affine_transform_to_all_chains(MCType::ASLEEP, layer);
+            };
+        };
+         */
+        
+        // Convert activations to probabilities and committ
+        activate_layer_convert_to_probs(MCType::ASLEEP, 0, binary_visible);
+        activate_layer_committ(MCType::ASLEEP, 0);
+        for (auto layer=1; layer<_no_layers; layer++) {
+            activate_layer_convert_to_probs(MCType::ASLEEP, layer, binary_hidden);
+            activate_layer_committ(MCType::ASLEEP, layer);
+        };
+    };
+    
+    // Make a pass activating upwards
+    void Lattice::activate_upward_pass(MCType chain, bool binary_hidden) {
 
-			for (auto rit=rit_begin; rit!=_latt_h.rend(); ++rit)
-			{
-				// Shuffle
-				std::random_shuffle ( _latt_h_idxs[rit->first].begin(), _latt_h_idxs[rit->first].end() );
+        /*
+        if (_bn_mode) {
+            std::cerr << ">>> Lattice::activate_upward_pass <<< Not sure how to treat BN here!" << std::endl;
+            exit(EXIT_FAILURE);
+        };
+         */
+        
+        // All layers
+        for (auto layer=1; layer<_no_layers; layer++) {
+            
+            // Calculate activations
+            activate_layer_calculate(chain, layer, layer-1);
+            
+            // Batch normalization
+            /*
+            if (_bn_mode) {
+                
+                // Already have means, vars, beta-bar and gamma-bar from activate_layer_calculate
+                
+                // Apply affine transformations
+                _bn_apply_affine_transform_to_all_chains(chain, layer);
+            };
+             */
 
-				for (auto const &idx: _latt_h_idxs[rit->first]) 
-				{
-					rit->second[idx]->prepare_sample_at_timepoint(timepoint, binary_hidden);
-					rit->second[idx]->committ_sample();
-				};
-			};
-		};
-
-		// Finally, sample the visible layer
-
-		if (parallel) {
-
-			// Parallel
-
-			for (auto const &idx: _latt_v_idxs) 
-			{
-				_latt_v[idx]->prepare_sample_at_timepoint(timepoint,binary_visible);
-			};
-			for (auto const &idx: _latt_v_idxs) 
-			{
-				_latt_v[idx]->committ_sample();
-			};
-
-		} else {
-
-			// Not in parallel
-
-			// Shuffle
-			std::random_shuffle ( _latt_v_idxs.begin(), _latt_v_idxs.end() );		
-
-			for (auto const &idx: _latt_v_idxs) 
-			{
-				_latt_v[idx]->prepare_sample_at_timepoint(timepoint,binary_visible);
-				_latt_v[idx]->committ_sample();
-			};
-
-		};
-	};
-	void Lattice::sample_up_v_to_h_at_timepoint(int timepoint, bool layer_wise, bool binary_hidden, bool parallel) {
-
-		if (layer_wise && parallel) {
-
-			// Layer wise and in parallel
-
-			for (auto it=_latt_h.begin(); it!=_latt_h.end(); it++) 
-			{
-				for (auto const &idx: _latt_h_idxs[it->first]) 
-				{
-					it->second[idx]->prepare_sample_at_timepoint(timepoint, binary_hidden, it->first-1);
-				};
-				for (auto const &idx: _latt_h_idxs[it->first]) 
-				{
-					it->second[idx]->committ_sample();
-				};
-			};
-
-		} else if (layer_wise && !parallel) {
-
-			// Layer wise and not in parallel
-
-			for (auto it=_latt_h.begin(); it!=_latt_h.end(); it++) 
-			{
-				// Shuffle
-				std::random_shuffle ( _latt_h_idxs[it->first].begin(), _latt_h_idxs[it->first].end() );
-
-				for (auto const &idx: _latt_h_idxs[it->first]) 
-				{
-					it->second[idx]->prepare_sample_at_timepoint(timepoint, binary_hidden, it->first-1);
-					it->second[idx]->committ_sample();
-				};
-			};
-
-		} else if (!layer_wise && parallel) {
-
-			// Not layer wise and in parallel
-
-			for (auto it=_latt_h.begin(); it!=_latt_h.end(); it++) 
-			{
-				for (auto const &idx: _latt_h_idxs[it->first]) 
-				{
-					it->second[idx]->prepare_sample_at_timepoint(timepoint, binary_hidden);
-				};
-				for (auto const &idx: _latt_h_idxs[it->first]) 
-				{
-					it->second[idx]->committ_sample();
-				};
-			};
-
-		} else if (!layer_wise && !parallel) {
-
-			// Not layer wise and not in parallel
-
-			for (auto it=_latt_h.begin(); it!=_latt_h.end(); it++) 
-			{
-				// Shuffle
-				std::random_shuffle ( _latt_h_idxs[it->first].begin(), _latt_h_idxs[it->first].end() );
-
-				for (auto const &idx: _latt_h_idxs[it->first]) 
-				{
-					it->second[idx]->prepare_sample_at_timepoint(timepoint, binary_hidden);
-					it->second[idx]->committ_sample();
-				};
-			};
-		};
-	};
-
-	/********************
+            // Convert activations to probabilities and committ
+            activate_layer_convert_to_probs(chain, layer, binary_hidden);
+            
+            // Committ
+            activate_layer_committ(chain, layer);
+        };
+    };
+    void Lattice::activate_upward_pass_with_2x_weights_1x_bias(MCType chain, bool binary_hidden) {
+        // Copy over the mults for safekeeping
+        std::map<int, std::map<int, double>> o2_mults = _o2_mults;
+        std::map<int, double> bias_mults = _bias_mults;
+        
+        // 2x
+        for (auto layer=0; layer<_no_layers-1; layer++) {
+            // NOT the last layer!
+            if (layer != _no_layers-2) {
+                _o2_mults[layer][layer+1] = 2.0;
+            } else {
+                _o2_mults[layer][layer+1] = 1.0;
+            };
+        };
+        // 1x bias
+        for (auto layer=0; layer<_no_layers; layer++) {
+            _bias_mults[layer] = 1.0;
+        };
+        
+        // Activate upward pass
+        activate_upward_pass(chain, binary_hidden);
+        
+        // Copy back
+        _o2_mults = o2_mults;
+        _bias_mults = bias_mults;
+    };
+         
+    /********************
 	Get counts
 	********************/
-
+    
+    /*
 	// 1 particle
-	double Lattice::get_count(Sptr &sp) const {
-		double count = 0.0;
-		for (auto const &s: _latt_v) {
-			count += s->get_occ(sp);
-		};
-
-		return count;
+	double Lattice::get_count_vis(Sptr &sp) const {
+        return sum(_latt.at(_i_markov_chain).at(0).at(sp));
 	};
 
 	// 2 particle
-	double Lattice::get_count(Sptr &sp1, Sptr &sp2, bool reversibly) const {
+	double Lattice::get_count_vis(Sptr &sp1, Sptr &sp2, bool reversibly) const {
 		// Only dim=1 for now
 		if (_no_dims != 1) {
 			std::cerr << ">>> Error: Lattice::get_count <<< only supported for dim 1." << std::endl;
@@ -1222,7 +1427,7 @@ namespace dblz {
 	};
 
 	// 3 particle
-	double Lattice::get_count(Sptr &sp1, Sptr &sp2, Sptr &sp3, bool reversibly) const {
+	double Lattice::get_count_vis(Sptr &sp1, Sptr &sp2, Sptr &sp3, bool reversibly) const {
 		// Only dim=1 for now
 		if (_no_dims != 1) {
 			std::cerr << ">>> Error: Lattice::get_count <<< only supported for dim 1." << std::endl;
@@ -1251,7 +1456,7 @@ namespace dblz {
 	};
 
 	// 4 particle
-	double Lattice::get_count(Sptr &sp1, Sptr &sp2, Sptr &sp3, Sptr &sp4, bool reversibly) const {
+	double Lattice::get_count_vis(Sptr &sp1, Sptr &sp2, Sptr &sp3, Sptr &sp4, bool reversibly) const {
 		// Only dim=1 for now
 		if (_no_dims != 1) {
 			std::cerr << ">>> Error: Lattice::get_count <<< only supported for dim 1." << std::endl;
@@ -1279,66 +1484,170 @@ namespace dblz {
 
 		return count;
 	};
+     */
+    
+    // ***************
+    // MARK: - Reap moments
+    // ***************
+    
+    void Lattice::reap_moments(MCType chain) {
+        // Reset all ixns
+        for (auto ixn: _all_ixns) {
+            for (auto i_chain=0; i_chain<_no_markov_chains.at(chain); i_chain++) {
+                ixn->get_moment()->set_moment_sample(chain, i_chain, 0.0);
+            };
+        };
+        
+        // Reap biases
+        double val;
+        // Go over all chains
+        for (auto i_chain=0; i_chain<_no_markov_chains.at(chain); i_chain++) {
+            // All biases
+            for (auto &bias_layer: _bias_dict) {
+                // Go through possible species in this layer
+                for (auto &sp_pr: bias_layer.second) {
+                    // Get the moment
+                    val = arma::sum(_mc_chains.at(chain).at(i_chain).at(bias_layer.first).at(sp_pr.first));
+            
+                    // Set the moment
+                    if (sp_pr.second->get_moment()) {
+                        if (chain == MCType::ASLEEP || !sp_pr.second->get_moment()->get_is_awake_moment_fixed()) {
+                            sp_pr.second->get_moment()->increment_moment_sample(chain, i_chain, val);
+                        };
+                    };
+                };
+            };
+        };
+        
+        // Reap ixns
+        // Go over all chains
+        for (auto i_chain=0; i_chain<_no_markov_chains.at(chain); i_chain++) {
+            // All ixns
+            for (auto &o2_ixn_layer_1: _o2_ixn_dict) {
+                // Go through possible species in this layer
+                for (auto &sp_pr_1: o2_ixn_layer_1.second) {
+                    for (auto &o2_ixn_layer_2: sp_pr_1.second) {
+                        // Be careful not to double count
+                        if (o2_ixn_layer_2.first <= o2_ixn_layer_1.first) {
+                            // skip
+                            continue;
+                        };
+                        
+                        // Now ( layer 1 = o2_ixn_layer_1.first ) < ( layer 2 = o2_ixn_layer_2.first ) guaranteed
+                        
+                        for (auto &sp_pr_2: o2_ixn_layer_2.second) {
+                            // Get the moment
+                            val = dot(_mc_chains.at(chain).at(i_chain).at(o2_ixn_layer_1.first).at(sp_pr_1.first), _adj.at(o2_ixn_layer_1.first) * _mc_chains.at(chain).at(i_chain).at(o2_ixn_layer_2.first).at(sp_pr_2.first));
+                            
+                            // Set the moment
+                            if (sp_pr_2.second->get_moment()) {
+                                if (chain == MCType::ASLEEP || !sp_pr_2.second->get_moment()->get_is_awake_moment_fixed()) {
+                                    sp_pr_2.second->get_moment()->increment_moment_sample(chain, i_chain, val);
+                                };
+                            };
+                        };
+                    };
+                };
+            };
+        };
+        
+        // Gamma, beta
+        /*
+        if (_bn_mode) {
+            
+            // Calculate BN params
+            calculate_bn_params(chain);
+            
+            // Activate all chains again first (but not the visible layer!)
+            for (auto layer=1; layer<_no_layers; layer++) {
+                activate_layer_calculate_bn(chain, layer);
+                
+            };
+            
+            // Calculate mean, var
+            for (auto layer=1; layer<_no_layers; layer++) {
+                // _bn_calculate_means_vars_from_activations(chain, layer);
+                
+                // Transform all chains
+                for (auto i_chain=0; i_chain<_no_markov_chains.at(chain); i_chain++) {
+                    for (auto sp: _species_possible_vec[layer]) {
+                        
+                        _mc_chains_act[chain][i_chain][layer][sp] -= _bn_means[chain][layer][sp];
+                        
+                        _mc_chains_act[chain][i_chain][layer][sp] /= sqrt(_bn_vars[chain][layer][sp] + _bn_eps);
+                    };
+                };
+            };
+            
+            std::string cname = "awake";
+            if (chain == MCType::ASLEEP) {
+                cname = "asleep";
+            };
+            std::cout << cname << std::endl;
+            
+            // Assign
+            double val_gamma,val_beta;
+            for (auto layer=1; layer<_no_layers; layer++) {
+                for (auto sp: _species_possible_vec.at(layer)) {
+                    for (auto i_chain=0; i_chain<_no_markov_chains.at(chain); i_chain++) {
+                        // Calculate
+                        
+                        val_gamma = arma::dot(_mc_chains.at(chain).at(i_chain).at(layer).at(sp), _mc_chains_act.at(chain).at(i_chain).at(layer).at(sp));
+                        val_beta = arma::sum(_mc_chains.at(chain).at(i_chain).at(layer).at(sp));
+                        // Assign
+                        _bn_gamma[layer][sp]->get_moment()->set_moment_sample(chain, i_chain, val_gamma);
+                        _bn_beta[layer][sp]->get_moment()->set_moment_sample(chain, i_chain, val_beta);
+                    };
+                };
+            };
+        };
+         */
+    };
+    
+    // *******************
+    // MARK: - Batch normalization
+    // *******************
+    
+    // Calculate means from activations
+    void Lattice::_bn_calculate_means_vars_from_activations(MCType chain, int layer) {
+        // Reset
+        for (auto sp: _species_possible_vec[layer]) {
+            _bn_means[chain][layer][sp].fill(0.0);
+            _bn_vars[chain][layer][sp].fill(0.0);
+        };
+        
+        // Mean
+        for (auto sp: _species_possible_vec[layer]) {
+            for (auto i_chain=0; i_chain<_no_markov_chains[chain]; i_chain++) {
+                _bn_means[chain][layer][sp] += _mc_chains_act[chain][i_chain][layer][sp];
+            };
+            _bn_means[chain][layer][sp] /= _no_markov_chains[chain];
+        };
+        
+        // Variance
+        for (auto sp: _species_possible_vec[layer]) {
+            for (auto i_chain=0; i_chain<_no_markov_chains[chain]; i_chain++) {
+                _bn_vars[chain][layer][sp] += pow(_mc_chains_act[chain][i_chain][layer][sp] - _bn_means[chain][layer][sp],2);
+            };
+            _bn_vars[chain][layer][sp] /= _no_markov_chains[chain];
+        };
+    };
+    
+    // Calculate bar parameters from means, vars
+    void Lattice::_bn_calculate_bar_params_from_means_vars(MCType chain, int layer) {
+        for (auto sp: _species_possible_vec[layer]) {
+            _bn_beta_bar[chain][layer][sp] = _bn_beta[layer][sp]->get_val() - ( _bn_gamma[layer][sp]->get_val() * _bn_means[chain][layer][sp] / sqrt(_bn_vars[chain][layer][sp] + _bn_eps) );
+            _bn_gamma_bar[chain][layer][sp] = _bn_gamma[layer][sp]->get_val() / sqrt(_bn_vars[chain][layer][sp] + _bn_eps);
+        };
+    };
 
-	/****************************************
-	Lattice - PRIVATE
-	****************************************/
-
-	/********************
-	Lookup a site iterator from x,y,z
-	********************/
-
-	UnitVisible* Lattice::_look_up_unit_v(int x) const {
-		if (x > _box_length || x < 1) {
-			return nullptr;
-		};
-
-		// Figure out index in list
-		int n = x-1;
-
-		return _latt_v[n];
-	};
-	UnitVisible* Lattice::_look_up_unit_v(int x, int y) const {
-		if (x > _box_length || x < 1 || y > _box_length || y < 1) {
-			return nullptr;
-		};
-
-		// Figure out index in list
-		int n = (x-1)*_box_length + y-1;
-
-		return _latt_v[n];
-	};
-	UnitVisible* Lattice::_look_up_unit_v(int x, int y, int z) const {
-		if (x > _box_length || x < 1 || y > _box_length || y < 1 || z > _box_length || z < 1) {
-			return nullptr;
-		};
-
-		// Figure out index in list
-		int n = (x-1)*_box_length*_box_length + (y-1)*_box_length + z-1;
-
-		return _latt_v[n];
-	};
-
-	UnitHidden* Lattice::_look_up_unit_h(int layer, int idx) const {
-		auto it = _latt_h.find(layer);
-		if (it == _latt_h.end()) {
-			return nullptr;
-		};
-		if (idx >= it->second.size()) {
-			return nullptr;
-		};
-
-		return it->second[idx];
-	};
-
-	/********************
-	Check dim
-	********************/
-
-	void Lattice::_check_dim(int dim) const {
-		if (_no_dims != dim) {
-			std::cerr << ">>> Error: Lattice::_check_dim <<< dim is: " << _no_dims << " but requested: " << dim << std::endl;
-			exit(EXIT_FAILURE);
-		};	
-	};
+    // Apply BN transform
+    void Lattice::_bn_apply_affine_transform_to_all_chains(MCType chain, int layer) {
+        for (auto i_chain=0; i_chain<_no_markov_chains[chain]; i_chain++) {
+            for (auto sp: _species_possible_vec[layer]) {
+                _mc_chains_act[chain][i_chain][layer][sp] %= _bn_gamma_bar[chain][layer][sp];
+                _mc_chains_act[chain][i_chain][layer][sp] += _bn_beta_bar[chain][layer][sp];
+            };
+        };
+    };
 };

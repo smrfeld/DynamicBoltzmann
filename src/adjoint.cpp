@@ -1,10 +1,11 @@
-#include "../include/dynamicboltz_bits/adjoint.hpp"
+#include "../include/dblz_bits/adjoint.hpp"
 
 // Other headers
-#include "../include/dynamicboltz_bits/ixn_param.hpp"
-#include "../include/dynamicboltz_bits/general.hpp"
-#include "../include/dynamicboltz_bits/diff_eq_rhs.hpp"
-#include "../include/dynamicboltz_bits/moment.hpp"
+#include "../include/dblz_bits/ixn_param_traj.hpp"
+#include "../include/dblz_bits/ixn_param.hpp"
+#include "../include/dblz_bits/general.hpp"
+#include "../include/dblz_bits/diff_eq_rhs.hpp"
+#include "../include/dblz_bits/moment.hpp"
 
 #include <iostream>
 #include <fstream>
@@ -16,24 +17,18 @@
 namespace dblz {
 
 	/****************************************
-	Adjoint - IMPLEMENTATION DEFINITIONS
+	Adjoint
 	****************************************/
 
-	/********************
-	Constructor
-	********************/
+    // ***************
+    // MARK: - Constructor
+    // ***************
 
-	Adjoint::Adjoint(std::string name, Iptr ixn_param) {
+	Adjoint::Adjoint(std::string name, ITptr ixn_param_traj) {
 		_name = name;
-		_ixn_param = ixn_param;
+		_ixn_param_traj = ixn_param_traj;
 
-		_no_timesteps = 0;
-		_no_timepoints = 1;
-		_zero_end_cond_timepoint = 0;
-
-		_vals = new double[_no_timepoints];
-		std::fill_n(_vals,_no_timepoints,0.0);
-		_vals[0] = 0.0;
+        set_no_timesteps(0);
 	};
 	Adjoint::Adjoint(const Adjoint& other) {
 		_copy(other);
@@ -60,113 +55,109 @@ namespace dblz {
 		_clean_up();
 	};
 	void Adjoint::_clean_up() {
-		safeDelArr(_vals);
-	};
+        // Nothing....
+    };
 	void Adjoint::_copy(const Adjoint& other) {
 		_name = other._name;
-		_ixn_param = other._ixn_param;
+		_ixn_param_traj = other._ixn_param_traj;
 		_no_timesteps = other._no_timesteps;
 		_no_timepoints = other._no_timepoints;
-		_vals = new double[_no_timepoints];
-		std::copy(other._vals,other._vals+_no_timepoints,_vals);
-		_zero_end_cond_timepoint = other._zero_end_cond_timepoint;
+        _vals = other._vals;
+		_timepoint_zero_end_cond = other._timepoint_zero_end_cond;
 	};
 	void Adjoint::_move(Adjoint& other) {
 		_name = other._name;
-		_ixn_param = other._ixn_param;
+        _ixn_param_traj = other._ixn_param_traj;
 		_no_timesteps = other._no_timesteps;
 		_no_timepoints = other._no_timepoints;
-		_vals = new double[_no_timepoints];
-		std::copy(other._vals,other._vals+_no_timepoints,_vals);
-		_zero_end_cond_timepoint = other._zero_end_cond_timepoint;
+        _vals = other._vals;
+		_timepoint_zero_end_cond = other._timepoint_zero_end_cond;
 
 		// Reset the other
 		other._name = "";
-		other._ixn_param = nullptr;
+		other._ixn_param_traj = nullptr;
 		other._no_timesteps = 0;
 		other._no_timepoints = 0;
-		safeDelArr(other._vals);
-		other._zero_end_cond_timepoint = 0;
+        other._vals.clear();
+        other._timepoint_zero_end_cond = 0;
 	};
 
-	/********************
-	Validate setup
-	********************/
-
-	void Adjoint::check_setup() const {
-		// ...
-	};
-
-	/********************
-	Timesteps
-	********************/
-
+    // ***************
+    // MARK: - Timesteps
+    // ***************
+    
 	int Adjoint::get_no_timesteps() const {
 		return _no_timesteps;
 	};
 	void Adjoint::set_no_timesteps(int no_timesteps) {
 		_no_timesteps = no_timesteps;
 		_no_timepoints = _no_timesteps + 1;
-		// Vals
-		safeDelArr(_vals);
-		_vals = new double[_no_timepoints];
-		std::fill_n(_vals,_no_timepoints,0.0);
-		_vals[_no_timepoints-1] = 0.0;
+        
+        while (_vals.size() < _no_timepoints) {
+            _vals.push_back(0.0);
+        };
+        while (_vals.size() > _no_timepoints) {
+            _vals.pop_back();
+        };
+        
+        _timepoint_zero_end_cond = _no_timepoints-1;
+        _vals[_timepoint_zero_end_cond] = 0.0;
 	};
 
-
-	/********************
-	Init cond
-	********************/
-
-	int Adjoint::get_zero_end_cond_timepoint() const {
-		return _zero_end_cond_timepoint;
+    // ***************
+    // MARK: - Init cond
+    // ***************
+    
+    /*
+	int Adjoint::get_timepoint_zero_end_cond() const {
+		return _timepoint_zero_end_cond;
 	};
-	void Adjoint::set_zero_end_cond_timepoint(int timepoint) {
+	void Adjoint::set_timepoint_zero_end_cond(int timepoint) {
 		if (timepoint >= _no_timepoints) {
-			std::cout << ">>> Error: Adjoint::set_zero_end_cond_timepoint <<< no timepoints is: " << _no_timepoints << std::endl;
+			std::cout << ">>> Error: Adjoint::set_timepoint_zero_end_cond <<< no timepoints is: " << _no_timepoints << std::endl;
 			exit(EXIT_FAILURE);
 		};
 
-		_zero_end_cond_timepoint = timepoint;
-		_vals[_zero_end_cond_timepoint] = 0.0;
+		_timepoint_zero_end_cond = timepoint;
+		_vals[_timepoint_zero_end_cond] = 0.0;
 	};
-
-	/********************
-	Name, type
-	********************/
+    */
+    
+    // ***************
+    // MARK: - Name, type
+    // ***************
 
 	std::string Adjoint::get_name() const {
 		return _name;
 	};
 
-	Iptr Adjoint::get_ixn_param() const {	
-		return _ixn_param;
+	ITptr Adjoint::get_ixn_param_traj() const {
+		return _ixn_param_traj;
 	};
 
-	/********************
-	Value
-	********************/
-
+    // ***************
+    // MARK: - Value
+    // ***************
+    
 	double Adjoint::get_val_at_timepoint(int timepoint) const {
 		if (timepoint >= _no_timepoints) {
-			std::cerr << ">>> Error: Adjoint::get_val_at_timepoint <<< " << timepoint << " is out of bounds: " << _no_timepoints << std::endl;
+            std::cerr << ">>> Error: Adjoint::get_val_at_timepoint <<< " << timepoint << " is out of bounds: no timesteps: " << _no_timesteps << " no timepoints: " << _no_timepoints << std::endl;
 			exit(EXIT_FAILURE);
 		};
 		return _vals[timepoint];
 	};
 
-	/********************
-	Diff eq
-	********************/
-
-	void Adjoint::solve_diff_eq_at_timepoint_to_minus_one(int timepoint, double dt, bool l2_mode, const std::map<Iptr,double> &l2_lambda, const std::map<Iptr,double> &l2_center) {
+    // ***************
+    // MARK: - Diff eq
+    // ***************
+    
+	void Adjoint::solve_diff_eq_at_timepoint_to_minus_one(int timepoint, double dt, bool l2_mode, const std::map<ITptr,double> &l2_lambda, const std::map<ITptr,double> &l2_center) {
 		if (timepoint >= _no_timepoints) {
 			std::cerr << ">>> Error: Adjoint::solve_diff_eq_at_timepoint_to_minus_one <<< " << timepoint << " is out of bounds: " << _no_timepoints << std::endl;
 			exit(EXIT_FAILURE);
 		};
-		if (timepoint > _zero_end_cond_timepoint) {
-			std::cerr << ">>> Error: Adjoint::solve_diff_eq_at_timepoint_to_minus_one <<< " << timepoint << " is beyond the zero endpoint: " << _zero_end_cond_timepoint << std::endl;
+		if (timepoint > _timepoint_zero_end_cond) {
+			std::cerr << ">>> Error: Adjoint::solve_diff_eq_at_timepoint_to_minus_one <<< " << timepoint << " is beyond the zero endpoint: " << _timepoint_zero_end_cond << std::endl;
 			exit(EXIT_FAILURE);		
 		};
 
@@ -175,15 +166,15 @@ namespace dblz {
 		double deriv, adjoint_val;
 
 		// Go through dependencies (numerator F and adjoint)
-		for (auto const dep_pair: _ixn_param->get_diff_eq_dependencies()) {
+        for (auto const dep_pair: _ixn_param_traj->get_diff_eq_dependencies()) {
 
 			// Derivative
 			deriv = dep_pair.first->get_deriv_wrt_nu_at_timepoint(timepoint,dep_pair.second);
 
 			// Adjoint
-			auto adjoint = dep_pair.first->get_parent_ixn_param()->get_adjoint();
+			auto adjoint = dep_pair.first->get_parent_ixn_param_traj()->get_adjoint();
 			if (!adjoint) {
-				std::cerr << ">>> Error: Adjoint::solve_diff_eq_at_timepoint_to_minus_one <<< No adjoint for ixn param: " << dep_pair.first->get_parent_ixn_param()->get_name() << std::endl;
+				std::cerr << ">>> Error: Adjoint::solve_diff_eq_at_timepoint_to_minus_one <<< No adjoint for ixn param: " << dep_pair.first->get_parent_ixn_param_traj()->get_name() << std::endl;
 				exit(EXIT_FAILURE);	
 			};
 			adjoint_val = adjoint->get_val_at_timepoint(timepoint);
@@ -222,14 +213,15 @@ namespace dblz {
 		*/
 
 		// Difference in moments
-		double moment_delta = _ixn_param->get_moment()->get_moment_at_timepoint(MomentType::ASLEEP, timepoint) - _ixn_param->get_moment()->get_moment_at_timepoint(MomentType::AWAKE, timepoint);
-
+        auto moment = _ixn_param_traj->get_ixn_param_at_timepoint(timepoint)->get_moment();
+        double moment_delta = moment->get_moment(MCType::ASLEEP) - moment->get_moment(MCType::AWAKE);
+        
 		// L2 reg
 		if (l2_mode) {
 			// L2 mode
 
-			double ixn_param_val = _ixn_param->get_val_at_timepoint(timepoint);
-			double l2_term = 2.0 * l2_lambda.at(_ixn_param) * (ixn_param_val-l2_center.at(_ixn_param));
+            double ixn_param_val = _ixn_param_traj->get_ixn_param_at_timepoint(timepoint)->get_val();
+			double l2_term = 2.0 * l2_lambda.at(_ixn_param_traj) * (ixn_param_val-l2_center.at(_ixn_param_traj));
 			std::cout << _name << " " << timepoint << " " << moment_delta << " " << l2_term << std::endl;
 
 			// Step
@@ -240,16 +232,6 @@ namespace dblz {
 
 			// Step
 			_vals[timepoint-1] = _vals[timepoint] - dt * (moment_delta - deriv);
-		};
-	};
-
-	/********************
-	Reset to zero
-	********************/
-
-	void Adjoint::reset_to_zero() {
-		for (auto timepoint=0; timepoint<_no_timepoints; timepoint++) {
-			_vals[timepoint] = 0.0;
 		};
 	};
 

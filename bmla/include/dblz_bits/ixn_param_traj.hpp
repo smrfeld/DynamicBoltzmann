@@ -69,6 +69,13 @@ namespace dblz {
 		~IxnParamTraj();
 		
         // ***************
+        // MARK: - Print moment string
+        // ***************
+        
+        void print_val_traj(int timepoint_start, int no_timesteps) const;
+        void print_moment_traj(int timepoint_start, int no_timesteps) const;
+        
+        // ***************
         // MARK: - Diff eq rhs that this ixn param appears in
         // ***************
 
@@ -133,7 +140,8 @@ namespace dblz {
         // MARK: - Write to file
         // ***************
 
-		void write_to_file(std::string fname) const;
+		void write_val_traj_to_file(int timepoint_start, int no_timesteps, std::string fname) const;
+        void write_moment_traj_to_file(int timepoint_start, int no_timesteps, std::string fname) const;
 	};
 
 };

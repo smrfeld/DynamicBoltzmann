@@ -273,22 +273,10 @@ namespace dblz {
             std::cout << ixn_param_traj->get_name() << std::endl;
             
             // Print traj of ixn params
-            for (auto timepoint=0; timepoint<_no_timesteps_ixn_params; timepoint++) {
-                std::cout << ixn_param_traj->get_ixn_param_at_timepoint(timepoint)->get_val();
-                if (timepoint != _no_timesteps_ixn_params-1) {
-                    std::cout << " ";
-                };
-            };
-            std::cout << std::endl;
-
-            // Print moments
-            for (auto timepoint=_timepoint_start_lattice; timepoint<=_timepoint_start_lattice+_no_timesteps_lattice; timepoint++) {
-                std::cout << ixn_param_traj->get_ixn_param_at_timepoint(timepoint)->get_moment()->get_moment_comparison_str();
-                if (timepoint != _timepoint_start_lattice+_no_timesteps_lattice) {
-                  std::cout << " ";
-                };
-            };
-            std::cout << std::endl;
+            ixn_param_traj->print_val_traj(_timepoint_start_lattice, _no_timesteps_lattice);
+            
+            // Print moment traj
+            ixn_param_traj->print_moment_traj(_timepoint_start_lattice, _no_timesteps_lattice);
         };
         
         if (options.verbose) {

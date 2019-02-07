@@ -118,6 +118,30 @@ namespace dblz {
     };
 
     // ***************
+    // MARK: - Print moment string
+    // ***************
+    
+    void IxnParamTraj::print_val_traj(int timepoint_start, int no_timesteps) const {
+        for (auto timepoint=timepoint_start; timepoint<=timepoint_start+no_timesteps; timepoint++) {
+            std::cout << _ixn_params.at(timepoint)->get_val();
+            if (timepoint != timepoint_start + no_timesteps) {
+                std::cout << " ";
+            };
+        };
+        std::cout << std::endl;
+    };
+    
+    void IxnParamTraj::print_moment_traj(int timepoint_start, int no_timesteps) const {
+        for (auto timepoint=timepoint_start; timepoint<=timepoint_start+no_timesteps; timepoint++) {
+            std::cout << _ixn_params.at(timepoint)->get_moment()->get_moment_comparison_str();
+            if (timepoint != timepoint_start+no_timesteps) {
+                std::cout << " ";
+            };
+        };
+        std::cout << std::endl;
+    };
+    
+    // ***************
     // MARK: - Diff eq rhs that this ixn param appears in
     // ***************
     
@@ -276,7 +300,7 @@ namespace dblz {
     // MARK: - Write to file
     // ***************
 
-	void IxnParamTraj::write_to_file(std::string fname) const {
+	void IxnParamTraj::write_val_traj_to_file(int timepoint_start, int no_timesteps, std::string fname) const {
 		std::ofstream f;
 
 		// Open
@@ -284,16 +308,39 @@ namespace dblz {
 
 		// Make sure we found it
 		if (!f.is_open()) {
-			std::cerr << ">>> Error: IxnParamTraj::write_to_file <<< could not write to file: " << fname << std::endl;
+			std::cerr << ">>> Error: IxnParamTraj::write_val_traj_to_file <<< could not write to file: " << fname << std::endl;
 			exit(EXIT_FAILURE);
 		};
 
 		// Go through all time
-		for (auto timepoint=0; timepoint<_no_timepoints; timepoint++) {
+		for (auto timepoint=timepoint_start; timepoint<=timepoint_start+no_timesteps; timepoint++) {
 			f << _ixn_params.at(timepoint)->get_val() << "\n";
 		};
 
 		// Close
 		f.close();
 	};
+    
+    void IxnParamTraj::write_moment_traj_to_file(int timepoint_start, int no_timesteps, std::string fname) const {
+        std::ofstream f;
+        
+        // Open
+        f.open(fname);
+        
+        // Make sure we found it
+        if (!f.is_open()) {
+            std::cerr << ">>> Error: IxnParamTraj::write_moment_traj_to_file <<< could not write to file: " << fname << std::endl;
+            exit(EXIT_FAILURE);
+        };
+        
+        // Go through all time
+        std::shared_ptr<Moment> moment;
+        for (auto timepoint=timepoint_start; timepoint<=timepoint_start+no_timesteps; timepoint++) {
+            moment = _ixn_params.at(timepoint)->get_moment();
+            f << moment->get_moment(MCType::AWAKE) << " " << moment->get_moment(MCType::ASLEEP) << "\n";
+        };
+        
+        // Close
+        f.close();
+    };
 };

@@ -183,6 +183,11 @@ namespace dblz {
             // Remove
             _ixn_params.pop_back();
         };
+        
+        // Set for adjoints of ixn params
+        if (_adjoint) {
+            _adjoint->set_no_timesteps(no_timesteps);
+        };
     };
     
     // ***************
@@ -300,7 +305,7 @@ namespace dblz {
     // MARK: - Write to file
     // ***************
 
-	void IxnParamTraj::write_val_traj_to_file(int timepoint_start, int no_timesteps, std::string fname) const {
+	void IxnParamTraj::write_val_traj_to_file(int timepoint_start, int no_timesteps, std::string fname, bool with_timepoints) const {
 		std::ofstream f;
 
 		// Open
@@ -313,15 +318,21 @@ namespace dblz {
 		};
 
 		// Go through all time
-		for (auto timepoint=timepoint_start; timepoint<=timepoint_start+no_timesteps; timepoint++) {
-			f << _ixn_params.at(timepoint)->get_val() << "\n";
-		};
-
+        if (with_timepoints) {
+            for (auto timepoint=timepoint_start; timepoint<=timepoint_start+no_timesteps; timepoint++) {
+                f << _ixn_params.at(timepoint)->get_val() << "\n";
+            };
+        } else {
+            for (auto timepoint=timepoint_start; timepoint<=timepoint_start+no_timesteps; timepoint++) {
+                f << timepoint << " " << _ixn_params.at(timepoint)->get_val() << "\n";
+            };
+        };
+        
 		// Close
 		f.close();
 	};
     
-    void IxnParamTraj::write_moment_traj_to_file(int timepoint_start, int no_timesteps, std::string fname) const {
+    void IxnParamTraj::write_moment_traj_to_file(int timepoint_start, int no_timesteps, std::string fname, bool with_timepoints) const {
         std::ofstream f;
         
         // Open
@@ -335,9 +346,16 @@ namespace dblz {
         
         // Go through all time
         std::shared_ptr<Moment> moment;
-        for (auto timepoint=timepoint_start; timepoint<=timepoint_start+no_timesteps; timepoint++) {
-            moment = _ixn_params.at(timepoint)->get_moment();
-            f << moment->get_moment(MCType::AWAKE) << " " << moment->get_moment(MCType::ASLEEP) << "\n";
+        if (with_timepoints) {
+            for (auto timepoint=timepoint_start; timepoint<=timepoint_start+no_timesteps; timepoint++) {
+                moment = _ixn_params.at(timepoint)->get_moment();
+                f << moment->get_moment(MCType::AWAKE) << " " << moment->get_moment(MCType::ASLEEP) << "\n";
+            };
+        } else {
+            for (auto timepoint=timepoint_start; timepoint<=timepoint_start+no_timesteps; timepoint++) {
+                moment = _ixn_params.at(timepoint)->get_moment();
+                f << timepoint << " " << moment->get_moment(MCType::AWAKE) << " " << moment->get_moment(MCType::ASLEEP) << "\n";
+            };
         };
         
         // Close

@@ -147,13 +147,6 @@ namespace dblz {
                 };
             };
         };
-        
-        // Set for adjoints of ixn params
-        for (auto ixn_param_traj: _ixn_param_trajs) {
-            if (ixn_param_traj->get_adjoint()) {
-                ixn_param_traj->get_adjoint()->set_no_timesteps(no_timesteps);
-            };
-        };
     };
 
     // ***************

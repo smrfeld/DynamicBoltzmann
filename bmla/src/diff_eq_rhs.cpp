@@ -463,7 +463,7 @@ namespace dblz {
                 
                 // Update
                 // _val -= dopt * mhat / (sqrt(vhat) + eps);
-                pr.first->get_bf(_coeff_order[i])->increment_coeff(- dopt * mhat / (sqrt(vhat) + eps));
+                pr.first->get_bf(_coeff_order[i])->increment_coeff(dopt * mhat / (sqrt(vhat) + eps));
                 // std::cout << "update_committ_stored_adam: ptr: " << pr.first << " idx: " << i << " update: " << - dopt * mhat / (sqrt(vhat) + eps) << std::endl;
             };
             

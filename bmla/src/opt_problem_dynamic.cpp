@@ -268,7 +268,7 @@ namespace dblz {
         
         wake_sleep_loop(i_opt_step,no_mean_field_updates,no_gibbs_sampling_steps,fname_traj_coll,options_wake_sleep);
         
-        // Print the moments
+        // Print
         for (auto ixn_param_traj: _latt_traj->get_all_ixn_param_trajs()) {
             std::cout << ixn_param_traj->get_name() << std::endl;
             

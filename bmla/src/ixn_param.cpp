@@ -115,7 +115,7 @@ namespace dblz {
             _adam_v = nullptr;
         };
 
-		_moment = other._moment;
+        _moment = std::make_unique<Moment>(*other._moment);
 
 		_is_val_fixed = other._is_val_fixed;
 	};

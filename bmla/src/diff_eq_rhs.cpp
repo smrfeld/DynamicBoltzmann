@@ -173,7 +173,12 @@ namespace dblz {
             // Deriv-Deriv-Deriv
             _coeff_order.push_back({q3c1::DimType::DERIV,q3c1::DimType::DERIV,q3c1::DimType::DERIV});
         };
-
+        
+        // Nullptr for adams/nesterovs
+        _nesterov_y_s = nullptr;
+        _nesterov_y_sp1 = nullptr;
+        _adam_m = nullptr;
+        _adam_v = nullptr;
 	};
 	DiffEqRHS::DiffEqRHS(const DiffEqRHS& other) : Grid(other) {
 		_copy(other);
@@ -216,15 +221,23 @@ namespace dblz {
 
         if (other._nesterov_y_s) {
 			_nesterov_y_s = new std::map<q3c1::Vertex*,std::vector<double>>(*other._nesterov_y_s);
-		};
+        } else {
+            _nesterov_y_s = nullptr;
+        };
 		if (other._nesterov_y_sp1) {
 			_nesterov_y_sp1 = new std::map<q3c1::Vertex*,std::vector<double>>(*other._nesterov_y_sp1);
-		};
+        } else {
+            _nesterov_y_sp1 = nullptr;
+        };
         if (other._adam_m) {
             _adam_m = new std::map<q3c1::Vertex*,std::vector<double>>(*other._adam_m);
+        } else {
+            _adam_m = nullptr;
         };
         if (other._adam_v) {
             _adam_v = new std::map<q3c1::Vertex*,std::vector<double>>(*other._adam_v);
+        } else {
+            _adam_v = nullptr;
         };
 	};
 	void DiffEqRHS::_move(DiffEqRHS& other) {
@@ -262,20 +275,23 @@ namespace dblz {
 		// Note: Domain is not owned => do not delete
 		if (_nesterov_y_s) {
 			delete _nesterov_y_s;
-			_nesterov_y_s = nullptr;
 		};
-		if (_nesterov_y_sp1) {
+        _nesterov_y_s = nullptr;
+        
+        if (_nesterov_y_sp1) {
 			delete _nesterov_y_sp1;
-			_nesterov_y_sp1 = nullptr;
 		};
+        _nesterov_y_sp1 = nullptr;
+        
         if (_adam_m) {
             delete _adam_m;
-            _adam_m = nullptr;
         };
+        _adam_m = nullptr;
+        
         if (_adam_v) {
             delete _adam_v;
-            _adam_v = nullptr;
         };
+        _adam_v = nullptr;
 	};
 
 	/********************
@@ -353,16 +369,15 @@ namespace dblz {
 				auto it = _updates.find(pr.first);
 				if (it == _updates.end()) {
 					// new
-					_updates[pr.first] = pr.second;
-					for (auto i=0; i<pr.second.size(); i++) {
-						_updates[pr.first][i] *= dt * adjoint_val;
-					};
-				} else {
-					// append
-					for (auto i=0; i<pr.second.size(); i++) {
-						_updates[pr.first][i] += dt * adjoint_val * pr.second[i];
-					};
-				};
+                    _updates[pr.first] = std::vector<double>(_no_coeffs,0.0);
+                };
+                // append
+                for (auto i=0; i<_no_coeffs; i++) {
+                    _updates[pr.first][i] += dt * adjoint_val * pr.second[i];
+                    
+                    // std::cout << "update_calculate_and_store: timepoint = " << timepoint << " key ptr: " << pr.first << " idx: " << i << " val: " << dt * adjoint_val * pr.second[i] << std::endl;
+                    
+                };
 			};
 		};
 	};
@@ -377,6 +392,7 @@ namespace dblz {
         // Create adam variables if necessary
         if (!_adam_m) {
             _adam_m = new std::map<q3c1::Vertex*,std::vector<double>>();
+            // std::cout << "created _adam_m = " << _adam_m << std::endl;
         };
         if (!_adam_v) {
             _adam_v = new std::map<q3c1::Vertex*,std::vector<double>>();
@@ -385,13 +401,23 @@ namespace dblz {
         int opt_step_use = std::max(opt_step,1);
         
         double mhat, vhat;
+        std::map<q3c1::Vertex*,std::vector<double>>::iterator itm, itv;
         for (auto pr: _updates) {
             // _updates is never cleared
             // Therefore it will always contain the complete set of keys!
             // However, _adam_m and _adam_v may not contain the keys!
             
+            /*
+            std::cout << "update_committ_stored_adam: finding ptr = " << pr.first << " in _adam_m = " << _adam_m << std::endl;
+            std::cout << "before starting: updates are:" << std::endl;
+            for (auto i=0; i<_no_coeffs; i++) {
+                std::cout << pr.second[i] << " ";
+            };
+            std::cout << std::endl;
+             */
+            
             // adam_m
-            auto itm = _adam_m->find(pr.first);
+            itm = _adam_m->find(pr.first);
             if (itm != _adam_m->end()) {
                 // Exists, increment
                 for (auto i=0; i<_no_coeffs; i++) {
@@ -405,12 +431,20 @@ namespace dblz {
                 };
             };
             
+            /*
+            std::cout << "adams are:" << std::endl;
+            for (auto i=0; i<_no_coeffs; i++) {
+                std::cout << (*_adam_m)[pr.first][i] << " ";
+            };
+            std::cout << std::endl;
+             */
+            
             // adam_v
-            auto itv  = _adam_v->find(pr.first);
+            itv  = _adam_v->find(pr.first);
             if (itv != _adam_v->end()) {
                 // Exists, increment
                 for (auto i=0; i<_no_coeffs; i++) {
-                    (*_adam_v)[pr.first][i] = beta_2*itm->second[i] + (1.0 - beta_2)*pow(pr.second[i],2);
+                    (*_adam_v)[pr.first][i] = beta_2*itv->second[i] + (1.0 - beta_2)*pow(pr.second[i],2);
                 };
             } else {
                 // Is zero
@@ -430,11 +464,12 @@ namespace dblz {
                 // Update
                 // _val -= dopt * mhat / (sqrt(vhat) + eps);
                 pr.first->get_bf(_coeff_order[i])->increment_coeff(- dopt * mhat / (sqrt(vhat) + eps));
+                // std::cout << "update_committ_stored_adam: ptr: " << pr.first << " idx: " << i << " update: " << - dopt * mhat / (sqrt(vhat) + eps) << std::endl;
             };
             
             // Set the updates to zero
             // But do NOT clear the keys!
-            _updates[pr.first] = std::vector<double>(pr.second.size(),0.0);
+            _updates[pr.first] = std::vector<double>(_no_coeffs,0.0);
         };
     };
     

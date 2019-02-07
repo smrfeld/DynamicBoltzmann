@@ -142,6 +142,7 @@ namespace dblz {
 
 		void write_val_traj_to_file(int timepoint_start, int no_timesteps, std::string fname, bool with_timepoints=true) const;
         void write_moment_traj_to_file(int timepoint_start, int no_timesteps, std::string fname, bool with_timepoints=true) const;
+        void write_adjoint_traj_to_file(int timepoint_start, int no_timesteps, std::string fname, bool with_timepoints=true) const;
 	};
 
 };

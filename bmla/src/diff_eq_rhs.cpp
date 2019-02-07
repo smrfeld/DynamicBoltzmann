@@ -373,7 +373,7 @@ namespace dblz {
                 };
                 // append
                 for (auto i=0; i<_no_coeffs; i++) {
-                    _updates[pr.first][i] += dt * adjoint_val * pr.second[i];
+                    _updates[pr.first][i] -= dt * adjoint_val * pr.second[i];
                     
                     // std::cout << "update_calculate_and_store: timepoint = " << timepoint << " key ptr: " << pr.first << " idx: " << i << " val: " << dt * adjoint_val * pr.second[i] << std::endl;
                     
@@ -431,14 +431,6 @@ namespace dblz {
                 };
             };
             
-            /*
-            std::cout << "adams are:" << std::endl;
-            for (auto i=0; i<_no_coeffs; i++) {
-                std::cout << (*_adam_m)[pr.first][i] << " ";
-            };
-            std::cout << std::endl;
-             */
-            
             // adam_v
             itv  = _adam_v->find(pr.first);
             if (itv != _adam_v->end()) {
@@ -453,6 +445,14 @@ namespace dblz {
                     (*_adam_v)[pr.first][i] = (1.0 - beta_2)*pow(pr.second[i],2);
                 };
             };
+    
+            /*
+            std::cout << "adams are:" << std::endl;
+            for (auto i=0; i<_no_coeffs; i++) {
+                std::cout << (*_adam_m)[pr.first][i] << " ";
+            };
+            std::cout << std::endl;
+             */
             
             // Corrections and update
             for (auto i=0; i<_no_coeffs; i++) {
@@ -463,7 +463,7 @@ namespace dblz {
                 
                 // Update
                 // _val -= dopt * mhat / (sqrt(vhat) + eps);
-                pr.first->get_bf(_coeff_order[i])->increment_coeff(dopt * mhat / (sqrt(vhat) + eps));
+                pr.first->get_bf(_coeff_order[i])->increment_coeff(- dopt * mhat / (sqrt(vhat) + eps));
                 // std::cout << "update_committ_stored_adam: ptr: " << pr.first << " idx: " << i << " update: " << - dopt * mhat / (sqrt(vhat) + eps) << std::endl;
             };
             

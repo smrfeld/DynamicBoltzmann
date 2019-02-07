@@ -270,7 +270,7 @@ namespace dblz {
         
         // Print
         for (auto ixn_param_traj: _latt_traj->get_all_ixn_param_trajs()) {
-            std::cout << ixn_param_traj->get_name() << std::endl;
+            std::cout << ixn_param_traj->get_name() << " [" << _timepoint_start_lattice << "," << _timepoint_start_lattice+_no_timesteps_lattice << "]" << std::endl;
             
             // Print traj of ixn params
             ixn_param_traj->print_val_traj(_timepoint_start_lattice, _no_timesteps_lattice);

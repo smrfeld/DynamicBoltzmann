@@ -100,7 +100,7 @@ namespace dblz {
             _vals.pop_back();
         };
         
-        _timepoint_zero_end_cond = _no_timepoints;
+        _timepoint_zero_end_cond = _no_timepoints-1;
         _vals[_timepoint_zero_end_cond] = 0.0;
 	};
 
@@ -141,7 +141,7 @@ namespace dblz {
     
 	double Adjoint::get_val_at_timepoint(int timepoint) const {
 		if (timepoint >= _no_timepoints) {
-			std::cerr << ">>> Error: Adjoint::get_val_at_timepoint <<< " << timepoint << " is out of bounds: " << _no_timepoints << std::endl;
+            std::cerr << ">>> Error: Adjoint::get_val_at_timepoint <<< " << timepoint << " is out of bounds: no timesteps: " << _no_timesteps << " no timepoints: " << _no_timepoints << std::endl;
 			exit(EXIT_FAILURE);
 		};
 		return _vals[timepoint];

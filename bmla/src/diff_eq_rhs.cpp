@@ -353,7 +353,7 @@ namespace dblz {
 		std::map<q3c1::Vertex*,std::vector<double>> updates;
 
 		// Go through all times
-		for (auto timepoint=timepoint_start; timepoint<timepoint_end; timepoint++) {
+		for (auto timepoint=timepoint_start; timepoint<=timepoint_end; timepoint++) {
 
 			// Adjoint
 			adjoint_val = _parent_ixn_param_traj->get_adjoint()->get_val_at_timepoint(timepoint);

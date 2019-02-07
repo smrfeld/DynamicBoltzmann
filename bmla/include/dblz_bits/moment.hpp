@@ -64,6 +64,7 @@ namespace dblz {
 		********************/
 
 		void print_moment_comparison() const;
+        std::string get_moment_comparison_str() const;
 
 		/********************
 		Name, type

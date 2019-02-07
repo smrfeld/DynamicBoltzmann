@@ -165,7 +165,7 @@ namespace dblz {
 
 		// Calculate the update
 		// t_start = inclusive
-		// t_end = non-inclusive
+		// t_end = inclusive
 		// void update_calculate_and_store(int timepoint_start, int timepoint_end, double dt, double dopt);
         void update_calculate_and_store(int timepoint_start, int timepoint_end, double dt);
 

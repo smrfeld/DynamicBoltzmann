@@ -124,7 +124,7 @@ namespace dblz {
         };
         
         // Add as needed
-        for (auto timepoint=timepoint_start; timepoint<no_timesteps+1; timepoint++) {
+        for (auto timepoint=timepoint_start; timepoint<=timepoint_start + no_timesteps; timepoint++) {
             auto itf = _lattices.find(timepoint);
             if (itf == _lattices.end()) {
                 // Does not exist; need to create

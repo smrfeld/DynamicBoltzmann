@@ -73,35 +73,46 @@ namespace dblz {
 	void IxnParam::_clean_up() {
 		if (_nesterov_y_s) {
 			delete _nesterov_y_s;
-			_nesterov_y_s = nullptr;
 		};
-		if (_nesterov_y_sp1) {
+        _nesterov_y_s = nullptr;
+        
+        if (_nesterov_y_sp1) {
 			delete _nesterov_y_sp1;
-			_nesterov_y_sp1 = nullptr;
 		};
-		if (_adam_m) {
+        _nesterov_y_sp1 = nullptr;
+
+        if (_adam_m) {
 			delete _adam_m;
-			_adam_m = nullptr;
 		};
-		if (_adam_v) {
+        _adam_m = nullptr;
+
+        if (_adam_v) {
 			delete _adam_v;
-			_adam_v = nullptr;
-		};	
-	};
+		};
+        _adam_v = nullptr;
+    };
 	void IxnParam::_copy(const IxnParam& other) {
 		_val = other._val;
 		_update = other._update;
         if (other._nesterov_y_s) {
             _nesterov_y_s = new double(*other._nesterov_y_s);
+        } else {
+            _nesterov_y_s = nullptr;
         };
         if (other._nesterov_y_sp1) {
             _nesterov_y_sp1 = new double(*other._nesterov_y_sp1);
+        } else {
+            _nesterov_y_sp1 = nullptr;
         };
         if (other._adam_m) {
             _adam_m = new double(*other._adam_m);
+        } else {
+            _adam_m = nullptr;
         };
         if (other._adam_v) {
             _adam_v = new double(*other._adam_v);
+        } else {
+            _adam_v = nullptr;
         };
 
 		_moment = other._moment;
@@ -111,18 +122,10 @@ namespace dblz {
 	void IxnParam::_move(IxnParam& other) {
 		_val = other._val;
 		_update = other._update;
-        if (other._nesterov_y_s) {
-            _nesterov_y_s = new double(*other._nesterov_y_s);
-        };
-        if (other._nesterov_y_sp1) {
-            _nesterov_y_sp1 = new double(*other._nesterov_y_sp1);
-        };
-        if (other._adam_m) {
-            _adam_m = new double(*other._adam_m);
-        };
-        if (other._adam_v) {
-            _adam_v = new double(*other._adam_v);
-        };
+        _nesterov_y_s = other._nesterov_y_s;
+        _nesterov_y_sp1 = other._nesterov_y_sp1;
+        _adam_m = other._adam_m;
+        _adam_v = other._adam_v;
         
 		_moment = std::move(other._moment);
 

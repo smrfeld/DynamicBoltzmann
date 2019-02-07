@@ -109,6 +109,12 @@ namespace dblz {
         std::cout << "(" << _val_averaged.at(MCType::AWAKE) << "," << _val_averaged.at(MCType::ASLEEP) << ") " << std::endl;
 	};
     
+    std::string Moment::get_moment_comparison_str() const {
+        std::stringstream s;
+        s << "(" << _val_averaged.at(MCType::AWAKE) << "," << _val_averaged.at(MCType::ASLEEP) << ")";
+        return s.str();
+    };
+    
 	/********************
 	Name
 	********************/

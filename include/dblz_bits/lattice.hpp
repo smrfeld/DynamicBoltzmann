@@ -148,16 +148,12 @@ namespace dblz {
         // MARK: Activations
         // ***************
         
-        // Reset activations to 0
-        void _reset_activations(MCType chain, int i_chain, int layer);
-        
-        // Calculate bias
-        void _calculate_bias(MCType chain, int i_chain, int layer);
-        
-        // Calculate activation given layer above or below
+        // Calculate activation given layer above or below or both
+        // Includes biases!
         void _calculate_activations_from_below(MCType chain, int i_chain, int layer);
         void _calculate_activations_from_above(MCType chain, int i_chain, int layer);
-
+        void _calculate_activations_from_both(MCType chain, int i_chain, int layer);
+        
         // Calculate activations when the scale paramaters gamma in eqn (7) are not incorporated into th weights
         // See bullet pt 2 on p. 366
         void _calculate_activations_from_above_bn(MCType chain, int i_chain, int layer);

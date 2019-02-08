@@ -871,33 +871,14 @@ namespace dblz {
     // MARK: - Activate layer steps - PRIVATE
     // ***************
     
-    // Reset activations to 0
-    void Lattice::_reset_activations(MCType chain, int i_chain, int layer) {
-        for (auto sp: _species_possible_vec.at(layer)) {
-            _mc_chains_act[chain][i_chain][layer][sp].fill(0.0);
-        };
-    };
-    
-    // Calculate bias
-    void Lattice::_calculate_bias(MCType chain, int i_chain, int layer) {
-        
-        // Get no units
-        int no_units = get_no_units_in_layer(layer);
-        
-        // Activate from below
-        for (auto sp: _species_possible_vec.at(layer)) {
-            
-            // bias term
-            _mc_chains_act[chain][i_chain][layer][sp] += get_bias_in_layer(layer, sp) * arma::vec(no_units,arma::fill::ones);
-            
-        };
-    };
-    
     // Calculate activation given layer above or below
     void Lattice::_calculate_activations_from_below(MCType chain, int i_chain, int layer) {
         
         // Activate from below
         for (auto sp: _species_possible_vec.at(layer)) {
+            
+            // bias term
+            _mc_chains_act[chain][i_chain][layer][sp].fill(get_bias_in_layer(layer, sp));
             
             // ixns
             for (auto &given_sp: _species_possible_vec.at(layer-1)) {
@@ -914,11 +895,32 @@ namespace dblz {
         // Activate from above
         for (auto sp: _species_possible_vec.at(layer)) {
             
+            // bias term
+            _mc_chains_act[chain][i_chain][layer][sp].fill(get_bias_in_layer(layer, sp));
+            
             // ixns
             for (auto given_sp: _species_possible_vec.at(layer+1)) {
                 
                 // Activate from above
                 _mc_chains_act[chain][i_chain][layer][sp] += get_ixn_between_layers(layer+1, given_sp, layer, sp) * ( _adj[layer].t() * _mc_chains[chain][i_chain][layer+1][given_sp] );
+            };
+        };
+    };
+    
+    void Lattice::_calculate_activations_from_both(MCType chain, int i_chain, int layer) {
+        for (auto sp: _species_possible_vec.at(layer)) {
+            
+            // bias term
+            _mc_chains_act[chain][i_chain][layer][sp].fill(get_bias_in_layer(layer, sp));
+            
+            // Activate from above
+            for (auto given_sp: _species_possible_vec.at(layer+1)) {
+                _mc_chains_act[chain][i_chain][layer][sp] += get_ixn_between_layers(layer+1, given_sp, layer, sp) * ( _adj[layer].t() * _mc_chains[chain][i_chain][layer+1][given_sp] );
+            };
+            
+            // Activate from below
+            for (auto given_sp: _species_possible_vec.at(layer-1)) {
+                _mc_chains_act[chain][i_chain][layer][sp] += get_ixn_between_layers(layer-1, given_sp, layer, sp) * ( _adj[layer-1] * _mc_chains[chain][i_chain][layer-1][given_sp] );
             };
         };
     };
@@ -981,21 +983,19 @@ namespace dblz {
     // (1) Calculate activations for a specific layer
     // Both directions
     void Lattice::activate_layer_calculate(MCType chain, int layer) {
-        
+
         // Calculate activations for all chains
-        for (auto i_chain=0; i_chain<_no_markov_chains.at(chain); i_chain++) {
-            // Reset
-            _reset_activations(chain,i_chain,layer);
-            
-            // Bias
-            _calculate_bias(chain, i_chain, layer);
-            
-            // Weights
-            if (layer != 0) {
+        if (layer == 0) {
+            for (auto i_chain=0; i_chain<_no_markov_chains.at(chain); i_chain++) {
+                _calculate_activations_from_above(chain,i_chain,layer);
+            };
+        } else if (layer == _no_layers-1) {
+            for (auto i_chain=0; i_chain<_no_markov_chains.at(chain); i_chain++) {
                 _calculate_activations_from_below(chain,i_chain,layer);
             };
-            if (layer != _no_layers-1) {
-                _calculate_activations_from_above(chain,i_chain,layer);
+        } else {
+            for (auto i_chain=0; i_chain<_no_markov_chains.at(chain); i_chain++) {
+                _calculate_activations_from_both(chain,i_chain,layer);
             };
         };
     };
@@ -1003,28 +1003,23 @@ namespace dblz {
     void Lattice::activate_layer_calculate(MCType chain, int layer, int given_layer) {
         
         // Calculate activations for all chains
-        for (auto i_chain=0; i_chain<_no_markov_chains.at(chain); i_chain++) {
-            // Reset
-            _reset_activations(chain,i_chain,layer);
-            
-            // Bias
-            _calculate_bias(chain, i_chain, layer);
-            
-            // Weights
-            if (given_layer == layer - 1) {
+        if (given_layer == layer - 1) {
+            for (auto i_chain=0; i_chain<_no_markov_chains.at(chain); i_chain++) {
                 _calculate_activations_from_below(chain,i_chain,layer);
-            } else if (given_layer == layer + 1) {
-                _calculate_activations_from_above(chain,i_chain,layer);
-            } else {
-                std::cerr << ">>> Lattice::activate_layer_calculate <<< given layer must be +- layer, but instead layer = " << layer << " and given layer = " << given_layer << std::endl;
-                exit(EXIT_FAILURE);
             };
+        } else if (given_layer == layer + 1) {
+            for (auto i_chain=0; i_chain<_no_markov_chains.at(chain); i_chain++) {
+                _calculate_activations_from_above(chain,i_chain,layer);
+            };
+        } else {
+            std::cerr << ">>> Lattice::activate_layer_calculate <<< given layer must be +- layer, but instead layer = " << layer << " and given layer = " << given_layer << std::endl;
+            exit(EXIT_FAILURE);
         };
     };
     // (1) Calculate activations for a specific layer
     // Both directions
     void Lattice::activate_layer_calculate_bn(MCType chain, int layer) {
-        
+        /*
         // Calculate activations for all chains
         for (auto i_chain=0; i_chain<_no_markov_chains.at(chain); i_chain++) {
             // Reset
@@ -1041,10 +1036,11 @@ namespace dblz {
                 _calculate_activations_from_above_bn(chain,i_chain,layer);
             };
         };
+         */
     };
     // Only one direction
     void Lattice::activate_layer_calculate_bn(MCType chain, int layer, int given_layer) {
-        
+        /*
         // Calculate activations for all chains
         for (auto i_chain=0; i_chain<_no_markov_chains.at(chain); i_chain++) {
             // Reset
@@ -1063,19 +1059,22 @@ namespace dblz {
                 exit(EXIT_FAILURE);
             };
         };
+         */
     };
 
     // (2) Convert activations to probs
     void Lattice::activate_layer_convert_to_probs(MCType chain, int layer, bool binary) {
         
+        int no_units = get_no_units_in_layer(layer);
+        auto prop_tot = arma::vec(no_units,arma::fill::ones);
+
         // All chains
         for (auto i_chain=0; i_chain<_no_markov_chains.at(chain); i_chain++) {
         
             // Convert activations to propensities via exp
             // Also calculate total propensity
             // Starts at 1.0 = exp(0) for empty
-            int no_units = get_no_units_in_layer(layer);
-            auto prop_tot = arma::vec(no_units,arma::fill::ones);
+            prop_tot.fill(arma::fill::ones);
             for (auto sp: _species_possible_vec.at(layer)) {
                 _mc_chains_act[chain][i_chain][layer][sp].transform( [](double val) { return (exp(val)); } );
                 // _mc_chains_act[chain][i_chain][layer][sp] = exp(_mc_chains_act[chain][i_chain][layer][sp]);
@@ -1124,7 +1123,7 @@ namespace dblz {
         // All chains
         for (auto i_chain=0; i_chain<_no_markov_chains.at(chain); i_chain++) {
             for (auto sp: _species_possible_vec.at(layer)) {
-                _mc_chains[chain][i_chain][layer][sp] = arma::vec(_mc_chains_act[chain][i_chain][layer][sp]);
+                _mc_chains[chain][i_chain][layer][sp] = _mc_chains_act[chain][i_chain][layer][sp];
             };
         };
     };

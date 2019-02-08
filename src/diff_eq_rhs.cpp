@@ -179,6 +179,9 @@ namespace dblz {
         _nesterov_y_sp1 = nullptr;
         _adam_m = nullptr;
         _adam_v = nullptr;
+        
+        // Max update
+        _mag_max_update = nullptr;
 	};
 	DiffEqRHS::DiffEqRHS(const DiffEqRHS& other) : Grid(other) {
 		_copy(other);
@@ -239,6 +242,12 @@ namespace dblz {
         } else {
             _adam_v = nullptr;
         };
+        
+        if (other._mag_max_update) {
+            _mag_max_update = new double(*other._mag_max_update);
+        } else {
+            _mag_max_update = nullptr;
+        };
 	};
 	void DiffEqRHS::_move(DiffEqRHS& other) {
 		_name = other._name;
@@ -255,6 +264,8 @@ namespace dblz {
         _adam_m = other._adam_m;
         _adam_v = other._adam_v;
         
+        _mag_max_update = other._mag_max_update;
+        
 		// Reset other
 		other._name = "";
 		other._no_dims = 0;
@@ -269,6 +280,8 @@ namespace dblz {
         
         other._adam_m = nullptr;
         other._adam_v = nullptr;
+        
+        other._mag_max_update = nullptr;
 	};
 
 	void DiffEqRHS::_clean_up() {
@@ -292,6 +305,11 @@ namespace dblz {
             delete _adam_v;
         };
         _adam_v = nullptr;
+        
+        if (_mag_max_update) {
+            delete _mag_max_update;
+        };
+        _mag_max_update = nullptr;
 	};
 
 	/********************
@@ -303,6 +321,23 @@ namespace dblz {
 		std::cout << "--- Validate Basis func " << _name << " ---" << std::endl;
 	};
 
+    // ***************
+    // MARK: - Set magnitude of max update
+    // ***************
+    
+    void DiffEqRHS::set_mag_max_update(double mag) {
+        if (_mag_max_update) {
+            delete _mag_max_update;
+        };
+        
+        if (mag < 0.0) {
+            std::cerr << ">>> DiffEqRHS::set_mag_max_update <<< Error: mag of max update must be positive" << std::endl;
+            exit(EXIT_FAILURE);
+        };
+        
+        _mag_max_update = new double(mag);
+    };
+    
 	/********************
 	Getters
 	********************/
@@ -400,7 +435,7 @@ namespace dblz {
         
         int opt_step_use = std::max(opt_step,1);
         
-        double mhat, vhat;
+        double mhat, vhat, update_val;
         std::map<q3c1::Vertex*,std::vector<double>>::iterator itm, itv;
         for (auto pr: _updates) {
             // _updates is never cleared
@@ -463,7 +498,18 @@ namespace dblz {
                 
                 // Update
                 // _val -= dopt * mhat / (sqrt(vhat) + eps);
-                pr.first->get_bf(_coeff_order[i])->increment_coeff(- dopt * mhat / (sqrt(vhat) + eps));
+                update_val = -dopt * mhat / (sqrt(vhat) + eps);
+                if (_mag_max_update) {
+                    if (update_val > *_mag_max_update) {
+                        std::cout << "Warning: update: " << update_val << " is beyond the max magnitude; clipping to: " << *_mag_max_update << std::endl;
+                        update_val = *_mag_max_update;
+                    } else if (update_val < - *_mag_max_update) {
+                        std::cout << "Warning: update: " << update_val << " is beyond the max magnitude; clipping to: " << - *_mag_max_update << std::endl;
+                        update_val = - *_mag_max_update;
+                    };
+                };
+                
+                pr.first->get_bf(_coeff_order[i])->increment_coeff(update_val);
                 // std::cout << "update_committ_stored_adam: ptr: " << pr.first << " idx: " << i << " update: " << - dopt * mhat / (sqrt(vhat) + eps) << std::endl;
             };
             

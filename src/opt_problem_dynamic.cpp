@@ -15,6 +15,7 @@
 #include <algorithm>
 #include <iterator>
 #include <iostream>
+#include <ctime>
 
 /************************************
  * Namespace for bmla
@@ -32,11 +33,11 @@ namespace dblz {
     
     OptProblemDynamic::OptProblemDynamic(std::shared_ptr<LatticeTraj> latt_traj, int no_markov_chains_awake, int no_markov_chains_asleep, int no_timesteps_ixn_params, int timepoint_start_lattice, int no_timesteps_lattice) {
         _latt_traj = latt_traj;
-        
+
+        set_no_timesteps_ixn_params(no_timesteps_ixn_params); // NOTE: must set this first!
+        set_no_timesteps_lattice(timepoint_start_lattice, no_timesteps_lattice);
         set_no_markov_chains(MCType::AWAKE,no_markov_chains_awake);
         set_no_markov_chains(MCType::ASLEEP,no_markov_chains_asleep);
-        set_no_timesteps_ixn_params(no_timesteps_ixn_params);
-        set_no_timesteps_lattice(timepoint_start_lattice, no_timesteps_lattice);
     };
     OptProblemDynamic::OptProblemDynamic(const OptProblemDynamic& other) {
         _copy(other);
@@ -123,34 +124,29 @@ namespace dblz {
      ********************/
     
     void OptProblemDynamic::wake_sleep_loop(int i_opt_step, int no_mean_field_updates, int no_gibbs_sampling_steps, FNameTrajColl &fname_traj_coll, OptionsWakeSleepDynamic options) {
-        
-        // Reset all moments
-        for (auto ixn_param_traj: _latt_traj->get_all_ixn_param_trajs()) {
-            for (auto timepoint=_timepoint_start_lattice; timepoint<=_timepoint_start_lattice+_no_timesteps_lattice; timepoint++) {
-                auto moment = ixn_param_traj->get_ixn_param_at_timepoint(timepoint)->get_moment();
-                moment->reset_to_zero(MCType::ASLEEP);
-                if (!moment->get_is_awake_moment_fixed()) {
-                    moment->reset_to_zero(MCType::AWAKE);
-                };
-            };
-        };
-        
-        // AWAKE PHASE
-        
+                
         // Make a batch subset
         std::vector<int> idx_subset = fname_traj_coll.get_random_subset(_no_markov_chains[MCType::AWAKE]);
         
         // Go through all timepoints
+        std::shared_ptr<Lattice> latt = nullptr;
+        FNameTraj file_traj;
         for (auto timepoint=_timepoint_start_lattice; timepoint<=_timepoint_start_lattice+_no_timesteps_lattice; timepoint++) {
 
-            auto latt = _latt_traj->get_lattice_at_timepoint(timepoint);
+            latt = _latt_traj->get_lattice_at_timepoint(timepoint);
             
+            // AWAKE PHASE
+            
+            clock_t t0 = clock();
+
             // Read in the batch
             for (int i_chain=0; i_chain<_no_markov_chains[MCType::AWAKE]; i_chain++)
             {
-                auto file_traj = fname_traj_coll.get_fname_traj(idx_subset[i_chain]);
+                file_traj = fname_traj_coll.get_fname_traj(idx_subset[i_chain]);
                 latt->read_layer_from_file(MCType::AWAKE, i_chain, 0, file_traj[timepoint].name, file_traj[timepoint].binary);
             };
+            
+            clock_t t1 = clock();
             
             // Option (1): init MF with random hidden layers with prob units
             /*
@@ -162,39 +158,45 @@ namespace dblz {
             // (faster to converge!!!)
             latt->activate_upward_pass_with_2x_weights_1x_bias(MCType::AWAKE, false);
             
+            clock_t t2 = clock();
+            
             // Variational inference
             for (auto i=0; i<no_mean_field_updates; i++) {
                 latt->mean_field_hiddens_step();
             };
             
+            clock_t t3 = clock();
+            
             // Reap awake
             latt->reap_moments(MCType::AWAKE);
+            
+            clock_t t4 = clock();
             
             // ASLEEP PHASE - PERSISTENT_CD
             
             // Run CD sampling
-            for (auto i_chain=0; i_chain<_no_markov_chains[MCType::ASLEEP]; i_chain++) {
-                
-                // Sample vis, hidden
-                for (int i_sampling_step=0; i_sampling_step<no_gibbs_sampling_steps; i_sampling_step++)
-                {
-                    if (i_sampling_step != no_gibbs_sampling_steps-1) {
-                        latt->gibbs_sampling_step(options.is_asleep_visible_binary, options.is_asleep_hidden_binary);
-                    } else {
-                        if (options.is_asleep_visible_binary_final && options.is_asleep_hidden_binary_final) {
-                            // All binary
-                            latt->gibbs_sampling_step(options.is_asleep_visible_binary_final, options.is_asleep_hidden_binary_final);
-                        } else {
-                            // Parallel for non-binary options
-                            latt->gibbs_sampling_step_parallel(options.is_asleep_visible_binary_final, options.is_asleep_hidden_binary_final);
-                        };
-                    };
-                };
+            
+            // Sample vis, hidden
+            for (int i_sampling_step=0; i_sampling_step<no_gibbs_sampling_steps-1; i_sampling_step++)
+            {
+                latt->gibbs_sampling_step(options.is_asleep_visible_binary, options.is_asleep_hidden_binary);
             };
+            // Final step
+            if (options.is_asleep_visible_binary_final && options.is_asleep_hidden_binary_final) {
+                // All binary
+                latt->gibbs_sampling_step(options.is_asleep_visible_binary_final, options.is_asleep_hidden_binary_final);
+            } else {
+                // Parallel for non-binary options
+                latt->gibbs_sampling_step_parallel(options.is_asleep_visible_binary_final, options.is_asleep_hidden_binary_final);
+            };
+            
+            clock_t t5 = clock();
             
             // Reap asleep
             latt->reap_moments(MCType::ASLEEP);
         
+            clock_t t6 = clock();
+            
             // Average moments
             for (auto &ixn_param_traj: _latt_traj->get_all_ixn_param_trajs()) {
                 // std::cout << "averaging: " << ixn_param->get_name() << std::endl;
@@ -203,6 +205,18 @@ namespace dblz {
                 };
                 ixn_param_traj->get_ixn_param_at_timepoint(timepoint)->get_moment()->average_moment_samples(MCType::ASLEEP);
             };
+            
+            clock_t t7 = clock();
+            
+            double dt1 = (t1-t0)  / (double) CLOCKS_PER_SEC;
+            double dt2 = (t2-t1)  / (double) CLOCKS_PER_SEC;
+            double dt3 = (t3-t2)  / (double) CLOCKS_PER_SEC;
+            double dt4 = (t4-t3)  / (double) CLOCKS_PER_SEC;
+            double dt5 = (t5-t4)  / (double) CLOCKS_PER_SEC;
+            double dt6 = (t6-t5)  / (double) CLOCKS_PER_SEC;
+            double dt7 = (t7-t6)  / (double) CLOCKS_PER_SEC;
+            double dt_tot = dt1 + dt2 + dt3 + dt4 + dt5 + dt6 + dt7;
+            std::cout << "timepoint: " << timepoint << " [read " << dt1/dt_tot << "] [up " << dt2/dt_tot << "] [mf " << dt3/dt_tot << "] [reap " << dt4/dt_tot << "] [gibbs " << dt5/dt_tot << "] [reap " << dt6/dt_tot << "] [ave " << dt7/dt_tot << "]" << std::endl;
         };
     };
     

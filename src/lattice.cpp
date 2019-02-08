@@ -611,54 +611,49 @@ namespace dblz {
         
         // Helpers
         
-        // Running for evaluating propensities
-        auto running = arma::vec(no_units,arma::fill::zeros);
-        
-        // flip vector:
-        // 1 initially = rand is above current propensity
-        // 0 = rand is below current propensity
-        auto flip = arma::vec(no_units,arma::fill::ones);
-        auto new_flip = flip;
+        // sign of r vector:
+        // 1 initially
+        // 1 -> 1 => not this species
+        // 1 -> -1 => this species
+        // -1 -> -1 => not this species
+        auto sign_of_r = arma::vec(no_units,arma::fill::ones);
+        auto sign_of_r_new = sign_of_r;
 
         // _latt or _latt_act?
         if (act) {
-            
-            // Convert to propensities
-            for (auto sp: _species_possible_vec.at(layer)) {
-                running += _mc_chains_act[chain][i_chain][layer][sp];
-                _mc_chains_act[chain][i_chain][layer][sp] = running;
-            };
             
             // Evaluate
             // Initially: we (flip) are at zero, rand value is somewhere above
             // Next: we (flip) are at some propensity, rand value may be somewhere above or below
             // Finally: we (flip) are at max propensity = 1.0, rand value is below
             for (auto sp: _species_possible_vec.at(layer)) {
+                // Subtract prob from r
+                r -= _mc_chains_act[chain][i_chain][layer][sp];
+                
                 // New flip vector
-                new_flip = 0.5*sign(r - _mc_chains_act[chain][i_chain][layer][sp]) + 0.5;
-                // flip -> new_flip
-                // 1 -> 1 => not this species => (flip - new_flip) = 0
-                // 1 -> 0 => yes this species => (flip - new_flip) = 1
-                // 0 -> 0 => already assigned a previous species  => (flip - new_flip) = 0
-                _mc_chains_act[chain][i_chain][layer][sp] = flip - new_flip;
+                sign_of_r_new = sign(r);
+                
+                // Difference
+                // sign_of_r -> sign_of_r_new
+                // 1 -> 1 => not this species [0]
+                // 1 -> -1 => this species [1]
+                // -1 -> -1 => not this species [0]
+                // 0.5 * (sign_of_r - sign_of_r_new) encodes the [brackets]
+                
+                _mc_chains_act[chain][i_chain][layer][sp] = 0.5 * (sign_of_r - sign_of_r_new);
                 
                 // Old flip vector = new flip vector
-                flip = new_flip;
+                sign_of_r = sign_of_r_new;
             };
             // Finally: if still above the final propensity, it is the empty species! This means all are zero, so no further adjustment needed!
             
         } else {
-            
-            // As above but with _latt
+
             for (auto sp: _species_possible_vec.at(layer)) {
-                running += _mc_chains[chain][i_chain][layer][sp];
-                _mc_chains[chain][i_chain][layer][sp] = running;
-            };
-            
-            for (auto sp: _species_possible_vec.at(layer)) {
-                new_flip = 0.5*sign(r - _mc_chains[chain][i_chain][layer][sp]) + 0.5;
-                _mc_chains[chain][i_chain][layer][sp] = flip - new_flip;
-                flip = new_flip;
+                r -= _mc_chains[chain][i_chain][layer][sp];
+                sign_of_r_new = sign(r);
+                _mc_chains[chain][i_chain][layer][sp] = 0.5 * (sign_of_r - sign_of_r_new);
+                sign_of_r = sign_of_r_new;
             };
         };
     };
@@ -1082,7 +1077,8 @@ namespace dblz {
             int no_units = get_no_units_in_layer(layer);
             auto prop_tot = arma::vec(no_units,arma::fill::ones);
             for (auto sp: _species_possible_vec.at(layer)) {
-                _mc_chains_act[chain][i_chain][layer][sp] = exp(_mc_chains_act[chain][i_chain][layer][sp]);
+                _mc_chains_act[chain][i_chain][layer][sp].transform( [](double val) { return (exp(val)); } );
+                // _mc_chains_act[chain][i_chain][layer][sp] = exp(_mc_chains_act[chain][i_chain][layer][sp]);
                 prop_tot += _mc_chains_act[chain][i_chain][layer][sp];
             };
             
@@ -1250,7 +1246,12 @@ namespace dblz {
         };
          */
         
-        for (auto layer=0; layer<_no_layers; layer += 2) {
+        // Zeroth layer
+        activate_layer_calculate(MCType::ASLEEP, 0);
+        activate_layer_convert_to_probs(MCType::ASLEEP, 0, binary_visible);
+        activate_layer_committ(MCType::ASLEEP, 0);
+        // Other layers
+        for (auto layer=2; layer<_no_layers; layer += 2) {
             
             // Calculate activations for all chains, hidden layers
             /*
@@ -1274,11 +1275,7 @@ namespace dblz {
             */
             
             // Convert activations to probabilities and committ
-            if (layer == 0) {
-                activate_layer_convert_to_probs(MCType::ASLEEP, layer, binary_visible);
-            } else {
-                activate_layer_convert_to_probs(MCType::ASLEEP, layer, binary_hidden);
-            };
+            activate_layer_convert_to_probs(MCType::ASLEEP, layer, binary_hidden);
             activate_layer_committ(MCType::ASLEEP, layer);
         };
     };
@@ -1367,14 +1364,12 @@ namespace dblz {
         std::map<int, double> bias_mults = _bias_mults;
         
         // 2x
-        for (auto layer=0; layer<_no_layers-1; layer++) {
-            // NOT the last layer!
-            if (layer != _no_layers-2) {
-                _o2_mults[layer][layer+1] = 2.0;
-            } else {
-                _o2_mults[layer][layer+1] = 1.0;
-            };
+        for (auto layer=0; layer<_no_layers-2; layer++) {
+            _o2_mults[layer][layer+1] = 2.0;
         };
+        // 1x last layer
+        _o2_mults[_no_layers-2][_no_layers-1] = 1.0;
+
         // 1x bias
         for (auto layer=0; layer<_no_layers; layer++) {
             _bias_mults[layer] = 1.0;
@@ -1510,10 +1505,8 @@ namespace dblz {
                     val = arma::sum(_mc_chains.at(chain).at(i_chain).at(bias_layer.first).at(sp_pr.first));
             
                     // Set the moment
-                    if (sp_pr.second->get_moment()) {
-                        if (chain == MCType::ASLEEP || !sp_pr.second->get_moment()->get_is_awake_moment_fixed()) {
-                            sp_pr.second->get_moment()->increment_moment_sample(chain, i_chain, val);
-                        };
+                    if (chain == MCType::ASLEEP || !sp_pr.second->get_moment()->get_is_awake_moment_fixed()) {
+                        sp_pr.second->get_moment()->increment_moment_sample(chain, i_chain, val);
                     };
                 };
             };
@@ -1540,10 +1533,8 @@ namespace dblz {
                             val = dot(_mc_chains.at(chain).at(i_chain).at(o2_ixn_layer_1.first).at(sp_pr_1.first), _adj.at(o2_ixn_layer_1.first) * _mc_chains.at(chain).at(i_chain).at(o2_ixn_layer_2.first).at(sp_pr_2.first));
                             
                             // Set the moment
-                            if (sp_pr_2.second->get_moment()) {
-                                if (chain == MCType::ASLEEP || !sp_pr_2.second->get_moment()->get_is_awake_moment_fixed()) {
-                                    sp_pr_2.second->get_moment()->increment_moment_sample(chain, i_chain, val);
-                                };
+                            if (chain == MCType::ASLEEP || !sp_pr_2.second->get_moment()->get_is_awake_moment_fixed()) {
+                                sp_pr_2.second->get_moment()->increment_moment_sample(chain, i_chain, val);
                             };
                         };
                     };

@@ -116,6 +116,9 @@ namespace dblz {
 		// Internal
 		std::vector<double> _form_abscissas(int timepoint) const;
 
+        // Maximum magnitude for update to coeffs
+        double *_mag_max_update;
+        
 		// Internal copy/clean up function
 		void _copy(const DiffEqRHS& other);
 		void _move(DiffEqRHS& other);
@@ -141,6 +144,12 @@ namespace dblz {
 
 		void validate_setup() const;
 
+        // ***************
+        // MARK: - Set magnitude of max update
+        // ***************
+        
+        void set_mag_max_update(double mag);
+        
 		/********************
 		Getters
 		********************/

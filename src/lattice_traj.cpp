@@ -110,7 +110,9 @@ namespace dblz {
         };
         
         // Save at least one lattice
-        auto lptr = _lattices.begin()->second;
+        auto itl = _lattices.end();
+        itl--;
+        auto lptr = itl->second;
         
         // Delete
         auto it = _lattices.begin();

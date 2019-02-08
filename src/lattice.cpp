@@ -1066,6 +1066,8 @@ namespace dblz {
     void Lattice::activate_layer_convert_to_probs(MCType chain, int layer, bool binary) {
         
         int no_units = get_no_units_in_layer(layer);
+        
+        // Starts at 1.0 = exp(0) for empty
         auto prop_tot = arma::vec(no_units,arma::fill::ones);
 
         // All chains
@@ -1073,7 +1075,6 @@ namespace dblz {
         
             // Convert activations to propensities via exp
             // Also calculate total propensity
-            // Starts at 1.0 = exp(0) for empty
             prop_tot.fill(arma::fill::ones);
             for (auto sp: _species_possible_vec.at(layer)) {
                 _mc_chains_act[chain][i_chain][layer][sp].transform( [](double val) { return (exp(val)); } );
@@ -1094,9 +1095,11 @@ namespace dblz {
                 _mc_chains_act[chain][i_chain][layer][sp] /= prop_tot;
                 // std::cout << "prob: " << sp->get_name() << " : " << arma::sum(_mc_chains_act[chain][i_chain][layer][sp]) << std::endl;
             };
+        };
             
-            // Sample if binary
-            if (binary) {
+        // Sample if binary
+        if (binary) {
+            for (auto i_chain=0; i_chain<_no_markov_chains.at(chain); i_chain++) {
                 _binarize_all_units_in_layer(chain,i_chain,layer,true);
                 /*
                 for (auto sp: _species_possible_vec.at(layer)) {

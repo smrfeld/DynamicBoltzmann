@@ -28,25 +28,23 @@ namespace dblz {
 		_copy(other);
 	};
 	Domain1D::Domain1D(Domain1D&& other) : Dimension1D(std::move(other)) {
-		_copy(other);
-		other._reset();
+		_move(other);
 	};
 	Domain1D& Domain1D::operator=(const Domain1D& other) {
 		if (this != &other)
 		{
-	        Dimension1D::operator=(other);
 			_clean_up();
-			_copy(other);
+            Dimension1D::operator=(other);
+            _copy(other);
 		};
 		return *this;
 	};
 	Domain1D& Domain1D::operator=(Domain1D&& other) {
 		if (this != &other)
 		{
-	        Dimension1D::operator=(std::move(other));
 			_clean_up();
-			_copy(other);
-			other._reset();
+            Dimension1D::operator=(std::move(other));
+            _move(other);
 		};
 		return *this;
 	};
@@ -57,9 +55,10 @@ namespace dblz {
 	{
 		_ixn_param_traj = other._ixn_param_traj;
 	};
-	void Domain1D::_reset()
+	void Domain1D::_move(Domain1D& other)
 	{
-		_ixn_param_traj = nullptr;
+        _ixn_param_traj = other._ixn_param_traj;
+        other._ixn_param_traj = nullptr;
 	};
 	void Domain1D::_clean_up() {
 	};
@@ -131,7 +130,8 @@ namespace dblz {
 		_domain = domain;
 		_no_dims = _domain.size();
 		_parent_ixn_param_traj = parent_ixn_param_traj;
-
+        _abscissas = std::vector<double>(_no_dims,0.0);
+        
 		if (_no_dims == 0 || _no_dims > 3) {
 			std::cerr << ">>> Error: DiffEqRHS::DiffEqRHS <<< Only dims 1,2,3 are supported" << std::endl;
 			exit(EXIT_FAILURE);
@@ -194,7 +194,6 @@ namespace dblz {
 		if (this != &other)
 		{
 			_clean_up();
-
 			Grid::operator=(other);
 			_copy(other);
 		};
@@ -221,7 +220,8 @@ namespace dblz {
 		_domain = other._domain;
 		_parent_ixn_param_traj = other._parent_ixn_param_traj;
 		_updates = other._updates;
-
+        _abscissas = other._abscissas;
+        
         if (other._nesterov_y_s) {
 			_nesterov_y_s = new std::map<q3c1::Vertex*,std::vector<double>>(*other._nesterov_y_s);
         } else {
@@ -257,7 +257,8 @@ namespace dblz {
 		_domain = other._domain;
 		_parent_ixn_param_traj = other._parent_ixn_param_traj;
 		_updates = other._updates;
-        
+        _abscissas = other._abscissas;
+
 		_nesterov_y_s = other._nesterov_y_s;
 		_nesterov_y_sp1 = other._nesterov_y_sp1;
 
@@ -274,7 +275,8 @@ namespace dblz {
 		other._domain.clear();
 		other._parent_ixn_param_traj = nullptr;
 		other._updates.clear();
-
+        other._abscissas.clear();
+        
         other._nesterov_y_s = nullptr;
 		other._nesterov_y_sp1 = nullptr;
         
@@ -354,22 +356,23 @@ namespace dblz {
 		return _domain;
 	};
 
-	std::vector<double> DiffEqRHS::_form_abscissas(int timepoint) const {
-		std::vector<double> abscissas;
-		for (auto dim=0; dim<_domain.size(); dim++) {
-			abscissas.push_back(_domain[dim]->get_ixn_param_traj()->get_ixn_param_at_timepoint(timepoint)->get_val());
+    void DiffEqRHS::_form_abscissas(int timepoint) const {
+		for (auto dim=0; dim<_no_dims; dim++) {
+            _abscissas[dim] = _domain[dim]->get_ixn_param_traj()->get_ixn_param_at_timepoint(timepoint)->get_val();
 		};
-		return abscissas;
 	};
 
 	double DiffEqRHS::get_val_at_timepoint(int timepoint) const {
-		return Grid::get_val(_form_abscissas(timepoint));
+        _form_abscissas(timepoint);
+        return Grid::get_val(_abscissas);
 	};
 	double DiffEqRHS::get_deriv_wrt_u_at_timepoint(int timepoint, q3c1::IdxSet global_vertex_idxs, std::vector<q3c1::DimType> dim_types) const {
-		return Grid::get_deriv_wrt_coeff(_form_abscissas(timepoint), global_vertex_idxs, dim_types);
+        _form_abscissas(timepoint);
+		return Grid::get_deriv_wrt_coeff(_abscissas, global_vertex_idxs, dim_types);
 	};
 	double DiffEqRHS::get_deriv_wrt_nu_at_timepoint(int timepoint, int deriv_dim) const {
-		return Grid::get_deriv_wrt_abscissa(_form_abscissas(timepoint), deriv_dim);
+        _form_abscissas(timepoint);
+		return Grid::get_deriv_wrt_abscissa(_abscissas, deriv_dim);
 	};
 
 	/********************
@@ -381,9 +384,6 @@ namespace dblz {
 		// Adjoint
 		double adjoint_val;
 
-		// Abscissas
-		std::vector<double> abscissas;
-
 		// Updates
 		std::map<q3c1::Vertex*,std::vector<double>> updates;
 
@@ -394,10 +394,10 @@ namespace dblz {
 			adjoint_val = _parent_ixn_param_traj->get_adjoint()->get_val_at_timepoint(timepoint);
 
 			// Form abscissas
-			abscissas = _form_abscissas(timepoint);
+            _form_abscissas(timepoint);
 
 			// Get updates for verts
-			updates = Grid::get_deriv_wrt_coeffs_for_all_surrounding_verts(abscissas);
+			updates = Grid::get_deriv_wrt_coeffs_for_all_surrounding_verts(_abscissas);
 
 			// Append to any existing
 			for (auto &pr: updates) {

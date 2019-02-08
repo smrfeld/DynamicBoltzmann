@@ -24,7 +24,7 @@ namespace dblz {
 
 		// Internal copy func/clean up
 		void _clean_up();
-		void _reset();
+		void _move(Domain1D& other);
 		void _copy(const Domain1D& other);
 
 	public:
@@ -114,7 +114,8 @@ namespace dblz {
         std::map<q3c1::Vertex*,std::vector<double>> *_adam_m, *_adam_v;
 
 		// Internal
-		std::vector<double> _form_abscissas(int timepoint) const;
+        mutable std::vector<double> _abscissas;
+        void _form_abscissas(int timepoint) const;
 
         // Maximum magnitude for update to coeffs
         double *_mag_max_update;

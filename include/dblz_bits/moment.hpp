@@ -37,6 +37,9 @@ namespace dblz {
 
 		// Averaged values
         std::map<MCType, double> _val_averaged;
+        
+        // Difference
+        double _val_diff;
 	
 		// If the awake moment is fixed
 		bool _is_awake_moment_fixed;
@@ -84,36 +87,39 @@ namespace dblz {
 		Reset
 		********************/
 
-		void reset_to_zero(MCType type);
+		void reset_moment_samples_to_zero();
 
 		/********************
 		Fixed awake
 		********************/
 
-		void set_is_awake_moment_fixed(bool flag);
+		void set_is_awake_moment_fixed(bool flag, double val);
 		bool get_is_awake_moment_fixed() const;
 
 		/********************
 		Get/set moment
 		********************/
-
-		double get_moment(MCType type) const;
-		void set_moment(MCType type, double val);
-
+        
+        // Get moment
+        double get_moment(MCType type) const;
+        
 		// Sample
-		double get_moment_sample(MCType type, int i_sample) const;
 		void set_moment_sample(MCType type, int i_sample, double val);
-        void increment_moment_sample(MCType type, int i_sample, double val);
+        // void increment_moment_sample(MCType type, int i_sample, double val);
 
 		// Average reaps
-		void average_moment_samples(MCType type);
-
+		void average_moment_samples();
+        
+        // Get moment difference
+        double get_moment_diff_awake_minus_asleep() const;
+        
+        // Augment moment difference by some value
+        void increment_moment_diff_awake_minus_asleep(double val);
+        
 		/********************
 		Write
 		********************/
 
 		void write_to_file(std::string fname, bool append=false) const;
-
 	};
-
 };

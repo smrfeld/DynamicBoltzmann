@@ -22,7 +22,9 @@ namespace dblz {
     typedef std::map<Sptr,arma::vec> layer_occ;
     typedef std::map<int, layer_occ> layers_map;
 
-	class Lattice
+    enum class LatticeMode: unsigned int { NORMAL, CENTERED, BATCHNORM };
+    
+    class Lattice
 	{
 	private:
 
@@ -92,11 +94,15 @@ namespace dblz {
         std::map<int, double> _bias_mults;
         
         // ***************
-        // MARK: Batch normalization
+        // MARK: Mode: normal vs centered vs batch normalized
         // ***************
         
         // Mode
-        bool _bn_mode;
+        LatticeMode _mode;
+
+        // ***************
+        // MARK: Batch normalization
+        // ***************
         
         // Batch normalization parameters for the layers
         // (layer) -> (parameter)
@@ -113,6 +119,19 @@ namespace dblz {
         
         // Small epsilon to prevent div by zero
         double _bn_eps;
+        
+        // ***************
+        // MARK: - Centering
+        // ***************
+        
+        // Sliding factors for each layer
+        std::map<int, double> _c_sliding_factors;
+        
+        // Moving average means for each layer
+        std::map<int, std::map<Sptr, arma::vec>> _c_means;
+        
+        // Batch means for each layer
+        std::map<int, std::map<Sptr, arma::vec>> _c_batch_means;
         
         // ***************
         // MARK: - Private methods
@@ -159,6 +178,11 @@ namespace dblz {
         void _calculate_activations_from_above_bn(MCType chain, int i_chain, int layer);
         void _calculate_activations_from_below_bn(MCType chain, int i_chain, int layer);
 
+        // Centered activations
+        void _calculate_activations_from_below_c(MCType chain, int i_chain, int layer);
+        void _calculate_activations_from_above_c(MCType chain, int i_chain, int layer);
+        void _calculate_activations_from_both_c(MCType chain, int i_chain, int layer);
+
         // ***************
         // MARK: - Constructor helpers
         // ***************
@@ -177,8 +201,9 @@ namespace dblz {
         // MARK: Constructor
         // ***************
         
-        Lattice(int no_dims, int box_length, std::vector<Sptr> species_visible, bool batch_norm_mode);
-		Lattice(const Lattice& other);
+        Lattice(int no_dims, int box_length, std::vector<Sptr> species_visible, LatticeMode mode);
+        Lattice(int no_dims, int box_length, std::vector<Sptr> species_visible, LatticeMode mode, double layer_zero_sliding_factor);
+        Lattice(const Lattice& other);
 		Lattice(Lattice&& other);
 		Lattice& operator=(const Lattice& other);
 		Lattice& operator=(Lattice&& other);
@@ -192,6 +217,7 @@ namespace dblz {
         int get_box_length() const;
         int get_no_units_in_layer(int layer) const;
         int get_no_layers() const;
+        LatticeMode get_lattice_mode() const;
         
         // ***************
         // MARK: Markov chains
@@ -206,7 +232,8 @@ namespace dblz {
         // ***************
         
         void add_layer(int layer, int box_length, std::vector<Sptr> species);
-        void add_layer(int layer, int box_length, std::vector<Sptr> species, Iptr beta, Iptr gamma);
+        void add_layer_batchnorm(int layer, int box_length, std::vector<Sptr> species, Iptr beta, Iptr gamma);
+        void add_layer_centered(int layer, int box_length, std::vector<Sptr> species, double sliding_factor);
 
         // ***************
         // MARK: Biases/ixn params
@@ -280,6 +307,9 @@ namespace dblz {
         // NOTE: For these two, BN params must already exist! See below to calculate!
         void activate_layer_calculate_bn(MCType chain, int layer);
         void activate_layer_calculate_bn(MCType chain, int layer, int given_layer);
+        // (1.c) Alternatively, include centering
+        void activate_layer_calculate_c(MCType chain, int layer);
+        void activate_layer_calculate_c(MCType chain, int layer, int given_layer);
         
         // (2) Convert activations to probs
         void activate_layer_convert_to_probs(MCType chain, int layer, bool binary);
@@ -310,7 +340,7 @@ namespace dblz {
         void activate_upward_pass_with_2x_weights_1x_bias(MCType chain, bool binary_hidden);
 
         // ***************
-        // MARK: Get counts for visible layer
+        // MARK: - Get counts for visible layer
         // ***************
 
         /*
@@ -321,9 +351,10 @@ namespace dblz {
          */
         
         // ***************
-        // MARK: Reap moments
+        // MARK: - Reap moments, both awake and asleep
         // ***************
 
-        void reap_moments(MCType chain);
+        // Also calculates the averages!
+        void reap_moments();
 	};
 };

@@ -17,7 +17,8 @@ namespace dblz {
     class Lattice;
     
     enum class MCType: unsigned int;
-    
+    enum class LatticeMode: unsigned int;
+
 	/****************************************
 	LatticeTraj
 	****************************************/
@@ -51,7 +52,7 @@ namespace dblz {
         // MARK: - Constructor
         // ***************
         
-        LatticeTraj(int no_dims, int box_length, std::vector<Sptr> species_visible);
+        LatticeTraj(int no_dims, int box_length, std::vector<Sptr> species_visible, LatticeMode mode);
 		LatticeTraj(const LatticeTraj& other);
 		LatticeTraj(LatticeTraj&& other);
 		LatticeTraj& operator=(const LatticeTraj& other);

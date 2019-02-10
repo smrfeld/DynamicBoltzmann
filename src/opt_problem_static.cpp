@@ -95,14 +95,6 @@ namespace dblz {
             std::cout << "--- Sampling lattice ---" << std::endl;
         };
         
-        // Reset all moments
-        for (auto &ixn_param: _latt->get_all_ixn_params()) {
-            if (!ixn_param->get_moment()->get_is_awake_moment_fixed()) {
-                ixn_param->get_moment()->reset_to_zero(MCType::AWAKE);
-            };
-            ixn_param->get_moment()->reset_to_zero(MCType::ASLEEP);
-        };
-        
         // AWAKE PHASE
         
         // Make a batch subset
@@ -131,9 +123,6 @@ namespace dblz {
         for (auto i=0; i<no_mean_field_updates; i++) {
             _latt->mean_field_hiddens_step();
         };
-            
-        // Reap awake
-        _latt->reap_moments(MCType::AWAKE);
         
         // Write out the lattices
         if (options.write_after_awake) {
@@ -169,9 +158,6 @@ namespace dblz {
                 };
             };
         };
-        
-        // Reap asleep
-        _latt->reap_moments(MCType::ASLEEP);
 
         // Write out the lattices
         if (options.write_after_asleep) {
@@ -186,19 +172,10 @@ namespace dblz {
             };
         };
         
-        // Average moments
-        for (auto &ixn_param: _latt->get_all_ixn_params()) {
-            // std::cout << "averaging: " << ixn_param->get_name() << std::endl;
-            if (!ixn_param->get_moment()->get_is_awake_moment_fixed()) {
-                ixn_param->get_moment()->average_moment_samples(MCType::AWAKE);
-            };
-            ixn_param->get_moment()->average_moment_samples(MCType::ASLEEP);
-        };
+        // REAP
         
-        if (options.verbose) {
-            std::cout << std::endl;
-        };
-        
+        _latt->reap_moments();
+
         if (options.verbose) {
             std::cout << "--- [Finished] Sampled lattice ---" << std::endl;
             std::cout << std::endl;
@@ -249,7 +226,7 @@ namespace dblz {
             if (!ixn_param->get_is_val_fixed()) {
                 // Update
                 if (options.l2_reg) {
-                    ixn_param->update_calculate_and_store(options.l2_reg,options.l2_lambda[ixn_param],options.l2_center[ixn_param]);
+                    ixn_param->update_calculate_and_store_l2(options.l2_lambda[ixn_param],options.l2_center[ixn_param]);
                 } else {
                     ixn_param->update_calculate_and_store();
                 };

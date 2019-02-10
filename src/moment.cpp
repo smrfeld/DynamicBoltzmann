@@ -70,6 +70,8 @@ namespace dblz {
 		// averaged
 		_val_averaged = other._val_averaged;
 		
+        _val_diff = other._val_diff;
+        
 		_is_awake_moment_fixed = other._is_awake_moment_fixed;
 
 		// Reset the other
@@ -84,6 +86,8 @@ namespace dblz {
 		other._val_averaged[MCType::AWAKE] = 0.0;
         other._val_averaged[MCType::ASLEEP] = 0.0;
 
+        other._val_diff = 0.0;
+        
 		other._is_awake_moment_fixed = false;
 	};
 	void Moment::_copy(const Moment& other) {
@@ -97,6 +101,8 @@ namespace dblz {
 
 		// averaged
 		_val_averaged = other._val_averaged;
+        
+        _val_diff = other._val_diff;
 
 		_is_awake_moment_fixed = other._is_awake_moment_fixed;
 	};
@@ -149,19 +155,26 @@ namespace dblz {
 	Reset
 	********************/
 
-	void Moment::reset_to_zero(MCType type) {
-        for (auto i_chain=0; i_chain<_no_markov_chains[type]; i_chain++) {
-            set_moment_sample(type, i_chain, 0.0);
+	void Moment::reset_moment_samples_to_zero() {
+        for (auto i_chain=0; i_chain<_no_markov_chains[MCType::AWAKE]; i_chain++) {
+            set_moment_sample(MCType::AWAKE, i_chain, 0.0);
         };
-        set_moment(type, 0.0);
+        for (auto i_chain=0; i_chain<_no_markov_chains[MCType::ASLEEP]; i_chain++) {
+            set_moment_sample(MCType::ASLEEP, i_chain, 0.0);
+        };
 	};
 
 	/********************
 	Fixed awake
 	********************/
 
-	void Moment::set_is_awake_moment_fixed(bool flag) {
+	void Moment::set_is_awake_moment_fixed(bool flag, double val) {
 		_is_awake_moment_fixed = flag;
+        
+        _val_averaged[MCType::AWAKE] = val;
+        
+        // Recompute difference
+        _val_diff = _val_averaged[MCType::AWAKE] - _val_averaged[MCType::ASLEEP];
 	};
 	bool Moment::get_is_awake_moment_fixed() const {
 		return _is_awake_moment_fixed;
@@ -171,33 +184,47 @@ namespace dblz {
 	Get/set moment
 	********************/
 
-	double Moment::get_moment(MCType type) const {
+    // Get moment
+    double Moment::get_moment(MCType type) const {
         return _val_averaged.at(type);
-	};
-	void Moment::set_moment(MCType type, double val) {
-        _val_averaged[type] = val;
-	};
-
+    };
+    
 	// Batch
-	double Moment::get_moment_sample(MCType type, int i_sample) const {
-        return _vals_reaped.at(type).at(i_sample);
-	};
 	void Moment::set_moment_sample(MCType type, int i_sample, double val) {
         _vals_reaped[type][i_sample] = val;
 	};
+    /*
     void Moment::increment_moment_sample(MCType type, int i_sample, double val) {
         _vals_reaped[type][i_sample] += val;
     };
+     */
 
     // Average reaps
-	void Moment::average_moment_samples(MCType type) {
-        _val_averaged[type] = 0.0;
-        for (auto i=0; i<_no_markov_chains[type]; i++) {
-            _val_averaged[type] += _vals_reaped[type][i];
+	void Moment::average_moment_samples() {
+        _val_averaged[MCType::AWAKE] = 0.0;
+        _val_averaged[MCType::ASLEEP] = 0.0;
+        for (auto i=0; i<_no_markov_chains[MCType::AWAKE]; i++) {
+            _val_averaged[MCType::AWAKE] += _vals_reaped[MCType::AWAKE][i];
         };
-        _val_averaged[type] /= _no_markov_chains[type];
-	};
+        for (auto i=0; i<_no_markov_chains[MCType::ASLEEP]; i++) {
+            _val_averaged[MCType::ASLEEP] += _vals_reaped[MCType::ASLEEP][i];
+        };
+        _val_averaged[MCType::AWAKE] /= _no_markov_chains[MCType::AWAKE];
+        _val_averaged[MCType::ASLEEP] /= _no_markov_chains[MCType::ASLEEP];
+        
+        _val_diff = _val_averaged[MCType::AWAKE] - _val_averaged[MCType::ASLEEP];
+    };
 
+    // Get moment difference
+    double Moment::get_moment_diff_awake_minus_asleep() const {
+        return _val_diff;
+    };
+    
+    // Augment moment difference by some value
+    void Moment::increment_moment_diff_awake_minus_asleep(double val) {
+        _val_diff += val;
+    };
+    
 	/********************
 	Write
 	********************/

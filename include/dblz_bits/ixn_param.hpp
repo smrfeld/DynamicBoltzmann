@@ -90,7 +90,9 @@ namespace dblz {
 		Update
 		********************/
 
-		void update_calculate_and_store(bool l2_mode=false, double l2_lambda=0.0, double l2_center=0.0);
+        void update_calculate_and_store_l2(double l2_lambda, double l2_center);
+		void update_calculate_and_store();
+        
 		void update_committ_stored_sgd(double dopt);
 		void update_committ_stored_nesterov(double dopt, double nesterov_acc);
 		void update_committ_stored_adam(double dopt, int opt_step, double beta_1, double beta_2, double eps);

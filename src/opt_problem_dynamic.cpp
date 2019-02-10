@@ -167,11 +167,6 @@ namespace dblz {
             
             clock_t t3 = clock();
             
-            // Reap awake
-            latt->reap_moments(MCType::AWAKE);
-            
-            clock_t t4 = clock();
-            
             // ASLEEP PHASE - PERSISTENT_CD
             
             // Run CD sampling
@@ -190,33 +185,21 @@ namespace dblz {
                 latt->gibbs_sampling_step_parallel(options.is_asleep_visible_binary_final, options.is_asleep_hidden_binary_final);
             };
             
-            clock_t t5 = clock();
+            clock_t t4 = clock();
             
-            // Reap asleep
-            latt->reap_moments(MCType::ASLEEP);
+            // REAP PHASE
+            
+            latt->reap_moments();
         
-            clock_t t6 = clock();
-            
-            // Average moments
-            for (auto &ixn_param_traj: _latt_traj->get_all_ixn_param_trajs()) {
-                // std::cout << "averaging: " << ixn_param->get_name() << std::endl;
-                if (!ixn_param_traj->get_ixn_param_at_timepoint(timepoint)->get_moment()->get_is_awake_moment_fixed()) {
-                    ixn_param_traj->get_ixn_param_at_timepoint(timepoint)->get_moment()->average_moment_samples(MCType::AWAKE);
-                };
-                ixn_param_traj->get_ixn_param_at_timepoint(timepoint)->get_moment()->average_moment_samples(MCType::ASLEEP);
-            };
-            
-            clock_t t7 = clock();
+            clock_t t5 = clock();
             
             double dt1 = (t1-t0)  / (double) CLOCKS_PER_SEC;
             double dt2 = (t2-t1)  / (double) CLOCKS_PER_SEC;
             double dt3 = (t3-t2)  / (double) CLOCKS_PER_SEC;
             double dt4 = (t4-t3)  / (double) CLOCKS_PER_SEC;
             double dt5 = (t5-t4)  / (double) CLOCKS_PER_SEC;
-            double dt6 = (t6-t5)  / (double) CLOCKS_PER_SEC;
-            double dt7 = (t7-t6)  / (double) CLOCKS_PER_SEC;
-            double dt_tot = dt1 + dt2 + dt3 + dt4 + dt5 + dt6 + dt7;
-            std::cout << "timepoint: " << timepoint << " [read " << dt1/dt_tot << "] [up " << dt2/dt_tot << "] [mf " << dt3/dt_tot << "] [reap " << dt4/dt_tot << "] [gibbs " << dt5/dt_tot << "] [reap " << dt6/dt_tot << "] [ave " << dt7/dt_tot << "]" << std::endl;
+            double dt_tot = dt1 + dt2 + dt3 + dt4 + dt5;
+            std::cout << "timepoint: " << timepoint << " [read " << dt1/dt_tot << "] [up " << dt2/dt_tot << "] [mf " << dt3/dt_tot << "] [gibbs " << dt4/dt_tot << "] [reap " << dt5/dt_tot << "]" << std::endl;
         };
     };
     

@@ -187,13 +187,14 @@ namespace dblz {
 	Update
 	********************/
 
-	void IxnParam::update_calculate_and_store(bool l2_mode, double l2_lambda, double l2_center) {
-		_update = _moment->get_moment(MCType::ASLEEP) - _moment->get_moment(MCType::AWAKE);
-		if (l2_mode) {
-			_update += 2.0 * l2_lambda * (_val - l2_center);
-		};
+	void IxnParam::update_calculate_and_store_l2(double l2_lambda, double l2_center) {
+		_update = -1.0 * _moment->get_moment_diff_awake_minus_asleep() + 2.0 * l2_lambda * (_val - l2_center);
 	};
-	void IxnParam::update_committ_stored_sgd(double dopt) {
+    void IxnParam::update_calculate_and_store() {
+        _update = -1.0 * _moment->get_moment_diff_awake_minus_asleep();
+    };
+    
+    void IxnParam::update_committ_stored_sgd(double dopt) {
 		// Just update
 		_val -= dopt*_update;
 	};

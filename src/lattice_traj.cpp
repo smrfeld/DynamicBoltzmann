@@ -32,10 +32,15 @@ namespace dblz {
 	Constructor
 	********************/
 
-	LatticeTraj::LatticeTraj(int no_dims, int box_length, std::vector<Sptr> species_visible)
+    LatticeTraj::LatticeTraj(int no_dims, int box_length, std::vector<Sptr> species_visible, LatticeMode mode)
 	{
+        if (mode == LatticeMode::BATCHNORM) {
+            std::cerr << ">>> LatticeTraj::LatticeTraj <<< Batch norm mode not supported!" << std::endl;
+            exit(EXIT_FAILURE);
+        };
+        
         // Make first lattice
-        _lattices[0] = std::make_shared<Lattice>(no_dims,box_length,species_visible,false);
+        _lattices[0] = std::make_shared<Lattice>(no_dims,box_length,species_visible,mode);
         
         // Set no timesteps/timepoints
         set_no_timesteps(0,0);

@@ -29,9 +29,18 @@ namespace dblz {
 	Constructor
 	********************/
 
-	Lattice::Lattice(int no_dims, int box_length, std::vector<Sptr> species_visible, bool batch_norm_mode)
+    Lattice::Lattice(int no_dims, int box_length, std::vector<Sptr> species_visible, LatticeMode mode, double layer_zero_sliding_factor) : Lattice(no_dims,box_length,species_visible,mode) {
+        if (mode != LatticeMode::CENTERED) {
+            std::cerr << ">>> Lattice::Lattice <<< Error: constructor with layer_zero_sliding_factor is only for CENTERED mode!" << std::endl;
+            exit(EXIT_FAILURE);
+        };
+
+        // Set sliding factor
+        _c_sliding_factors[0] = layer_zero_sliding_factor;
+    };
+	Lattice::Lattice(int no_dims, int box_length, std::vector<Sptr> species_visible, LatticeMode mode)
 	{
-        if (batch_norm_mode) {
+        if (mode == LatticeMode::BATCHNORM) {
             std::cerr << "ERROR: Batch norm mode is presently fucked and therefore forbidden" << std::endl;
             exit(EXIT_FAILURE);
         };
@@ -45,16 +54,21 @@ namespace dblz {
 		_box_length = box_length;
         _no_layers = 0;
         
+        _mode = mode;
+        
         // Batch norm
-        _bn_mode = batch_norm_mode;
         _bn_eps = 1.0e-8;
-
+        
         // Set no chains
         set_no_markov_chains(MCType::AWAKE, 1);
         set_no_markov_chains(MCType::ASLEEP, 1);
     
 		// Visible layer
-        add_layer(0, _box_length, species_visible, nullptr, nullptr);
+        if (_mode == LatticeMode::CENTERED) {
+            add_layer_centered(0, _box_length, species_visible, 1.0);
+        } else {
+            add_layer(0, _box_length, species_visible);
+        };
 	};
 	Lattice::Lattice(const Lattice& other) {
 		_copy(other);
@@ -109,7 +123,8 @@ namespace dblz {
         _o2_mults = other._o2_mults;
         _bias_mults = other._bias_mults;
         
-        _bn_mode = other._bn_mode;
+        _mode = other._mode;
+        
         _bn_beta = other._bn_beta;
         _bn_gamma = other._bn_gamma;
         _bn_beta_bar = other._bn_beta_bar;
@@ -117,6 +132,10 @@ namespace dblz {
         _bn_means = other._bn_means;
         _bn_vars = other._bn_vars;
         _bn_eps = other._bn_eps;
+        
+        _c_sliding_factors = other._c_sliding_factors;
+        _c_means = other._c_means;
+        _c_batch_means = other._c_batch_means;
     };
 	void Lattice::_move(Lattice& other) {
         _no_dims = other._no_dims;
@@ -144,7 +163,8 @@ namespace dblz {
         _o2_mults = other._o2_mults;
         _bias_mults = other._bias_mults;
 
-        _bn_mode = other._bn_mode;
+        _mode = other._mode;
+        
         _bn_beta = other._bn_beta;
         _bn_gamma = other._bn_gamma;
         _bn_beta_bar = other._bn_beta_bar;
@@ -153,6 +173,10 @@ namespace dblz {
         _bn_vars = other._bn_vars;
         _bn_eps = other._bn_eps;
 
+        _c_sliding_factors = other._c_sliding_factors;
+        _c_means = other._c_means;
+        _c_batch_means = other._c_batch_means;
+        
 		// Reset other
 		other._no_dims = 0;
 		other._box_length = 0;
@@ -179,7 +203,8 @@ namespace dblz {
         other._o2_mults.clear();
         other._bias_mults.clear();
         
-        other._bn_mode = true;
+        other._mode = LatticeMode::NORMAL;
+        
         other._bn_beta.clear();
         other._bn_gamma.clear();
         other._bn_beta_bar.clear();
@@ -187,6 +212,10 @@ namespace dblz {
         other._bn_means.clear();
         other._bn_vars.clear();
         other._bn_eps = 0.0;
+        
+        other._c_sliding_factors.clear();
+        other._c_means.clear();
+        other._c_batch_means.clear();
 	};
     
     /****************************************
@@ -263,6 +292,7 @@ namespace dblz {
     int Lattice::get_no_dims() const {
         return _no_dims;
     };
+    
     int Lattice::get_box_length() const {
         return _box_length;
     };
@@ -275,6 +305,10 @@ namespace dblz {
         return _no_layers;
     };
     
+    LatticeMode Lattice::get_lattice_mode() const {
+        return _mode;
+    };
+
     /********************
      Markov chains
      ********************/
@@ -314,19 +348,6 @@ namespace dblz {
      ********************/
     
     void Lattice::add_layer(int layer, int box_length, std::vector<Sptr> species) {
-        if (_bn_mode) {
-            std::cerr << ">>> Lattice::add_layer <<< in batch norm mode; must specify scale and shift parameters" << std::endl;
-            exit(EXIT_FAILURE);
-        };
-        
-        add_layer(layer,box_length,species,nullptr,nullptr);
-    };
-    
-    void Lattice::add_layer(int layer, int box_length, std::vector<Sptr> species, Iptr beta, Iptr gamma) {
-        if (!_bn_mode && beta != nullptr && gamma != nullptr) {
-            std::cerr << ">>> Lattice::add_layer <<< NOT in batch norm mode; cannot specify scale and shift parameters" << std::endl;
-            exit(EXIT_FAILURE);
-        };
         
         if (layer != _no_layers) {
             std::cerr << ">>> Lattice::add_layer <<< error: next layer must be: " << _no_layers << " not: " << layer << std::endl;
@@ -349,7 +370,7 @@ namespace dblz {
         
         // No units
         _no_units_per_layer[layer] = no_units;
-
+        
         // Lookups
         if (_no_dims == 1) {
             for (auto x=1; x<=_box_length; x++) {
@@ -386,40 +407,77 @@ namespace dblz {
         if (layer != 0) {
             int size_below = get_no_units_in_layer(layer-1);
             _adj[layer-1] = arma::mat(size_below,no_units,arma::fill::zeros);
+            std::cout << "Made adjacency matrix: " << layer-1 << " " << size_below << " " << no_units << std::endl;
+        };
+
+    };
+    
+    void Lattice::add_layer_batchnorm(int layer, int box_length, std::vector<Sptr> species, Iptr beta, Iptr gamma) {
+        if (_mode != LatticeMode::BATCHNORM) {
+            std::cerr << ">>> Lattice::add_layer_batchnorm <<< Error: mode is not batch_norm" << std::endl;
+            exit(EXIT_FAILURE);
         };
         
+        if (layer == 0) {
+            std::cerr << ">>> Lattice::add_layer_batchnorm <<< 0th layer cannot be batch norm" << std::endl;
+            exit(EXIT_FAILURE);
+        };
+        
+        // Add layer
+        add_layer(layer,box_length,species);
+        
+        int no_units = get_no_units_in_layer(layer);
+        
         // Batch norm
-        if (_bn_mode) {
-            if (layer != 0) {
-              
-                for (auto sp: _species_possible_vec[layer]) {
-                    // Set params
-                    _bn_beta[layer][sp] = beta;
-                    _bn_gamma[layer][sp] = gamma;
-                    
-                    // Add to all
-                    auto it1 = std::find(_all_ixns.begin(), _all_ixns.end(), beta);
-                    if (it1 == _all_ixns.end()) {
-                        _all_ixns.push_back(beta);
-                    };
-                    auto it2 = std::find(_all_ixns.begin(), _all_ixns.end(), gamma);
-                    if (it2 == _all_ixns.end()) {
-                        _all_ixns.push_back(gamma);
-                    };
-
-                    _bn_beta_bar[MCType::AWAKE][layer][sp] = arma::vec(no_units,arma::fill::zeros);
-                    _bn_beta_bar[MCType::ASLEEP][layer][sp] = arma::vec(no_units,arma::fill::zeros);
-                    _bn_gamma_bar[MCType::AWAKE][layer][sp] = arma::vec(no_units,arma::fill::zeros);
-                    _bn_gamma_bar[MCType::ASLEEP][layer][sp] = arma::vec(no_units,arma::fill::zeros);
-
-                    std::cout << "Filling _bn_means with zeros: no_units: " << no_units << " layer: " << layer << " species: " << sp->get_name() << std::endl;
-                    
-                    _bn_means[MCType::AWAKE][layer][sp] = arma::vec(no_units,arma::fill::zeros);
-                    _bn_means[MCType::ASLEEP][layer][sp] = arma::vec(no_units,arma::fill::zeros);
-                    _bn_vars[MCType::AWAKE][layer][sp] = arma::vec(no_units,arma::fill::zeros);
-                    _bn_vars[MCType::ASLEEP][layer][sp] = arma::vec(no_units,arma::fill::zeros);
-                };
+        for (auto sp: _species_possible_vec[layer]) {
+            // Set params
+            _bn_beta[layer][sp] = beta;
+            _bn_gamma[layer][sp] = gamma;
+            
+            // Add to all
+            auto it1 = std::find(_all_ixns.begin(), _all_ixns.end(), beta);
+            if (it1 == _all_ixns.end()) {
+                _all_ixns.push_back(beta);
             };
+            auto it2 = std::find(_all_ixns.begin(), _all_ixns.end(), gamma);
+            if (it2 == _all_ixns.end()) {
+                _all_ixns.push_back(gamma);
+            };
+
+            _bn_beta_bar[MCType::AWAKE][layer][sp] = arma::vec(no_units,arma::fill::zeros);
+            _bn_beta_bar[MCType::ASLEEP][layer][sp] = arma::vec(no_units,arma::fill::zeros);
+            _bn_gamma_bar[MCType::AWAKE][layer][sp] = arma::vec(no_units,arma::fill::zeros);
+            _bn_gamma_bar[MCType::ASLEEP][layer][sp] = arma::vec(no_units,arma::fill::zeros);
+
+            // std::cout << "Filling _bn_means with zeros: no_units: " << no_units << " layer: " << layer << " species: " << sp->get_name() << std::endl;
+            
+            _bn_means[MCType::AWAKE][layer][sp] = arma::vec(no_units,arma::fill::zeros);
+            _bn_means[MCType::ASLEEP][layer][sp] = arma::vec(no_units,arma::fill::zeros);
+            _bn_vars[MCType::AWAKE][layer][sp] = arma::vec(no_units,arma::fill::zeros);
+            _bn_vars[MCType::ASLEEP][layer][sp] = arma::vec(no_units,arma::fill::zeros);
+        };
+    };
+    
+    void Lattice::add_layer_centered(int layer, int box_length, std::vector<Sptr> species, double sliding_factor) {
+        if (_mode != LatticeMode::CENTERED) {
+            std::cerr << ">>> Lattice::add_layer_centered <<< Error: mode is not centereed" << std::endl;
+            exit(EXIT_FAILURE);
+        };
+        
+        // Add layer
+        add_layer(layer,box_length,species);
+        
+        // Sliding factor
+        _c_sliding_factors[layer] = sliding_factor;
+        
+        // Means
+        int no_units = get_no_units_in_layer(layer);
+        for (auto sp: _species_possible_vec[layer]) {
+            _c_means[layer][sp] = arma::vec(no_units,arma::fill::ones);
+            _c_batch_means[layer][sp] = arma::vec(no_units,arma::fill::ones);
+            
+            // Init to 0.5
+            _c_means[layer][sp] *= 0.5;
         };
     };
 
@@ -552,6 +610,7 @@ namespace dblz {
     void Lattice::add_conn(int layer1, int x1, int y1, int z1, int layer2, int x2, int y2, int z2) {
         int idx1 = _look_up_unit(layer1, x1, y1, z1);
         int idx2 = _look_up_unit(layer2, x2, y2, z2);
+        std::cout << "Connecting: " << layer1 << " " << x1 << " " << y1 << " " << z1 << " : " << layer2 << " " << x2 << " " << y2 << " " << z2 << " : " << idx1 << " " << idx2 << std::endl;
         _adj[layer1](idx1,idx2) = 1.0;
     };
     
@@ -873,8 +932,6 @@ namespace dblz {
     
     // Calculate activation given layer above or below
     void Lattice::_calculate_activations_from_below(MCType chain, int i_chain, int layer) {
-        
-        // Activate from below
         for (auto sp: _species_possible_vec.at(layer)) {
             
             // bias term
@@ -885,14 +942,12 @@ namespace dblz {
                 // std::cout << "_calculate_activations_from_below: i_chain " << i_chain << " layer " << layer << " species below: " << given_sp->get_name() << " species above: " << sp->get_name() << " ixn: " << get_ixn_between_layers(layer-1, given_sp, layer, sp) << " adj: ... " << std::endl;
                 
                 // Activate from below
-                _mc_chains_act[chain][i_chain][layer][sp] += get_ixn_between_layers(layer-1, given_sp, layer, sp) * ( _adj[layer-1] * _mc_chains[chain][i_chain][layer-1][given_sp] );
+                _mc_chains_act[chain][i_chain][layer][sp] += get_ixn_between_layers(layer-1, given_sp, layer, sp) * ( _adj.at(layer-1) * _mc_chains.at(chain).at(i_chain).at(layer-1).at(given_sp) );
             };
         };
     };
     
     void Lattice::_calculate_activations_from_above(MCType chain, int i_chain, int layer) {
-
-        // Activate from above
         for (auto sp: _species_possible_vec.at(layer)) {
             
             // bias term
@@ -902,7 +957,7 @@ namespace dblz {
             for (auto given_sp: _species_possible_vec.at(layer+1)) {
                 
                 // Activate from above
-                _mc_chains_act[chain][i_chain][layer][sp] += get_ixn_between_layers(layer+1, given_sp, layer, sp) * ( _adj[layer].t() * _mc_chains[chain][i_chain][layer+1][given_sp] );
+                _mc_chains_act[chain][i_chain][layer][sp] += get_ixn_between_layers(layer+1, given_sp, layer, sp) * ( _adj.at(layer).t() * _mc_chains.at(chain).at(i_chain).at(layer+1).at(given_sp) );
             };
         };
     };
@@ -915,12 +970,12 @@ namespace dblz {
             
             // Activate from above
             for (auto given_sp: _species_possible_vec.at(layer+1)) {
-                _mc_chains_act[chain][i_chain][layer][sp] += get_ixn_between_layers(layer+1, given_sp, layer, sp) * ( _adj[layer].t() * _mc_chains[chain][i_chain][layer+1][given_sp] );
+                _mc_chains_act[chain][i_chain][layer][sp] += get_ixn_between_layers(layer+1, given_sp, layer, sp) * ( _adj.at(layer).t() * _mc_chains.at(chain).at(i_chain).at(layer+1).at(given_sp) );
             };
             
             // Activate from below
             for (auto given_sp: _species_possible_vec.at(layer-1)) {
-                _mc_chains_act[chain][i_chain][layer][sp] += get_ixn_between_layers(layer-1, given_sp, layer, sp) * ( _adj[layer-1] * _mc_chains[chain][i_chain][layer-1][given_sp] );
+                _mc_chains_act[chain][i_chain][layer][sp] += get_ixn_between_layers(layer-1, given_sp, layer, sp) * ( _adj.at(layer-1) * _mc_chains.at(chain).at(i_chain).at(layer-1).at(given_sp) );
             };
         };
     };
@@ -976,15 +1031,62 @@ namespace dblz {
         };
     };
     
+    // Calculate activation given layer above or below
+    void Lattice::_calculate_activations_from_below_c(MCType chain, int i_chain, int layer) {
+        for (auto sp: _species_possible_vec.at(layer)) {
+            
+            // bias term
+            _mc_chains_act[chain][i_chain][layer][sp].fill(get_bias_in_layer(layer, sp));
+            
+            // ixns
+            for (auto &given_sp: _species_possible_vec.at(layer-1)) {
+                
+                // Activate from below
+                _mc_chains_act[chain][i_chain][layer][sp] += get_ixn_between_layers(layer-1, given_sp, layer, sp) * ( _adj.at(layer-1) * ( _mc_chains.at(chain).at(i_chain).at(layer-1).at(given_sp) - _c_means.at(layer-1).at(given_sp) ) );
+            };
+        };
+    };
+    
+    void Lattice::_calculate_activations_from_above_c(MCType chain, int i_chain, int layer) {
+        for (auto sp: _species_possible_vec.at(layer)) {
+            
+            // bias term
+            _mc_chains_act[chain][i_chain][layer][sp].fill(get_bias_in_layer(layer, sp));
+            
+            // ixns
+            for (auto given_sp: _species_possible_vec.at(layer+1)) {
+                
+                // Activate from above
+                _mc_chains_act[chain][i_chain][layer][sp] += get_ixn_between_layers(layer+1, given_sp, layer, sp) * ( _adj.at(layer).t() * ( _mc_chains.at(chain).at(i_chain).at(layer+1).at(given_sp) - _c_means.at(layer+1).at(given_sp) ) );
+            };
+        };
+    };
+    
+    void Lattice::_calculate_activations_from_both_c(MCType chain, int i_chain, int layer) {
+        for (auto sp: _species_possible_vec.at(layer)) {
+            
+            // bias term
+            _mc_chains_act[chain][i_chain][layer][sp].fill(get_bias_in_layer(layer, sp));
+            
+            // Activate from above
+            for (auto given_sp: _species_possible_vec.at(layer+1)) {
+                _mc_chains_act[chain][i_chain][layer][sp] += get_ixn_between_layers(layer+1, given_sp, layer, sp) * ( _adj.at(layer).t() * ( _mc_chains.at(chain).at(i_chain).at(layer+1).at(given_sp) - _c_means.at(layer+1).at(given_sp) ) );
+            };
+            
+            // Activate from below
+            for (auto given_sp: _species_possible_vec.at(layer-1)) {
+                _mc_chains_act[chain][i_chain][layer][sp] += get_ixn_between_layers(layer-1, given_sp, layer, sp) * ( _adj.at(layer-1) * ( _mc_chains.at(chain).at(i_chain).at(layer-1).at(given_sp) - _c_means.at(layer-1).at(given_sp) ) );
+            };
+        };
+    };
+
     // ***************
     // MARK: - Activate layer steps - PUBLIC
     // ***************
     
-    // (1) Calculate activations for a specific layer
+    // (1.a) Normal activation
     // Both directions
     void Lattice::activate_layer_calculate(MCType chain, int layer) {
-
-        // Calculate activations for all chains
         if (layer == 0) {
             for (auto i_chain=0; i_chain<_no_markov_chains.at(chain); i_chain++) {
                 _calculate_activations_from_above(chain,i_chain,layer);
@@ -1001,8 +1103,6 @@ namespace dblz {
     };
     // Only one direction
     void Lattice::activate_layer_calculate(MCType chain, int layer, int given_layer) {
-        
-        // Calculate activations for all chains
         if (given_layer == layer - 1) {
             for (auto i_chain=0; i_chain<_no_markov_chains.at(chain); i_chain++) {
                 _calculate_activations_from_below(chain,i_chain,layer);
@@ -1016,7 +1116,8 @@ namespace dblz {
             exit(EXIT_FAILURE);
         };
     };
-    // (1) Calculate activations for a specific layer
+    
+    // (1.a) Batch norm activation
     // Both directions
     void Lattice::activate_layer_calculate_bn(MCType chain, int layer) {
         /*
@@ -1061,7 +1162,40 @@ namespace dblz {
         };
          */
     };
-
+    
+    // (1.a) Centered activation
+    // Both directions
+    void Lattice::activate_layer_calculate_c(MCType chain, int layer) {
+        if (layer == 0) {
+            for (auto i_chain=0; i_chain<_no_markov_chains.at(chain); i_chain++) {
+                _calculate_activations_from_above_c(chain,i_chain,layer);
+            };
+        } else if (layer == _no_layers-1) {
+            for (auto i_chain=0; i_chain<_no_markov_chains.at(chain); i_chain++) {
+                _calculate_activations_from_below_c(chain,i_chain,layer);
+            };
+        } else {
+            for (auto i_chain=0; i_chain<_no_markov_chains.at(chain); i_chain++) {
+                _calculate_activations_from_both_c(chain,i_chain,layer);
+            };
+        };
+    };
+    // Only one direction
+    void Lattice::activate_layer_calculate_c(MCType chain, int layer, int given_layer) {
+        if (given_layer == layer - 1) {
+            for (auto i_chain=0; i_chain<_no_markov_chains.at(chain); i_chain++) {
+                _calculate_activations_from_below_c(chain,i_chain,layer);
+            };
+        } else if (given_layer == layer + 1) {
+            for (auto i_chain=0; i_chain<_no_markov_chains.at(chain); i_chain++) {
+                _calculate_activations_from_above_c(chain,i_chain,layer);
+            };
+        } else {
+            std::cerr << ">>> Lattice::activate_layer_calculate <<< given layer must be +- layer, but instead layer = " << layer << " and given layer = " << given_layer << std::endl;
+            exit(EXIT_FAILURE);
+        };
+    };
+    
     // (2) Convert activations to probs
     void Lattice::activate_layer_convert_to_probs(MCType chain, int layer, bool binary) {
         
@@ -1487,57 +1621,179 @@ namespace dblz {
     // MARK: - Reap moments
     // ***************
     
-    void Lattice::reap_moments(MCType chain) {
-        // Reset all ixns
-        for (auto ixn: _all_ixns) {
-            for (auto i_chain=0; i_chain<_no_markov_chains.at(chain); i_chain++) {
-                ixn->get_moment()->set_moment_sample(chain, i_chain, 0.0);
-            };
-        };
+    void Lattice::reap_moments() {
         
-        // Reap biases
-        double val;
-        // Go over all chains
-        for (auto i_chain=0; i_chain<_no_markov_chains.at(chain); i_chain++) {
-            // All biases
-            for (auto &bias_layer: _bias_dict) {
-                // Go through possible species in this layer
-                for (auto &sp_pr: bias_layer.second) {
-                    // Get the moment
-                    val = arma::sum(_mc_chains.at(chain).at(i_chain).at(bias_layer.first).at(sp_pr.first));
+        // If centering mode: calculate the centers from the awake moment, and then slide
+        if (_mode == LatticeMode::CENTERED) {
             
-                    // Set the moment
-                    if (chain == MCType::ASLEEP || !sp_pr.second->get_moment()->get_is_awake_moment_fixed()) {
-                        sp_pr.second->get_moment()->increment_moment_sample(chain, i_chain, val);
+            // Awake phase: determine batch mean
+            for (auto layer=0; layer<_no_layers; layer++) {
+                for (auto sp: _species_possible_vec.at(layer)) {
+                    // Reset
+                    _c_batch_means[layer][sp].fill(arma::fill::zeros);
+                    
+                    // Get batch mean from all chains
+                    for (auto i_chain=0; i_chain<_no_markov_chains.at(MCType::AWAKE); i_chain++) {
+                        _c_batch_means[layer][sp] += _mc_chains.at(MCType::AWAKE).at(i_chain).at(layer).at(sp);
                     };
+                    _c_batch_means[layer][sp] /= _no_markov_chains.at(MCType::AWAKE);
+                };
+            };
+                
+            // Asleep phase: slide mean
+            for (auto layer=0; layer<_no_layers; layer++) {
+                for (auto sp: _species_possible_vec.at(layer)) {
+                    // Slide
+                    _c_means[layer][sp] = (1.0 - _c_sliding_factors.at(layer)) * _c_means.at(layer).at(sp) + _c_sliding_factors.at(layer) * _c_batch_means.at(layer).at(sp);
                 };
             };
         };
         
         // Reap ixns
-        // Go over all chains
-        for (auto i_chain=0; i_chain<_no_markov_chains.at(chain); i_chain++) {
-            // All ixns
-            for (auto &o2_ixn_layer_1: _o2_ixn_dict) {
-                // Go through possible species in this layer
-                for (auto &sp_pr_1: o2_ixn_layer_1.second) {
-                    for (auto &o2_ixn_layer_2: sp_pr_1.second) {
-                        // Be careful not to double count
-                        if (o2_ixn_layer_2.first <= o2_ixn_layer_1.first) {
-                            // skip
-                            continue;
+        double val;
+        for (auto &o2_ixn_layer_1: _o2_ixn_dict) {
+            for (auto &sp_pr_1: o2_ixn_layer_1.second) {
+                for (auto &o2_ixn_layer_2: sp_pr_1.second) {
+                    // Be careful not to double count
+                    if (o2_ixn_layer_2.first <= o2_ixn_layer_1.first) {
+                        // skip
+                        continue;
+                    };
+                    
+                    // Now ( layer 1 = o2_ixn_layer_1.first ) < ( layer 2 = o2_ixn_layer_2.first ) guaranteed
+                    
+                    for (auto &sp_pr_2: o2_ixn_layer_2.second) {
+                        
+                        // Awake phase
+                        
+                        if (!sp_pr_2.second->get_moment()->get_is_awake_moment_fixed()) {
+                            
+                            for (auto i_chain=0; i_chain<_no_markov_chains.at(MCType::AWAKE); i_chain++) {
+
+                                // Get the moment
+                                if (_mode == LatticeMode::NORMAL) {
+                                    val = dot(_mc_chains.at(MCType::AWAKE).at(i_chain).at(o2_ixn_layer_1.first).at(sp_pr_1.first), _adj.at(o2_ixn_layer_1.first) * _mc_chains.at(MCType::AWAKE).at(i_chain).at(o2_ixn_layer_2.first).at(sp_pr_2.first));
+                                } else if (_mode == LatticeMode::CENTERED) {
+                                    val = dot(
+                                              _mc_chains.at(MCType::AWAKE).at(i_chain).at(o2_ixn_layer_1.first).at(sp_pr_1.first) - _c_means.at(o2_ixn_layer_1.first).at(sp_pr_1.first)
+                                              ,
+                                              _adj.at(o2_ixn_layer_1.first) * (
+                                                                               _mc_chains.at(MCType::AWAKE).at(i_chain).at(o2_ixn_layer_2.first).at(sp_pr_2.first) - _c_means.at(o2_ixn_layer_2.first).at(sp_pr_2.first)
+                                                                               ));
+                                };
+                                
+                                // Set the moment
+                                sp_pr_2.second->get_moment()->set_moment_sample(MCType::AWAKE, i_chain, val);
+                            };
                         };
                         
-                        // Now ( layer 1 = o2_ixn_layer_1.first ) < ( layer 2 = o2_ixn_layer_2.first ) guaranteed
+                        // Asleep phase
                         
-                        for (auto &sp_pr_2: o2_ixn_layer_2.second) {
+                        for (auto i_chain=0; i_chain<_no_markov_chains.at(MCType::ASLEEP); i_chain++) {
+                            
                             // Get the moment
-                            val = dot(_mc_chains.at(chain).at(i_chain).at(o2_ixn_layer_1.first).at(sp_pr_1.first), _adj.at(o2_ixn_layer_1.first) * _mc_chains.at(chain).at(i_chain).at(o2_ixn_layer_2.first).at(sp_pr_2.first));
+                            if (_mode == LatticeMode::NORMAL) {
+                                val = dot(_mc_chains.at(MCType::ASLEEP).at(i_chain).at(o2_ixn_layer_1.first).at(sp_pr_1.first), _adj.at(o2_ixn_layer_1.first) * _mc_chains.at(MCType::ASLEEP).at(i_chain).at(o2_ixn_layer_2.first).at(sp_pr_2.first));
+                            } else if (_mode == LatticeMode::CENTERED) {
+                                val = dot(
+                                          _mc_chains.at(MCType::ASLEEP).at(i_chain).at(o2_ixn_layer_1.first).at(sp_pr_1.first) - _c_means.at(o2_ixn_layer_1.first).at(sp_pr_1.first)
+                                          ,
+                                          _adj.at(o2_ixn_layer_1.first) * (
+                                                                           _mc_chains.at(MCType::ASLEEP).at(i_chain).at(o2_ixn_layer_2.first).at(sp_pr_2.first) - _c_means.at(o2_ixn_layer_2.first).at(sp_pr_2.first)
+                                                                           ));
+                            };
                             
                             // Set the moment
-                            if (chain == MCType::ASLEEP || !sp_pr_2.second->get_moment()->get_is_awake_moment_fixed()) {
-                                sp_pr_2.second->get_moment()->increment_moment_sample(chain, i_chain, val);
-                            };
+                            sp_pr_2.second->get_moment()->set_moment_sample(MCType::ASLEEP, i_chain, val);
+                        };
+                        
+                        // Average the gradients
+                        sp_pr_2.second->get_moment()->average_moment_samples();
+                    };
+                };
+            };
+        };
+        
+        // Reap biases
+        // All biases
+        for (auto &bias_layer: _bias_dict) {
+            // Go through possible species in this layer
+            for (auto &sp_pr: bias_layer.second) {
+                
+                // Awake phase
+                
+                if (!sp_pr.second->get_moment()->get_is_awake_moment_fixed()) {
+                    for (auto i_chain=0; i_chain<_no_markov_chains.at(MCType::AWAKE); i_chain++) {
+                    
+                        // Get the moment
+                        val = arma::sum(_mc_chains.at(MCType::AWAKE).at(i_chain).at(bias_layer.first).at(sp_pr.first));
+        
+                        // Set the moment
+                        sp_pr.second->get_moment()->set_moment_sample(MCType::AWAKE, i_chain, val);
+                    };
+                };
+                
+                // Asleep phase
+                
+                for (auto i_chain=0; i_chain<_no_markov_chains.at(MCType::ASLEEP); i_chain++) {
+                    
+                    // Get the moment
+                    val = arma::sum(_mc_chains.at(MCType::ASLEEP).at(i_chain).at(bias_layer.first).at(sp_pr.first));
+                    
+                    // Set the moment
+                    sp_pr.second->get_moment()->set_moment_sample(MCType::ASLEEP, i_chain, val);
+                };
+                
+                // Average
+                sp_pr.second->get_moment()->average_moment_samples();
+            };
+        };
+        
+        // Offset bias for centering
+        double grad, offset;
+        if (_mode == LatticeMode::CENTERED) {
+            // Go through all layers
+            for (auto layer=0; layer<_no_layers; layer++) {
+                // Go through all species in this layer
+                for (auto sp: _species_possible_vec.at(layer)) {
+                    
+                    // Below
+                    if (layer != 0) {
+                        
+                        // Go through all species in the layer below
+                        for (auto sp_below: _species_possible_vec.at(layer-1)) {
+                            // Get the gradient in the ixn of these two
+                            grad = _o2_ixn_dict.at(layer-1).at(sp_below).at(layer).at(sp)->get_moment()->get_moment_diff_awake_minus_asleep();
+                            
+                            // Calculate offset
+                            offset = -1.0 * grad * arma::sum(_adj.at(layer-1).t() * _c_means.at(layer-1).at(sp_below));
+                            
+                            // ***************
+                            // TODO: Don't count the diagonal (???) TBD!
+                            // ***************
+
+                            // Adjust bias in this layer
+                            _bias_dict.at(layer).at(sp)->get_moment()->increment_moment_diff_awake_minus_asleep(offset);
+                        };
+                    };
+                    
+                    // Above
+                    if (layer != _no_layers) {
+                        
+                        // Go through all species in the layer above
+                        for (auto sp_above: _species_possible_vec.at(layer+1)) {
+                            // Get the gradient in the ixn of these two
+                            grad = _o2_ixn_dict.at(layer+1).at(sp_above).at(layer).at(sp)->get_moment()->get_moment_diff_awake_minus_asleep();
+                            
+                            // Calculate offset
+                            offset = -1.0 * grad * arma::sum(_adj.at(layer) * _c_means.at(layer+1).at(sp_above));
+                            
+                            // ***************
+                            // TODO: Don't count the diagonal (???) TBD!
+                            // ***************
+                            
+                            // Adjust bias in this layer
+                            _bias_dict.at(layer).at(sp)->get_moment()->increment_moment_diff_awake_minus_asleep(offset);
                         };
                     };
                 };

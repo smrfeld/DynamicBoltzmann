@@ -391,7 +391,7 @@ namespace dblz {
             for (auto x=1; x<=box_length; x++) {
                 for (auto y=1; y<=box_length; y++) {
                     for (auto z=1; z<=box_length; z++) {
-                        std::cout << "Setting idx in layer: " << layer << " pos: " << x << " " << y << " " << z << " to idx: " << ctr << std::endl;
+                        // std::cout << "Setting idx in layer: " << layer << " pos: " << x << " " << y << " " << z << " to idx: " << ctr << std::endl;
                         _lookup_3[layer][x][y][z] = ctr;
                         _rlookup[layer][ctr] = std::vector<int>({x,y,z});
                         ctr++;
@@ -411,7 +411,7 @@ namespace dblz {
             int size_below = get_no_units_in_layer(layer-1);
             _adj[layer-1][layer] = arma::mat(no_units,size_below,arma::fill::zeros);
             _adj[layer][layer-1] = _adj[layer-1][layer].t();
-            std::cout << "Made adjacency matrix: " << layer-1 << " " << no_units << " " << size_below << std::endl;
+            // std::cout << "Made adjacency matrix: " << layer-1 << " " << no_units << " " << size_below << std::endl;
         };
 
     };
@@ -604,7 +604,7 @@ namespace dblz {
     void Lattice::add_conn(int layer1, int x1, int y1, int z1, int layer2, int x2, int y2, int z2) {
         int idx1 = _look_up_unit(layer1, x1, y1, z1);
         int idx2 = _look_up_unit(layer2, x2, y2, z2);
-        std::cout << "Connecting: " << layer1 << " " << x1 << " " << y1 << " " << z1 << " : " << layer2 << " " << x2 << " " << y2 << " " << z2 << " : " << idx1 << " " << idx2 << std::endl;
+        // std::cout << "Connecting: " << layer1 << " " << x1 << " " << y1 << " " << z1 << " : " << layer2 << " " << x2 << " " << y2 << " " << z2 << " : " << idx1 << " " << idx2 << std::endl;
         _adj[layer1][layer2](idx2,idx1) = 1.0;
         _adj[layer2][layer1](idx1,idx2) = 1.0;
     };
@@ -1673,7 +1673,7 @@ namespace dblz {
                 if (!moment->get_is_awake_moment_fixed()) {
                     moment->reset_moment(MCType::AWAKE);
                     for (auto i_chain=0; i_chain<_no_markov_chains.at(MCType::AWAKE); i_chain++) {
-                        moment->increment_moment(MCType::AWAKE, arma::accu(_mc_chains.at(MCType::AWAKE).at(i_chain).at(layer).at(sp)));
+                        moment->increment_moment(MCType::AWAKE, arma::accu(_mc_chains.at(MCType::AWAKE).at(i_chain).at(layer).at(sp)) / _no_markov_chains.at(MCType::AWAKE));
                     };
                 };
                 
@@ -1681,7 +1681,7 @@ namespace dblz {
                 
                 moment->reset_moment(MCType::ASLEEP);
                 for (auto i_chain=0; i_chain<_no_markov_chains.at(MCType::ASLEEP); i_chain++) {
-                    moment->increment_moment(MCType::ASLEEP, arma::accu(_mc_chains.at(MCType::ASLEEP).at(i_chain).at(layer).at(sp)));
+                    moment->increment_moment(MCType::ASLEEP, arma::accu(_mc_chains.at(MCType::ASLEEP).at(i_chain).at(layer).at(sp)) / _no_markov_chains.at(MCType::ASLEEP));
                 };
             };
         };

@@ -32,7 +32,13 @@ namespace dblz {
 	Constructor
 	********************/
 
-    LatticeTraj::LatticeTraj(int no_dims, int box_length, std::vector<Sptr> species_visible, LatticeMode mode)
+    LatticeTraj::LatticeTraj(int no_dims, int box_length, std::vector<Sptr> species_visible, LatticeMode mode) : LatticeTraj(no_dims,box_length,species_visible,mode,0.0) {
+        if (mode != LatticeMode::CENTERED) {
+            std::cerr << ">>> LatticeTraj::LatticeTraj <<< Error: must specify sliding factors in centered mode!" << std::endl;
+            exit(EXIT_FAILURE);
+        };
+    };
+    LatticeTraj::LatticeTraj(int no_dims, int box_length, std::vector<Sptr> species_visible, LatticeMode mode, double layer_zero_sliding_factor)
 	{
         if (mode == LatticeMode::BATCHNORM) {
             std::cerr << ">>> LatticeTraj::LatticeTraj <<< Batch norm mode not supported!" << std::endl;
@@ -40,7 +46,11 @@ namespace dblz {
         };
         
         // Make first lattice
-        _lattices[0] = std::make_shared<Lattice>(no_dims,box_length,species_visible,mode);
+        if (mode == LatticeMode::CENTERED) {
+            _lattices[0] = std::make_shared<Lattice>(no_dims,box_length,species_visible,mode,layer_zero_sliding_factor);
+        } else {
+            _lattices[0] = std::make_shared<Lattice>(no_dims,box_length,species_visible,mode);
+        };
         
         // Set no timesteps/timepoints
         set_no_timesteps(0,0);
@@ -210,6 +220,11 @@ namespace dblz {
     void LatticeTraj::add_layer(int layer, int box_length, std::vector<Sptr> species) {
         for (auto l: _lattices) {
             l.second->add_layer(layer, box_length, species);
+        };
+    };
+    void LatticeTraj::add_layer_centered(int layer, int box_length, std::vector<Sptr> species, double sliding_factors) {
+        for (auto l: _lattices) {
+            l.second->add_layer_centered(layer, box_length, species, sliding_factors);
         };
     };
     

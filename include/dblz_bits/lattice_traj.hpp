@@ -52,6 +52,7 @@ namespace dblz {
         // MARK: - Constructor
         // ***************
         
+        LatticeTraj(int no_dims, int box_length, std::vector<Sptr> species_visible, LatticeMode mode, double layer_zero_sliding_factor);
         LatticeTraj(int no_dims, int box_length, std::vector<Sptr> species_visible, LatticeMode mode);
 		LatticeTraj(const LatticeTraj& other);
 		LatticeTraj(LatticeTraj&& other);
@@ -98,7 +99,8 @@ namespace dblz {
         
         // Add layer
         void add_layer(int layer, int box_length, std::vector<Sptr> species);
-        
+        void add_layer_centered(int layer, int box_length, std::vector<Sptr> species, double sliding_factors);
+
 		// Biases
 		void add_bias_all_layers(Sptr sp, ITptr bias);
         void add_bias_to_layer(int layer, Sptr sp, ITptr bias);

@@ -27,15 +27,24 @@ namespace dblz {
 		_name = name;
 		_type = type;
 
-        set_no_markov_chains(MCType::AWAKE,1);
-        set_no_markov_chains(MCType::ASLEEP,1);
-
 		// Fixed awake moment
 		_is_awake_moment_fixed = false;
         
         // Offset
         _val_diff_offset = 0.0;
-	};
+        
+        // Vals
+        _val_averaged[MCType::AWAKE] = 0.0;
+        _val_averaged[MCType::ASLEEP] = 0.0;
+
+        // Matrix of vals
+        _weight_matrix[MCType::AWAKE] = nullptr;
+        _weight_matrix[MCType::ASLEEP] = nullptr;
+        _weight_matrix_awake_minus_asleep = nullptr;
+        _bias_vec[MCType::AWAKE] = nullptr;
+        _bias_vec[MCType::ASLEEP] = nullptr;
+        _bias_vec_awake_minus_asleep = nullptr;
+    };
 	Moment::Moment(const Moment& other) {
 		_copy(other);
 	};
@@ -60,19 +69,44 @@ namespace dblz {
 		_clean_up();
 	};
 
-	void Moment::_clean_up() {};
+	void Moment::_clean_up() {
+        if (_weight_matrix[MCType::AWAKE]) {
+            delete _weight_matrix[MCType::AWAKE];
+        };
+        _weight_matrix[MCType::AWAKE] = nullptr;
+        if (_weight_matrix[MCType::ASLEEP]) {
+            delete _weight_matrix[MCType::ASLEEP];
+        };
+        _weight_matrix[MCType::ASLEEP] = nullptr;
+        if (_weight_matrix_awake_minus_asleep) {
+            delete _weight_matrix_awake_minus_asleep;
+        };
+        _weight_matrix_awake_minus_asleep = nullptr;
+        
+        if (_bias_vec[MCType::AWAKE]) {
+            delete _bias_vec[MCType::AWAKE];
+        };
+        _bias_vec[MCType::AWAKE] = nullptr;
+        if (_bias_vec[MCType::ASLEEP]) {
+            delete _bias_vec[MCType::ASLEEP];
+        };
+        _bias_vec[MCType::ASLEEP] = nullptr;
+        if (_bias_vec_awake_minus_asleep) {
+            delete _bias_vec_awake_minus_asleep;
+        };
+        _bias_vec_awake_minus_asleep = nullptr;
+    };
 	void Moment::_move(Moment &other) {
 		_name = other._name;
 		_type = other._type;
 
-        _no_markov_chains = other._no_markov_chains;
-        
-		// reaped
-		_vals_reaped = other._vals_reaped;
-
 		// averaged
 		_val_averaged = other._val_averaged;
-		
+        _weight_matrix = other._weight_matrix;
+        _weight_matrix_awake_minus_asleep = other._weight_matrix_awake_minus_asleep;
+        _bias_vec = other._bias_vec;
+        _bias_vec_awake_minus_asleep = other._bias_vec_awake_minus_asleep;
+        
         _val_diff_offset = other._val_diff_offset;
         
 		_is_awake_moment_fixed = other._is_awake_moment_fixed;
@@ -80,15 +114,17 @@ namespace dblz {
 		// Reset the other
 		other._name = "";
 
-        other._no_markov_chains[MCType::AWAKE] = 0;
-        other._no_markov_chains[MCType::ASLEEP] = 0;
-
-		other._vals_reaped[MCType::AWAKE].clear();
-        other._vals_reaped[MCType::ASLEEP].clear();
-
 		other._val_averaged[MCType::AWAKE] = 0.0;
         other._val_averaged[MCType::ASLEEP] = 0.0;
 
+        other._weight_matrix[MCType::AWAKE] = nullptr;
+        other._weight_matrix[MCType::ASLEEP] = nullptr;
+        other._weight_matrix_awake_minus_asleep = nullptr;
+        
+        other._bias_vec[MCType::AWAKE] = nullptr;
+        other._bias_vec[MCType::ASLEEP] = nullptr;
+        other._bias_vec_awake_minus_asleep = nullptr;
+        
         other._val_diff_offset = 0.0;
         
 		other._is_awake_moment_fixed = false;
@@ -97,13 +133,45 @@ namespace dblz {
 		_name = other._name;
 		_type = other._type;
         
-        _no_markov_chains = other._no_markov_chains;
+        // _no_markov_chains = other._no_markov_chains;
         
 		// reaped
-        _vals_reaped = other._vals_reaped;
+        // _vals_reaped = other._vals_reaped;
 
 		// averaged
 		_val_averaged = other._val_averaged;
+        
+        if (other._weight_matrix.at(MCType::AWAKE)) {
+            _weight_matrix[MCType::AWAKE] = new arma::mat(*other._weight_matrix.at(MCType::AWAKE));
+        } else {
+            _weight_matrix[MCType::AWAKE] = nullptr;
+        };
+        if (other._weight_matrix.at(MCType::ASLEEP)) {
+            _weight_matrix[MCType::ASLEEP] = new arma::mat(*other._weight_matrix.at(MCType::ASLEEP));
+        } else {
+            _weight_matrix[MCType::ASLEEP] = nullptr;
+        };
+        if (other._weight_matrix_awake_minus_asleep) {
+            _weight_matrix_awake_minus_asleep = new arma::mat(*other._weight_matrix_awake_minus_asleep);
+        } else {
+            _weight_matrix_awake_minus_asleep = nullptr;
+        };
+
+        if (other._bias_vec.at(MCType::AWAKE)) {
+            _bias_vec[MCType::AWAKE] = new arma::vec(*other._bias_vec.at(MCType::AWAKE));
+        } else {
+            _bias_vec[MCType::AWAKE] = nullptr;
+        };
+        if (other._bias_vec.at(MCType::ASLEEP)) {
+            _bias_vec[MCType::ASLEEP] = new arma::vec(*other._bias_vec.at(MCType::ASLEEP));
+        } else {
+            _bias_vec[MCType::ASLEEP] = nullptr;
+        };
+        if (other._bias_vec_awake_minus_asleep) {
+            _bias_vec_awake_minus_asleep = new arma::vec(*other._bias_vec_awake_minus_asleep);
+        } else {
+            _bias_vec_awake_minus_asleep = nullptr;
+        };
         
         _val_diff_offset = other._val_diff_offset;
 
@@ -136,38 +204,6 @@ namespace dblz {
 	};
 
 	/********************
-	Batch size
-	********************/
-
-    int Moment::get_no_markov_chains(MCType type) const {
-        return _no_markov_chains.at(type);
-    };
-    void Moment::set_no_markov_chains(MCType type, int no_markov_chains) {
-        // Params
-        _no_markov_chains[type] = no_markov_chains;
-        
-        // Reaped vals
-        _vals_reaped[type] = std::vector<double>(_no_markov_chains[type]);
-        
-        // Reset averaged vals
-        _val_averaged[type] = 0.0;
-    };
-
-    
-	/********************
-	Reset
-	********************/
-
-	void Moment::reset_moment_samples_to_zero() {
-        for (auto i_chain=0; i_chain<_no_markov_chains[MCType::AWAKE]; i_chain++) {
-            set_moment_sample(MCType::AWAKE, i_chain, 0.0);
-        };
-        for (auto i_chain=0; i_chain<_no_markov_chains[MCType::ASLEEP]; i_chain++) {
-            set_moment_sample(MCType::ASLEEP, i_chain, 0.0);
-        };
-	};
-
-	/********************
 	Fixed awake
 	********************/
 
@@ -179,6 +215,96 @@ namespace dblz {
 	bool Moment::get_is_awake_moment_fixed() const {
 		return _is_awake_moment_fixed;
 	};
+    
+    // ***************
+    // MARK: - Set W matrix / bias vec
+    // ***************
+    
+    void Moment::set_weight_matrix_dims(int dim_lower, int dim_upper) {
+        if (_weight_matrix[MCType::AWAKE]) {
+            delete _weight_matrix[MCType::AWAKE];
+        };
+        _weight_matrix[MCType::AWAKE] = nullptr;
+        if (_weight_matrix[MCType::ASLEEP]) {
+            delete _weight_matrix[MCType::ASLEEP];
+        };
+        _weight_matrix[MCType::ASLEEP] = nullptr;
+        if (_weight_matrix_awake_minus_asleep) {
+            delete _weight_matrix_awake_minus_asleep;
+        };
+        _weight_matrix_awake_minus_asleep = nullptr;
+        
+        if (_type != IxnParamType::W && _type != IxnParamType::X) {
+            std::cerr << ">>> Moment::set_weight_matrix_dims <<< only W and X ixn params can have a weight matrix" << std::endl;
+            exit(EXIT_FAILURE);
+        };
+        
+        _weight_matrix[MCType::AWAKE] = new arma::mat(dim_lower,dim_upper,arma::fill::zeros);
+        _weight_matrix[MCType::ASLEEP] = new arma::mat(dim_lower,dim_upper,arma::fill::zeros);
+        _weight_matrix_awake_minus_asleep = new arma::mat(dim_lower,dim_upper,arma::fill::zeros);
+    };
+    void Moment::reset_weight_matrix(MCType type) {
+        _weight_matrix[type]->fill(arma::fill::zeros);
+    };
+    void Moment::increment_weight_matrix(MCType type, arma::mat increment) {
+        *_weight_matrix[type] += increment;
+    };
+    void Moment::set_moment_to_weight_matrix_sum(MCType type) {
+        _val_averaged[type] = arma::accu(*_weight_matrix[type]);
+    };
+    const arma::mat& Moment::get_weight_matrix(MCType type) const {
+        return *_weight_matrix.at(type);
+    };
+
+    void Moment::calculate_weight_matrix_awake_minus_asleep() {
+        *_weight_matrix_awake_minus_asleep = *_weight_matrix.at(MCType::AWAKE) - *_weight_matrix.at(MCType::ASLEEP);
+    };
+    const arma::mat& Moment::get_weight_matrix_awake_minus_asleep() const {
+        return *_weight_matrix_awake_minus_asleep;
+    };
+    
+    void Moment::set_bias_vec_dims(int dims) {
+        if (_bias_vec[MCType::AWAKE]) {
+            delete _bias_vec[MCType::AWAKE];
+        };
+        _bias_vec[MCType::AWAKE] = nullptr;
+        if (_bias_vec[MCType::ASLEEP]) {
+            delete _bias_vec[MCType::ASLEEP];
+        };
+        _bias_vec[MCType::ASLEEP] = nullptr;
+        if (_bias_vec_awake_minus_asleep) {
+            delete _bias_vec_awake_minus_asleep;
+        };
+        _bias_vec_awake_minus_asleep = nullptr;
+        
+        if (_type != IxnParamType::B && _type != IxnParamType::H) {
+            std::cerr << ">>> Moment::set_bias_vec_dims <<< only H and B ixn params can have a bias vec" << std::endl;
+            exit(EXIT_FAILURE);
+        };
+        
+        _bias_vec[MCType::AWAKE] = new arma::vec(dims,arma::fill::zeros);
+        _bias_vec[MCType::ASLEEP] = new arma::vec(dims,arma::fill::zeros);
+        _bias_vec_awake_minus_asleep = new arma::vec(dims,arma::fill::zeros);
+    };
+    void Moment::reset_bias_vec(MCType type) {
+        _bias_vec[type]->fill(arma::fill::zeros);
+    };
+    void Moment::increment_bias_vec(MCType type, arma::vec increment) {
+        *_bias_vec[type] += increment;
+    };
+    void Moment::set_moment_to_bias_vec_sum(MCType type) {
+        _val_averaged[type] = arma::accu(*_bias_vec.at(type));
+    };
+    const arma::vec& Moment::get_bias_vec(MCType type) const {
+        return *_bias_vec.at(type);
+    };
+
+    void Moment::calculate_bias_vec_awake_minus_asleep() {
+        *_bias_vec_awake_minus_asleep = *_bias_vec.at(MCType::AWAKE) - *_bias_vec.at(MCType::ASLEEP);
+    };
+    const arma::vec& Moment::get_bias_vec_awake_minus_asleep() const {
+        return *_bias_vec_awake_minus_asleep;
+    };
 
 	/********************
 	Get/set moment
@@ -188,29 +314,14 @@ namespace dblz {
     double Moment::get_moment(MCType type) const {
         return _val_averaged.at(type);
     };
-    
-	// Batch
-	void Moment::set_moment_sample(MCType type, int i_sample, double val) {
-        _vals_reaped[type][i_sample] = val;
-	};
-    /*
-    void Moment::increment_moment_sample(MCType type, int i_sample, double val) {
-        _vals_reaped[type][i_sample] += val;
+    void Moment::increment_moment(MCType type, double val) {
+        _val_averaged[type] += val;
     };
-     */
-
-    // Average reaps
-	void Moment::average_moment_samples() {
-        _val_averaged[MCType::AWAKE] = 0.0;
-        _val_averaged[MCType::ASLEEP] = 0.0;
-        for (auto i=0; i<_no_markov_chains[MCType::AWAKE]; i++) {
-            _val_averaged[MCType::AWAKE] += _vals_reaped[MCType::AWAKE][i];
-        };
-        for (auto i=0; i<_no_markov_chains[MCType::ASLEEP]; i++) {
-            _val_averaged[MCType::ASLEEP] += _vals_reaped[MCType::ASLEEP][i];
-        };
-        _val_averaged[MCType::AWAKE] /= _no_markov_chains[MCType::AWAKE];
-        _val_averaged[MCType::ASLEEP] /= _no_markov_chains[MCType::ASLEEP];
+    void Moment::set_moment(MCType type, double val) {
+        _val_averaged[type] = val;
+    };
+    void Moment::reset_moment(MCType type) {
+        _val_averaged[type] = 0.0;
     };
 
     // Get moment difference

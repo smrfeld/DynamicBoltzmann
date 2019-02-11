@@ -95,11 +95,13 @@ namespace dblz {
         _no_markov_chains[chain] = no_markov_chains;
         
         // Moments
+        /*
         for (auto ixn_param_traj: _latt_traj->get_all_ixn_param_trajs()) {
             for (auto timepoint=0; timepoint<_no_timepoints_ixn_params; timepoint++) {
                 ixn_param_traj->get_ixn_param_at_timepoint(timepoint)->get_moment()->set_no_markov_chains(chain, no_markov_chains);
             };
         };
+         */
         
         // Lattice
         _latt_traj->set_no_markov_chains(chain, no_markov_chains);

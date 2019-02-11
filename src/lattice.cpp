@@ -506,6 +506,13 @@ namespace dblz {
 
         // Add to all
         _add_to_all_ixns_vec(ixn);
+        
+        // Set moment matrix dims if we are in centered mode
+        if (_mode == LatticeMode::CENTERED) {
+            int no_below = get_no_units_in_layer(std::min(layer1,layer2));
+            int no_above = get_no_units_in_layer(std::max(layer1,layer2));
+            ixn->get_moment()->set_weight_matrix_dims(no_below,no_above);
+        };
     };
     
     // Set multiplier
@@ -1560,55 +1567,95 @@ namespace dblz {
         };
         
         // Reap ixns
-        std::map<int, std::map<Sptr, std::map<int, std::map<Sptr, arma::mat>>>> vals;
-        for (auto &o2_ixn_layer_1: _o2_ixn_dict) {
-            for (auto &sp_pr_1: o2_ixn_layer_1.second) {
-                for (auto &o2_ixn_layer_2: sp_pr_1.second) {
-                    // Be careful not to double count
-                    if (o2_ixn_layer_2.first <= o2_ixn_layer_1.first) {
-                        // skip
-                        continue;
-                    };
-                    
-                    // Now ( layer 1 = o2_ixn_layer_1.first ) < ( layer 2 = o2_ixn_layer_2.first ) guaranteed
-                    
-                    for (auto &sp_pr_2: o2_ixn_layer_2.second) {
-                        
-                        // Awake phase
-                        
-                        if (!sp_pr_2.second->get_moment()->get_is_awake_moment_fixed()) {
-                            
-                            for (auto i_chain=0; i_chain<_no_markov_chains.at(MCType::AWAKE); i_chain++) {
+        int layer1, layer2;
+        Sptr sp1, sp2;
+        std::shared_ptr<Moment> moment;
 
-                                // Get the moment
-                                if (_mode == LatticeMode::NORMAL) {
-                                    vals[o2_ixn_layer_1.first][sp_pr_1.first][o2_ixn_layer_2.first][sp_pr_2.first] = _adj.at(o2_ixn_layer_1.first).at(o2_ixn_layer_2.first) % ( _mc_chains.at(MCType::AWAKE).at(i_chain).at(o2_ixn_layer_1.first).at(sp_pr_1.first) * _mc_chains.at(MCType::AWAKE).at(i_chain).at(o2_ixn_layer_2.first).at(sp_pr_2.first).t() );
-                                } else if (_mode == LatticeMode::CENTERED) {
-                                    vals[o2_ixn_layer_1.first][sp_pr_1.first][o2_ixn_layer_2.first][sp_pr_2.first] = _adj.at(o2_ixn_layer_1.first).at(o2_ixn_layer_2.first) % ( (_mc_chains.at(MCType::AWAKE).at(i_chain).at(o2_ixn_layer_1.first).at(sp_pr_1.first) - _c_means.at(o2_ixn_layer_1.first).at(sp_pr_1.first)) * (_mc_chains.at(MCType::AWAKE).at(i_chain).at(o2_ixn_layer_2.first).at(sp_pr_2.first).t() - _c_means.at(o2_ixn_layer_2.first).at(sp_pr_2.first).t()) );
+        if (_mode == LatticeMode::NORMAL) {
+            
+            // NORMAL MODE
+            
+            for (auto &o2_ixn_layer_1: _o2_ixn_dict) {
+                layer1 = o2_ixn_layer_1.first;
+                for (auto &sp_pr_1: o2_ixn_layer_1.second) {
+                    sp1 = sp_pr_1.first;
+                    for (auto &o2_ixn_layer_2: sp_pr_1.second) {
+                        layer2 = o2_ixn_layer_2.first;
+                        // Be careful not to double count
+                        if (layer1 >= layer2) {
+                            // skip
+                            continue;
+                        };
+                        // Now layer1 < layer2 guaranteed
+                        
+                        for (auto &sp_pr_2: o2_ixn_layer_2.second) {
+
+                            sp2 = sp_pr_2.first;
+                            moment = sp_pr_2.second->get_moment();
+                            
+                            // Awake phase
+                            
+                            if (!moment->get_is_awake_moment_fixed()) {
+                                moment->reset_moment(MCType::AWAKE);
+                                for (auto i_chain=0; i_chain<_no_markov_chains.at(MCType::AWAKE); i_chain++) {
+                                    moment->increment_moment(MCType::AWAKE, arma::accu(_adj.at(layer1).at(layer2) % ( _mc_chains.at(MCType::AWAKE).at(i_chain).at(layer1).at(sp1) * _mc_chains.at(MCType::AWAKE).at(i_chain).at(layer2).at(sp2).t() ) / _no_markov_chains.at(MCType::AWAKE)));
                                 };
-                                
-                                // Set the moment
-                                sp_pr_2.second->get_moment()->set_moment_sample(MCType::AWAKE, i_chain, arma::accu(vals.at(o2_ixn_layer_1.first).at(sp_pr_1.first).at(o2_ixn_layer_2.first).at(sp_pr_2.first)));
-                            };
-                        };
-                        
-                        // Asleep phase
-                        
-                        for (auto i_chain=0; i_chain<_no_markov_chains.at(MCType::ASLEEP); i_chain++) {
-                            
-                            // Get the moment
-                            if (_mode == LatticeMode::NORMAL) {
-                                vals[o2_ixn_layer_1.first][sp_pr_1.first][o2_ixn_layer_2.first][sp_pr_2.first] = _adj.at(o2_ixn_layer_1.first).at(o2_ixn_layer_2.first) % ( _mc_chains.at(MCType::ASLEEP).at(i_chain).at(o2_ixn_layer_1.first).at(sp_pr_1.first) * _mc_chains.at(MCType::ASLEEP).at(i_chain).at(o2_ixn_layer_2.first).at(sp_pr_2.first).t() );
-                            } else if (_mode == LatticeMode::CENTERED) {
-                                vals[o2_ixn_layer_1.first][sp_pr_1.first][o2_ixn_layer_2.first][sp_pr_2.first] = _adj.at(o2_ixn_layer_1.first).at(o2_ixn_layer_2.first) % ( (_mc_chains.at(MCType::ASLEEP).at(i_chain).at(o2_ixn_layer_1.first).at(sp_pr_1.first) - _c_means.at(o2_ixn_layer_1.first).at(sp_pr_1.first)) * (_mc_chains.at(MCType::ASLEEP).at(i_chain).at(o2_ixn_layer_2.first).at(sp_pr_2.first).t() - _c_means.at(o2_ixn_layer_2.first).at(sp_pr_2.first).t()) );
                             };
 
-                            // Set the moment
-                            sp_pr_2.second->get_moment()->set_moment_sample(MCType::ASLEEP, i_chain, arma::accu(vals.at(o2_ixn_layer_1.first).at(sp_pr_1.first).at(o2_ixn_layer_2.first).at(sp_pr_2.first)));
+                            // Asleep phase
+                            
+                            moment->reset_moment(MCType::ASLEEP);
+                            for (auto i_chain=0; i_chain<_no_markov_chains.at(MCType::ASLEEP); i_chain++) {
+                                moment->increment_moment(MCType::ASLEEP, arma::accu(_adj.at(layer1).at(layer2) % ( _mc_chains.at(MCType::ASLEEP).at(i_chain).at(layer1).at(sp1) * _mc_chains.at(MCType::ASLEEP).at(i_chain).at(layer2).at(sp2).t() ) / _no_markov_chains.at(MCType::ASLEEP)));
+                            };
                         };
+                    };
+                };
+            };
+            
+        } else if (_mode == LatticeMode::CENTERED) {
+            
+            // CENTERED MODE
+            
+            for (auto &o2_ixn_layer_1: _o2_ixn_dict) {
+                layer1 = o2_ixn_layer_1.first;
+                for (auto &sp_pr_1: o2_ixn_layer_1.second) {
+                    sp1 = sp_pr_1.first;
+                    for (auto &o2_ixn_layer_2: sp_pr_1.second) {
+                        layer2 = o2_ixn_layer_2.first;
+                        // Be careful not to double count
+                        if (layer1 >= layer2) {
+                            // skip
+                            continue;
+                        };
+                        // Now layer1 < layer2 guaranteed
                         
-                        // Average the gradients
-                        sp_pr_2.second->get_moment()->average_moment_samples();
+                        for (auto &sp_pr_2: o2_ixn_layer_2.second) {
+                            
+                            sp2 = sp_pr_2.first;
+                            moment = sp_pr_2.second->get_moment();
+                            
+                            // Awake phase
+                            
+                            if (!moment->get_is_awake_moment_fixed()) {
+                                moment->reset_weight_matrix(MCType::AWAKE);
+                                for (auto i_chain=0; i_chain<_no_markov_chains.at(MCType::AWAKE); i_chain++) {
+                                    moment->increment_weight_matrix(MCType::AWAKE, _adj.at(layer1).at(layer2) % ( (_mc_chains.at(MCType::AWAKE).at(i_chain).at(layer1).at(sp1) - _c_means.at(layer1).at(sp1)) * (_mc_chains.at(MCType::AWAKE).at(i_chain).at(layer2).at(sp2).t() - _c_means.at(layer2).at(sp2).t()) ) / _no_markov_chains.at(MCType::AWAKE));
+                                };
+                                moment->set_moment_to_weight_matrix_sum(MCType::AWAKE);
+                            };
+                            
+                            // Asleep phase
+                            
+                            moment->reset_weight_matrix(MCType::ASLEEP);
+                            for (auto i_chain=0; i_chain<_no_markov_chains.at(MCType::ASLEEP); i_chain++) {
+                                moment->increment_weight_matrix(MCType::ASLEEP, _adj.at(layer1).at(layer2) % ( (_mc_chains.at(MCType::ASLEEP).at(i_chain).at(layer1).at(sp1) - _c_means.at(layer1).at(sp1)) * (_mc_chains.at(MCType::ASLEEP).at(i_chain).at(layer2).at(sp2).t() - _c_means.at(layer2).at(sp2).t()) ) / _no_markov_chains.at(MCType::ASLEEP));
+                            };
+                            moment->set_moment_to_weight_matrix_sum(MCType::ASLEEP);
+                            
+                            // Calculate diff
+                            moment->calculate_weight_matrix_awake_minus_asleep();
+                        };
                     };
                 };
             };
@@ -1616,37 +1663,29 @@ namespace dblz {
         
         // Reap biases
         // All biases
-        double val;
+        int layer;
+        Sptr sp;
         for (auto &bias_layer: _bias_dict) {
-            // Go through possible species in this layer
+            layer = bias_layer.first;
             for (auto &sp_pr: bias_layer.second) {
+                sp = sp_pr.first;
+                moment = sp_pr.second->get_moment();
                 
                 // Awake phase
                 
-                if (!sp_pr.second->get_moment()->get_is_awake_moment_fixed()) {
+                if (!moment->get_is_awake_moment_fixed()) {
+                    moment->reset_moment(MCType::AWAKE);
                     for (auto i_chain=0; i_chain<_no_markov_chains.at(MCType::AWAKE); i_chain++) {
-                    
-                        // Get the moment
-                        val = arma::sum(_mc_chains.at(MCType::AWAKE).at(i_chain).at(bias_layer.first).at(sp_pr.first));
-        
-                        // Set the moment
-                        sp_pr.second->get_moment()->set_moment_sample(MCType::AWAKE, i_chain, val);
+                        moment->increment_moment(MCType::AWAKE, arma::accu(_mc_chains.at(MCType::AWAKE).at(i_chain).at(layer).at(sp)));
                     };
                 };
                 
                 // Asleep phase
                 
+                moment->reset_moment(MCType::ASLEEP);
                 for (auto i_chain=0; i_chain<_no_markov_chains.at(MCType::ASLEEP); i_chain++) {
-                    
-                    // Get the moment
-                    val = arma::sum(_mc_chains.at(MCType::ASLEEP).at(i_chain).at(bias_layer.first).at(sp_pr.first));
-                    
-                    // Set the moment
-                    sp_pr.second->get_moment()->set_moment_sample(MCType::ASLEEP, i_chain, val);
+                    moment->increment_moment(MCType::ASLEEP, arma::accu(_mc_chains.at(MCType::ASLEEP).at(i_chain).at(layer).at(sp)));
                 };
-                
-                // Average
-                sp_pr.second->get_moment()->average_moment_samples();
             };
         };
         
@@ -1666,19 +1705,11 @@ namespace dblz {
                         
                         // Go through all species in the layer below
                         for (auto sp_below: _species_possible_vec.at(layer-1)) {
-                            // Get the gradient in the ixn of these two
-                            // grad = _o2_ixn_dict.at(layer-1).at(sp_below).at(layer).at(sp)->get_moment()->get_moment_diff_awake_minus_asleep();
-                            
-                            // Scale by the no of connections
-                            // grad /= arma::accu(_adj.at(layer-1).at(layer));
-                            
                             // Calculate offset
-                            offset -= arma::sum(vals.at(layer-1).at(sp_below).at(layer).at(sp) * _c_means.at(layer-1).at(sp_below));
-                            // offset = -1.0 * arma::sum(_adj.at(layer-1).at(layer) * _c_means.at(layer-1).at(sp_below));
+                            offset -= arma::sum( _o2_ixn_dict.at(layer-1).at(sp_below).at(layer).at(sp)->get_moment()->get_weight_matrix_awake_minus_asleep() * _c_means.at(layer-1).at(sp_below) );
                             
                             // Don't count the diagonal
-                            offset += arma::dot(vals.at(layer-1).at(sp_below).at(layer).at(sp).diag(), _c_means.at(layer-1).at(sp_below));
-                            // offset += grad * arma::dot(_adj.at(layer-1).at(layer).diag(),_c_means.at(layer-1).at(sp_below));
+                            offset += arma::dot(_o2_ixn_dict.at(layer-1).at(sp_below).at(layer).at(sp)->get_moment()->get_weight_matrix_awake_minus_asleep().diag(), _c_means.at(layer-1).at(sp_below));
                         };
                     };
                     
@@ -1687,19 +1718,12 @@ namespace dblz {
                         
                         // Go through all species in the layer above
                         for (auto sp_above: _species_possible_vec.at(layer+1)) {
-                            // Get the gradient in the ixn of these two
-                            // grad = _o2_ixn_dict.at(layer+1).at(sp_above).at(layer).at(sp)->get_moment()->get_moment_diff_awake_minus_asleep();
-                            
-                            // Scale by the no of connections
-                            // grad /= arma::accu(_adj.at(layer+1).at(layer));
 
                             // Calculate offset
-                            // offset = -1.0 * grad * arma::sum(_adj.at(layer+1).at(layer) * _c_means.at(layer+1).at(sp_above));
-                            offset -= arma::sum(vals.at(layer).at(sp).at(layer+1).at(sp_above).t() * _c_means.at(layer+1).at(sp_above));
-
+                            offset -= arma::sum( _o2_ixn_dict.at(layer).at(sp).at(layer+1).at(sp_above)->get_moment()->get_weight_matrix_awake_minus_asleep().t() * _c_means.at(layer+1).at(sp_above) );
+                            
                             // Don't count the diagonal
-                            offset += arma::dot(vals.at(layer).at(sp).at(layer+1).at(sp_above).diag(), _c_means.at(layer+1).at(sp_above));
-                            // offset += grad * arma::dot(_adj.at(layer+1).at(layer).diag(),_c_means.at(layer+1).at(sp_above));
+                            offset += arma::dot(_o2_ixn_dict.at(layer).at(sp).at(layer+1).at(sp_above)->get_moment()->get_weight_matrix_awake_minus_asleep().diag(), _c_means.at(layer+1).at(sp_above));
                         };
                     };
                     
@@ -1852,6 +1876,9 @@ namespace dblz {
         auto it = std::find(_all_ixns.begin(),_all_ixns.end(),ixn);
         if (it == _all_ixns.end()) {
             _all_ixns.push_back(ixn);
+        } else {
+            std::cerr << ">>> Lattice::_add_to_all_ixns_vec <<< reusing ixns currently not supported because it is not treated correctly in the reap function!" << std::endl;
+            exit(EXIT_FAILURE);
         };
     };
 };

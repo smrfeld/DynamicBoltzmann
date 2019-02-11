@@ -78,9 +78,11 @@ namespace dblz {
         _no_markov_chains[chain] = no_markov_chains;
         
         // Moments
+        /*
         for (auto &ixn_param: _latt->get_all_ixn_params()) {
             ixn_param->get_moment()->set_no_markov_chains(chain, no_markov_chains);
         };
+         */
         
         // Lattice
         _latt->set_no_markov_chains(chain, no_markov_chains);

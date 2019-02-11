@@ -151,7 +151,7 @@ namespace dblz {
     // MARK: - Diff eq
     // ***************
     
-	void Adjoint::solve_diff_eq_at_timepoint_to_minus_one(int timepoint, double dt, bool l2_mode, const std::map<ITptr,double> &l2_lambda, const std::map<ITptr,double> &l2_center) {
+	void Adjoint::solve_diff_eq_at_timepoint_to_minus_one(int timepoint, double dt) {
 		if (timepoint >= _no_timepoints) {
 			std::cerr << ">>> Error: Adjoint::solve_diff_eq_at_timepoint_to_minus_one <<< " << timepoint << " is out of bounds: " << _no_timepoints << std::endl;
 			exit(EXIT_FAILURE);
@@ -184,57 +184,27 @@ namespace dblz {
 
 		};
 
-		// Get domain
-		/*
-		auto diff_eq_rhs = _ixn_param->get_diff_eq_rhs();
-		if (!diff_eq_rhs) {
-			std::cerr << ">>> Error: Adjoint::solve_diff_eq_at_timepoint_to_minus_one <<< No diff eq rhs for ixn param!" << std::endl;
-			exit(EXIT_FAILURE);	
-		};
-
-		int i_dim = 0;
-		for (auto const &domain: diff_eq_rhs->get_domain()) {
-			// Get ixn param
-			auto ixn_param_in_deriv = domain->get_ixn_param();
-
-			// Get adjoint
-			auto adjoint_in_deriv = ixn_param_in_deriv->get_adjoint();
-			if (!adjoint_in_deriv) {
-				std::cerr << ">>> Error: Adjoint::solve_diff_eq_at_timepoint_to_minus_one <<< No adjoint for ixn param: " << ixn_param_in_deriv->get_name() << std::endl;
-				exit(EXIT_FAILURE);	
-			};
-
-			// Val
-			deriv += diff_eq_rhs->get_deriv_wrt_nu_at_timepoint(timepoint,i_dim) * adjoint_in_deriv->get_val_at_timepoint(timepoint);
-
-			// Next dim
-			i_dim++;
-		}; 
-		*/
-
 		// Difference in moments
         auto moment = _ixn_param_traj->get_ixn_param_at_timepoint(timepoint)->get_moment();
-        double moment_delta = moment->get_moment(MCType::ASLEEP) - moment->get_moment(MCType::AWAKE);
+        double moment_delta = -1.0 * moment->get_moment_diff_awake_minus_asleep();
         
-		// L2 reg
-		if (l2_mode) {
-			// L2 mode
-
-            double ixn_param_val = _ixn_param_traj->get_ixn_param_at_timepoint(timepoint)->get_val();
-			double l2_term = 2.0 * l2_lambda.at(_ixn_param_traj) * (ixn_param_val-l2_center.at(_ixn_param_traj));
-			std::cout << _name << " " << timepoint << " " << moment_delta << " " << l2_term << std::endl;
-
-			// Step
-			_vals[timepoint-1] = _vals[timepoint] - dt * (moment_delta - deriv + l2_term);
-
-		} else {
-			// Not L2 mode
-
-			// Step
-			_vals[timepoint-1] = _vals[timepoint] - dt * (moment_delta - deriv);
-		};
+        // Step
+        _vals[timepoint-1] = _vals[timepoint] - dt * (moment_delta - deriv);
 	};
+    
+    void Adjoint::solve_diff_eq_at_timepoint_to_minus_one_l2(int timepoint, double dt, const std::map<ITptr,double> &l2_lambda, const std::map<ITptr,double> &l2_center) {
 
+        // Solve
+        solve_diff_eq_at_timepoint_to_minus_one(timepoint, dt);
+        
+        // L2 reg
+        double ixn_param_val = _ixn_param_traj->get_ixn_param_at_timepoint(timepoint)->get_val();
+        double l2_term = 2.0 * l2_lambda.at(_ixn_param_traj) * (ixn_param_val-l2_center.at(_ixn_param_traj));
+        
+        // Step
+        _vals[timepoint-1] -= dt * l2_term;
+    };
+    
 	/********************
 	Write to file
 	********************/

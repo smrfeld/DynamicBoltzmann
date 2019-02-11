@@ -436,14 +436,8 @@ namespace dblz {
             _bn_gamma[layer][sp] = gamma;
             
             // Add to all
-            auto it1 = std::find(_all_ixns.begin(), _all_ixns.end(), beta);
-            if (it1 == _all_ixns.end()) {
-                _all_ixns.push_back(beta);
-            };
-            auto it2 = std::find(_all_ixns.begin(), _all_ixns.end(), gamma);
-            if (it2 == _all_ixns.end()) {
-                _all_ixns.push_back(gamma);
-            };
+            _add_to_all_ixns_vec(beta);
+            _add_to_all_ixns_vec(gamma);
 
             _bn_beta_bar[MCType::AWAKE][layer][sp] = arma::vec(no_units,arma::fill::zeros);
             _bn_beta_bar[MCType::ASLEEP][layer][sp] = arma::vec(no_units,arma::fill::zeros);
@@ -496,11 +490,7 @@ namespace dblz {
     void Lattice::add_bias_to_layer(int layer, Sptr sp, Iptr bias) {
         _bias_dict[layer][sp] = bias;
         
-        // Add to all
-        auto it = std::find(_all_ixns.begin(), _all_ixns.end(), bias);
-        if (it == _all_ixns.end()) {
-            _all_ixns.push_back(bias);
-        };
+        _add_to_all_ixns_vec(bias);
     };
 
     // Ixns
@@ -515,10 +505,7 @@ namespace dblz {
         _o2_ixn_dict[layer2][sp2][layer1][sp1] = ixn;
 
         // Add to all
-        auto it = std::find(_all_ixns.begin(), _all_ixns.end(), ixn);
-        if (it == _all_ixns.end()) {
-            _all_ixns.push_back(ixn);
-        };
+        _add_to_all_ixns_vec(ixn);
     };
     
     // Set multiplier
@@ -1857,5 +1844,19 @@ namespace dblz {
         };
     };
     
+    // ***************
+    // MARK: - Add ixn to all ixns vec
+    // ***************
     
+    // Add ixn to all ixns vec
+    void Lattice::_add_to_all_ixns_vec(Iptr ixn) {
+    
+        auto it = _all_ixns.find(ixn);
+        if (it == _all_ixns.end()) {
+            _all_ixns.push_back(ixn);
+        } else {
+            std::cerr << ">>> Lattice::_add_to_all_ixns_vec <<< Error: this ixn already exists somewhere else. Currently this is not treated correctly in the reap functions!" << std::endl;
+            exit(EXIT_FAILURE);
+        };
+    };
 };

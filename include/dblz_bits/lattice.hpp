@@ -142,6 +142,9 @@ namespace dblz {
         // Binarize
         void _binarize_all_units_in_layer(MCType chain, int i_chain, int layer, bool act);
 
+        // Add ixn to all ixns vec
+        void _add_to_all_ixns_vec(Iptr ixn);
+        
         // ***************
         // MARK: Look up sites
         // ***************

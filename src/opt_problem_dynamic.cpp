@@ -292,7 +292,7 @@ namespace dblz {
             for (auto timepoint=_timepoint_start_lattice+_no_timesteps_lattice; timepoint>_timepoint_start_lattice; timepoint--) {
                 for (auto ixn_param_traj: _latt_traj->get_all_ixn_param_trajs()) {
                     if (!ixn_param_traj->get_is_val_fixed_to_init_cond() && !ixn_param_traj->get_are_vals_fixed()) {
-                        ixn_param_traj->get_adjoint()->solve_diff_eq_at_timepoint_to_minus_one(timepoint,dt,options.l2_reg,options.l2_lambda,options.l2_center);
+                        ixn_param_traj->get_adjoint()->solve_diff_eq_at_timepoint_to_minus_one_l2(timepoint,dt,options.l2_lambda,options.l2_center);
                     };
                 };
             };

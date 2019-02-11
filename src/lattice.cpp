@@ -1560,7 +1560,7 @@ namespace dblz {
         };
         
         // Reap ixns
-        double val;
+        std::map<int, std::map<Sptr, std::map<int, std::map<Sptr, arma::mat>>>> vals;
         for (auto &o2_ixn_layer_1: _o2_ixn_dict) {
             for (auto &sp_pr_1: o2_ixn_layer_1.second) {
                 for (auto &o2_ixn_layer_2: sp_pr_1.second) {
@@ -1582,18 +1582,13 @@ namespace dblz {
 
                                 // Get the moment
                                 if (_mode == LatticeMode::NORMAL) {
-                                    val = dot(_mc_chains.at(MCType::AWAKE).at(i_chain).at(o2_ixn_layer_1.first).at(sp_pr_1.first), _adj.at(o2_ixn_layer_2.first).at(o2_ixn_layer_1.first) * _mc_chains.at(MCType::AWAKE).at(i_chain).at(o2_ixn_layer_2.first).at(sp_pr_2.first));
+                                    vals[o2_ixn_layer_1.first][sp_pr_1.first][o2_ixn_layer_2.first][sp_pr_2.first] = _adj.at(o2_ixn_layer_1.first).at(o2_ixn_layer_2.first) % ( _mc_chains.at(MCType::AWAKE).at(i_chain).at(o2_ixn_layer_1.first).at(sp_pr_1.first) * _mc_chains.at(MCType::AWAKE).at(i_chain).at(o2_ixn_layer_2.first).at(sp_pr_2.first).t() );
                                 } else if (_mode == LatticeMode::CENTERED) {
-                                    val = dot(
-                                              _mc_chains.at(MCType::AWAKE).at(i_chain).at(o2_ixn_layer_1.first).at(sp_pr_1.first) - _c_means.at(o2_ixn_layer_1.first).at(sp_pr_1.first)
-                                              ,
-                                              _adj.at(o2_ixn_layer_2.first).at(o2_ixn_layer_1.first) * (
-                                                                               _mc_chains.at(MCType::AWAKE).at(i_chain).at(o2_ixn_layer_2.first).at(sp_pr_2.first) - _c_means.at(o2_ixn_layer_2.first).at(sp_pr_2.first)
-                                                                               ));
+                                    vals[o2_ixn_layer_1.first][sp_pr_1.first][o2_ixn_layer_2.first][sp_pr_2.first] = _adj.at(o2_ixn_layer_1.first).at(o2_ixn_layer_2.first) % ( (_mc_chains.at(MCType::AWAKE).at(i_chain).at(o2_ixn_layer_1.first).at(sp_pr_1.first) - _c_means.at(o2_ixn_layer_1.first).at(sp_pr_1.first)) * (_mc_chains.at(MCType::AWAKE).at(i_chain).at(o2_ixn_layer_2.first).at(sp_pr_2.first).t() - _c_means.at(o2_ixn_layer_2.first).at(sp_pr_2.first).t()) );
                                 };
                                 
                                 // Set the moment
-                                sp_pr_2.second->get_moment()->set_moment_sample(MCType::AWAKE, i_chain, val);
+                                sp_pr_2.second->get_moment()->set_moment_sample(MCType::AWAKE, i_chain, arma::accu(vals.at(o2_ixn_layer_1.first).at(sp_pr_1.first).at(o2_ixn_layer_2.first).at(sp_pr_2.first)));
                             };
                         };
                         
@@ -1603,18 +1598,13 @@ namespace dblz {
                             
                             // Get the moment
                             if (_mode == LatticeMode::NORMAL) {
-                                val = dot(_mc_chains.at(MCType::ASLEEP).at(i_chain).at(o2_ixn_layer_1.first).at(sp_pr_1.first), _adj.at(o2_ixn_layer_2.first).at(o2_ixn_layer_1.first) * _mc_chains.at(MCType::ASLEEP).at(i_chain).at(o2_ixn_layer_2.first).at(sp_pr_2.first));
+                                vals[o2_ixn_layer_1.first][sp_pr_1.first][o2_ixn_layer_2.first][sp_pr_2.first] = _adj.at(o2_ixn_layer_1.first).at(o2_ixn_layer_2.first) % ( _mc_chains.at(MCType::ASLEEP).at(i_chain).at(o2_ixn_layer_1.first).at(sp_pr_1.first) * _mc_chains.at(MCType::ASLEEP).at(i_chain).at(o2_ixn_layer_2.first).at(sp_pr_2.first).t() );
                             } else if (_mode == LatticeMode::CENTERED) {
-                                val = dot(
-                                          _mc_chains.at(MCType::ASLEEP).at(i_chain).at(o2_ixn_layer_1.first).at(sp_pr_1.first) - _c_means.at(o2_ixn_layer_1.first).at(sp_pr_1.first)
-                                          ,
-                                          _adj.at(o2_ixn_layer_2.first).at(o2_ixn_layer_1.first) * (
-                                                                           _mc_chains.at(MCType::ASLEEP).at(i_chain).at(o2_ixn_layer_2.first).at(sp_pr_2.first) - _c_means.at(o2_ixn_layer_2.first).at(sp_pr_2.first)
-                                                                           ));
+                                vals[o2_ixn_layer_1.first][sp_pr_1.first][o2_ixn_layer_2.first][sp_pr_2.first] = _adj.at(o2_ixn_layer_1.first).at(o2_ixn_layer_2.first) % ( (_mc_chains.at(MCType::ASLEEP).at(i_chain).at(o2_ixn_layer_1.first).at(sp_pr_1.first) - _c_means.at(o2_ixn_layer_1.first).at(sp_pr_1.first)) * (_mc_chains.at(MCType::ASLEEP).at(i_chain).at(o2_ixn_layer_2.first).at(sp_pr_2.first).t() - _c_means.at(o2_ixn_layer_2.first).at(sp_pr_2.first).t()) );
                             };
-                            
+
                             // Set the moment
-                            sp_pr_2.second->get_moment()->set_moment_sample(MCType::ASLEEP, i_chain, val);
+                            sp_pr_2.second->get_moment()->set_moment_sample(MCType::ASLEEP, i_chain, arma::accu(vals.at(o2_ixn_layer_1.first).at(sp_pr_1.first).at(o2_ixn_layer_2.first).at(sp_pr_2.first)));
                         };
                         
                         // Average the gradients
@@ -1626,6 +1616,7 @@ namespace dblz {
         
         // Reap biases
         // All biases
+        double val;
         for (auto &bias_layer: _bias_dict) {
             // Go through possible species in this layer
             for (auto &sp_pr: bias_layer.second) {
@@ -1660,12 +1651,15 @@ namespace dblz {
         };
         
         // Offset bias for centering
-        double grad, offset=0.0;
+        double offset;
         if (_mode == LatticeMode::CENTERED) {
             // Go through all layers
             for (auto layer=0; layer<_no_layers; layer++) {
                 // Go through all species in this layer
                 for (auto sp: _species_possible_vec.at(layer)) {
+                    
+                    // Reset offset
+                    offset = 0.0;
                     
                     // Below
                     if (layer != 0) {
@@ -1673,16 +1667,18 @@ namespace dblz {
                         // Go through all species in the layer below
                         for (auto sp_below: _species_possible_vec.at(layer-1)) {
                             // Get the gradient in the ixn of these two
-                            grad = _o2_ixn_dict.at(layer-1).at(sp_below).at(layer).at(sp)->get_moment()->get_moment_diff_awake_minus_asleep();
+                            // grad = _o2_ixn_dict.at(layer-1).at(sp_below).at(layer).at(sp)->get_moment()->get_moment_diff_awake_minus_asleep();
                             
                             // Scale by the no of connections
-                            grad /= arma::accu(_adj.at(layer-1).at(layer));
+                            // grad /= arma::accu(_adj.at(layer-1).at(layer));
                             
                             // Calculate offset
-                            offset -= grad * arma::sum(_adj.at(layer-1).at(layer) * _c_means.at(layer-1).at(sp_below));
+                            offset -= arma::sum(vals.at(layer-1).at(sp_below).at(layer).at(sp) * _c_means.at(layer-1).at(sp_below));
+                            // offset = -1.0 * arma::sum(_adj.at(layer-1).at(layer) * _c_means.at(layer-1).at(sp_below));
                             
                             // Don't count the diagonal
-                            offset += grad * arma::dot(_adj.at(layer-1).at(layer).diag(),_c_means.at(layer-1).at(sp_below));
+                            offset += arma::dot(vals.at(layer-1).at(sp_below).at(layer).at(sp).diag(), _c_means.at(layer-1).at(sp_below));
+                            // offset += grad * arma::dot(_adj.at(layer-1).at(layer).diag(),_c_means.at(layer-1).at(sp_below));
                         };
                     };
                     
@@ -1692,16 +1688,18 @@ namespace dblz {
                         // Go through all species in the layer above
                         for (auto sp_above: _species_possible_vec.at(layer+1)) {
                             // Get the gradient in the ixn of these two
-                            grad = _o2_ixn_dict.at(layer+1).at(sp_above).at(layer).at(sp)->get_moment()->get_moment_diff_awake_minus_asleep();
+                            // grad = _o2_ixn_dict.at(layer+1).at(sp_above).at(layer).at(sp)->get_moment()->get_moment_diff_awake_minus_asleep();
                             
                             // Scale by the no of connections
-                            grad /= arma::accu(_adj.at(layer+1).at(layer));
+                            // grad /= arma::accu(_adj.at(layer+1).at(layer));
 
                             // Calculate offset
-                            offset -= grad * arma::sum(_adj.at(layer+1).at(layer) * _c_means.at(layer+1).at(sp_above));
-                            
+                            // offset = -1.0 * grad * arma::sum(_adj.at(layer+1).at(layer) * _c_means.at(layer+1).at(sp_above));
+                            offset -= arma::sum(vals.at(layer).at(sp).at(layer+1).at(sp_above).t() * _c_means.at(layer+1).at(sp_above));
+
                             // Don't count the diagonal
-                            offset += grad * arma::dot(_adj.at(layer+1).at(layer).diag(),_c_means.at(layer+1).at(sp_above));
+                            offset += arma::dot(vals.at(layer).at(sp).at(layer+1).at(sp_above).diag(), _c_means.at(layer+1).at(sp_above));
+                            // offset += grad * arma::dot(_adj.at(layer+1).at(layer).diag(),_c_means.at(layer+1).at(sp_above));
                         };
                     };
                     

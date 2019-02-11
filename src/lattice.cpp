@@ -406,8 +406,8 @@ namespace dblz {
         // Add adjacency matrix
         if (layer != 0) {
             int size_below = get_no_units_in_layer(layer-1);
-            _adj[layer-1][layer] = arma::mat(size_below,no_units,arma::fill::zeros);
-            _adj[layer][layer-1] = _adj[layer][layer-1].t();
+            _adj[layer-1][layer] = arma::mat(no_units,size_below,arma::fill::zeros);
+            _adj[layer][layer-1] = _adj[layer-1][layer].t();
             std::cout << "Made adjacency matrix: " << layer-1 << " " << size_below << " " << no_units << std::endl;
         };
 

@@ -150,14 +150,14 @@ namespace dblz {
                 // Set correct ixns
                 for (auto pr1: _bias_dict) {
                     for (auto pr2: pr1.second) {
-                        _lattices[timepoint]->add_bias_to_layer(pr1.first, pr2.first, pr2.second->get_ixn_param_at_timepoint(timepoint));
+                        _lattices[timepoint]->set_bias_of_layer(pr1.first, pr2.first, pr2.second->get_ixn_param_at_timepoint(timepoint));
                     };
                 };
                 for (auto pr1: _o2_ixn_dict) {
                     for (auto pr2: pr1.second) {
                         for (auto pr3: pr2.second) {
                             for (auto pr4: pr3.second) {
-                                _lattices[timepoint]->add_ixn_between_layers(pr1.first, pr2.first, pr3.first, pr4.first, pr4.second->get_ixn_param_at_timepoint(timepoint));
+                                _lattices[timepoint]->set_ixn_between_layers(pr1.first, pr2.first, pr3.first, pr4.first, pr4.second->get_ixn_param_at_timepoint(timepoint));
                             };
                         };
                     };
@@ -229,37 +229,25 @@ namespace dblz {
     };
     
     // Biases
-	void LatticeTraj::add_bias_all_layers(Sptr sp, ITptr bias) {
-        for (auto layer=0; layer<get_no_layers(); layer++) {
-            _bias_dict[layer][sp] = bias;
-        };
-        
-        _add_ixn_param_traj(bias);
-        
-        for (auto l: _lattices) {
-            l.second->add_bias_all_layers(sp, bias->get_ixn_param_at_timepoint(l.first));
-        };
-    };
-
-    void LatticeTraj::add_bias_to_layer(int layer, Sptr sp, ITptr bias) {
+    void LatticeTraj::set_bias_of_layer(int layer, Sptr sp, ITptr bias) {
         _bias_dict[layer][sp] = bias;
 
         _add_ixn_param_traj(bias);
 
         for (auto l: _lattices) {
-            l.second->add_bias_to_layer(layer, sp, bias->get_ixn_param_at_timepoint(l.first));
+            l.second->set_bias_of_layer(layer, sp, bias->get_ixn_param_at_timepoint(l.first));
         };
     };
 
     // Ixns
-    void LatticeTraj::add_ixn_between_layers(int layer1, Sptr sp1, int layer2, Sptr sp2, ITptr ixn) {
+    void LatticeTraj::set_ixn_between_layers(int layer1, Sptr sp1, int layer2, Sptr sp2, ITptr ixn) {
         _o2_ixn_dict[layer1][sp1][layer2][sp2] = ixn;
         _o2_ixn_dict[layer2][sp2][layer1][sp1] = ixn;
 
         _add_ixn_param_traj(ixn);
 
         for (auto l: _lattices) {
-            l.second->add_ixn_between_layers(layer1, sp1, layer2, sp2, ixn->get_ixn_param_at_timepoint(l.first));
+            l.second->set_ixn_between_layers(layer1, sp1, layer2, sp2, ixn->get_ixn_param_at_timepoint(l.first));
         };
     };
     

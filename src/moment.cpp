@@ -220,7 +220,7 @@ namespace dblz {
     // MARK: - Set W matrix / bias vec
     // ***************
     
-    void Moment::set_weight_matrix_dims(int dim_lower, int dim_upper) {
+    void Moment::set_weight_matrix_dims(int dim_upper_layer, int dim_lower_layer) {
         if (_weight_matrix[MCType::AWAKE]) {
             delete _weight_matrix[MCType::AWAKE];
         };
@@ -239,9 +239,9 @@ namespace dblz {
             exit(EXIT_FAILURE);
         };
         
-        _weight_matrix[MCType::AWAKE] = new arma::mat(dim_lower,dim_upper,arma::fill::zeros);
-        _weight_matrix[MCType::ASLEEP] = new arma::mat(dim_lower,dim_upper,arma::fill::zeros);
-        _weight_matrix_awake_minus_asleep = new arma::mat(dim_lower,dim_upper,arma::fill::zeros);
+        _weight_matrix[MCType::AWAKE] = new arma::mat(dim_upper_layer,dim_lower_layer,arma::fill::zeros);
+        _weight_matrix[MCType::ASLEEP] = new arma::mat(dim_upper_layer,dim_lower_layer,arma::fill::zeros);
+        _weight_matrix_awake_minus_asleep = new arma::mat(dim_upper_layer,dim_lower_layer,arma::fill::zeros);
     };
     void Moment::reset_weight_matrix(MCType type) {
         _weight_matrix[type]->fill(arma::fill::zeros);

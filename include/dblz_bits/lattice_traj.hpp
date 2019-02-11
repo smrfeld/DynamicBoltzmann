@@ -102,12 +102,11 @@ namespace dblz {
         void add_layer_centered(int layer, int box_length, std::vector<Sptr> species, double sliding_factors);
 
 		// Biases
-		void add_bias_all_layers(Sptr sp, ITptr bias);
-        void add_bias_to_layer(int layer, Sptr sp, ITptr bias);
+        void set_bias_of_layer(int layer, Sptr sp, ITptr bias);
 
 		// Ixns between layers
         // Always bidirectional
-        void add_ixn_between_layers(int layer1, Sptr sp1, int layer2, Sptr sp2, ITptr ixn);
+        void set_ixn_between_layers(int layer1, Sptr sp1, int layer2, Sptr sp2, ITptr ixn);
 
         // Set multiplier
         void set_multiplier_between_layers(int from_layer, int to_layer, double multiplier);

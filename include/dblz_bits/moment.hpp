@@ -90,7 +90,7 @@ namespace dblz {
         // ***************
         
         // Weight matrix is always lower layer to higher layer
-        void set_weight_matrix_dims(int dim_lower, int dim_upper);
+        void set_weight_matrix_dims(int dim_upper_layer, int dim_lower_layer);
         void reset_weight_matrix(MCType type);
         void increment_weight_matrix(MCType type, arma::mat increment);
         void set_moment_to_weight_matrix_sum(MCType type);

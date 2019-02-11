@@ -372,26 +372,29 @@ namespace dblz {
         _no_units_per_layer[layer] = no_units;
         
         // Lookups
+        int ctr=0;
         if (_no_dims == 1) {
-            for (auto x=1; x<=_box_length; x++) {
-                _lookup_1[layer][x] = x-1;
-                _rlookup[layer][x-1] = std::vector<int>({x});
+            for (auto x=1; x<=box_length; x++) {
+                _lookup_1[layer][x] = ctr;
+                _rlookup[layer][ctr] = std::vector<int>({x});
+                ctr++;
             };
         } else if (_no_dims == 2) {
-            int ctr=0;
-            for (auto x=1; x<=_box_length; x++) {
-                for (auto y=1; y<=_box_length; y++) {
+            for (auto x=1; x<=box_length; x++) {
+                for (auto y=1; y<=box_length; y++) {
                     _lookup_2[layer][x][y] = ctr;
-                    _rlookup[layer][ctr++] = std::vector<int>({x,y});
+                    _rlookup[layer][ctr] = std::vector<int>({x,y});
+                    ctr++;
                 };
             };
         } else if (_no_dims == 3) {
-            int ctr=0;
-            for (auto x=1; x<=_box_length; x++) {
-                for (auto y=1; y<=_box_length; y++) {
-                    for (auto z=1; z<=_box_length; z++) {
+            for (auto x=1; x<=box_length; x++) {
+                for (auto y=1; y<=box_length; y++) {
+                    for (auto z=1; z<=box_length; z++) {
+                        std::cout << "Setting idx in layer: " << layer << " pos: " << x << " " << y << " " << z << " to idx: " << ctr << std::endl;
                         _lookup_3[layer][x][y][z] = ctr;
-                        _rlookup[layer][ctr++] = std::vector<int>({x,y,z});
+                        _rlookup[layer][ctr] = std::vector<int>({x,y,z});
+                        ctr++;
                     };
                 };
             };
@@ -408,7 +411,7 @@ namespace dblz {
             int size_below = get_no_units_in_layer(layer-1);
             _adj[layer-1][layer] = arma::mat(no_units,size_below,arma::fill::zeros);
             _adj[layer][layer-1] = _adj[layer-1][layer].t();
-            // std::cout << "Made adjacency matrix: " << layer-1 << " " << size_below << " " << no_units << std::endl;
+            std::cout << "Made adjacency matrix: " << layer-1 << " " << no_units << " " << size_below << std::endl;
         };
 
     };
@@ -481,20 +484,14 @@ namespace dblz {
 	********************/
 
     // Biases
-	void Lattice::add_bias_all_layers(Sptr sp, Iptr bias) {
-        for (auto layer=0; layer<_no_layers; layer++) {
-            add_bias_to_layer(layer, sp, bias);
-        };
-    };
-
-    void Lattice::add_bias_to_layer(int layer, Sptr sp, Iptr bias) {
+    void Lattice::set_bias_of_layer(int layer, Sptr sp, Iptr bias) {
         _bias_dict[layer][sp] = bias;
         
         _add_to_all_ixns_vec(bias);
     };
 
     // Ixns
-    void Lattice::add_ixn_between_layers(int layer1, Sptr sp1, int layer2, Sptr sp2, Iptr ixn) {
+    void Lattice::set_ixn_between_layers(int layer1, Sptr sp1, int layer2, Sptr sp2, Iptr ixn) {
         if (layer2 != layer1+1 && layer2 != layer1-1) {
             std::cerr << ">>> Lattice::add_ixn_between_layers <<< layer2 != layer1 +- 1; instead layer_2 = " << layer2 << " and layer1 = " << layer1 << std::endl;
             exit(EXIT_FAILURE);
@@ -511,7 +508,7 @@ namespace dblz {
         if (_mode == LatticeMode::CENTERED) {
             int no_below = get_no_units_in_layer(std::min(layer1,layer2));
             int no_above = get_no_units_in_layer(std::max(layer1,layer2));
-            ixn->get_moment()->set_weight_matrix_dims(no_below,no_above);
+            ixn->get_moment()->set_weight_matrix_dims(no_above,no_below);
         };
     };
     
@@ -595,21 +592,21 @@ namespace dblz {
     void Lattice::add_conn(int layer1, int x1, int layer2, int x2) {
         int idx1 = _look_up_unit(layer1, x1);
         int idx2 = _look_up_unit(layer2, x2);
-        _adj[layer1][layer2](idx1,idx2) = 1.0;
-        _adj[layer2][layer1](idx2,idx1) = 1.0;
+        _adj[layer1][layer2](idx2,idx1) = 1.0;
+        _adj[layer2][layer1](idx1,idx2) = 1.0;
     };
     void Lattice::add_conn(int layer1, int x1, int y1, int layer2, int x2, int y2) {
         int idx1 = _look_up_unit(layer1, x1, y1);
         int idx2 = _look_up_unit(layer2, x2, y2);
-        _adj[layer1][layer2](idx1,idx2) = 1.0;
-        _adj[layer2][layer1](idx2,idx1) = 1.0;
+        _adj[layer1][layer2](idx2,idx1) = 1.0;
+        _adj[layer2][layer1](idx1,idx2) = 1.0;
     };
     void Lattice::add_conn(int layer1, int x1, int y1, int z1, int layer2, int x2, int y2, int z2) {
         int idx1 = _look_up_unit(layer1, x1, y1, z1);
         int idx2 = _look_up_unit(layer2, x2, y2, z2);
-        // std::cout << "Connecting: " << layer1 << " " << x1 << " " << y1 << " " << z1 << " : " << layer2 << " " << x2 << " " << y2 << " " << z2 << " : " << idx1 << " " << idx2 << std::endl;
-        _adj[layer1][layer2](idx1,idx2) = 1.0;
-        _adj[layer2][layer1](idx2,idx1) = 1.0;
+        std::cout << "Connecting: " << layer1 << " " << x1 << " " << y1 << " " << z1 << " : " << layer2 << " " << x2 << " " << y2 << " " << z2 << " : " << idx1 << " " << idx2 << std::endl;
+        _adj[layer1][layer2](idx2,idx1) = 1.0;
+        _adj[layer2][layer1](idx1,idx2) = 1.0;
     };
     
 	/********************
@@ -1598,7 +1595,7 @@ namespace dblz {
                             if (!moment->get_is_awake_moment_fixed()) {
                                 moment->reset_moment(MCType::AWAKE);
                                 for (auto i_chain=0; i_chain<_no_markov_chains.at(MCType::AWAKE); i_chain++) {
-                                    moment->increment_moment(MCType::AWAKE, arma::accu(_adj.at(layer1).at(layer2) % ( _mc_chains.at(MCType::AWAKE).at(i_chain).at(layer1).at(sp1) * _mc_chains.at(MCType::AWAKE).at(i_chain).at(layer2).at(sp2).t() ) / _no_markov_chains.at(MCType::AWAKE)));
+                                    moment->increment_moment(MCType::AWAKE, arma::accu(_adj.at(layer1).at(layer2) % ( _mc_chains.at(MCType::AWAKE).at(i_chain).at(layer2).at(sp2) * _mc_chains.at(MCType::AWAKE).at(i_chain).at(layer1).at(sp1).t() ) / _no_markov_chains.at(MCType::AWAKE)));
                                 };
                             };
 
@@ -1606,7 +1603,7 @@ namespace dblz {
                             
                             moment->reset_moment(MCType::ASLEEP);
                             for (auto i_chain=0; i_chain<_no_markov_chains.at(MCType::ASLEEP); i_chain++) {
-                                moment->increment_moment(MCType::ASLEEP, arma::accu(_adj.at(layer1).at(layer2) % ( _mc_chains.at(MCType::ASLEEP).at(i_chain).at(layer1).at(sp1) * _mc_chains.at(MCType::ASLEEP).at(i_chain).at(layer2).at(sp2).t() ) / _no_markov_chains.at(MCType::ASLEEP)));
+                                moment->increment_moment(MCType::ASLEEP, arma::accu(_adj.at(layer1).at(layer2) % ( _mc_chains.at(MCType::ASLEEP).at(i_chain).at(layer2).at(sp2) * _mc_chains.at(MCType::ASLEEP).at(i_chain).at(layer1).at(sp1).t() ) / _no_markov_chains.at(MCType::ASLEEP)));
                             };
                         };
                     };
@@ -1640,7 +1637,7 @@ namespace dblz {
                             if (!moment->get_is_awake_moment_fixed()) {
                                 moment->reset_weight_matrix(MCType::AWAKE);
                                 for (auto i_chain=0; i_chain<_no_markov_chains.at(MCType::AWAKE); i_chain++) {
-                                    moment->increment_weight_matrix(MCType::AWAKE, _adj.at(layer1).at(layer2) % ( (_mc_chains.at(MCType::AWAKE).at(i_chain).at(layer1).at(sp1) - _c_means.at(layer1).at(sp1)) * (_mc_chains.at(MCType::AWAKE).at(i_chain).at(layer2).at(sp2).t() - _c_means.at(layer2).at(sp2).t()) ) / _no_markov_chains.at(MCType::AWAKE));
+                                    moment->increment_weight_matrix(MCType::AWAKE, _adj.at(layer1).at(layer2) % ( (_mc_chains.at(MCType::AWAKE).at(i_chain).at(layer2).at(sp2) - _c_means.at(layer2).at(sp2)) * (_mc_chains.at(MCType::AWAKE).at(i_chain).at(layer1).at(sp1).t() - _c_means.at(layer1).at(sp1).t()) ) / _no_markov_chains.at(MCType::AWAKE));
                                 };
                                 moment->set_moment_to_weight_matrix_sum(MCType::AWAKE);
                             };
@@ -1649,7 +1646,7 @@ namespace dblz {
                             
                             moment->reset_weight_matrix(MCType::ASLEEP);
                             for (auto i_chain=0; i_chain<_no_markov_chains.at(MCType::ASLEEP); i_chain++) {
-                                moment->increment_weight_matrix(MCType::ASLEEP, _adj.at(layer1).at(layer2) % ( (_mc_chains.at(MCType::ASLEEP).at(i_chain).at(layer1).at(sp1) - _c_means.at(layer1).at(sp1)) * (_mc_chains.at(MCType::ASLEEP).at(i_chain).at(layer2).at(sp2).t() - _c_means.at(layer2).at(sp2).t()) ) / _no_markov_chains.at(MCType::ASLEEP));
+                                moment->increment_weight_matrix(MCType::ASLEEP, _adj.at(layer1).at(layer2) % ( (_mc_chains.at(MCType::ASLEEP).at(i_chain).at(layer2).at(sp2) - _c_means.at(layer2).at(sp2)) * (_mc_chains.at(MCType::ASLEEP).at(i_chain).at(layer1).at(sp1).t() - _c_means.at(layer1).at(sp1).t()) ) / _no_markov_chains.at(MCType::ASLEEP));
                             };
                             moment->set_moment_to_weight_matrix_sum(MCType::ASLEEP);
                             
@@ -1691,6 +1688,7 @@ namespace dblz {
         
         // Offset bias for centering
         double offset;
+        arma::vec mean;
         if (_mode == LatticeMode::CENTERED) {
             // Go through all layers
             for (auto layer=0; layer<_no_layers; layer++) {
@@ -1706,10 +1704,12 @@ namespace dblz {
                         // Go through all species in the layer below
                         for (auto sp_below: _species_possible_vec.at(layer-1)) {
                             // Calculate offset
-                            offset -= arma::sum( _o2_ixn_dict.at(layer-1).at(sp_below).at(layer).at(sp)->get_moment()->get_weight_matrix_awake_minus_asleep() * _c_means.at(layer-1).at(sp_below) );
+                            mean = _c_means.at(layer-1).at(sp_below);
+                            offset -= arma::sum( _o2_ixn_dict.at(layer-1).at(sp_below).at(layer).at(sp)->get_moment()->get_weight_matrix_awake_minus_asleep() * mean );
                             
                             // Don't count the diagonal
-                            offset += arma::dot(_o2_ixn_dict.at(layer-1).at(sp_below).at(layer).at(sp)->get_moment()->get_weight_matrix_awake_minus_asleep().diag(), _c_means.at(layer-1).at(sp_below));
+                            mean.resize(std::min(get_no_units_in_layer(layer-1),get_no_units_in_layer(layer)));
+                            offset += arma::dot(_o2_ixn_dict.at(layer-1).at(sp_below).at(layer).at(sp)->get_moment()->get_weight_matrix_awake_minus_asleep().diag(), mean);
                         };
                     };
                     
@@ -1720,10 +1720,12 @@ namespace dblz {
                         for (auto sp_above: _species_possible_vec.at(layer+1)) {
 
                             // Calculate offset
-                            offset -= arma::sum( _o2_ixn_dict.at(layer).at(sp).at(layer+1).at(sp_above)->get_moment()->get_weight_matrix_awake_minus_asleep().t() * _c_means.at(layer+1).at(sp_above) );
+                            mean = _c_means.at(layer+1).at(sp_above);
+                            offset -= arma::sum( _o2_ixn_dict.at(layer).at(sp).at(layer+1).at(sp_above)->get_moment()->get_weight_matrix_awake_minus_asleep().t() * mean );
                             
                             // Don't count the diagonal
-                            offset += arma::dot(_o2_ixn_dict.at(layer).at(sp).at(layer+1).at(sp_above)->get_moment()->get_weight_matrix_awake_minus_asleep().diag(), _c_means.at(layer+1).at(sp_above));
+                            mean.resize(std::min(get_no_units_in_layer(layer+1),get_no_units_in_layer(layer)));
+                            offset += arma::dot(_o2_ixn_dict.at(layer).at(sp).at(layer+1).at(sp_above)->get_moment()->get_weight_matrix_awake_minus_asleep().diag(), mean);
                         };
                     };
                     

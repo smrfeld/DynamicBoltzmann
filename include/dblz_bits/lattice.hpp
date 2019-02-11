@@ -245,12 +245,11 @@ namespace dblz {
         // ***************
         
         // Biases
-		void add_bias_all_layers(Sptr sp, Iptr bias);
-        void add_bias_to_layer(int layer, Sptr sp, Iptr bias);
+        void set_bias_of_layer(int layer, Sptr sp, Iptr bias);
 
 		// Ixns between layers
         // Always bidirectional
-        void add_ixn_between_layers(int layer1, Sptr sp1, int layer2, Sptr sp2, Iptr ixn);
+        void set_ixn_between_layers(int layer1, Sptr sp1, int layer2, Sptr sp2, Iptr ixn);
 
         // Set multiplier
         void set_multiplier_between_layers(int from_layer, int to_layer, double multiplier);

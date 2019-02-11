@@ -97,6 +97,8 @@ namespace dblz {
         
         // AWAKE PHASE
         
+        clock_t t0 = clock();
+        
         // Make a batch subset
         std::vector<int> idx_subset;
         idx_subset = fname_coll.get_random_subset(_no_markov_chains[MCType::AWAKE]);
@@ -109,6 +111,8 @@ namespace dblz {
             
         };
         
+        clock_t t1 = clock();
+        
         // Option (1): init MF with random hidden layers with prob units
         /*
         for (int i_chain=0; i_chain<_no_markov_chains[MCType::AWAKE]; i_chain++) {
@@ -119,11 +123,15 @@ namespace dblz {
         // (faster to converge!!!)
         _latt->activate_upward_pass_with_2x_weights_1x_bias(MCType::AWAKE, false);
         
+        clock_t t2 = clock();
+
         // Variational inference
         for (auto i=0; i<no_mean_field_updates; i++) {
             _latt->mean_field_hiddens_step();
         };
         
+        clock_t t3 = clock();
+
         // Write out the lattices
         if (options.write_after_awake) {
             for (auto i_chain=0; i_chain<_no_markov_chains[MCType::AWAKE]; i_chain++) {
@@ -140,24 +148,22 @@ namespace dblz {
         // ASLEEP PHASE - PERSISTENT_CD
         
         // Run CD sampling
-        for (auto i_chain=0; i_chain<_no_markov_chains[MCType::ASLEEP]; i_chain++) {
-            
-            // Sample vis, hidden
-            for (int i_sampling_step=0; i_sampling_step<no_gibbs_sampling_steps; i_sampling_step++)
-            {
-                if (i_sampling_step != no_gibbs_sampling_steps-1) {
-                    _latt->gibbs_sampling_step(options.is_asleep_visible_binary, options.is_asleep_hidden_binary);
-                } else {
-                    if (options.is_asleep_visible_binary_final && options.is_asleep_hidden_binary_final) {
-                        // All binary
-                        _latt->gibbs_sampling_step(options.is_asleep_visible_binary_final, options.is_asleep_hidden_binary_final);
-                    } else {
-                        // Parallel for non-binary options
-                        _latt->gibbs_sampling_step_parallel(options.is_asleep_visible_binary_final, options.is_asleep_hidden_binary_final);
-                    };
-                };
-            };
+    
+        // Sample vis, hidden
+        for (int i_sampling_step=0; i_sampling_step<no_gibbs_sampling_steps-1; i_sampling_step++)
+        {
+            _latt->gibbs_sampling_step(options.is_asleep_visible_binary, options.is_asleep_hidden_binary);
         };
+        // Final step
+        if (options.is_asleep_visible_binary_final && options.is_asleep_hidden_binary_final) {
+            // All binary
+            _latt->gibbs_sampling_step(options.is_asleep_visible_binary_final, options.is_asleep_hidden_binary_final);
+        } else {
+            // Parallel for non-binary options
+            _latt->gibbs_sampling_step_parallel(options.is_asleep_visible_binary_final, options.is_asleep_hidden_binary_final);
+        };
+
+        clock_t t4 = clock();
 
         // Write out the lattices
         if (options.write_after_asleep) {
@@ -175,6 +181,17 @@ namespace dblz {
         // REAP
         
         _latt->reap_moments();
+
+        clock_t t5 = clock();
+
+        
+        double dt1 = (t1-t0)  / (double) CLOCKS_PER_SEC;
+        double dt2 = (t2-t1)  / (double) CLOCKS_PER_SEC;
+        double dt3 = (t3-t2)  / (double) CLOCKS_PER_SEC;
+        double dt4 = (t4-t3)  / (double) CLOCKS_PER_SEC;
+        double dt5 = (t5-t4)  / (double) CLOCKS_PER_SEC;
+        double dt_tot = dt1 + dt2 + dt3 + dt4 + dt5;
+        std::cout << "[read " << dt1/dt_tot << "] [up " << dt2/dt_tot << "] [mf " << dt3/dt_tot << "] [gibbs " << dt4/dt_tot << "] [reap " << dt5/dt_tot << "]" << std::endl;
 
         if (options.verbose) {
             std::cout << "--- [Finished] Sampled lattice ---" << std::endl;

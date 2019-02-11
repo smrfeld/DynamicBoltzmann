@@ -356,5 +356,11 @@ namespace dblz {
 
         // Also calculates the averages!
         void reap_moments();
+        
+        // ***************
+        // MARK: - Write out centers
+        // ***************
+        
+        void write_centers_to_file(int layer, std::string fname) const;
 	};
 };

@@ -610,7 +610,7 @@ namespace dblz {
     void Lattice::add_conn(int layer1, int x1, int y1, int z1, int layer2, int x2, int y2, int z2) {
         int idx1 = _look_up_unit(layer1, x1, y1, z1);
         int idx2 = _look_up_unit(layer2, x2, y2, z2);
-        std::cout << "Connecting: " << layer1 << " " << x1 << " " << y1 << " " << z1 << " : " << layer2 << " " << x2 << " " << y2 << " " << z2 << " : " << idx1 << " " << idx2 << std::endl;
+        // std::cout << "Connecting: " << layer1 << " " << x1 << " " << y1 << " " << z1 << " : " << layer2 << " " << x2 << " " << y2 << " " << z2 << " : " << idx1 << " " << idx2 << std::endl;
         _adj[layer1](idx1,idx2) = 1.0;
     };
     
@@ -1311,7 +1311,11 @@ namespace dblz {
                 activate_layer_calculate(MCType::AWAKE, layer);
             };
              */
-            activate_layer_calculate(MCType::AWAKE, layer);
+            if (_mode == LatticeMode::NORMAL) {
+                activate_layer_calculate(MCType::AWAKE, layer);
+            } else if (_mode == LatticeMode::CENTERED) {
+                activate_layer_calculate_c(MCType::AWAKE, layer);
+            };
 
             // Batch normalization
             /*
@@ -1355,7 +1359,11 @@ namespace dblz {
                 activate_layer_calculate(MCType::ASLEEP, layer);
             };
              */
-            activate_layer_calculate(MCType::ASLEEP, layer);
+            if (_mode == LatticeMode::NORMAL) {
+                activate_layer_calculate(MCType::ASLEEP, layer);
+            } else if (_mode == LatticeMode::CENTERED) {
+                activate_layer_calculate_c(MCType::ASLEEP, layer);
+            };
 
             // Batch normalization
             /*
@@ -1383,7 +1391,11 @@ namespace dblz {
          */
         
         // Zeroth layer
-        activate_layer_calculate(MCType::ASLEEP, 0);
+        if (_mode == LatticeMode::NORMAL) {
+            activate_layer_calculate(MCType::ASLEEP, 0);
+        } else if (_mode == LatticeMode::CENTERED) {
+            activate_layer_calculate_c(MCType::ASLEEP, 0);
+        };
         activate_layer_convert_to_probs(MCType::ASLEEP, 0, binary_visible);
         activate_layer_committ(MCType::ASLEEP, 0);
         // Other layers
@@ -1397,7 +1409,11 @@ namespace dblz {
                 activate_layer_calculate(MCType::ASLEEP, layer);
             };
              */
-            activate_layer_calculate(MCType::ASLEEP, layer);
+            if (_mode == LatticeMode::NORMAL) {
+                activate_layer_calculate(MCType::ASLEEP, layer);
+            } else if (_mode == LatticeMode::CENTERED) {
+                activate_layer_calculate_c(MCType::ASLEEP, layer);
+            };
 
             // Batch normalization
             /*
@@ -1434,7 +1450,11 @@ namespace dblz {
                 activate_layer_calculate(MCType::ASLEEP, layer);
             };
              */
-            activate_layer_calculate(MCType::ASLEEP, layer);
+            if (_mode == LatticeMode::NORMAL) {
+                activate_layer_calculate(MCType::ASLEEP, layer);
+            } else if (_mode == LatticeMode::CENTERED) {
+                activate_layer_calculate_c(MCType::ASLEEP, layer);
+            };
         };
         
         // Batch normalization
@@ -1474,8 +1494,12 @@ namespace dblz {
         for (auto layer=1; layer<_no_layers; layer++) {
             
             // Calculate activations
-            activate_layer_calculate(chain, layer, layer-1);
-            
+            if (_mode == LatticeMode::NORMAL) {
+                activate_layer_calculate(chain, layer, layer-1);
+            } else if (_mode == LatticeMode::CENTERED) {
+                activate_layer_calculate_c(chain, layer, layer-1);
+            };
+
             // Batch normalization
             /*
             if (_bn_mode) {
@@ -1778,7 +1802,7 @@ namespace dblz {
                     };
                     
                     // Above
-                    if (layer != _no_layers) {
+                    if (layer != _no_layers-1) {
                         
                         // Go through all species in the layer above
                         for (auto sp_above: _species_possible_vec.at(layer+1)) {
@@ -1853,6 +1877,39 @@ namespace dblz {
          */
     };
     
+    // ***************
+    // MARK: - Write out centers
+    // ***************
+    
+    void Lattice::write_centers_to_file(int layer, std::string fname) const {
+        std::ofstream f;
+        f.open (fname);
+        if (!f.is_open()) { // make sure we found it
+            std::cerr << ">>> Lattice::write_centers_to_file <<< Error: could not open file: " << fname << " for writing" << std::endl;
+            exit(EXIT_FAILURE);
+        };
+        
+        // Go through all units
+        int no_units = get_no_units_in_layer(layer);
+
+        // Go through all units
+        std::vector<int> pos;
+        for (auto unit=0; unit<no_units; unit++) {
+            
+            // Go through species possible
+            pos = _look_up_pos(layer,unit);
+            for (auto const &x: pos) {
+                f << x << " ";
+            };
+            
+            // Write species and mean
+            for (auto sp: _species_possible_vec.at(layer)) {
+                f << sp->get_name() << " " << _c_means.at(layer).at(sp)(unit) << " ";
+            };
+            f << "\n";
+         };
+    };
+    
     // *******************
     // MARK: - Batch normalization
     // *******************
@@ -1899,4 +1956,6 @@ namespace dblz {
             };
         };
     };
+    
+    
 };

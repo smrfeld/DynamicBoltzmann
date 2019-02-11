@@ -4,7 +4,7 @@
 
 `armadillo` library.
 
-`q3c1` library for the Q3 C1 finite elements. Get it from [here](https://github.com/smrfeld/Q3-C1-Finite-Elements).
+`q3c1` library for the Q3 C1 finite elements. Get it from [here](https://github.com/smrfeld/Q3-C1-Finite-Elements). 
 
 ## Installation
 

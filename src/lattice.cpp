@@ -406,7 +406,8 @@ namespace dblz {
         // Add adjacency matrix
         if (layer != 0) {
             int size_below = get_no_units_in_layer(layer-1);
-            _adj[layer-1] = arma::mat(size_below,no_units,arma::fill::zeros);
+            _adj[layer-1][layer] = arma::mat(size_below,no_units,arma::fill::zeros);
+            _adj[layer][layer-1] = _adj[layer][layer-1].t();
             std::cout << "Made adjacency matrix: " << layer-1 << " " << size_below << " " << no_units << std::endl;
         };
 
@@ -600,18 +601,21 @@ namespace dblz {
     void Lattice::add_conn(int layer1, int x1, int layer2, int x2) {
         int idx1 = _look_up_unit(layer1, x1);
         int idx2 = _look_up_unit(layer2, x2);
-        _adj[layer1](idx1,idx2) = 1.0;
+        _adj[layer1][layer2](idx1,idx2) = 1.0;
+        _adj[layer2][layer1](idx2,idx1) = 1.0;
     };
     void Lattice::add_conn(int layer1, int x1, int y1, int layer2, int x2, int y2) {
         int idx1 = _look_up_unit(layer1, x1, y1);
         int idx2 = _look_up_unit(layer2, x2, y2);
-        _adj[layer1](idx1,idx2) = 1.0;
+        _adj[layer1][layer2](idx1,idx2) = 1.0;
+        _adj[layer2][layer1](idx2,idx1) = 1.0;
     };
     void Lattice::add_conn(int layer1, int x1, int y1, int z1, int layer2, int x2, int y2, int z2) {
         int idx1 = _look_up_unit(layer1, x1, y1, z1);
         int idx2 = _look_up_unit(layer2, x2, y2, z2);
         // std::cout << "Connecting: " << layer1 << " " << x1 << " " << y1 << " " << z1 << " : " << layer2 << " " << x2 << " " << y2 << " " << z2 << " : " << idx1 << " " << idx2 << std::endl;
-        _adj[layer1](idx1,idx2) = 1.0;
+        _adj[layer1][layer2](idx1,idx2) = 1.0;
+        _adj[layer2][layer1](idx2,idx1) = 1.0;
     };
     
 	/********************
@@ -942,7 +946,7 @@ namespace dblz {
                 // std::cout << "_calculate_activations_from_below: i_chain " << i_chain << " layer " << layer << " species below: " << given_sp->get_name() << " species above: " << sp->get_name() << " ixn: " << get_ixn_between_layers(layer-1, given_sp, layer, sp) << " adj: ... " << std::endl;
                 
                 // Activate from below
-                _mc_chains_act[chain][i_chain][layer][sp] += get_ixn_between_layers(layer-1, given_sp, layer, sp) * ( _adj.at(layer-1) * _mc_chains.at(chain).at(i_chain).at(layer-1).at(given_sp) );
+                _mc_chains_act[chain][i_chain][layer][sp] += get_ixn_between_layers(layer-1, given_sp, layer, sp) * ( _adj.at(layer-1).at(layer) * _mc_chains.at(chain).at(i_chain).at(layer-1).at(given_sp) );
             };
         };
     };
@@ -957,7 +961,7 @@ namespace dblz {
             for (auto given_sp: _species_possible_vec.at(layer+1)) {
                 
                 // Activate from above
-                _mc_chains_act[chain][i_chain][layer][sp] += get_ixn_between_layers(layer+1, given_sp, layer, sp) * ( _adj.at(layer).t() * _mc_chains.at(chain).at(i_chain).at(layer+1).at(given_sp) );
+                _mc_chains_act[chain][i_chain][layer][sp] += get_ixn_between_layers(layer+1, given_sp, layer, sp) * ( _adj.at(layer+1).at(layer) * _mc_chains.at(chain).at(i_chain).at(layer+1).at(given_sp) );
             };
         };
     };
@@ -970,12 +974,12 @@ namespace dblz {
             
             // Activate from above
             for (auto given_sp: _species_possible_vec.at(layer+1)) {
-                _mc_chains_act[chain][i_chain][layer][sp] += get_ixn_between_layers(layer+1, given_sp, layer, sp) * ( _adj.at(layer).t() * _mc_chains.at(chain).at(i_chain).at(layer+1).at(given_sp) );
+                _mc_chains_act[chain][i_chain][layer][sp] += get_ixn_between_layers(layer+1, given_sp, layer, sp) * ( _adj.at(layer+1).at(layer) * _mc_chains.at(chain).at(i_chain).at(layer+1).at(given_sp) );
             };
             
             // Activate from below
             for (auto given_sp: _species_possible_vec.at(layer-1)) {
-                _mc_chains_act[chain][i_chain][layer][sp] += get_ixn_between_layers(layer-1, given_sp, layer, sp) * ( _adj.at(layer-1) * _mc_chains.at(chain).at(i_chain).at(layer-1).at(given_sp) );
+                _mc_chains_act[chain][i_chain][layer][sp] += get_ixn_between_layers(layer-1, given_sp, layer, sp) * ( _adj.at(layer-1).at(layer) * _mc_chains.at(chain).at(i_chain).at(layer-1).at(given_sp) );
             };
         };
     };
@@ -994,7 +998,7 @@ namespace dblz {
                 for (auto &given_sp: _species_possible_vec.at(layer-1)) {
                     
                     // Activate from below
-                    _mc_chains_act[chain][i_chain][layer][sp] += get_ixn_between_layers(layer-1, given_sp, layer, sp) * ( _adj[layer-1] * _mc_chains[chain][i_chain][layer-1][given_sp] );
+                    _mc_chains_act[chain][i_chain][layer][sp] += get_ixn_between_layers(layer-1, given_sp, layer, sp) * ( _adj.at(layer-1).at(layer) * _mc_chains[chain][i_chain][layer-1][given_sp] );
                 };
             };
             
@@ -1008,7 +1012,7 @@ namespace dblz {
                 for (auto given_sp: _species_possible_vec.at(layer-1)) {
                     
                     // Activate from below
-                    _mc_chains_act[chain][i_chain][layer][sp] += _bn_gamma_bar[chain][layer-1][given_sp] % ( get_ixn_between_layers(layer-1, given_sp, layer, sp) * ( _adj[layer-1] * _mc_chains[chain][i_chain][layer-1][given_sp] ) );
+                    _mc_chains_act[chain][i_chain][layer][sp] += _bn_gamma_bar[chain][layer-1][given_sp] % ( get_ixn_between_layers(layer-1, given_sp, layer, sp) * ( _adj.at(layer-1).at(layer) * _mc_chains[chain][i_chain][layer-1][given_sp] ) );
                 };
             };
         };
@@ -1026,7 +1030,7 @@ namespace dblz {
             for (auto given_sp: _species_possible_vec.at(layer+1)) {
                 
                 // Activate from above
-                _mc_chains_act[chain][i_chain][layer][sp] += _bn_gamma_bar[chain][layer+1][given_sp] % ( get_ixn_between_layers(layer+1, given_sp, layer, sp) * ( _adj[layer].t() * _mc_chains[chain][i_chain][layer+1][given_sp] ) );
+                _mc_chains_act[chain][i_chain][layer][sp] += _bn_gamma_bar[chain][layer+1][given_sp] % ( get_ixn_between_layers(layer+1, given_sp, layer, sp) * ( _adj.at(layer+1).at(layer) * _mc_chains[chain][i_chain][layer+1][given_sp] ) );
             };
         };
     };
@@ -1042,7 +1046,7 @@ namespace dblz {
             for (auto &given_sp: _species_possible_vec.at(layer-1)) {
                 
                 // Activate from below
-                _mc_chains_act[chain][i_chain][layer][sp] += get_ixn_between_layers(layer-1, given_sp, layer, sp) * ( _adj.at(layer-1) * ( _mc_chains.at(chain).at(i_chain).at(layer-1).at(given_sp) - _c_means.at(layer-1).at(given_sp) ) );
+                _mc_chains_act[chain][i_chain][layer][sp] += get_ixn_between_layers(layer-1, given_sp, layer, sp) * ( _adj.at(layer-1).at(layer) * ( _mc_chains.at(chain).at(i_chain).at(layer-1).at(given_sp) - _c_means.at(layer-1).at(given_sp) ) );
             };
         };
     };
@@ -1057,7 +1061,7 @@ namespace dblz {
             for (auto given_sp: _species_possible_vec.at(layer+1)) {
                 
                 // Activate from above
-                _mc_chains_act[chain][i_chain][layer][sp] += get_ixn_between_layers(layer+1, given_sp, layer, sp) * ( _adj.at(layer).t() * ( _mc_chains.at(chain).at(i_chain).at(layer+1).at(given_sp) - _c_means.at(layer+1).at(given_sp) ) );
+                _mc_chains_act[chain][i_chain][layer][sp] += get_ixn_between_layers(layer+1, given_sp, layer, sp) * ( _adj.at(layer+1).at(layer) * ( _mc_chains.at(chain).at(i_chain).at(layer+1).at(given_sp) - _c_means.at(layer+1).at(given_sp) ) );
             };
         };
     };
@@ -1070,12 +1074,12 @@ namespace dblz {
             
             // Activate from above
             for (auto given_sp: _species_possible_vec.at(layer+1)) {
-                _mc_chains_act[chain][i_chain][layer][sp] += get_ixn_between_layers(layer+1, given_sp, layer, sp) * ( _adj.at(layer).t() * ( _mc_chains.at(chain).at(i_chain).at(layer+1).at(given_sp) - _c_means.at(layer+1).at(given_sp) ) );
+                _mc_chains_act[chain][i_chain][layer][sp] += get_ixn_between_layers(layer+1, given_sp, layer, sp) * ( _adj.at(layer+1).at(layer) * ( _mc_chains.at(chain).at(i_chain).at(layer+1).at(given_sp) - _c_means.at(layer+1).at(given_sp) ) );
             };
             
             // Activate from below
             for (auto given_sp: _species_possible_vec.at(layer-1)) {
-                _mc_chains_act[chain][i_chain][layer][sp] += get_ixn_between_layers(layer-1, given_sp, layer, sp) * ( _adj.at(layer-1) * ( _mc_chains.at(chain).at(i_chain).at(layer-1).at(given_sp) - _c_means.at(layer-1).at(given_sp) ) );
+                _mc_chains_act[chain][i_chain][layer][sp] += get_ixn_between_layers(layer-1, given_sp, layer, sp) * ( _adj.at(layer-1).at(layer) * ( _mc_chains.at(chain).at(i_chain).at(layer-1).at(given_sp) - _c_means.at(layer-1).at(given_sp) ) );
             };
         };
     };
@@ -1591,12 +1595,12 @@ namespace dblz {
 
                                 // Get the moment
                                 if (_mode == LatticeMode::NORMAL) {
-                                    val = dot(_mc_chains.at(MCType::AWAKE).at(i_chain).at(o2_ixn_layer_1.first).at(sp_pr_1.first), _adj.at(o2_ixn_layer_1.first) * _mc_chains.at(MCType::AWAKE).at(i_chain).at(o2_ixn_layer_2.first).at(sp_pr_2.first));
+                                    val = dot(_mc_chains.at(MCType::AWAKE).at(i_chain).at(o2_ixn_layer_1.first).at(sp_pr_1.first), _adj.at(o2_ixn_layer_2.first).at(o2_ixn_layer_1.first) * _mc_chains.at(MCType::AWAKE).at(i_chain).at(o2_ixn_layer_2.first).at(sp_pr_2.first));
                                 } else if (_mode == LatticeMode::CENTERED) {
                                     val = dot(
                                               _mc_chains.at(MCType::AWAKE).at(i_chain).at(o2_ixn_layer_1.first).at(sp_pr_1.first) - _c_means.at(o2_ixn_layer_1.first).at(sp_pr_1.first)
                                               ,
-                                              _adj.at(o2_ixn_layer_1.first) * (
+                                              _adj.at(o2_ixn_layer_2.first).at(o2_ixn_layer_1.first) * (
                                                                                _mc_chains.at(MCType::AWAKE).at(i_chain).at(o2_ixn_layer_2.first).at(sp_pr_2.first) - _c_means.at(o2_ixn_layer_2.first).at(sp_pr_2.first)
                                                                                ));
                                 };
@@ -1612,12 +1616,12 @@ namespace dblz {
                             
                             // Get the moment
                             if (_mode == LatticeMode::NORMAL) {
-                                val = dot(_mc_chains.at(MCType::ASLEEP).at(i_chain).at(o2_ixn_layer_1.first).at(sp_pr_1.first), _adj.at(o2_ixn_layer_1.first) * _mc_chains.at(MCType::ASLEEP).at(i_chain).at(o2_ixn_layer_2.first).at(sp_pr_2.first));
+                                val = dot(_mc_chains.at(MCType::ASLEEP).at(i_chain).at(o2_ixn_layer_1.first).at(sp_pr_1.first), _adj.at(o2_ixn_layer_2.first).at(o2_ixn_layer_1.first) * _mc_chains.at(MCType::ASLEEP).at(i_chain).at(o2_ixn_layer_2.first).at(sp_pr_2.first));
                             } else if (_mode == LatticeMode::CENTERED) {
                                 val = dot(
                                           _mc_chains.at(MCType::ASLEEP).at(i_chain).at(o2_ixn_layer_1.first).at(sp_pr_1.first) - _c_means.at(o2_ixn_layer_1.first).at(sp_pr_1.first)
                                           ,
-                                          _adj.at(o2_ixn_layer_1.first) * (
+                                          _adj.at(o2_ixn_layer_2.first).at(o2_ixn_layer_1.first) * (
                                                                            _mc_chains.at(MCType::ASLEEP).at(i_chain).at(o2_ixn_layer_2.first).at(sp_pr_2.first) - _c_means.at(o2_ixn_layer_2.first).at(sp_pr_2.first)
                                                                            ));
                             };
@@ -1685,14 +1689,13 @@ namespace dblz {
                             grad = _o2_ixn_dict.at(layer-1).at(sp_below).at(layer).at(sp)->get_moment()->get_moment_diff_awake_minus_asleep();
                             
                             // Scale by the no of connections
-                            grad /= arma::accu(_adj.at(layer-1));
+                            grad /= arma::accu(_adj.at(layer-1).at(layer));
                             
                             // Calculate offset
-                            offset -= grad * arma::sum(_adj.at(layer-1).t() * _c_means.at(layer-1).at(sp_below));
+                            offset -= grad * arma::sum(_adj.at(layer-1).at(layer) * _c_means.at(layer-1).at(sp_below));
                             
                             // Don't count the diagonal
-                            arma::mat trans = _adj.at(layer-1).t();
-                            offset += grad * arma::dot(trans.diag(),_c_means.at(layer-1).at(sp_below));
+                            offset += grad * arma::dot(_adj.at(layer-1).at(layer).diag(),_c_means.at(layer-1).at(sp_below));
                         };
                     };
                     
@@ -1705,13 +1708,13 @@ namespace dblz {
                             grad = _o2_ixn_dict.at(layer+1).at(sp_above).at(layer).at(sp)->get_moment()->get_moment_diff_awake_minus_asleep();
                             
                             // Scale by the no of connections
-                            grad /= arma::accu(_adj.at(layer));
+                            grad /= arma::accu(_adj.at(layer+1).at(layer));
 
                             // Calculate offset
-                            offset -= grad * arma::sum(_adj.at(layer) * _c_means.at(layer+1).at(sp_above));
+                            offset -= grad * arma::sum(_adj.at(layer+1).at(layer) * _c_means.at(layer+1).at(sp_above));
                             
                             // Don't count the diagonal
-                            offset += grad * arma::dot(_adj.at(layer).diag(),_c_means.at(layer+1).at(sp_above));
+                            offset += grad * arma::dot(_adj.at(layer+1).at(layer).diag(),_c_means.at(layer+1).at(sp_above));
                         };
                     };
                     

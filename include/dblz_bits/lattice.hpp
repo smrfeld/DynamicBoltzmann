@@ -76,9 +76,11 @@ namespace dblz {
         // ***************
         
         // Adjacency matrices
-        // Idx 0 connects 0, 1
-        // Idx i connects i, i+1
-        std::map<int,arma::mat> _adj;
+        // Layer 1 -> layer 2 -> matrix
+        // corresponds to:
+        // layer 2 . matrix . layer 1
+        // i.e. "layer 1 TO layer 2" 
+        std::map<int,std::map<int,arma::mat>> _adj;
         
         // ***************
         // MARK: Ixn params

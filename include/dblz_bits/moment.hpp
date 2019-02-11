@@ -38,8 +38,8 @@ namespace dblz {
 		// Averaged values
         std::map<MCType, double> _val_averaged;
         
-        // Difference
-        double _val_diff;
+        // Offset to the difference
+        double _val_diff_offset;
 	
 		// If the awake moment is fixed
 		bool _is_awake_moment_fixed;
@@ -114,7 +114,7 @@ namespace dblz {
         double get_moment_diff_awake_minus_asleep() const;
         
         // Augment moment difference by some value
-        void increment_moment_diff_awake_minus_asleep(double val);
+        void set_moment_diff_awake_minus_asleep_offset(double val);
         
 		/********************
 		Write

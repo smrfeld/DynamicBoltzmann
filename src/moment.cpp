@@ -32,6 +32,9 @@ namespace dblz {
 
 		// Fixed awake moment
 		_is_awake_moment_fixed = false;
+        
+        // Offset
+        _val_diff_offset = 0.0;
 	};
 	Moment::Moment(const Moment& other) {
 		_copy(other);
@@ -70,7 +73,7 @@ namespace dblz {
 		// averaged
 		_val_averaged = other._val_averaged;
 		
-        _val_diff = other._val_diff;
+        _val_diff_offset = other._val_diff_offset;
         
 		_is_awake_moment_fixed = other._is_awake_moment_fixed;
 
@@ -86,7 +89,7 @@ namespace dblz {
 		other._val_averaged[MCType::AWAKE] = 0.0;
         other._val_averaged[MCType::ASLEEP] = 0.0;
 
-        other._val_diff = 0.0;
+        other._val_diff_offset = 0.0;
         
 		other._is_awake_moment_fixed = false;
 	};
@@ -102,7 +105,7 @@ namespace dblz {
 		// averaged
 		_val_averaged = other._val_averaged;
         
-        _val_diff = other._val_diff;
+        _val_diff_offset = other._val_diff_offset;
 
 		_is_awake_moment_fixed = other._is_awake_moment_fixed;
 	};
@@ -172,9 +175,6 @@ namespace dblz {
 		_is_awake_moment_fixed = flag;
         
         _val_averaged[MCType::AWAKE] = val;
-        
-        // Recompute difference
-        _val_diff = _val_averaged[MCType::AWAKE] - _val_averaged[MCType::ASLEEP];
 	};
 	bool Moment::get_is_awake_moment_fixed() const {
 		return _is_awake_moment_fixed;
@@ -211,18 +211,16 @@ namespace dblz {
         };
         _val_averaged[MCType::AWAKE] /= _no_markov_chains[MCType::AWAKE];
         _val_averaged[MCType::ASLEEP] /= _no_markov_chains[MCType::ASLEEP];
-        
-        _val_diff = _val_averaged[MCType::AWAKE] - _val_averaged[MCType::ASLEEP];
     };
 
     // Get moment difference
     double Moment::get_moment_diff_awake_minus_asleep() const {
-        return _val_diff;
+        return _val_averaged.at(MCType::AWAKE) - _val_averaged.at(MCType::ASLEEP) + _val_diff_offset;
     };
     
     // Augment moment difference by some value
-    void Moment::increment_moment_diff_awake_minus_asleep(double val) {
-        _val_diff += val;
+    void Moment::set_moment_diff_awake_minus_asleep_offset(double val) {
+        _val_diff_offset = val;
     };
     
 	/********************

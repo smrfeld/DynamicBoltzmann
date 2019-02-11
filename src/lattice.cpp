@@ -1293,45 +1293,29 @@ namespace dblz {
     // Variational inference
     void Lattice::mean_field_hiddens_step() {
         
-        // Calculate BN params
-        /*
-        if (_bn_mode) {
-            calculate_bn_params(MCType::AWAKE);
-        };
-         */
-        
-        // Go through all layers
-        for (auto layer=1; layer<_no_layers; layer++) {
-            
-            // Calculate activations for all chains
-            /*
-            if (_bn_mode) {
-                activate_layer_calculate_bn(MCType::AWAKE, layer);
-            } else {
-                activate_layer_calculate(MCType::AWAKE, layer);
-            };
-             */
-            if (_mode == LatticeMode::NORMAL) {
-                activate_layer_calculate(MCType::AWAKE, layer);
-            } else if (_mode == LatticeMode::CENTERED) {
-                activate_layer_calculate_c(MCType::AWAKE, layer);
-            };
+        if (_mode == LatticeMode::NORMAL) {
 
-            // Batch normalization
-            /*
-            if (_bn_mode && layer != 0) { // only hidden layers
+            // Go through all layers
+            for (auto layer=1; layer<_no_layers; layer++) {
+                activate_layer_calculate(MCType::AWAKE, layer);
                 
-                // Already have means, vars, beta-bar and gamma-bar from activate_layer_calculate
-                
-                // Apply affine transformations
-                _bn_apply_affine_transform_to_all_chains(MCType::AWAKE, layer);
+                // Convert activations to probabilities and committ
+                // Use prob units!
+                activate_layer_convert_to_probs(MCType::AWAKE, layer, false);
+                activate_layer_committ(MCType::AWAKE, layer);
             };
-             */
             
-            // Convert activations to probabilities and committ
-            // Use prob units!
-            activate_layer_convert_to_probs(MCType::AWAKE, layer, false);
-            activate_layer_committ(MCType::AWAKE, layer);
+        } else if (_mode == LatticeMode::CENTERED) {
+            
+            // Go through all layers
+            for (auto layer=1; layer<_no_layers; layer++) {
+                activate_layer_calculate_c(MCType::AWAKE, layer);
+                
+                // Convert activations to probabilities and committ
+                // Use prob units!
+                activate_layer_convert_to_probs(MCType::AWAKE, layer, false);
+                activate_layer_committ(MCType::AWAKE, layer);
+            };
         };
     };
 
@@ -1340,136 +1324,62 @@ namespace dblz {
         
         // Activate in two blocks: odds and evens!
         
-        // First the odd layers
-
-        // Calculate BN params
-        /*
-        if (_bn_mode) {
-            calculate_bn_params(MCType::ASLEEP);
-        };
-         */
-        
-        for (auto layer=1; layer<_no_layers; layer += 2) {
-
-            // Calculate activations for all chains, hidden layers
-            /*
-            if (_bn_mode) {
-                activate_layer_calculate_bn(MCType::ASLEEP, layer);
-            } else {
-                activate_layer_calculate(MCType::ASLEEP, layer);
-            };
-             */
-            if (_mode == LatticeMode::NORMAL) {
-                activate_layer_calculate(MCType::ASLEEP, layer);
-            } else if (_mode == LatticeMode::CENTERED) {
-                activate_layer_calculate_c(MCType::ASLEEP, layer);
-            };
-
-            // Batch normalization
-            /*
-            if (_bn_mode && layer != 0) { // only hidden layers
-                
-                // Already have means, vars, beta-bar and gamma-bar from activate_layer_calculate
-
-                // Apply affine transformations
-                _bn_apply_affine_transform_to_all_chains(MCType::ASLEEP, layer);
-            };
-             */
-
-            // Convert activations to probabilities and committ
-            activate_layer_convert_to_probs(MCType::ASLEEP, layer, binary_hidden);
-            activate_layer_committ(MCType::ASLEEP, layer);
-        };
-        
-        // Next the even layers
-        
-        // Calculate BN params AGAIN!
-        /*
-        if (_bn_mode) {
-            calculate_bn_params(MCType::ASLEEP);
-        };
-         */
-        
-        // Zeroth layer
         if (_mode == LatticeMode::NORMAL) {
+            
+            // First the odd layers
+            for (auto layer=1; layer<_no_layers; layer += 2) {
+                activate_layer_calculate(MCType::ASLEEP, layer);
+                activate_layer_convert_to_probs(MCType::ASLEEP, layer, binary_hidden);
+                activate_layer_committ(MCType::ASLEEP, layer);
+            };
+        
+            // Next the even layers
+            // Zeroth layer
             activate_layer_calculate(MCType::ASLEEP, 0);
+            activate_layer_convert_to_probs(MCType::ASLEEP, 0, binary_visible);
+            activate_layer_committ(MCType::ASLEEP, 0);
+            // Other layers
+            for (auto layer=2; layer<_no_layers; layer += 2) {
+                activate_layer_calculate(MCType::ASLEEP, layer);
+                activate_layer_convert_to_probs(MCType::ASLEEP, layer, binary_hidden);
+                activate_layer_committ(MCType::ASLEEP, layer);
+            };
+            
         } else if (_mode == LatticeMode::CENTERED) {
-            activate_layer_calculate_c(MCType::ASLEEP, 0);
-        };
-        activate_layer_convert_to_probs(MCType::ASLEEP, 0, binary_visible);
-        activate_layer_committ(MCType::ASLEEP, 0);
-        // Other layers
-        for (auto layer=2; layer<_no_layers; layer += 2) {
             
-            // Calculate activations for all chains, hidden layers
-            /*
-            if (_bn_mode) {
-                activate_layer_calculate_bn(MCType::ASLEEP, layer);
-            } else {
-                activate_layer_calculate(MCType::ASLEEP, layer);
-            };
-             */
-            if (_mode == LatticeMode::NORMAL) {
-                activate_layer_calculate(MCType::ASLEEP, layer);
-            } else if (_mode == LatticeMode::CENTERED) {
+            // First the odd layers
+            for (auto layer=1; layer<_no_layers; layer += 2) {
                 activate_layer_calculate_c(MCType::ASLEEP, layer);
+                activate_layer_convert_to_probs(MCType::ASLEEP, layer, binary_hidden);
+                activate_layer_committ(MCType::ASLEEP, layer);
             };
-
-            // Batch normalization
-            /*
-            if (_bn_mode && layer != 0) { // only hidden layers
-                
-                // Already have means, vars, beta-bar and gamma-bar from activate_layer_calculate
-
-                // Apply affine transformations
-                _bn_apply_affine_transform_to_all_chains(MCType::ASLEEP, layer);
-            };
-            */
             
-            // Convert activations to probabilities and committ
-            activate_layer_convert_to_probs(MCType::ASLEEP, layer, binary_hidden);
-            activate_layer_committ(MCType::ASLEEP, layer);
+            // Next the even layers
+            // Zeroth layer
+            activate_layer_calculate_c(MCType::ASLEEP, 0);
+            activate_layer_convert_to_probs(MCType::ASLEEP, 0, binary_visible);
+            activate_layer_committ(MCType::ASLEEP, 0);
+            // Other layers
+            for (auto layer=2; layer<_no_layers; layer += 2) {
+                activate_layer_calculate_c(MCType::ASLEEP, layer);
+                activate_layer_convert_to_probs(MCType::ASLEEP, layer, binary_hidden);
+                activate_layer_committ(MCType::ASLEEP, layer);
+            };
+            
         };
     };
     void Lattice::gibbs_sampling_step_parallel(bool binary_visible, bool binary_hidden) {
         
-        // Calculate BN params
-        /*
-        if (_bn_mode) {
-            calculate_bn_params(MCType::ASLEEP);
-        };
-         */
-        
         // Activate in parallel
-        for (auto layer=0; layer<_no_layers; layer++) {
-            // Calculate activations for all chains, hidden layers
-            /*
-            if (_bn_mode) {
-                activate_layer_calculate_bn(MCType::ASLEEP, layer);
-            } else {
+        if (_mode == LatticeMode::NORMAL) {
+            for (auto layer=0; layer<_no_layers; layer++) {
                 activate_layer_calculate(MCType::ASLEEP, layer);
             };
-             */
-            if (_mode == LatticeMode::NORMAL) {
-                activate_layer_calculate(MCType::ASLEEP, layer);
-            } else if (_mode == LatticeMode::CENTERED) {
+        } else if (_mode == LatticeMode::CENTERED) {
+            for (auto layer=0; layer<_no_layers; layer++) {
                 activate_layer_calculate_c(MCType::ASLEEP, layer);
             };
         };
-        
-        // Batch normalization
-        /*
-        if (_bn_mode) {
-            
-            for (auto layer=1; layer<_no_layers; layer++) { // only hidden layers
-
-                // Already have means, vars, beta-bar and gamma-bar from activate_layer_calculate
-
-                // Apply affine transformations
-                _bn_apply_affine_transform_to_all_chains(MCType::ASLEEP, layer);
-            };
-        };
-         */
         
         // Convert activations to probabilities and committ
         activate_layer_convert_to_probs(MCType::ASLEEP, 0, binary_visible);
@@ -1482,39 +1392,24 @@ namespace dblz {
     
     // Make a pass activating upwards
     void Lattice::activate_upward_pass(MCType chain, bool binary_hidden) {
-
-        /*
-        if (_bn_mode) {
-            std::cerr << ">>> Lattice::activate_upward_pass <<< Not sure how to treat BN here!" << std::endl;
-            exit(EXIT_FAILURE);
-        };
-         */
         
         // All layers
-        for (auto layer=1; layer<_no_layers; layer++) {
-            
-            // Calculate activations
-            if (_mode == LatticeMode::NORMAL) {
+        if (_mode == LatticeMode::NORMAL) {
+
+            for (auto layer=1; layer<_no_layers; layer++) {
                 activate_layer_calculate(chain, layer, layer-1);
-            } else if (_mode == LatticeMode::CENTERED) {
+            };
+            
+        } else if (_mode == LatticeMode::CENTERED) {
+            
+            for (auto layer=1; layer<_no_layers; layer++) {
                 activate_layer_calculate_c(chain, layer, layer-1);
             };
+        };
 
-            // Batch normalization
-            /*
-            if (_bn_mode) {
-                
-                // Already have means, vars, beta-bar and gamma-bar from activate_layer_calculate
-                
-                // Apply affine transformations
-                _bn_apply_affine_transform_to_all_chains(chain, layer);
-            };
-             */
-
-            // Convert activations to probabilities and committ
+        // Convert activations to probabilities and committ
+        for (auto layer=1; layer<_no_layers; layer++) {
             activate_layer_convert_to_probs(chain, layer, binary_hidden);
-            
-            // Committ
             activate_layer_committ(chain, layer);
         };
     };
@@ -1774,7 +1669,7 @@ namespace dblz {
         };
         
         // Offset bias for centering
-        double grad, offset;
+        double grad, offset=0.0;
         if (_mode == LatticeMode::CENTERED) {
             // Go through all layers
             for (auto layer=0; layer<_no_layers; layer++) {
@@ -1789,15 +1684,15 @@ namespace dblz {
                             // Get the gradient in the ixn of these two
                             grad = _o2_ixn_dict.at(layer-1).at(sp_below).at(layer).at(sp)->get_moment()->get_moment_diff_awake_minus_asleep();
                             
-                            // Calculate offset
-                            offset = -1.0 * grad * arma::sum(_adj.at(layer-1).t() * _c_means.at(layer-1).at(sp_below));
+                            // Scale by the no of connections
+                            grad /= arma::accu(_adj.at(layer-1));
                             
-                            // ***************
-                            // TODO: Don't count the diagonal (???) TBD!
-                            // ***************
-
-                            // Adjust bias in this layer
-                            _bias_dict.at(layer).at(sp)->get_moment()->increment_moment_diff_awake_minus_asleep(offset);
+                            // Calculate offset
+                            offset -= grad * arma::sum(_adj.at(layer-1).t() * _c_means.at(layer-1).at(sp_below));
+                            
+                            // Don't count the diagonal
+                            arma::mat trans = _adj.at(layer-1).t();
+                            offset += grad * arma::dot(trans.diag(),_c_means.at(layer-1).at(sp_below));
                         };
                     };
                     
@@ -1809,17 +1704,19 @@ namespace dblz {
                             // Get the gradient in the ixn of these two
                             grad = _o2_ixn_dict.at(layer+1).at(sp_above).at(layer).at(sp)->get_moment()->get_moment_diff_awake_minus_asleep();
                             
+                            // Scale by the no of connections
+                            grad /= arma::accu(_adj.at(layer));
+
                             // Calculate offset
-                            offset = -1.0 * grad * arma::sum(_adj.at(layer) * _c_means.at(layer+1).at(sp_above));
+                            offset -= grad * arma::sum(_adj.at(layer) * _c_means.at(layer+1).at(sp_above));
                             
-                            // ***************
-                            // TODO: Don't count the diagonal (???) TBD!
-                            // ***************
-                            
-                            // Adjust bias in this layer
-                            _bias_dict.at(layer).at(sp)->get_moment()->increment_moment_diff_awake_minus_asleep(offset);
+                            // Don't count the diagonal
+                            offset += grad * arma::dot(_adj.at(layer).diag(),_c_means.at(layer+1).at(sp_above));
                         };
                     };
+                    
+                    // Adjust bias in this layer
+                    _bias_dict.at(layer).at(sp)->get_moment()->set_moment_diff_awake_minus_asleep_offset(offset);
                 };
             };
         };

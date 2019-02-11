@@ -1851,12 +1851,9 @@ namespace dblz {
     // Add ixn to all ixns vec
     void Lattice::_add_to_all_ixns_vec(Iptr ixn) {
     
-        auto it = _all_ixns.find(ixn);
+        auto it = std::find(_all_ixns.begin(),_all_ixns.end(),ixn);
         if (it == _all_ixns.end()) {
             _all_ixns.push_back(ixn);
-        } else {
-            std::cerr << ">>> Lattice::_add_to_all_ixns_vec <<< Error: this ixn already exists somewhere else. Currently this is not treated correctly in the reap functions!" << std::endl;
-            exit(EXIT_FAILURE);
         };
     };
 };

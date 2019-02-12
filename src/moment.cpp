@@ -142,17 +142,17 @@ namespace dblz {
 		_val_averaged = other._val_averaged;
         
         if (other._weight_matrix.at(MCType::AWAKE)) {
-            _weight_matrix[MCType::AWAKE] = new arma::mat(*other._weight_matrix.at(MCType::AWAKE));
+            _weight_matrix[MCType::AWAKE] = new arma::sp_mat(*other._weight_matrix.at(MCType::AWAKE));
         } else {
             _weight_matrix[MCType::AWAKE] = nullptr;
         };
         if (other._weight_matrix.at(MCType::ASLEEP)) {
-            _weight_matrix[MCType::ASLEEP] = new arma::mat(*other._weight_matrix.at(MCType::ASLEEP));
+            _weight_matrix[MCType::ASLEEP] = new arma::sp_mat(*other._weight_matrix.at(MCType::ASLEEP));
         } else {
             _weight_matrix[MCType::ASLEEP] = nullptr;
         };
         if (other._weight_matrix_awake_minus_asleep) {
-            _weight_matrix_awake_minus_asleep = new arma::mat(*other._weight_matrix_awake_minus_asleep);
+            _weight_matrix_awake_minus_asleep = new arma::sp_mat(*other._weight_matrix_awake_minus_asleep);
         } else {
             _weight_matrix_awake_minus_asleep = nullptr;
         };
@@ -239,27 +239,27 @@ namespace dblz {
             exit(EXIT_FAILURE);
         };
         
-        _weight_matrix[MCType::AWAKE] = new arma::mat(dim_upper_layer,dim_lower_layer,arma::fill::zeros);
-        _weight_matrix[MCType::ASLEEP] = new arma::mat(dim_upper_layer,dim_lower_layer,arma::fill::zeros);
-        _weight_matrix_awake_minus_asleep = new arma::mat(dim_upper_layer,dim_lower_layer,arma::fill::zeros);
+        _weight_matrix[MCType::AWAKE] = new arma::sp_mat(dim_upper_layer,dim_lower_layer);
+        _weight_matrix[MCType::ASLEEP] = new arma::sp_mat(dim_upper_layer,dim_lower_layer);
+        _weight_matrix_awake_minus_asleep = new arma::sp_mat(dim_upper_layer,dim_lower_layer);
     };
     void Moment::reset_weight_matrix(MCType type) {
-        _weight_matrix[type]->fill(arma::fill::zeros);
+        _weight_matrix[type]->zeros();
     };
-    void Moment::increment_weight_matrix(MCType type, arma::mat increment) {
+    void Moment::increment_weight_matrix(MCType type, arma::sp_mat increment) {
         *_weight_matrix[type] += increment;
     };
     void Moment::set_moment_to_weight_matrix_sum(MCType type) {
         _val_averaged[type] = arma::accu(*_weight_matrix[type]);
     };
-    const arma::mat& Moment::get_weight_matrix(MCType type) const {
+    const arma::sp_mat& Moment::get_weight_matrix(MCType type) const {
         return *_weight_matrix.at(type);
     };
 
     void Moment::calculate_weight_matrix_awake_minus_asleep() {
         *_weight_matrix_awake_minus_asleep = *_weight_matrix.at(MCType::AWAKE) - *_weight_matrix.at(MCType::ASLEEP);
     };
-    const arma::mat& Moment::get_weight_matrix_awake_minus_asleep() const {
+    const arma::sp_mat& Moment::get_weight_matrix_awake_minus_asleep() const {
         return *_weight_matrix_awake_minus_asleep;
     };
     

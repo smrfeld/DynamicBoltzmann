@@ -420,7 +420,7 @@ namespace dblz {
         // Add adjacency matrix
         if (layer != 0) {
             int size_below = get_no_units_in_layer(layer-1);
-            _adj[layer-1][layer] = arma::mat(no_units,size_below,arma::fill::zeros);
+            _adj[layer-1][layer] = arma::sp_mat(no_units,size_below);
             _adj[layer][layer-1] = _adj[layer-1][layer].t();
             // std::cout << "Made adjacency matrix: " << layer-1 << " " << no_units << " " << size_below << std::endl;
         };
@@ -1714,7 +1714,7 @@ namespace dblz {
                         for (auto sp_below: _species_possible_vec.at(layer-1)) {
                             // Calculate offset
                             mean = _c_means.at(layer-1).at(sp_below);
-                            offset -= arma::sum( _o2_ixn_dict.at(layer-1).at(sp_below).at(layer).at(sp)->get_moment()->get_weight_matrix_awake_minus_asleep() * mean );
+                            offset -= arma::accu( _o2_ixn_dict.at(layer-1).at(sp_below).at(layer).at(sp)->get_moment()->get_weight_matrix_awake_minus_asleep() * mean );
                             
                             // Don't count the diagonal
                             mean.resize(std::min(get_no_units_in_layer(layer-1),get_no_units_in_layer(layer)));
@@ -1730,7 +1730,7 @@ namespace dblz {
 
                             // Calculate offset
                             mean = _c_means.at(layer+1).at(sp_above);
-                            offset -= arma::sum( _o2_ixn_dict.at(layer).at(sp).at(layer+1).at(sp_above)->get_moment()->get_weight_matrix_awake_minus_asleep().t() * mean );
+                            offset -= arma::accu( _o2_ixn_dict.at(layer).at(sp).at(layer+1).at(sp_above)->get_moment()->get_weight_matrix_awake_minus_asleep().t() * mean );
                             
                             // Don't count the diagonal
                             mean.resize(std::min(get_no_units_in_layer(layer+1),get_no_units_in_layer(layer)));

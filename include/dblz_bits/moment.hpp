@@ -34,8 +34,8 @@ namespace dblz {
         
         // Average mat
         // Only for W or X
-        std::map<MCType,arma::mat*> _weight_matrix;
-        arma::mat* _weight_matrix_awake_minus_asleep;
+        std::map<MCType,arma::sp_mat*> _weight_matrix;
+        arma::sp_mat* _weight_matrix_awake_minus_asleep;
         // Only for biases
         std::map<MCType,arma::vec*> _bias_vec;
         arma::vec* _bias_vec_awake_minus_asleep;
@@ -92,12 +92,12 @@ namespace dblz {
         // Weight matrix is always lower layer to higher layer
         void set_weight_matrix_dims(int dim_upper_layer, int dim_lower_layer);
         void reset_weight_matrix(MCType type);
-        void increment_weight_matrix(MCType type, arma::mat increment);
+        void increment_weight_matrix(MCType type, arma::sp_mat increment);
         void set_moment_to_weight_matrix_sum(MCType type);
-        const arma::mat& get_weight_matrix(MCType type) const;
+        const arma::sp_mat& get_weight_matrix(MCType type) const;
 
         void calculate_weight_matrix_awake_minus_asleep();
-        const arma::mat& get_weight_matrix_awake_minus_asleep() const;
+        const arma::sp_mat& get_weight_matrix_awake_minus_asleep() const;
         
         void set_bias_vec_dims(int dims);
         void reset_bias_vec(MCType type);

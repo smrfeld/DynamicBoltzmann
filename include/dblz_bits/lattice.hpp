@@ -80,7 +80,7 @@ namespace dblz {
         // corresponds to:
         // layer 2 . matrix . layer 1
         // i.e. "layer 1 TO layer 2" 
-        std::map<int,std::map<int,arma::mat>> _adj;
+        std::map<int,std::map<int,arma::sp_mat>> _adj;
         
         // ***************
         // MARK: Ixn params

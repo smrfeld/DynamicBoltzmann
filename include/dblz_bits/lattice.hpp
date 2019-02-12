@@ -293,13 +293,6 @@ namespace dblz {
         void activate_layer_calculate_from_above(MCType chain, int layer);
         void activate_layer_calculate_from_both(MCType chain, int layer);
         
-        void activate_layer_calculate_from_below_bn(MCType chain, int layer);
-        void activate_layer_calculate_from_above_bn(MCType chain, int layer);
-        
-        void activate_layer_calculate_from_below_c(MCType chain, int layer);
-        void activate_layer_calculate_from_above_c(MCType chain, int layer);
-        void activate_layer_calculate_from_both_c(MCType chain, int layer);
-        
         // (2) Convert activations to probs
         void activate_layer_convert_to_probs(MCType chain, int layer, bool binary);
 

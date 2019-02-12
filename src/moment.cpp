@@ -354,13 +354,35 @@ namespace dblz {
 			exit(EXIT_FAILURE);
 		};
 
-		// Go through all time
         f << _val_averaged.at(MCType::AWAKE) << " " << _val_averaged.at(MCType::ASLEEP) << "\n";
 
 		// Close
 		f.close();
 	};
 
+    void Moment::write_weight_matrix_to_file(std::string fname) const {
+        std::ofstream f;
+        
+        // Open
+        f.open(fname);
+        
+        // Make sure we found it
+        if (!f.is_open()) {
+            std::cerr << ">>> Error: Moment::write_weight_matrix_to_file <<< could not write to file: " << fname << std::endl;
+            exit(EXIT_FAILURE);
+        };
+        
+        for (auto i=0; i<_weight_matrix.at(MCType::AWAKE)->n_rows; i++) {
+            for (auto j=0; j<_weight_matrix.at(MCType::AWAKE)->n_cols; j++) {
+                if ((*_weight_matrix_awake_minus_asleep)(i,j) != 0) {
+                    f << i << " " << j << " " << (*_weight_matrix_awake_minus_asleep)(i,j) << "\n";
+                };
+            };
+        };
+        
+        // Close
+        f.close();
+    };
 };
 
 

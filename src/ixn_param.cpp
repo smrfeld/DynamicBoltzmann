@@ -188,15 +188,15 @@ namespace dblz {
 	********************/
 
 	void IxnParam::update_calculate_and_store_l2(double l2_lambda, double l2_center) {
-		_update = -1.0 * _moment->get_moment_diff_awake_minus_asleep() + 2.0 * l2_lambda * (_val - l2_center);
+		_update = _moment->get_moment_diff_awake_minus_asleep() - 2.0 * l2_lambda * (_val - l2_center);
 	};
     void IxnParam::update_calculate_and_store() {
-        _update = -1.0 * _moment->get_moment_diff_awake_minus_asleep();
+        _update = _moment->get_moment_diff_awake_minus_asleep();
     };
     
     void IxnParam::update_committ_stored_sgd(double dopt) {
 		// Just update
-		_val -= dopt*_update;
+		_val += dopt*_update;
 	};
 	void IxnParam::update_committ_stored_nesterov(double dopt, double nesterov_acc) {
 
@@ -247,7 +247,7 @@ namespace dblz {
 		double vhat = (*_adam_v) / (1.0 - pow(beta_2,opt_step_use));
 
 		// update
-		_val -= dopt * mhat / (sqrt(vhat) + eps);
+		_val += dopt * mhat / (sqrt(vhat) + eps);
 	};
 
 	/********************

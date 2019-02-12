@@ -129,5 +129,7 @@ namespace dblz {
 		********************/
 
 		void write_to_file(std::string fname, bool append=false) const;
+        
+        void write_weight_matrix_to_file(std::string fname) const;
 	};
 };

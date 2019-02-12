@@ -1547,6 +1547,7 @@ namespace dblz {
     void Lattice::reap_moments() {
         
         // If centering mode: calculate the centers from the awake moment, and then slide
+        /*
         if (_mode == LatticeMode::CENTERED) {
             
             // Awake phase: determine batch mean
@@ -1563,6 +1564,34 @@ namespace dblz {
                 };
             };
                 
+            // Asleep phase: slide mean
+            for (auto layer=0; layer<_no_layers; layer++) {
+                for (auto sp: _species_possible_vec.at(layer)) {
+                    // Slide
+                    _c_means[layer][sp] = (1.0 - _c_sliding_factors.at(layer)) * _c_means.at(layer).at(sp) + _c_sliding_factors.at(layer) * _c_batch_means.at(layer).at(sp);
+                };
+            };
+        };
+         */
+        // Enhanced gradient
+        if (_mode == LatticeMode::CENTERED) {
+            
+            // Awake phase: determine batch mean
+            for (auto layer=0; layer<_no_layers; layer++) {
+                for (auto sp: _species_possible_vec.at(layer)) {
+                    // Reset
+                    _c_batch_means[layer][sp].fill(arma::fill::zeros);
+                    
+                    // Get batch mean from all chains
+                    for (auto i_chain=0; i_chain<_no_markov_chains.at(MCType::AWAKE); i_chain++) {
+                        _c_batch_means[layer][sp] += 0.5 * _mc_chains.at(MCType::AWAKE).at(i_chain).at(layer).at(sp) / _no_markov_chains.at(MCType::AWAKE);
+                    };
+                    for (auto i_chain=0; i_chain<_no_markov_chains.at(MCType::ASLEEP); i_chain++) {
+                        _c_batch_means[layer][sp] += 0.5 * _mc_chains.at(MCType::ASLEEP).at(i_chain).at(layer).at(sp) / _no_markov_chains.at(MCType::ASLEEP);
+                    };
+                };
+            };
+            
             // Asleep phase: slide mean
             for (auto layer=0; layer<_no_layers; layer++) {
                 for (auto sp: _species_possible_vec.at(layer)) {
@@ -1644,8 +1673,14 @@ namespace dblz {
                             // Awake phase
                             
                             if (!moment->get_is_awake_moment_fixed()) {
+                                // moment->set_weight_matrix(MCType::AWAKE, _adj.at(layer1).at(layer2));
                                 moment->reset_weight_matrix(MCType::AWAKE);
                                 for (auto i_chain=0; i_chain<_no_markov_chains.at(MCType::AWAKE); i_chain++) {
+                                    /*
+                                    for (auto it = moment->get_weight_matrix_ptr(MCType::AWAKE)->begin(); it != moment->get_weight_matrix_ptr(MCType::AWAKE)->end(); ++it) {
+                                        (*moment->get_weight_matrix_ptr(MCType::AWAKE))(it.row(),it.col()) += ( (_mc_chains.at(MCType::AWAKE).at(i_chain).at(layer2).at(sp2) - _c_means.at(layer2).at(sp2)(it.row())) * (_mc_chains.at(MCType::AWAKE).at(i_chain).at(layer1).at(sp1).t() - _c_means.at(layer1).at(sp1)(it.col())) ) / _no_markov_chains.at(MCType::AWAKE);
+                                    };
+                                     */
                                     moment->increment_weight_matrix(MCType::AWAKE, _adj.at(layer1).at(layer2) % ( (_mc_chains.at(MCType::AWAKE).at(i_chain).at(layer2).at(sp2) - _c_means.at(layer2).at(sp2)) * (_mc_chains.at(MCType::AWAKE).at(i_chain).at(layer1).at(sp1).t() - _c_means.at(layer1).at(sp1).t()) ) / _no_markov_chains.at(MCType::AWAKE));
                                 };
                                 moment->set_moment_to_weight_matrix_sum(MCType::AWAKE);
@@ -1743,6 +1778,40 @@ namespace dblz {
                 };
             };
         };
+        
+        // First BINARIZE, then slide!
+        /*
+        if (_mode == LatticeMode::CENTERED) {
+            
+            // Awake phase: determine batch mean
+            for (auto layer=0; layer<_no_layers; layer++) {
+                
+                // Binarize
+                for (auto i_chain=0; i_chain<_no_markov_chains.at(MCType::AWAKE); i_chain++) {
+                    _binarize_all_units_in_layer(MCType::AWAKE, i_chain, layer, false);
+                };
+                
+                for (auto sp: _species_possible_vec.at(layer)) {
+                    // Reset
+                    _c_batch_means[layer][sp].fill(arma::fill::zeros);
+                    
+                    // Get batch mean from all chains
+                    for (auto i_chain=0; i_chain<_no_markov_chains.at(MCType::AWAKE); i_chain++) {
+                        _c_batch_means[layer][sp] += _mc_chains.at(MCType::AWAKE).at(i_chain).at(layer).at(sp);
+                    };
+                    _c_batch_means[layer][sp] /= _no_markov_chains.at(MCType::AWAKE);
+                };
+            };
+            
+            // Asleep phase: slide mean
+            for (auto layer=0; layer<_no_layers; layer++) {
+                for (auto sp: _species_possible_vec.at(layer)) {
+                    // Slide
+                    _c_means[layer][sp] = (1.0 - _c_sliding_factors.at(layer)) * _c_means.at(layer).at(sp) + _c_sliding_factors.at(layer) * _c_batch_means.at(layer).at(sp);
+                };
+            };
+        };
+        */
         
         // Gamma, beta
         /*

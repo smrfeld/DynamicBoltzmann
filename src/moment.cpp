@@ -243,6 +243,9 @@ namespace dblz {
         _weight_matrix[MCType::ASLEEP] = new arma::sp_mat(dim_upper_layer,dim_lower_layer);
         _weight_matrix_awake_minus_asleep = new arma::sp_mat(dim_upper_layer,dim_lower_layer);
     };
+    void Moment::set_weight_matrix(MCType type, arma::sp_mat matrix) {
+        *_weight_matrix[type] = matrix;
+    };
     void Moment::reset_weight_matrix(MCType type) {
         _weight_matrix[type]->zeros();
     };
@@ -252,8 +255,8 @@ namespace dblz {
     void Moment::set_moment_to_weight_matrix_sum(MCType type) {
         _val_averaged[type] = arma::accu(*_weight_matrix[type]);
     };
-    const arma::sp_mat& Moment::get_weight_matrix(MCType type) const {
-        return *_weight_matrix.at(type);
+    arma::sp_mat* Moment::get_weight_matrix_ptr(MCType type) const {
+        return _weight_matrix.at(type);
     };
 
     void Moment::calculate_weight_matrix_awake_minus_asleep() {

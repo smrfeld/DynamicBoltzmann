@@ -22,7 +22,7 @@ namespace dblz {
     typedef std::map<Sptr,arma::vec> layer_occ;
     typedef std::map<int, layer_occ> layers_map;
 
-    enum class LatticeMode: unsigned int { NORMAL, CENTERED, BATCHNORM };
+    enum class LatticeMode: unsigned int { NORMAL, CENTERED, BATCHNORM, CENTERED_M };
     
     class Lattice
 	{
@@ -169,26 +169,6 @@ namespace dblz {
         void _bn_apply_affine_transform_to_all_chains(MCType chain, int layer);
         
         // ***************
-        // MARK: Activations
-        // ***************
-        
-        // Calculate activation given layer above or below or both
-        // Includes biases!
-        void _calculate_activations_from_below(MCType chain, int i_chain, int layer);
-        void _calculate_activations_from_above(MCType chain, int i_chain, int layer);
-        void _calculate_activations_from_both(MCType chain, int i_chain, int layer);
-        
-        // Calculate activations when the scale paramaters gamma in eqn (7) are not incorporated into th weights
-        // See bullet pt 2 on p. 366
-        void _calculate_activations_from_above_bn(MCType chain, int i_chain, int layer);
-        void _calculate_activations_from_below_bn(MCType chain, int i_chain, int layer);
-
-        // Centered activations
-        void _calculate_activations_from_below_c(MCType chain, int i_chain, int layer);
-        void _calculate_activations_from_above_c(MCType chain, int i_chain, int layer);
-        void _calculate_activations_from_both_c(MCType chain, int i_chain, int layer);
-
-        // ***************
         // MARK: - Constructor helpers
         // ***************
         
@@ -308,18 +288,17 @@ namespace dblz {
         
         // For all chains:
         
-        // (1.a) Calculate activations for a specific layer
-        // Both directions
-        void activate_layer_calculate(MCType chain, int layer);
-        // Only one direction
-        void activate_layer_calculate(MCType chain, int layer, int given_layer);
-        // (1.b) Alternatively, include batch norm params
-        // NOTE: For these two, BN params must already exist! See below to calculate!
-        void activate_layer_calculate_bn(MCType chain, int layer);
-        void activate_layer_calculate_bn(MCType chain, int layer, int given_layer);
-        // (1.c) Alternatively, include centering
-        void activate_layer_calculate_c(MCType chain, int layer);
-        void activate_layer_calculate_c(MCType chain, int layer, int given_layer);
+        // 1. Calculate activation given layer above or below or both
+        void activate_layer_calculate_from_below(MCType chain, int layer);
+        void activate_layer_calculate_from_above(MCType chain, int layer);
+        void activate_layer_calculate_from_both(MCType chain, int layer);
+        
+        void activate_layer_calculate_from_below_bn(MCType chain, int layer);
+        void activate_layer_calculate_from_above_bn(MCType chain, int layer);
+        
+        void activate_layer_calculate_from_below_c(MCType chain, int layer);
+        void activate_layer_calculate_from_above_c(MCType chain, int layer);
+        void activate_layer_calculate_from_both_c(MCType chain, int layer);
         
         // (2) Convert activations to probs
         void activate_layer_convert_to_probs(MCType chain, int layer, bool binary);

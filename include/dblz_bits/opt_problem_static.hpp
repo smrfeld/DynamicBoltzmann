@@ -38,11 +38,7 @@ namespace dblz {
         bool l2_reg = false;
         std::map<std::shared_ptr<IxnParam>,double> l2_lambda;
         std::map<std::shared_ptr<IxnParam>,double> l2_center;
-        
-        // Variable learning rate
-        bool var_learning_rates = false;
-        std::map<std::shared_ptr<IxnParam>,double> var_learning_rate_values;
-        
+                
         // Options for the solvers
         Solver solver = Solver::ADAM;
         
@@ -130,13 +126,13 @@ namespace dblz {
          ********************/
         
         // Check if options passed are valid
-        void check_options(double dopt, int no_mean_field_updates, int no_gibbs_sampling_steps, OptionsSolveStatic options, OptionsWakeSleepStatic options_wake_sleep);
+        void check_options(int no_mean_field_updates, int no_gibbs_sampling_steps, OptionsSolveStatic options, OptionsWakeSleepStatic options_wake_sleep);
         
         // One step
-        void solve_one_step(int i_opt_step, double dopt, int no_mean_field_updates, int no_gibbs_sampling_steps, FNameColl &fname_coll, OptionsSolveStatic options, OptionsWakeSleepStatic options_wake_sleep);
+        void solve_one_step(int i_opt_step, int no_mean_field_updates, int no_gibbs_sampling_steps, FNameColl &fname_coll, OptionsSolveStatic options, OptionsWakeSleepStatic options_wake_sleep);
         
         // Many steps
-        void solve(int no_opt_steps, double dopt, int no_mean_field_updates, int no_gibbs_sampling_steps, FNameColl &fname_coll, OptionsSolveStatic options, OptionsWakeSleepStatic options_wake_sleep);
+        void solve(int no_opt_steps, int no_mean_field_updates, int no_gibbs_sampling_steps, FNameColl &fname_coll, OptionsSolveStatic options, OptionsWakeSleepStatic options_wake_sleep);
     };
     
 };

@@ -25,8 +25,9 @@ namespace dblz {
     // MARK: - Constructor
     // ***************
     
-	IxnParam::IxnParam(std::string name, IxnParamType type, double init_guess) {
+	IxnParam::IxnParam(std::string name, IxnParamType type, double init_guess, double lr) {
 
+        _lr = lr;
 		_val = init_guess;
 		_update = 0.0;
         
@@ -92,6 +93,7 @@ namespace dblz {
         _adam_v = nullptr;
     };
 	void IxnParam::_copy(const IxnParam& other) {
+        _lr = other._lr;
 		_val = other._val;
 		_update = other._update;
         if (other._nesterov_y_s) {
@@ -120,6 +122,7 @@ namespace dblz {
 		_is_val_fixed = other._is_val_fixed;
 	};
 	void IxnParam::_move(IxnParam& other) {
+        _lr = other._lr;
 		_val = other._val;
 		_update = other._update;
         _nesterov_y_s = other._nesterov_y_s;
@@ -132,6 +135,7 @@ namespace dblz {
 		_is_val_fixed = other._is_val_fixed;
 
 		// Reset the other
+        other._lr = 0.0;
 		other._val = 0.0;
 		other._update = 0.0;
 		other._nesterov_y_s = nullptr;
@@ -141,6 +145,17 @@ namespace dblz {
 		other._adam_v = nullptr;
 	};
 
+    // ***************
+    // MARK: - Learning rate
+    // ***************
+    
+    double IxnParam::get_lr() const {
+        return _lr;
+    };
+    void IxnParam::set_lr(double lr) {
+        _lr = lr;
+    };
+    
 	/********************
 	Name, type
 	********************/

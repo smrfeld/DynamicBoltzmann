@@ -206,18 +206,18 @@ namespace dblz {
      ********************/
     
     // Check if options passed are valid
-    void OptProblemStatic::check_options(double dopt, int no_mean_field_updates, int no_gibbs_sampling_steps, OptionsSolveStatic options, OptionsWakeSleepStatic options_wake_sleep) {
+    void OptProblemStatic::check_options(int no_mean_field_updates, int no_gibbs_sampling_steps, OptionsSolveStatic options, OptionsWakeSleepStatic options_wake_sleep) {
     };
     
     // One step
-    void OptProblemStatic::solve_one_step(int i_opt_step, double dopt, int no_mean_field_updates, int no_gibbs_sampling_steps, FNameColl &fname_coll, OptionsSolveStatic options, OptionsWakeSleepStatic options_wake_sleep) {
+    void OptProblemStatic::solve_one_step(int i_opt_step, int no_mean_field_updates, int no_gibbs_sampling_steps, FNameColl &fname_coll, OptionsSolveStatic options, OptionsWakeSleepStatic options_wake_sleep) {
         
         /*****
          Check options
          *****/
         
         if (options.should_check_options) {
-            check_options(dopt,no_mean_field_updates,no_gibbs_sampling_steps,options,options_wake_sleep);
+            check_options(no_mean_field_updates,no_gibbs_sampling_steps,options,options_wake_sleep);
         };
         
         /*****
@@ -265,38 +265,22 @@ namespace dblz {
             std::cout << "--- Committing update ---" << std::endl;
         };
         
-        double dopt_use = dopt;
         if (options.solver == Solver::SGD) {
             for (auto &ixn_param: _latt->get_all_ixn_params()) {
                 if (!ixn_param->get_is_val_fixed()) {
-                    // Learning rate
-                    if (options.var_learning_rates) {
-                        dopt_use = options.var_learning_rate_values[ixn_param];
-                    };
-                    
-                    ixn_param->update_committ_stored_sgd(dopt_use);
+                    ixn_param->update_committ_stored_sgd(ixn_param->get_lr());
                 };
             };
         } else if (options.solver == Solver::NESTEROV) {
             for (auto &ixn_param: _latt->get_all_ixn_params()) {
                 if (!ixn_param->get_is_val_fixed()) {
-                    // Learning rate
-                    if (options.var_learning_rates) {
-                        dopt_use = options.var_learning_rate_values[ixn_param];
-                    };
-                    
-                    ixn_param->update_committ_stored_nesterov(dopt_use,options.nesterov_acc);
+                    ixn_param->update_committ_stored_nesterov(ixn_param->get_lr(),options.nesterov_acc);
                 };
             };
         } else if (options.solver == Solver::ADAM) {
             for (auto &ixn_param: _latt->get_all_ixn_params()) {
                 if (!ixn_param->get_is_val_fixed()) {
-                    // Learning rate
-                    if (options.var_learning_rates) {
-                        dopt_use = options.var_learning_rate_values[ixn_param];
-                    };
-                    
-                    ixn_param->update_committ_stored_adam(dopt_use,i_opt_step,options.adam_beta_1,options.adam_beta_2,options.adam_eps);
+                    ixn_param->update_committ_stored_adam(ixn_param->get_lr(),i_opt_step,options.adam_beta_1,options.adam_beta_2,options.adam_eps);
                 };
             };
         };
@@ -308,7 +292,7 @@ namespace dblz {
     };
     
     // Many steps
-    void OptProblemStatic::solve(int no_opt_steps, double dopt, int no_mean_field_updates, int no_gibbs_sampling_steps, FNameColl &fname_coll, OptionsSolveStatic options, OptionsWakeSleepStatic options_wake_sleep) {
+    void OptProblemStatic::solve(int no_opt_steps, int no_mean_field_updates, int no_gibbs_sampling_steps, FNameColl &fname_coll, OptionsSolveStatic options, OptionsWakeSleepStatic options_wake_sleep) {
         
         for (int i_opt_step=1; i_opt_step<=no_opt_steps; i_opt_step++)
         {
@@ -318,7 +302,7 @@ namespace dblz {
             std::cout << "------------------" << std::endl;
             
             // Solve
-            solve_one_step(i_opt_step,dopt,no_mean_field_updates,no_gibbs_sampling_steps,fname_coll,options,options_wake_sleep);
+            solve_one_step(i_opt_step,no_mean_field_updates,no_gibbs_sampling_steps,fname_coll,options,options_wake_sleep);
         };
     };
 };

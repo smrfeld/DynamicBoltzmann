@@ -30,7 +30,7 @@ namespace dblz {
 		_init_cond = init_cond;
 
         // First element
-        _ixn_params.push_back(std::make_shared<IxnParam>(name,type,init_cond));
+        _ixn_params.push_back(std::make_shared<IxnParam>(name,type,init_cond,0.0));
         
         // Adjoint
         _adjoint = nullptr;

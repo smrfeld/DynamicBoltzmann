@@ -24,6 +24,9 @@ namespace dblz {
 
 	private:
         
+        // Learning rate
+        double _lr;
+        
         // Values
         double _val;
         double _update;
@@ -51,13 +54,20 @@ namespace dblz {
 		Constructor
 		********************/
 
-		IxnParam(std::string name, IxnParamType type, double init_guess); 
+		IxnParam(std::string name, IxnParamType type, double init_guess, double lr);
 		IxnParam(const IxnParam& other);
 		IxnParam(IxnParam&& other);
 		IxnParam& operator=(const IxnParam& other);
 		IxnParam& operator=(IxnParam&& other);
 		~IxnParam();
 
+        // ***************
+        // MARK: - Learning rate
+        // ***************
+        
+        double get_lr() const;
+        void set_lr(double lr);
+        
 		/********************
 		Name, type
 		********************/

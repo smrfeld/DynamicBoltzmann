@@ -115,6 +115,19 @@ namespace dblz {
     };
 
     // ***************
+    // MARK: - Sliding factors
+    // ***************
+    
+    double LatticeTraj::get_sliding_factor(int layer) const {
+        return _lattices.begin()->second->get_sliding_factor(layer);
+    };
+    void LatticeTraj::set_sliding_factor(int layer, double factor) {
+        for (auto l: _lattices) {
+            l.second->set_sliding_factor(layer, factor);
+        };
+    };
+    
+    // ***************
     // MARK: - No timesteps
     // ***************
     

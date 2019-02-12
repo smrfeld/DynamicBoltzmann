@@ -229,8 +229,14 @@ namespace dblz {
         // ***************
 
         int get_no_markov_chains(MCType type) const;
-
         void set_no_markov_chains(MCType type, int no_markov_chains);
+        
+        // ***************
+        // MARK: - Sliding factors
+        // ***************
+        
+        double get_sliding_factor(int layer) const;
+        void set_sliding_factor(int layer, double factor);
         
         // ***************
         // MARK: Add a layer
@@ -365,6 +371,7 @@ namespace dblz {
         // MARK: - Write out centers
         // ***************
         
+        void read_centers_from_file(int layer, std::string fname);
         void write_centers_to_file(int layer, std::string fname) const;
 	};
 };

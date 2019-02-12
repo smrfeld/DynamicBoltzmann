@@ -343,6 +343,17 @@ namespace dblz {
         };
     };
     
+    // ***************
+    // MARK: - Sliding factors
+    // ***************
+    
+    double Lattice::get_sliding_factor(int layer) const {
+        return _c_sliding_factors.at(layer);
+    };
+    void Lattice::set_sliding_factor(int layer, double factor) {
+        _c_sliding_factors[layer] = factor;
+    };
+
     /********************
      Add a layer
      ********************/
@@ -1393,19 +1404,17 @@ namespace dblz {
 
             for (auto layer=1; layer<_no_layers; layer++) {
                 activate_layer_calculate(chain, layer, layer-1);
+                activate_layer_convert_to_probs(chain, layer, binary_hidden);
+                activate_layer_committ(chain, layer);
             };
             
         } else if (_mode == LatticeMode::CENTERED) {
             
             for (auto layer=1; layer<_no_layers; layer++) {
                 activate_layer_calculate_c(chain, layer, layer-1);
+                activate_layer_convert_to_probs(chain, layer, binary_hidden);
+                activate_layer_committ(chain, layer);
             };
-        };
-
-        // Convert activations to probabilities and committ
-        for (auto layer=1; layer<_no_layers; layer++) {
-            activate_layer_convert_to_probs(chain, layer, binary_hidden);
-            activate_layer_committ(chain, layer);
         };
     };
     void Lattice::activate_upward_pass_with_2x_weights_1x_bias(MCType chain, bool binary_hidden) {
@@ -1792,6 +1801,76 @@ namespace dblz {
     // MARK: - Write out centers
     // ***************
     
+    void Lattice::read_centers_from_file(int layer, std::string fname) {
+        // Open
+        std::ifstream f;
+        f.open(fname);
+        if (!f.is_open()) { // make sure we found it
+            std::cerr << ">>> Error: Lattice::read_centers_from_file <<< could not find file: " << fname << std::endl;
+            exit(EXIT_FAILURE);
+        };
+        
+        std::map<std::string,std::map<int,double>> to_write;
+        
+        std::string x="",y="",z="";
+        std::string sp="";
+        std::string center="";
+        std::string line;
+        std::istringstream iss;
+        int s;
+        
+        int no_species = _species_possible_vec.at(layer).size();
+        
+        if (_no_dims == 1) {
+            while (getline(f,line)) {
+                if (line == "") { continue; };
+                iss = std::istringstream(line);
+                iss >> x;
+                s = _look_up_unit(layer,atoi(x.c_str()));
+                for (auto i=0; i<no_species; i++) {
+                    iss >> sp >> center;
+                    to_write[sp][s] = atof(center.c_str());;
+                    sp=""; center="";
+                };
+                x="";
+            };
+        } else if (_no_dims == 2) {
+            while (getline(f,line)) {
+                if (line == "") { continue; };
+                iss = std::istringstream(line);
+                iss >> x >> y;
+                s = _look_up_unit(layer,atoi(x.c_str()),atoi(y.c_str()));
+                for (auto i=0; i<no_species; i++) {
+                    iss >> sp >> center;
+                    to_write[sp][s] = atof(center.c_str());;
+                    sp=""; center="";
+                };
+                x=""; y="";
+            };
+        }else if (_no_dims == 3) {
+            while (getline(f,line)) {
+                if (line == "") { continue; };
+                iss = std::istringstream(line);
+                iss >> x >> y >> z;
+                s = _look_up_unit(layer,atoi(x.c_str()),atoi(y.c_str()),atoi(z.c_str()));
+                for (auto i=0; i<no_species; i++) {
+                    iss >> sp >> center;
+                    to_write[sp][s] = atof(center.c_str());;
+                    sp=""; center="";
+                };
+                x=""; y=""; z="";
+            };
+        };
+        
+        // Write
+        for (auto sp_pr: to_write) {
+            auto species = _species_possible_map[layer][sp_pr.first];
+            for (auto idx_pr: sp_pr.second) {
+                _c_means[layer][species](idx_pr.first) = idx_pr.second;
+            };
+        };
+    };
+    
     void Lattice::write_centers_to_file(int layer, std::string fname) const {
         std::ofstream f;
         f.open (fname);
@@ -1879,8 +1958,10 @@ namespace dblz {
         if (it == _all_ixns.end()) {
             _all_ixns.push_back(ixn);
         } else {
+            /*
             std::cerr << ">>> Lattice::_add_to_all_ixns_vec <<< reusing ixns currently not supported because it is not treated correctly in the reap function!" << std::endl;
             exit(EXIT_FAILURE);
+             */
         };
     };
 };

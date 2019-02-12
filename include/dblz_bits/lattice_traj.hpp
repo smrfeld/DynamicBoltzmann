@@ -61,6 +61,13 @@ namespace dblz {
 		~LatticeTraj();
 
         // ***************
+        // MARK: - Sliding factors
+        // ***************
+        
+        double get_sliding_factor(int layer) const;
+        void set_sliding_factor(int layer, double factor);
+        
+        // ***************
         // MARK: - No timesteps
         // ***************
         

@@ -1482,6 +1482,8 @@ namespace dblz {
     // ***************
     
     void Lattice::reap_moments() {
+    
+        clock_t t0 = clock();
         
         // If centering mode: calculate the centers from the awake moment, and then slide
         int no_units;
@@ -1530,6 +1532,8 @@ namespace dblz {
             };
         };
 
+        clock_t t1 = clock();
+
          // Enhanced gradient
         /*
         if (_mode == LatticeMode::CENTERED) {
@@ -1563,6 +1567,7 @@ namespace dblz {
         // Reap ixns
         int layer1, layer2;
         Sptr sp1, sp2;
+        arma::sp_mat::iterator mit, mit_end;
         std::shared_ptr<Moment> moment;
         for (auto &o2_ixn_layer_1: _o2_ixn_dict) {
             layer1 = o2_ixn_layer_1.first;
@@ -1694,20 +1699,32 @@ namespace dblz {
                             if (!moment->get_is_awake_moment_fixed()) {
                                 moment->reset_moment(MCType::AWAKE);
                                 for (auto i_chain=0; i_chain<_no_markov_chains.at(MCType::AWAKE); i_chain++) {
-                                    moment->increment_moment(MCType::AWAKE, arma::accu(_adj.at(layer1).at(layer2) % ( ( _mc_chains.at(MCType::AWAKE).at(i_chain).at(layer2).at(sp2) - _cpt_means.at(layer2).at(sp2) ) * ( _mc_chains.at(MCType::AWAKE).at(i_chain).at(layer1).at(sp1).t() - _cpt_means.at(layer1).at(sp1) ) ) / _no_markov_chains.at(MCType::AWAKE)));
+                                    mit = _adj.at(layer1).at(layer2).begin();
+                                    mit_end = _adj.at(layer1).at(layer2).end();
+                                    for(; mit != mit_end; ++mit) {
+                                        moment->increment_moment(MCType::AWAKE, ( _mc_chains.at(MCType::AWAKE).at(i_chain).at(layer2).at(sp2)(mit.row()) - _cpt_means.at(layer2).at(sp2) ) * ( _mc_chains.at(MCType::AWAKE).at(i_chain).at(layer1).at(sp1)(mit.col()) - _cpt_means.at(layer1).at(sp1) ) / _no_markov_chains.at(MCType::AWAKE) );
+                                    };
+                                    // moment->increment_moment(MCType::AWAKE, arma::accu(_adj.at(layer1).at(layer2) % ( ( _mc_chains.at(MCType::AWAKE).at(i_chain).at(layer2).at(sp2) - _cpt_means.at(layer2).at(sp2) ) * ( _mc_chains.at(MCType::AWAKE).at(i_chain).at(layer1).at(sp1).t() - _cpt_means.at(layer1).at(sp1) ) ) / _no_markov_chains.at(MCType::AWAKE)));
                                 };
                             };
                             
                             // Asleep phase
                             moment->reset_moment(MCType::ASLEEP);
                             for (auto i_chain=0; i_chain<_no_markov_chains.at(MCType::ASLEEP); i_chain++) {
-                                moment->increment_moment(MCType::ASLEEP, arma::accu(_adj.at(layer1).at(layer2) % ( ( _mc_chains.at(MCType::ASLEEP).at(i_chain).at(layer2).at(sp2) - _cpt_means.at(layer2).at(sp2) ) * ( _mc_chains.at(MCType::ASLEEP).at(i_chain).at(layer1).at(sp1).t() - _cpt_means.at(layer1).at(sp1) ) ) / _no_markov_chains.at(MCType::ASLEEP)));
+                                mit = _adj.at(layer1).at(layer2).begin();
+                                mit_end = _adj.at(layer1).at(layer2).end();
+                                for(; mit != mit_end; ++mit) {
+                                    moment->increment_moment(MCType::ASLEEP, ( _mc_chains.at(MCType::ASLEEP).at(i_chain).at(layer2).at(sp2)(mit.row()) - _cpt_means.at(layer2).at(sp2) ) * ( _mc_chains.at(MCType::ASLEEP).at(i_chain).at(layer1).at(sp1)(mit.col()) - _cpt_means.at(layer1).at(sp1) ) / _no_markov_chains.at(MCType::ASLEEP) );
+                                };
+                                // moment->increment_moment(MCType::ASLEEP, arma::accu(_adj.at(layer1).at(layer2) % ( ( _mc_chains.at(MCType::ASLEEP).at(i_chain).at(layer2).at(sp2) - _cpt_means.at(layer2).at(sp2) ) * ( _mc_chains.at(MCType::ASLEEP).at(i_chain).at(layer1).at(sp1).t() - _cpt_means.at(layer1).at(sp1) ) ) / _no_markov_chains.at(MCType::ASLEEP)));
                             };
                         };
                     };
                 };
             };
         };
+        
+        clock_t t2 = clock();
         
         // Reap biases
         // All biases
@@ -1745,6 +1762,8 @@ namespace dblz {
             };
         };
         
+        clock_t t3 = clock();
+
         // Offset bias for centering
         double offset;
         arma::vec mean;
@@ -1842,6 +1861,15 @@ namespace dblz {
                 _bias_dict.at(layer).at(sp)->get_moment()->set_moment_diff_awake_minus_asleep_offset(offset);
             };
         };
+        
+        clock_t t4 = clock();
+        
+        double dt1 = (t1-t0)  / (double) CLOCKS_PER_SEC;
+        double dt2 = (t2-t1)  / (double) CLOCKS_PER_SEC;
+        double dt3 = (t3-t2)  / (double) CLOCKS_PER_SEC;
+        double dt4 = (t4-t3)  / (double) CLOCKS_PER_SEC;
+        double dt_tot = dt1 + dt2 + dt3 + dt4;
+        std::cout << "[means " << dt1/dt_tot << "] [ixns " << dt2/dt_tot << "] [boases " << dt3/dt_tot << "] [offset " << dt4/dt_tot << "]" << std::endl;
         
         // Slide at the end
         for (auto layer=0; layer<_no_layers; layer++) {

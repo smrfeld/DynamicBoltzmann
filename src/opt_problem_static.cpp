@@ -194,7 +194,6 @@ namespace dblz {
         _latt->reap_moments();
 
         clock_t t5 = clock();
-
         
         double dt1 = (t1-t0)  / (double) CLOCKS_PER_SEC;
         double dt2 = (t2-t1)  / (double) CLOCKS_PER_SEC;

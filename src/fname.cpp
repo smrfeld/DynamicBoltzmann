@@ -74,4 +74,13 @@ namespace dblz {
 	    std::vector<int>::const_iterator last = _idxs.begin() + size;
 	    return std::vector<int>(first,last);
 	};
+    
+    std::vector<FName> FNameColl::get_random_subset_fnames(int size) {
+        std::vector<FName> fnames;
+        std::vector<int> idxs = get_random_subset(size);
+        for (auto const &idx: idxs) {
+            fnames.push_back(_fnames.at(idx));
+        };
+        return fnames;
+    };
 };

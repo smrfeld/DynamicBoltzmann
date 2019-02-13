@@ -54,5 +54,6 @@ namespace dblz {
 		********************/
 
 		std::vector<int> get_random_subset(int size);
+        std::vector<FName> get_random_subset_fnames(int size);
 	};
 };

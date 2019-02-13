@@ -32,12 +32,7 @@ namespace dblz {
         
         // Verbosity
         bool verbose = false;
-        
-        // Integral start
-        bool integral_limit_mode = false;
-        int integral_start = 0;
-        int integral_size = 10;
-        
+                
         // L2 Reg mode
         bool l2_reg = false;
         std::map<std::shared_ptr<IxnParamTraj>,double> l2_lambda;

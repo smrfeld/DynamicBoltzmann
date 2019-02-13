@@ -183,7 +183,7 @@ namespace dblz {
         
         // Max update
         _mag_max_update = nullptr;
-	};
+    };
 	DiffEqRHS::DiffEqRHS(const DiffEqRHS& other) : Grid(other) {
 		_copy(other);
 	};

@@ -14,6 +14,37 @@
 namespace dblz {
     
     enum class MCType: unsigned int;
+    struct FName;
+    
+    /****************************************
+     OptProblemStatic Options
+     ****************************************/
+    
+    struct OptionsWakeSleep {
+        
+        // Verbosity
+        bool verbose = false;
+        
+        // Sampling options
+        // Is the visible reconstruction binary, EXCEPT in the last phase?
+        bool is_asleep_visible_binary = true;
+        // Is the hidden reconstruction binary, EXCEPT in the last phase?
+        bool is_asleep_hidden_binary = true;
+        // Is the visible reconstruction binary in the last phase?
+        bool is_asleep_visible_binary_final = true;
+        // Is the hidden reconstruction binary in the last phase?
+        bool is_asleep_hidden_binary_final = false;
+        
+        // Write after awake/asleep
+        bool write_after_awake = false;
+        bool write_after_asleep = false;
+        std::string write_after_awake_dir = "";
+        std::string write_after_asleep_dir = "";
+        
+        // Gibbs sampling awake phase
+        bool gibbs_sample_awake_phase = false;
+        bool gibbs_sample_awake_phase_hidden_binary = true;
+    };
     
 	/****************************************
 	Lattice
@@ -357,5 +388,11 @@ namespace dblz {
         
         void read_center_pt_from_file(int layer, std::string fname);
         void write_center_pt_to_file(int layer, std::string fname) const;
+        
+        // ***************
+        // MARK: - Wake/sleep
+        // ***************
+        
+        void wake_sleep_loop(int i_opt_step, int no_mean_field_updates, int no_gibbs_sampling_steps, std::vector<FName> &fnames, OptionsWakeSleep options);
 	};
 };

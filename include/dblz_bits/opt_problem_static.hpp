@@ -13,6 +13,7 @@ namespace dblz {
     class IxnParam;
     class Lattice;
     class FNameColl;
+    struct OptionsWakeSleep;
     
     /****************************************
     Misc options
@@ -52,36 +53,6 @@ namespace dblz {
     };
     
     /****************************************
-     OptProblemStatic Options
-     ****************************************/
-    
-    struct OptionsWakeSleepStatic {
-        
-        // Verbosity
-        bool verbose = false;
-        
-        // Sampling options
-        // Is the visible reconstruction binary, EXCEPT in the last phase?
-        bool is_asleep_visible_binary = true;
-        // Is the hidden reconstruction binary, EXCEPT in the last phase?
-        bool is_asleep_hidden_binary = true;
-        // Is the visible reconstruction binary in the last phase?
-        bool is_asleep_visible_binary_final = true;
-        // Is the hidden reconstruction binary in the last phase?
-        bool is_asleep_hidden_binary_final = false;
-
-        // Write after awake/asleep
-        bool write_after_awake = false;
-        bool write_after_asleep = false;
-        std::string write_after_awake_dir = "";
-        std::string write_after_asleep_dir = "";
-        
-        // Gibbs sampling awake phase
-        bool gibbs_sample_awake_phase = false;
-        bool gibbs_sample_awake_phase_hidden_binary = true;
-    };
-
-    /****************************************
      OptProblemStatic
      ****************************************/
     
@@ -118,25 +89,19 @@ namespace dblz {
          ********************/
         
         void set_no_markov_chains(MCType chain, int no_markov_chains);
-        
-        /********************
-         Wake/asleep loop
-         ********************/
-        
-        void wake_sleep_loop(int i_opt_step, int no_mean_field_updates, int no_gibbs_sampling_steps, FNameColl &fname_coll, OptionsWakeSleepStatic options);
-        
+                
         /********************
          Solve
          ********************/
         
         // Check if options passed are valid
-        void check_options(int no_mean_field_updates, int no_gibbs_sampling_steps, OptionsSolveStatic options, OptionsWakeSleepStatic options_wake_sleep);
+        void check_options(int no_mean_field_updates, int no_gibbs_sampling_steps, OptionsSolveStatic options, OptionsWakeSleep options_wake_sleep);
         
         // One step
-        void solve_one_step(int i_opt_step, int no_mean_field_updates, int no_gibbs_sampling_steps, FNameColl &fname_coll, OptionsSolveStatic options, OptionsWakeSleepStatic options_wake_sleep);
+        void solve_one_step(int i_opt_step, int no_mean_field_updates, int no_gibbs_sampling_steps, FNameColl &fname_coll, OptionsSolveStatic options, OptionsWakeSleep options_wake_sleep);
         
         // Many steps
-        void solve(int no_opt_steps, int no_mean_field_updates, int no_gibbs_sampling_steps, FNameColl &fname_coll, OptionsSolveStatic options, OptionsWakeSleepStatic options_wake_sleep);
+        void solve(int no_opt_steps, int no_mean_field_updates, int no_gibbs_sampling_steps, FNameColl &fname_coll, OptionsSolveStatic options, OptionsWakeSleep options_wake_sleep);
     };
     
 };

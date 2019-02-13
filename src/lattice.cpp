@@ -5,6 +5,7 @@
 #include "../include/dblz_bits/species.hpp"
 #include "../include/dblz_bits/moment.hpp"
 #include "../include/dblz_bits/ixn_param.hpp"
+#include "../include/dblz_bits/fname.hpp"
 
 #include <iostream>
 #include <fstream>
@@ -2204,6 +2205,121 @@ namespace dblz {
             std::cerr << ">>> Lattice::_add_to_all_ixns_vec <<< reusing ixns currently not supported because it is not treated correctly in the reap function!" << std::endl;
             exit(EXIT_FAILURE);
              */
+        };
+    };
+    
+    // ***************
+    // MARK: - Wake/sleep loop
+    // ***************
+    
+    void Lattice::wake_sleep_loop(int i_opt_step, int no_mean_field_updates, int no_gibbs_sampling_steps, std::vector<FName> &fnames, OptionsWakeSleep options) {
+        if (options.verbose) {
+            std::cout << "--- Wake/sleep loop ---" << std::endl;
+        };
+        
+        // AWAKE PHASE
+        
+        clock_t t0 = clock();
+        
+        // Read in the batch
+        for (int i_chain=0; i_chain<_no_markov_chains[MCType::AWAKE]; i_chain++)
+        {
+            read_layer_from_file(MCType::AWAKE, i_chain, 0, fnames[i_chain].name, fnames[i_chain].binary);
+        };
+        
+        clock_t t1 = clock();
+        
+        // Option (1): init MF with random hidden layers with prob units
+        /*
+         for (int i_chain=0; i_chain<_no_markov_chains[MCType::AWAKE]; i_chain++) {
+         _latt->set_random_all_hidden_units(MCType::AWAKE, i_chain, false);
+         };
+         */
+        // Option (2): upward pass with 2x weights (DBM) to activate probabilitsic units
+        // (faster to converge!!!)
+        activate_upward_pass_with_2x_weights_1x_bias(MCType::AWAKE, false);
+        
+        clock_t t2 = clock();
+        
+        // Variational inference
+        if (!options.gibbs_sample_awake_phase) {
+            
+            for (auto i=0; i<no_mean_field_updates; i++) {
+                mean_field_hiddens_step();
+            };
+            
+        } else {
+            
+            for (auto i=0; i<no_mean_field_updates; i++) {
+                gibbs_sampling_step_awake(options.gibbs_sample_awake_phase_hidden_binary);
+            };
+        };
+        
+        clock_t t3 = clock();
+        
+        // Write out the lattices
+        if (options.write_after_awake) {
+            for (auto i_chain=0; i_chain<_no_markov_chains[MCType::AWAKE]; i_chain++) {
+                for (auto layer=0; layer<_no_layers; layer++) {
+                    bool write_binary = false;
+                    if (layer == 0) {
+                        write_binary = true;
+                    };
+                    write_layer_to_file(MCType::AWAKE, i_chain, layer, options.write_after_awake_dir+"/"+pad_str(i_chain,2)+"_"+pad_str(layer,2)+".txt", write_binary);
+                };
+            };
+        };
+        
+        // ASLEEP PHASE - PERSISTENT_CD
+        
+        // Run CD sampling
+        
+        // Sample vis, hidden
+        for (int i_sampling_step=0; i_sampling_step<no_gibbs_sampling_steps-1; i_sampling_step++)
+        {
+            gibbs_sampling_step(options.is_asleep_visible_binary, options.is_asleep_hidden_binary);
+        };
+        // Final step
+        if (options.is_asleep_visible_binary_final && options.is_asleep_hidden_binary_final) {
+            // All binary
+            gibbs_sampling_step(options.is_asleep_visible_binary_final, options.is_asleep_hidden_binary_final);
+        } else {
+            // Parallel for non-binary options
+            gibbs_sampling_step_parallel(options.is_asleep_visible_binary_final, options.is_asleep_hidden_binary_final);
+        };
+        
+        clock_t t4 = clock();
+        
+        // Write out the lattices
+        if (options.write_after_asleep) {
+            for (auto i_chain=0; i_chain<_no_markov_chains[MCType::ASLEEP]; i_chain++) {
+                for (auto layer=0; layer<_no_layers; layer++) {
+                    bool write_binary = false;
+                    if (layer == 0) {
+                        write_binary = true;
+                    };
+                    write_layer_to_file(MCType::ASLEEP, i_chain, layer, options.write_after_asleep_dir+"/"+pad_str(i_chain,2)+"_"+pad_str(layer,2)+".txt", write_binary);
+                };
+            };
+        };
+        
+        // REAP
+        
+        reap_moments();
+        
+        clock_t t5 = clock();
+        
+        double dt1 = (t1-t0)  / (double) CLOCKS_PER_SEC;
+        double dt2 = (t2-t1)  / (double) CLOCKS_PER_SEC;
+        double dt3 = (t3-t2)  / (double) CLOCKS_PER_SEC;
+        double dt4 = (t4-t3)  / (double) CLOCKS_PER_SEC;
+        double dt5 = (t5-t4)  / (double) CLOCKS_PER_SEC;
+        double dt_tot = dt1 + dt2 + dt3 + dt4 + dt5;
+        std::cout << "[read " << dt1/dt_tot << "] [up " << dt2/dt_tot << "] [mf " << dt3/dt_tot << "] [gibbs " << dt4/dt_tot << "] [reap " << dt5/dt_tot << "]" << std::endl;
+        
+        if (options.verbose) {
+            std::cout << "--- [Finished] Wake/sleep ---" << std::endl;
+            std::cout << std::endl;
         };
     };
 };

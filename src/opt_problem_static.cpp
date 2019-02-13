@@ -77,136 +77,8 @@ namespace dblz {
         // Store
         _no_markov_chains[chain] = no_markov_chains;
         
-        // Moments
-        /*
-        for (auto &ixn_param: _latt->get_all_ixn_params()) {
-            ixn_param->get_moment()->set_no_markov_chains(chain, no_markov_chains);
-        };
-         */
-        
         // Lattice
         _latt->set_no_markov_chains(chain, no_markov_chains);
-    };
-    
-    /********************
-     Wake/asleep loop
-     ********************/
-    
-    void OptProblemStatic::wake_sleep_loop(int i_opt_step, int no_mean_field_updates, int no_gibbs_sampling_steps, FNameColl &fname_coll, OptionsWakeSleepStatic options) {
-        if (options.verbose) {
-            std::cout << "--- Sampling lattice ---" << std::endl;
-        };
-        
-        // AWAKE PHASE
-        
-        clock_t t0 = clock();
-        
-        // Make a batch subset
-        std::vector<int> idx_subset;
-        idx_subset = fname_coll.get_random_subset(_no_markov_chains[MCType::AWAKE]);
-        
-        // Read in the batch
-        for (int i_chain=0; i_chain<_no_markov_chains[MCType::AWAKE]; i_chain++)
-        {
-            auto file = fname_coll.get_fname(idx_subset[i_chain]);
-            _latt->read_layer_from_file(MCType::AWAKE, i_chain, 0, file.name, file.binary);
-            
-        };
-        
-        clock_t t1 = clock();
-        
-        // Option (1): init MF with random hidden layers with prob units
-        /*
-        for (int i_chain=0; i_chain<_no_markov_chains[MCType::AWAKE]; i_chain++) {
-            _latt->set_random_all_hidden_units(MCType::AWAKE, i_chain, false);
-        };
-         */
-        // Option (2): upward pass with 2x weights (DBM) to activate probabilitsic units
-        // (faster to converge!!!)
-        _latt->activate_upward_pass_with_2x_weights_1x_bias(MCType::AWAKE, false);
-        
-        clock_t t2 = clock();
-
-        // Variational inference
-        if (!options.gibbs_sample_awake_phase) {
-            
-            for (auto i=0; i<no_mean_field_updates; i++) {
-                _latt->mean_field_hiddens_step();
-            };
-            
-        } else {
-            
-            for (auto i=0; i<no_mean_field_updates; i++) {
-                _latt->gibbs_sampling_step_awake(options.gibbs_sample_awake_phase_hidden_binary);
-            };
-        };
-                
-        clock_t t3 = clock();
-
-        // Write out the lattices
-        if (options.write_after_awake) {
-            for (auto i_chain=0; i_chain<_no_markov_chains[MCType::AWAKE]; i_chain++) {
-                for (auto layer=0; layer<_latt->get_no_layers(); layer++) {
-                    bool write_binary = false;
-                    if (layer == 0) {
-                        write_binary = true;
-                    };
-                    _latt->write_layer_to_file(MCType::AWAKE, i_chain, layer, options.write_after_awake_dir+"/"+pad_str(i_chain,2)+"_"+pad_str(layer,2)+".txt", write_binary);
-                };
-            };
-        };
-        
-        // ASLEEP PHASE - PERSISTENT_CD
-        
-        // Run CD sampling
-    
-        // Sample vis, hidden
-        for (int i_sampling_step=0; i_sampling_step<no_gibbs_sampling_steps-1; i_sampling_step++)
-        {
-            _latt->gibbs_sampling_step(options.is_asleep_visible_binary, options.is_asleep_hidden_binary);
-        };
-        // Final step
-        if (options.is_asleep_visible_binary_final && options.is_asleep_hidden_binary_final) {
-            // All binary
-            _latt->gibbs_sampling_step(options.is_asleep_visible_binary_final, options.is_asleep_hidden_binary_final);
-        } else {
-            // Parallel for non-binary options
-            _latt->gibbs_sampling_step_parallel(options.is_asleep_visible_binary_final, options.is_asleep_hidden_binary_final);
-        };
-
-        clock_t t4 = clock();
-
-        // Write out the lattices
-        if (options.write_after_asleep) {
-            for (auto i_chain=0; i_chain<_no_markov_chains[MCType::ASLEEP]; i_chain++) {
-                for (auto layer=0; layer<_latt->get_no_layers(); layer++) {
-                    bool write_binary = false;
-                    if (layer == 0) {
-                        write_binary = true;
-                    };
-                    _latt->write_layer_to_file(MCType::ASLEEP, i_chain, layer, options.write_after_asleep_dir+"/"+pad_str(i_chain,2)+"_"+pad_str(layer,2)+".txt", write_binary);
-                };
-            };
-        };
-        
-        // REAP
-        
-        _latt->reap_moments();
-
-        clock_t t5 = clock();
-        
-        double dt1 = (t1-t0)  / (double) CLOCKS_PER_SEC;
-        double dt2 = (t2-t1)  / (double) CLOCKS_PER_SEC;
-        double dt3 = (t3-t2)  / (double) CLOCKS_PER_SEC;
-        double dt4 = (t4-t3)  / (double) CLOCKS_PER_SEC;
-        double dt5 = (t5-t4)  / (double) CLOCKS_PER_SEC;
-        double dt_tot = dt1 + dt2 + dt3 + dt4 + dt5;
-        std::cout << "[read " << dt1/dt_tot << "] [up " << dt2/dt_tot << "] [mf " << dt3/dt_tot << "] [gibbs " << dt4/dt_tot << "] [reap " << dt5/dt_tot << "]" << std::endl;
-
-        if (options.verbose) {
-            std::cout << "--- [Finished] Sampled lattice ---" << std::endl;
-            std::cout << std::endl;
-        };
     };
     
     /********************
@@ -214,11 +86,11 @@ namespace dblz {
      ********************/
     
     // Check if options passed are valid
-    void OptProblemStatic::check_options(int no_mean_field_updates, int no_gibbs_sampling_steps, OptionsSolveStatic options, OptionsWakeSleepStatic options_wake_sleep) {
+    void OptProblemStatic::check_options(int no_mean_field_updates, int no_gibbs_sampling_steps, OptionsSolveStatic options, OptionsWakeSleep options_wake_sleep) {
     };
     
     // One step
-    void OptProblemStatic::solve_one_step(int i_opt_step, int no_mean_field_updates, int no_gibbs_sampling_steps, FNameColl &fname_coll, OptionsSolveStatic options, OptionsWakeSleepStatic options_wake_sleep) {
+    void OptProblemStatic::solve_one_step(int i_opt_step, int no_mean_field_updates, int no_gibbs_sampling_steps, FNameColl &fname_coll, OptionsSolveStatic options, OptionsWakeSleep options_wake_sleep) {
         
         /*****
          Check options
@@ -232,7 +104,9 @@ namespace dblz {
          Wake/asleep loop
          *****/
         
-        wake_sleep_loop(i_opt_step,no_mean_field_updates,no_gibbs_sampling_steps,fname_coll,options_wake_sleep);
+        auto fnames = fname_coll.get_random_subset_fnames(_no_markov_chains.at(MCType::AWAKE));
+        
+        _latt->wake_sleep_loop(i_opt_step, no_mean_field_updates, no_gibbs_sampling_steps, fnames, options_wake_sleep);
         
         if (options.verbose_moment) {
             for (auto &ixn_param: _latt->get_all_ixn_params()) {
@@ -300,7 +174,7 @@ namespace dblz {
     };
     
     // Many steps
-    void OptProblemStatic::solve(int no_opt_steps, int no_mean_field_updates, int no_gibbs_sampling_steps, FNameColl &fname_coll, OptionsSolveStatic options, OptionsWakeSleepStatic options_wake_sleep) {
+    void OptProblemStatic::solve(int no_opt_steps, int no_mean_field_updates, int no_gibbs_sampling_steps, FNameColl &fname_coll, OptionsSolveStatic options, OptionsWakeSleep options_wake_sleep) {
         
         for (int i_opt_step=1; i_opt_step<=no_opt_steps; i_opt_step++)
         {

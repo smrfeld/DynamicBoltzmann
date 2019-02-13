@@ -209,17 +209,17 @@ namespace dblz {
         _update = _moment->get_moment_diff_awake_minus_asleep();
     };
     
-    void IxnParam::update_committ_stored_sgd(double dopt) {
+    void IxnParam::update_committ_stored_sgd() {
 		// Just update
-		_val += dopt*_update;
+		_val += _lr*_update;
 	};
-	void IxnParam::update_committ_stored_nesterov(double dopt, double nesterov_acc) {
+	void IxnParam::update_committ_stored_nesterov(double nesterov_acc) {
 
 		// ysp1, lambda sp1
 		if (!_nesterov_y_sp1) {
 			_nesterov_y_sp1 = new double(_val);
 		};
-		*_nesterov_y_sp1 = _val - dopt * _update;
+		*_nesterov_y_sp1 = _val - _lr * _update;
 		// std::cout << "_nesterov_y_sp1 = " << _nesterov_y_sp1 << std::endl;
 		// _lambda_sp1 = (1.0 + sqrt(1.0 + 4.0 * pow(_lambda_s,2))) / 2.0;
 		//std::cout << "_lambda_sp1 = " << _lambda_sp1 << std::endl;
@@ -241,7 +241,7 @@ namespace dblz {
 		*_nesterov_y_s = *_nesterov_y_sp1;
 		// _lambda_s = _lambda_sp1;
 	};
-	void IxnParam::update_committ_stored_adam(double dopt, int opt_step, double beta_1, double beta_2, double eps) {
+	void IxnParam::update_committ_stored_adam(int opt_step, double beta_1, double beta_2, double eps) {
 		if (!_adam_m) {
 			_adam_m = new double(0.0);
 		};
@@ -262,7 +262,7 @@ namespace dblz {
 		double vhat = (*_adam_v) / (1.0 - pow(beta_2,opt_step_use));
 
 		// update
-		_val += dopt * mhat / (sqrt(vhat) + eps);
+		_val += _lr * mhat / (sqrt(vhat) + eps);
 	};
 
 	/********************

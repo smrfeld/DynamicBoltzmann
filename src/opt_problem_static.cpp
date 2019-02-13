@@ -276,19 +276,19 @@ namespace dblz {
         if (options.solver == Solver::SGD) {
             for (auto &ixn_param: _latt->get_all_ixn_params()) {
                 if (!ixn_param->get_is_val_fixed()) {
-                    ixn_param->update_committ_stored_sgd(ixn_param->get_lr());
+                    ixn_param->update_committ_stored_sgd();
                 };
             };
         } else if (options.solver == Solver::NESTEROV) {
             for (auto &ixn_param: _latt->get_all_ixn_params()) {
                 if (!ixn_param->get_is_val_fixed()) {
-                    ixn_param->update_committ_stored_nesterov(ixn_param->get_lr(),options.nesterov_acc);
+                    ixn_param->update_committ_stored_nesterov(options.nesterov_acc);
                 };
             };
         } else if (options.solver == Solver::ADAM) {
             for (auto &ixn_param: _latt->get_all_ixn_params()) {
                 if (!ixn_param->get_is_val_fixed()) {
-                    ixn_param->update_committ_stored_adam(ixn_param->get_lr(),i_opt_step,options.adam_beta_1,options.adam_beta_2,options.adam_eps);
+                    ixn_param->update_committ_stored_adam(i_opt_step,options.adam_beta_1,options.adam_beta_2,options.adam_eps);
                 };
             };
         };

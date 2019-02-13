@@ -33,7 +33,7 @@ namespace dblz {
 	********************/
 
     LatticeTraj::LatticeTraj(int no_dims, int box_length, std::vector<Sptr> species_visible, LayerMode layer_zero_mode) : LatticeTraj(no_dims,box_length,species_visible,layer_zero_mode,0.0) {
-        if (layer_zero_mode != LayerMode::CENTERED && layer_zero_mode != LayerMode::CENTERED_M) {
+        if (layer_zero_mode == LayerMode::CENTERED || layer_zero_mode == LayerMode::CENTERED_M || layer_zero_mode == LayerMode::CENTERED_PT) {
             std::cerr << ">>> LatticeTraj::LatticeTraj <<< Error: must specify sliding factors in centered mode!" << std::endl;
             exit(EXIT_FAILURE);
         };
@@ -46,9 +46,9 @@ namespace dblz {
         };
         
         // Make first lattice
-        if (layer_zero_mode == LayerMode::CENTERED || layer_zero_mode == LayerMode::CENTERED_M) {
+        if (layer_zero_mode == LayerMode::CENTERED || layer_zero_mode == LayerMode::CENTERED_M || layer_zero_mode == LayerMode::CENTERED_PT) {
             _lattices[0] = std::make_shared<Lattice>(no_dims,box_length,species_visible,layer_zero_mode,layer_zero_sliding_factor);
-        } else {
+        } else if (layer_zero_mode == LayerMode::NORMAL) {
             _lattices[0] = std::make_shared<Lattice>(no_dims,box_length,species_visible,layer_zero_mode);
         };
         

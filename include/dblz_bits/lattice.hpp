@@ -22,8 +22,9 @@ namespace dblz {
     typedef std::map<Sptr,arma::vec> layer_occ;
     typedef std::map<int, layer_occ> layers_map;
 
-    enum class LatticeMode: unsigned int { NORMAL, CENTERED, BATCHNORM, CENTERED_M };
-    
+    // enum class LatticeMode: unsigned int { NORMAL, CENTERED, BATCHNORM, CENTERED_M };
+    enum class LayerMode: unsigned int { NORMAL, CENTERED, BATCHNORM, CENTERED_M, CENTERED_PT };
+
     class Lattice
 	{
 	private:
@@ -100,7 +101,7 @@ namespace dblz {
         // ***************
         
         // Mode
-        LatticeMode _mode;
+        std::map<int, LayerMode> _mode;
 
         // ***************
         // MARK: Batch normalization
@@ -134,6 +135,10 @@ namespace dblz {
         
         // Batch means for each layer
         std::map<int, std::map<Sptr, arma::vec>> _c_batch_means;
+        
+        // As above, but pointwise
+        std::map<int, std::map<Sptr, double>> _cpt_means;
+        std::map<int, std::map<Sptr, double>> _cpt_batch_means;
         
         // ***************
         // MARK: - Private methods
@@ -186,8 +191,8 @@ namespace dblz {
         // MARK: Constructor
         // ***************
         
-        Lattice(int no_dims, int box_length, std::vector<Sptr> species_visible, LatticeMode mode);
-        Lattice(int no_dims, int box_length, std::vector<Sptr> species_visible, LatticeMode mode, double layer_zero_sliding_factor);
+        Lattice(int no_dims, int box_length, std::vector<Sptr> species_visible, LayerMode layer_zero_mode);
+        Lattice(int no_dims, int box_length, std::vector<Sptr> species_visible, LayerMode layer_zero_mode, double layer_zero_sliding_factor);
         Lattice(const Lattice& other);
 		Lattice(Lattice&& other);
 		Lattice& operator=(const Lattice& other);
@@ -202,7 +207,7 @@ namespace dblz {
         int get_box_length() const;
         int get_no_units_in_layer(int layer) const;
         int get_no_layers() const;
-        LatticeMode get_lattice_mode() const;
+        LayerMode get_layer_mode(int layer) const;
         
         // ***************
         // MARK: Markov chains
@@ -222,9 +227,10 @@ namespace dblz {
         // MARK: Add a layer
         // ***************
         
-        void add_layer(int layer, int box_length, std::vector<Sptr> species);
-        void add_layer_batchnorm(int layer, int box_length, std::vector<Sptr> species, Iptr beta, Iptr gamma);
-        void add_layer_centered(int layer, int box_length, std::vector<Sptr> species, double sliding_factor);
+        void _add_layer(int layer, int box_length, std::vector<Sptr> species, LayerMode mode);
+        void add_layer(int layer, int box_length, std::vector<Sptr> species, LayerMode mode, Iptr beta, Iptr gamma);
+        void add_layer(int layer, int box_length, std::vector<Sptr> species, LayerMode mode, double sliding_factor);
+        void add_layer(int layer, int box_length, std::vector<Sptr> species, LayerMode mode);
 
         // ***************
         // MARK: Biases/ixn params
@@ -345,5 +351,8 @@ namespace dblz {
         
         void read_centers_from_file(int layer, std::string fname);
         void write_centers_to_file(int layer, std::string fname) const;
+        
+        void read_center_pt_from_file(int layer, std::string fname);
+        void write_center_pt_to_file(int layer, std::string fname) const;
 	};
 };

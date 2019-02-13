@@ -32,24 +32,24 @@ namespace dblz {
 	Constructor
 	********************/
 
-    LatticeTraj::LatticeTraj(int no_dims, int box_length, std::vector<Sptr> species_visible, LatticeMode mode) : LatticeTraj(no_dims,box_length,species_visible,mode,0.0) {
-        if (mode != LatticeMode::CENTERED) {
+    LatticeTraj::LatticeTraj(int no_dims, int box_length, std::vector<Sptr> species_visible, LayerMode layer_zero_mode) : LatticeTraj(no_dims,box_length,species_visible,layer_zero_mode,0.0) {
+        if (layer_zero_mode != LayerMode::CENTERED && layer_zero_mode != LayerMode::CENTERED_M) {
             std::cerr << ">>> LatticeTraj::LatticeTraj <<< Error: must specify sliding factors in centered mode!" << std::endl;
             exit(EXIT_FAILURE);
         };
     };
-    LatticeTraj::LatticeTraj(int no_dims, int box_length, std::vector<Sptr> species_visible, LatticeMode mode, double layer_zero_sliding_factor)
+    LatticeTraj::LatticeTraj(int no_dims, int box_length, std::vector<Sptr> species_visible, LayerMode layer_zero_mode, double layer_zero_sliding_factor)
 	{
-        if (mode == LatticeMode::BATCHNORM) {
+        if (layer_zero_mode == LayerMode::BATCHNORM) {
             std::cerr << ">>> LatticeTraj::LatticeTraj <<< Batch norm mode not supported!" << std::endl;
             exit(EXIT_FAILURE);
         };
         
         // Make first lattice
-        if (mode == LatticeMode::CENTERED) {
-            _lattices[0] = std::make_shared<Lattice>(no_dims,box_length,species_visible,mode,layer_zero_sliding_factor);
+        if (layer_zero_mode == LayerMode::CENTERED || layer_zero_mode == LayerMode::CENTERED_M) {
+            _lattices[0] = std::make_shared<Lattice>(no_dims,box_length,species_visible,layer_zero_mode,layer_zero_sliding_factor);
         } else {
-            _lattices[0] = std::make_shared<Lattice>(no_dims,box_length,species_visible,mode);
+            _lattices[0] = std::make_shared<Lattice>(no_dims,box_length,species_visible,layer_zero_mode);
         };
         
         // Set no timesteps/timepoints
@@ -230,17 +230,17 @@ namespace dblz {
     // ***************
     
      // Add a layer
-    void LatticeTraj::add_layer(int layer, int box_length, std::vector<Sptr> species) {
+    void LatticeTraj::add_layer(int layer, int box_length, std::vector<Sptr> species, LayerMode mode) {
         for (auto l: _lattices) {
-            l.second->add_layer(layer, box_length, species);
+            l.second->add_layer(layer, box_length, species, mode);
         };
     };
-    void LatticeTraj::add_layer_centered(int layer, int box_length, std::vector<Sptr> species, double sliding_factors) {
+    void LatticeTraj::add_layer(int layer, int box_length, std::vector<Sptr> species, LayerMode mode, double sliding_factors) {
         for (auto l: _lattices) {
-            l.second->add_layer_centered(layer, box_length, species, sliding_factors);
+            l.second->add_layer(layer, box_length, species, mode, sliding_factors);
         };
     };
-    
+
     // Biases
     void LatticeTraj::set_bias_of_layer(int layer, Sptr sp, ITptr bias) {
         _bias_dict[layer][sp] = bias;

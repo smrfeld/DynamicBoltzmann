@@ -1265,7 +1265,7 @@ namespace dblz {
     };
     
     // Sample
-    void Lattice::gibbs_sampling_step_awake(bool binary_visible, bool binary_hidden) {
+    void Lattice::gibbs_sampling_step_awake(bool binary_hidden) {
         
         // Activate in two blocks: odds and evens!
         

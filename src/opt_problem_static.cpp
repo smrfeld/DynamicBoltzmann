@@ -137,7 +137,7 @@ namespace dblz {
         } else {
             
             for (auto i=0; i<no_mean_field_updates; i++) {
-                _latt->gibbs_sampling_step_awake(options.gibbs_sample_awake_phase_visible_binary, options.gibbs_sample_awake_phase_hidden_binary);
+                _latt->gibbs_sampling_step_awake(options.gibbs_sample_awake_phase_hidden_binary);
             };
         };
                 

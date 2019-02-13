@@ -78,7 +78,6 @@ namespace dblz {
         
         // Gibbs sampling awake phase
         bool gibbs_sample_awake_phase = false;
-        bool gibbs_sample_awake_phase_visible_binary = true;
         bool gibbs_sample_awake_phase_hidden_binary = true;
     };
 

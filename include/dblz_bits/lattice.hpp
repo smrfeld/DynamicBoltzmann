@@ -318,6 +318,9 @@ namespace dblz {
         
         // Variational inference ie mean field
         void mean_field_hiddens_step();
+        
+        // Gibbs sampling for awake phase
+        void gibbs_sampling_step_awake(bool binary_visible, bool binary_hidden);
 
         // Gibbs sampling
         void gibbs_sampling_step(bool binary_visible, bool binary_hidden);

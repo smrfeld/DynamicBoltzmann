@@ -1263,6 +1263,35 @@ namespace dblz {
         activate_layer_convert_to_probs(MCType::AWAKE, _no_layers-1, false);
         activate_layer_committ(MCType::AWAKE, _no_layers-1);
     };
+    
+    // Sample
+    void Lattice::gibbs_sampling_step_awake(bool binary_visible, bool binary_hidden) {
+        
+        // Activate in two blocks: odds and evens!
+        
+        // First the odd layers
+        for (auto layer=1; layer<_no_layers; layer += 2) {
+            if (layer != _no_layers-1) {
+                activate_layer_calculate_from_both(MCType::AWAKE, layer);
+            } else {
+                activate_layer_calculate_from_below(MCType::AWAKE, layer);
+            };
+            activate_layer_convert_to_probs(MCType::AWAKE, layer, binary_hidden);
+            activate_layer_committ(MCType::AWAKE, layer);
+        };
+        
+        // Next the even layers
+        // Other layers
+        for (auto layer=2; layer<_no_layers; layer += 2) {
+            if (layer != _no_layers-1) {
+                activate_layer_calculate_from_both(MCType::AWAKE, layer);
+            } else {
+                activate_layer_calculate_from_below(MCType::AWAKE, layer);
+            };
+            activate_layer_convert_to_probs(MCType::AWAKE, layer, binary_hidden);
+            activate_layer_committ(MCType::AWAKE, layer);
+        };
+    };
 
     // Sample
     void Lattice::gibbs_sampling_step(bool binary_visible, bool binary_hidden) {

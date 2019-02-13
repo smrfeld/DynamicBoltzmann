@@ -128,10 +128,19 @@ namespace dblz {
         clock_t t2 = clock();
 
         // Variational inference
-        for (auto i=0; i<no_mean_field_updates; i++) {
-            _latt->mean_field_hiddens_step();
+        if (!options.gibbs_sample_awake_phase) {
+            
+            for (auto i=0; i<no_mean_field_updates; i++) {
+                _latt->mean_field_hiddens_step();
+            };
+            
+        } else {
+            
+            for (auto i=0; i<no_mean_field_updates; i++) {
+                _latt->gibbs_sampling_step_awake(options.gibbs_sample_awake_phase_visible_binary, options.gibbs_sample_awake_phase_hidden_binary);
+            };
         };
-        
+                
         clock_t t3 = clock();
 
         // Write out the lattices

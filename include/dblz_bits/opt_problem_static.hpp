@@ -75,6 +75,11 @@ namespace dblz {
         bool write_after_asleep = false;
         std::string write_after_awake_dir = "";
         std::string write_after_asleep_dir = "";
+        
+        // Gibbs sampling awake phase
+        bool gibbs_sample_awake_phase = false;
+        bool gibbs_sample_awake_phase_visible_binary = true;
+        bool gibbs_sample_awake_phase_hidden_binary = true;
     };
 
     /****************************************

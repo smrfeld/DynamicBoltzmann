@@ -1719,7 +1719,7 @@ namespace dblz {
         // Offset bias for centering
         double offset;
         arma::vec mean;
-        
+        Iptr ixn;
         // Go through all layers
         for (auto layer=0; layer<_no_layers; layer++) {
             
@@ -1735,25 +1735,36 @@ namespace dblz {
                     // Go through all species in the layer below
                     for (auto sp_below: _species_possible_vec.at(layer-1)) {
                         
+                        // Check that such an ixn exists
+                        auto it1 = _o2_ixn_dict.at(layer-1).at(sp_below).find(layer);
+                        if (it1 == _o2_ixn_dict.at(layer-1).at(sp_below).end()) {
+                            continue;
+                        };
+                        auto it2 = it1->second.find(sp);
+                        if (it2 == it1->second.end()) {
+                            continue;
+                        };
+                        ixn = it2->second;
+                        
                         if (_mode.at(layer-1) == LayerMode::CENTERED) {
 
                             // Calculate offset
                             mean = _c_means.at(layer-1).at(sp_below);
-                            offset -= arma::accu( _o2_ixn_dict.at(layer-1).at(sp_below).at(layer).at(sp)->get_moment()->get_weight_matrix_awake_minus_asleep() * mean );
+                            offset -= arma::accu( ixn->get_moment()->get_weight_matrix_awake_minus_asleep() * mean );
                             
                             // Don't count the diagonal
                             mean.resize(std::min(get_no_units_in_layer(layer-1),get_no_units_in_layer(layer)));
-                            offset += arma::dot(_o2_ixn_dict.at(layer-1).at(sp_below).at(layer).at(sp)->get_moment()->get_weight_matrix_awake_minus_asleep().diag(), mean);
+                            offset += arma::dot(ixn->get_moment()->get_weight_matrix_awake_minus_asleep().diag(), mean);
                             
                         } else if (_mode.at(layer-1) == LayerMode::CENTERED_M) {
                             
                             // Calculate offset
-                            offset += _c_sliding_factors.at(layer-1) * _o2_ixn_dict.at(layer-1).at(sp_below).at(layer).at(sp)->get_val() * arma::accu(_adj.at(layer-1).at(layer) * _bias_dict.at(layer-1).at(sp_below)->get_moment()->get_bias_vec(MCType::AWAKE));
+                            offset += _c_sliding_factors.at(layer-1) * ixn->get_val() * arma::accu(_adj.at(layer-1).at(layer) * _bias_dict.at(layer-1).at(sp_below)->get_moment()->get_bias_vec(MCType::AWAKE));
 
                         } else if (_mode.at(layer-1) == LayerMode::CENTERED_PT) {
                             
                             // Calculate offset
-                            offset -= _o2_ixn_dict.at(layer-1).at(sp_below).at(layer).at(sp)->get_moment()->get_moment_diff_awake_minus_asleep() * _cpt_means.at(layer-1).at(sp_below);
+                            offset -= ixn->get_moment()->get_moment_diff_awake_minus_asleep() * _cpt_means.at(layer-1).at(sp_below);
                         };
                     };
                 };
@@ -1764,25 +1775,36 @@ namespace dblz {
                     // Go through all species in the layer above
                     for (auto sp_above: _species_possible_vec.at(layer+1)) {
 
+                        // Check that such an ixn exists
+                        auto it1 = _o2_ixn_dict.at(layer+1).at(sp_above).find(layer);
+                        if (it1 == _o2_ixn_dict.at(layer+1).at(sp_above).end()) {
+                            continue;
+                        };
+                        auto it2 = it1->second.find(sp);
+                        if (it2 == it1->second.end()) {
+                            continue;
+                        };
+                        ixn = it2->second;
+                        
                         if (_mode.at(layer+1) == LayerMode::CENTERED) {
 
                             // Calculate offset
                             mean = _c_means.at(layer+1).at(sp_above);
-                            offset -= arma::accu( _o2_ixn_dict.at(layer).at(sp).at(layer+1).at(sp_above)->get_moment()->get_weight_matrix_awake_minus_asleep().t() * mean );
+                            offset -= arma::accu( ixn->get_moment()->get_weight_matrix_awake_minus_asleep().t() * mean );
                             
                             // Don't count the diagonal
                             mean.resize(std::min(get_no_units_in_layer(layer+1),get_no_units_in_layer(layer)));
-                            offset += arma::dot(_o2_ixn_dict.at(layer).at(sp).at(layer+1).at(sp_above)->get_moment()->get_weight_matrix_awake_minus_asleep().diag(), mean);
+                            offset += arma::dot(ixn->get_moment()->get_weight_matrix_awake_minus_asleep().diag(), mean);
                             
                         } else if (_mode.at(layer+1) == LayerMode::CENTERED_M) {
                             
                             // Calculate offset
-                            offset += _c_sliding_factors.at(layer+1) * _o2_ixn_dict.at(layer+1).at(sp_above).at(layer).at(sp)->get_val() * arma::accu(_adj.at(layer+1).at(layer) * _bias_dict.at(layer+1).at(sp_above)->get_moment()->get_bias_vec(MCType::AWAKE));
+                            offset += _c_sliding_factors.at(layer+1) * ixn->get_val() * arma::accu(_adj.at(layer+1).at(layer) * _bias_dict.at(layer+1).at(sp_above)->get_moment()->get_bias_vec(MCType::AWAKE));
 
                         } else if (_mode.at(layer+1) == LayerMode::CENTERED_PT) {
                             
                             // Calculate offset
-                            offset -= _o2_ixn_dict.at(layer+1).at(sp_above).at(layer).at(sp)->get_moment()->get_moment_diff_awake_minus_asleep() * _cpt_means.at(layer+1).at(sp_above);
+                            offset -= ixn->get_moment()->get_moment_diff_awake_minus_asleep() * _cpt_means.at(layer+1).at(sp_above);
                         };
                     };
                 };

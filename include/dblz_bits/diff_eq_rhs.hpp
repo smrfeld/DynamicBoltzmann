@@ -86,6 +86,9 @@ namespace dblz {
 
 	private:
 
+        // Learning rate
+        double _lr;
+        
 		// Name
 		std::string _name;
 
@@ -132,12 +135,19 @@ namespace dblz {
 		********************/
 
 		// Note: ownership of domain is NOT transferred
-		DiffEqRHS(std::string name, ITptr parent_ixn_param_traj, std::vector<Domain1D*> domain);
+		DiffEqRHS(std::string name, ITptr parent_ixn_param_traj, std::vector<Domain1D*> domain, double lr);
 		DiffEqRHS(const DiffEqRHS& other);
 		DiffEqRHS(DiffEqRHS&& other);
 		DiffEqRHS& operator=(const DiffEqRHS& other);
 		DiffEqRHS& operator=(DiffEqRHS &&other);
 		~DiffEqRHS();
+        
+        // ***************
+        // MARK: - Learning rate
+        // ***************
+        
+        void set_lr(double lr);
+        double get_lr() const;
 
 		/********************
 		Validate setup
@@ -181,9 +191,9 @@ namespace dblz {
 
 		// Committ the update
 		// void update_committ_stored(bool nesterov_mode=true, double nesterov_acc=0.5);
-        void update_committ_stored_sgd(double dopt);
-        void update_committ_stored_nesterov(double dopt, double nesterov_acc);
-        void update_committ_stored_adam(double dopt, int opt_step, double beta_1, double beta_2, double eps);
+        void update_committ_stored_sgd();
+        void update_committ_stored_nesterov(double nesterov_acc);
+        void update_committ_stored_adam(int opt_step, double beta_1, double beta_2, double eps);
 
         // Verbose
         void print_update_stored() const;

@@ -42,11 +42,7 @@ namespace dblz {
         bool l2_reg = false;
         std::map<std::shared_ptr<IxnParamTraj>,double> l2_lambda;
         std::map<std::shared_ptr<IxnParamTraj>,double> l2_center;
-        
-        // Variable learning rate
-        bool var_learning_rates = false;
-        std::map<std::shared_ptr<IxnParamTraj>,double> var_learning_rate_values;
-        
+                
         // Options for the solvers
         Solver solver = Solver::ADAM;
         
@@ -77,6 +73,10 @@ namespace dblz {
         bool is_asleep_visible_binary_final = true;
         // Is the hidden reconstruction binary in the last phase?
         bool is_asleep_hidden_binary_final = false;
+        
+        // Gibbs sampling awake phase
+        bool gibbs_sample_awake_phase = false;
+        bool gibbs_sample_awake_phase_hidden_binary = true;
     };
 
     /****************************************
@@ -137,13 +137,13 @@ namespace dblz {
          ********************/
         
         // Check if options passed are valid
-        void check_options(double dopt, double dt, int no_mean_field_updates, int no_gibbs_sampling_steps, OptionsSolveDynamic options, OptionsWakeSleepDynamic options_wake_sleep);
+        void check_options(double dt, int no_mean_field_updates, int no_gibbs_sampling_steps, OptionsSolveDynamic options, OptionsWakeSleepDynamic options_wake_sleep);
         
         // One step
-        void solve_one_step(int i_opt_step, double dt, double dopt, int no_mean_field_updates, int no_gibbs_sampling_steps, FNameTrajColl &fname_traj_coll, OptionsSolveDynamic options, OptionsWakeSleepDynamic options_wake_sleep);
+        void solve_one_step(int i_opt_step, double dt, int no_mean_field_updates, int no_gibbs_sampling_steps, FNameTrajColl &fname_traj_coll, OptionsSolveDynamic options, OptionsWakeSleepDynamic options_wake_sleep);
         
         // Many steps
-        void solve(int no_opt_steps, double dt, double dopt, int no_mean_field_updates, int no_gibbs_sampling_steps, FNameTrajColl &fname_traj_coll, OptionsSolveDynamic options, OptionsWakeSleepDynamic options_wake_sleep);
+        void solve(int no_opt_steps, double dt, int no_mean_field_updates, int no_gibbs_sampling_steps, FNameTrajColl &fname_traj_coll, OptionsSolveDynamic options, OptionsWakeSleepDynamic options_wake_sleep);
     };
     
 };

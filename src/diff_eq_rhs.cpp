@@ -125,12 +125,13 @@ namespace dblz {
 	Constructor
 	********************/
 
-	DiffEqRHS::DiffEqRHS(std::string name, ITptr parent_ixn_param_traj, std::vector<Domain1D*> domain) : q3c1::Grid(std::vector<q3c1::Dimension1D*>(domain.begin(),domain.end())) {
+	DiffEqRHS::DiffEqRHS(std::string name, ITptr parent_ixn_param_traj, std::vector<Domain1D*> domain, double lr) : q3c1::Grid(std::vector<q3c1::Dimension1D*>(domain.begin(),domain.end())) {
 		_name = name;
 		_domain = domain;
 		_no_dims = _domain.size();
 		_parent_ixn_param_traj = parent_ixn_param_traj;
         _abscissas = std::vector<double>(_no_dims,0.0);
+        _lr = lr;
         
 		if (_no_dims == 0 || _no_dims > 3) {
 			std::cerr << ">>> Error: DiffEqRHS::DiffEqRHS <<< Only dims 1,2,3 are supported" << std::endl;
@@ -221,6 +222,7 @@ namespace dblz {
 		_parent_ixn_param_traj = other._parent_ixn_param_traj;
 		_updates = other._updates;
         _abscissas = other._abscissas;
+        _lr = other._lr;
         
         if (other._nesterov_y_s) {
 			_nesterov_y_s = new std::map<q3c1::Vertex*,std::vector<double>>(*other._nesterov_y_s);
@@ -258,6 +260,7 @@ namespace dblz {
 		_parent_ixn_param_traj = other._parent_ixn_param_traj;
 		_updates = other._updates;
         _abscissas = other._abscissas;
+        _lr = other._lr;
 
 		_nesterov_y_s = other._nesterov_y_s;
 		_nesterov_y_sp1 = other._nesterov_y_sp1;
@@ -276,6 +279,7 @@ namespace dblz {
 		other._parent_ixn_param_traj = nullptr;
 		other._updates.clear();
         other._abscissas.clear();
+        other._lr = 0.0;
         
         other._nesterov_y_s = nullptr;
 		other._nesterov_y_sp1 = nullptr;
@@ -313,6 +317,17 @@ namespace dblz {
         };
         _mag_max_update = nullptr;
 	};
+
+    // ***************
+    // MARK: - Learning rate
+    // ***************
+    
+    void DiffEqRHS::set_lr(double lr) {
+        _lr = lr;
+    };
+    double DiffEqRHS::get_lr() const {
+        return _lr;
+    };
 
 	/********************
 	Validate
@@ -418,11 +433,15 @@ namespace dblz {
 	};
 
 	// Committ the update
-    void DiffEqRHS::update_committ_stored_sgd(double dopt) {
+    void DiffEqRHS::update_committ_stored_sgd() {
+        std::cerr << ">>> DiffEqRHS::update_committ_stored_sgd <<< Unsupported currently" << std::endl;
+        exit(EXIT_FAILURE);
     };
-    void DiffEqRHS::update_committ_stored_nesterov(double dopt, double nesterov_acc) {
+    void DiffEqRHS::update_committ_stored_nesterov(double nesterov_acc) {
+        std::cerr << ">>> DiffEqRHS::update_committ_stored_nesterov <<< Unsupported currently" << std::endl;
+        exit(EXIT_FAILURE);
     };
-    void DiffEqRHS::update_committ_stored_adam(double dopt, int opt_step, double beta_1, double beta_2, double eps) {
+    void DiffEqRHS::update_committ_stored_adam(int opt_step, double beta_1, double beta_2, double eps) {
 
         // Create adam variables if necessary
         if (!_adam_m) {
@@ -498,7 +517,7 @@ namespace dblz {
                 
                 // Update
                 // _val -= dopt * mhat / (sqrt(vhat) + eps);
-                update_val = -dopt * mhat / (sqrt(vhat) + eps);
+                update_val = - _lr * mhat / (sqrt(vhat) + eps);
                 if (_mag_max_update) {
                     if (update_val > *_mag_max_update) {
                         std::cout << "Warning: update: " << update_val << " is beyond the max magnitude; clipping to: " << *_mag_max_update << std::endl;

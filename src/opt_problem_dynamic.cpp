@@ -163,10 +163,19 @@ namespace dblz {
             clock_t t2 = clock();
             
             // Variational inference
-            for (auto i=0; i<no_mean_field_updates; i++) {
-                latt->mean_field_hiddens_step();
+            if (!options.gibbs_sample_awake_phase) {
+                
+                for (auto i=0; i<no_mean_field_updates; i++) {
+                    latt->mean_field_hiddens_step();
+                };
+                
+            } else {
+                
+                for (auto i=0; i<no_mean_field_updates; i++) {
+                    latt->gibbs_sampling_step_awake(options.gibbs_sample_awake_phase_hidden_binary);
+                };
             };
-            
+
             clock_t t3 = clock();
             
             // ASLEEP PHASE - PERSISTENT_CD
@@ -210,7 +219,7 @@ namespace dblz {
      ********************/
     
     // Check if options passed are valid
-    void OptProblemDynamic::check_options(double dopt, double dt, int no_mean_field_updates, int no_gibbs_sampling_steps, OptionsSolveDynamic options, OptionsWakeSleepDynamic options_wake_sleep) {
+    void OptProblemDynamic::check_options(double dt, int no_mean_field_updates, int no_gibbs_sampling_steps, OptionsSolveDynamic options, OptionsWakeSleepDynamic options_wake_sleep) {
         if (options.solver == Solver::SGD || options.solver == Solver::NESTEROV) {
             std::cerr << ">>> OptProblemDynamic::check_options <<< Error: only Adam is currently supported as a solver" << std::endl;
             exit(EXIT_FAILURE);
@@ -218,7 +227,7 @@ namespace dblz {
     };
     
     // One step
-    void OptProblemDynamic::solve_one_step(int i_opt_step, double dt, double dopt, int no_mean_field_updates, int no_gibbs_sampling_steps, FNameTrajColl &fname_traj_coll, OptionsSolveDynamic options, OptionsWakeSleepDynamic options_wake_sleep) {
+    void OptProblemDynamic::solve_one_step(int i_opt_step, double dt, int no_mean_field_updates, int no_gibbs_sampling_steps, FNameTrajColl &fname_traj_coll, OptionsSolveDynamic options, OptionsWakeSleepDynamic options_wake_sleep) {
         
         /*****
          Check options
@@ -229,7 +238,7 @@ namespace dblz {
         };
         
         if (options.should_check_options) {
-            check_options(dopt,dt,no_mean_field_updates,no_gibbs_sampling_steps,options,options_wake_sleep);
+            check_options(dt,no_mean_field_updates,no_gibbs_sampling_steps,options,options_wake_sleep);
         };
         
         if (options.verbose) {
@@ -339,18 +348,15 @@ namespace dblz {
             std::cout << "--- Committing update ---" << std::endl;
         };
 
-        double dopt_use = dopt;
         if (options.solver == Solver::ADAM) {
             for (auto &ixn_param_traj: _latt_traj->get_all_ixn_param_trajs()) {
                 if (!ixn_param_traj->get_is_val_fixed_to_init_cond() && !ixn_param_traj->get_are_vals_fixed()) {
-                    // Learning rate
-                    if (options.var_learning_rates) {
-                        dopt_use = options.var_learning_rate_values[ixn_param_traj];
-                    };
-                    
-                    ixn_param_traj->get_diff_eq_rhs()->update_committ_stored_adam(dopt_use,i_opt_step,options.adam_beta_1,options.adam_beta_2,options.adam_eps);
+                    ixn_param_traj->get_diff_eq_rhs()->update_committ_stored_adam(i_opt_step,options.adam_beta_1,options.adam_beta_2,options.adam_eps);
                 };
             };
+        } else {
+            std::cerr << ">>> OptProblemDynamic::solve_one_step <<< Solvers other than Adam are currently not supported" << std::endl;
+            exit(EXIT_FAILURE);
         };
         
         if (options.verbose) {
@@ -359,7 +365,7 @@ namespace dblz {
     };
     
     // Many steps
-    void OptProblemDynamic::solve(int no_opt_steps, double dt, double dopt, int no_mean_field_updates, int no_gibbs_sampling_steps, FNameTrajColl &fname_traj_coll, OptionsSolveDynamic options, OptionsWakeSleepDynamic options_wake_sleep) {
+    void OptProblemDynamic::solve(int no_opt_steps, double dt, int no_mean_field_updates, int no_gibbs_sampling_steps, FNameTrajColl &fname_traj_coll, OptionsSolveDynamic options, OptionsWakeSleepDynamic options_wake_sleep) {
         
         for (int i_opt_step=1; i_opt_step<=no_opt_steps; i_opt_step++)
         {
@@ -369,7 +375,7 @@ namespace dblz {
             std::cout << "------------------" << std::endl;
             
             // Solve
-            solve_one_step(i_opt_step,dt,dopt,no_mean_field_updates,no_gibbs_sampling_steps,fname_traj_coll,options,options_wake_sleep);
+            solve_one_step(i_opt_step,dt,no_mean_field_updates,no_gibbs_sampling_steps,fname_traj_coll,options,options_wake_sleep);
         };
     };
 };

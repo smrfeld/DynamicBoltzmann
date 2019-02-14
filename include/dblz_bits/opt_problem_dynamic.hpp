@@ -13,6 +13,7 @@ namespace dblz {
     class IxnParamTraj;
     class LatticeTraj;
     class FNameTrajColl;
+    struct OptionsWakeSleep;
     
     /****************************************
     Misc options
@@ -32,7 +33,7 @@ namespace dblz {
         
         // Verbosity
         bool verbose = false;
-                
+        
         // L2 Reg mode
         bool l2_reg = false;
         std::map<std::shared_ptr<IxnParamTraj>,double> l2_lambda;
@@ -50,30 +51,6 @@ namespace dblz {
         double adam_eps = 0.00000001;
     };
     
-    /****************************************
-     OptProblemDynamic Options
-     ****************************************/
-    
-    struct OptionsWakeSleepDynamic {
-        
-        // Verbosity
-        bool verbose = false;
-        
-        // Sampling options
-        // Is the visible reconstruction binary, EXCEPT in the last phase?
-        bool is_asleep_visible_binary = true;
-        // Is the hidden reconstruction binary, EXCEPT in the last phase?
-        bool is_asleep_hidden_binary = true;
-        // Is the visible reconstruction binary in the last phase?
-        bool is_asleep_visible_binary_final = true;
-        // Is the hidden reconstruction binary in the last phase?
-        bool is_asleep_hidden_binary_final = false;
-        
-        // Gibbs sampling awake phase
-        bool gibbs_sample_awake_phase = false;
-        bool gibbs_sample_awake_phase_hidden_binary = true;
-    };
-
     /****************************************
      OptProblemDynamic
      ****************************************/
@@ -120,25 +97,18 @@ namespace dblz {
         void set_no_markov_chains(MCType chain, int no_markov_chains);
         void set_no_timesteps_ixn_params(int no_timesteps_ixn_params);
         void set_no_timesteps_lattice(int timepoint_start_lattice, int no_timesteps_lattice);
-
-        /********************
-         Wake/asleep loop
-         ********************/
-        
-        void wake_sleep_loop(int i_opt_step, int no_mean_field_updates, int no_gibbs_sampling_steps, FNameTrajColl &fname_traj_coll, OptionsWakeSleepDynamic options);
         
         /********************
          Solve
          ********************/
         
         // Check if options passed are valid
-        void check_options(double dt, int no_mean_field_updates, int no_gibbs_sampling_steps, OptionsSolveDynamic options, OptionsWakeSleepDynamic options_wake_sleep);
+        void check_options(int timepoint_start_SIP, int no_timesteps_SIP, int timepoint_start_WSA, int no_timesteps_WSA, double dt, int no_mean_field_updates, int no_gibbs_sampling_steps, OptionsSolveDynamic options, OptionsWakeSleep options_wake_sleep);
         
         // One step
-        void solve_one_step(int i_opt_step, double dt, int no_mean_field_updates, int no_gibbs_sampling_steps, FNameTrajColl &fname_traj_coll, OptionsSolveDynamic options, OptionsWakeSleepDynamic options_wake_sleep);
-        
-        // Many steps
-        void solve(int no_opt_steps, double dt, int no_mean_field_updates, int no_gibbs_sampling_steps, FNameTrajColl &fname_traj_coll, OptionsSolveDynamic options, OptionsWakeSleepDynamic options_wake_sleep);
+        // SIP = solve ixn params
+        // WSA = wake/sleep/adjoint
+        void solve_one_step(int i_opt_step, int timepoint_start_SIP, int no_timesteps_SIP, int timepoint_start_WSA, int no_timesteps_WSA, double dt, int no_mean_field_updates, int no_gibbs_sampling_steps, FNameTrajColl &fname_traj_coll, OptionsSolveDynamic options, OptionsWakeSleep options_wake_sleep);
     };
     
 };

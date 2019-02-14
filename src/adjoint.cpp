@@ -136,6 +136,15 @@ namespace dblz {
 	};
 
     // ***************
+    // MARK: - Set zero endpoint
+    // ***************
+    
+    void Adjoint::set_timepoint_zero_end_cond(int timepoint) {
+        _timepoint_zero_end_cond = timepoint;
+        _vals[_timepoint_zero_end_cond] = 0.0;
+    };
+
+    // ***************
     // MARK: - Value
     // ***************
     

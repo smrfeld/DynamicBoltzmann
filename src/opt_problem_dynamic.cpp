@@ -122,104 +122,11 @@ namespace dblz {
     };
     
     /********************
-     Wake/asleep loop
-     ********************/
-    
-    void OptProblemDynamic::wake_sleep_loop(int i_opt_step, int no_mean_field_updates, int no_gibbs_sampling_steps, FNameTrajColl &fname_traj_coll, OptionsWakeSleepDynamic options) {
-                
-        // Make a batch subset
-        std::vector<int> idx_subset = fname_traj_coll.get_random_subset(_no_markov_chains[MCType::AWAKE]);
-        
-        // Go through all timepoints
-        std::shared_ptr<Lattice> latt = nullptr;
-        FNameTraj file_traj;
-        for (auto timepoint=_timepoint_start_lattice; timepoint<=_timepoint_start_lattice+_no_timesteps_lattice; timepoint++) {
-
-            latt = _latt_traj->get_lattice_at_timepoint(timepoint);
-            
-            // AWAKE PHASE
-            
-            clock_t t0 = clock();
-
-            // Read in the batch
-            for (int i_chain=0; i_chain<_no_markov_chains[MCType::AWAKE]; i_chain++)
-            {
-                file_traj = fname_traj_coll.get_fname_traj(idx_subset[i_chain]);
-                latt->read_layer_from_file(MCType::AWAKE, i_chain, 0, file_traj[timepoint].name, file_traj[timepoint].binary);
-            };
-            
-            clock_t t1 = clock();
-            
-            // Option (1): init MF with random hidden layers with prob units
-            /*
-            for (int i_chain=0; i_chain<_no_markov_chains[MCType::AWAKE]; i_chain++) {
-                _latt_traj->set_random_all_hidden_units(MCType::AWAKE, i_chain, false);
-            };
-             */
-            // Option (2): upward pass with 2x weights (DBM) to activate probabilitsic units
-            // (faster to converge!!!)
-            latt->activate_upward_pass_with_2x_weights_1x_bias(MCType::AWAKE, false);
-            
-            clock_t t2 = clock();
-            
-            // Variational inference
-            if (!options.gibbs_sample_awake_phase) {
-                
-                for (auto i=0; i<no_mean_field_updates; i++) {
-                    latt->mean_field_hiddens_step();
-                };
-                
-            } else {
-                
-                for (auto i=0; i<no_mean_field_updates; i++) {
-                    latt->gibbs_sampling_step_awake(options.gibbs_sample_awake_phase_hidden_binary);
-                };
-            };
-
-            clock_t t3 = clock();
-            
-            // ASLEEP PHASE - PERSISTENT_CD
-            
-            // Run CD sampling
-            
-            // Sample vis, hidden
-            for (int i_sampling_step=0; i_sampling_step<no_gibbs_sampling_steps-1; i_sampling_step++)
-            {
-                latt->gibbs_sampling_step(options.is_asleep_visible_binary, options.is_asleep_hidden_binary);
-            };
-            // Final step
-            if (options.is_asleep_visible_binary_final && options.is_asleep_hidden_binary_final) {
-                // All binary
-                latt->gibbs_sampling_step(options.is_asleep_visible_binary_final, options.is_asleep_hidden_binary_final);
-            } else {
-                // Parallel for non-binary options
-                latt->gibbs_sampling_step_parallel(options.is_asleep_visible_binary_final, options.is_asleep_hidden_binary_final);
-            };
-            
-            clock_t t4 = clock();
-            
-            // REAP PHASE
-            
-            latt->reap_moments();
-        
-            clock_t t5 = clock();
-            
-            double dt1 = (t1-t0)  / (double) CLOCKS_PER_SEC;
-            double dt2 = (t2-t1)  / (double) CLOCKS_PER_SEC;
-            double dt3 = (t3-t2)  / (double) CLOCKS_PER_SEC;
-            double dt4 = (t4-t3)  / (double) CLOCKS_PER_SEC;
-            double dt5 = (t5-t4)  / (double) CLOCKS_PER_SEC;
-            double dt_tot = dt1 + dt2 + dt3 + dt4 + dt5;
-            std::cout << "timepoint: " << timepoint << " [read " << dt1/dt_tot << "] [up " << dt2/dt_tot << "] [mf " << dt3/dt_tot << "] [gibbs " << dt4/dt_tot << "] [reap " << dt5/dt_tot << "]" << std::endl;
-        };
-    };
-    
-    /********************
      Solve
      ********************/
     
     // Check if options passed are valid
-    void OptProblemDynamic::check_options(double dt, int no_mean_field_updates, int no_gibbs_sampling_steps, OptionsSolveDynamic options, OptionsWakeSleepDynamic options_wake_sleep) {
+    void OptProblemDynamic::check_options(int timepoint_start_SIP, int no_timesteps_SIP, int timepoint_start_WSA, int no_timesteps_WSA, double dt, int no_mean_field_updates, int no_gibbs_sampling_steps, OptionsSolveDynamic options, OptionsWakeSleep options_wake_sleep) {
         if (options.solver == Solver::SGD || options.solver == Solver::NESTEROV) {
             std::cerr << ">>> OptProblemDynamic::check_options <<< Error: only Adam is currently supported as a solver" << std::endl;
             exit(EXIT_FAILURE);
@@ -227,7 +134,7 @@ namespace dblz {
     };
     
     // One step
-    void OptProblemDynamic::solve_one_step(int i_opt_step, double dt, int no_mean_field_updates, int no_gibbs_sampling_steps, FNameTrajColl &fname_traj_coll, OptionsSolveDynamic options, OptionsWakeSleepDynamic options_wake_sleep) {
+    void OptProblemDynamic::solve_one_step(int i_opt_step, int timepoint_start_SIP, int no_timesteps_SIP, int timepoint_start_WSA, int no_timesteps_WSA, double dt, int no_mean_field_updates, int no_gibbs_sampling_steps, FNameTrajColl &fname_traj_coll, OptionsSolveDynamic options, OptionsWakeSleep options_wake_sleep) {
         
         /*****
          Check options
@@ -238,7 +145,7 @@ namespace dblz {
         };
         
         if (options.should_check_options) {
-            check_options(dt,no_mean_field_updates,no_gibbs_sampling_steps,options,options_wake_sleep);
+            check_options(timepoint_start_SIP, no_timesteps_SIP, timepoint_start_WSA, no_timesteps_WSA, dt, no_mean_field_updates, no_gibbs_sampling_steps, options, options_wake_sleep);
         };
         
         if (options.verbose) {
@@ -254,7 +161,7 @@ namespace dblz {
         };
 
         // Solve over all time
-        for (auto timepoint=0; timepoint<_no_timesteps_ixn_params; timepoint++) {
+        for (auto timepoint=timepoint_start_SIP; timepoint<timepoint_start_SIP+no_timesteps_SIP; timepoint++) {
             for (auto ixn_param_traj: _latt_traj->get_all_ixn_param_trajs()) {
                 if (!ixn_param_traj->get_is_val_fixed_to_init_cond() && !ixn_param_traj->get_are_vals_fixed()) {
                     ixn_param_traj->solve_diff_eq_at_timepoint_to_plus_one(timepoint,dt);
@@ -274,7 +181,13 @@ namespace dblz {
             std::cout << "--- Wake-sleep ---" << std::endl;
         };
         
-        wake_sleep_loop(i_opt_step,no_mean_field_updates,no_gibbs_sampling_steps,fname_traj_coll,options_wake_sleep);
+        std::vector<std::vector<FName>> fname_coll = fname_traj_coll.get_random_subset_fnames(_no_markov_chains.at(MCType::AWAKE), timepoint_start_WSA, no_timesteps_WSA);
+        
+        for (auto timepoint=timepoint_start_WSA; timepoint<=timepoint_start_WSA+no_timesteps_WSA; timepoint++) {
+            
+            _latt_traj->get_lattice_at_timepoint(timepoint)->wake_sleep_loop(i_opt_step, no_mean_field_updates, no_gibbs_sampling_steps, fname_coll.at(timepoint-timepoint_start_WSA), options_wake_sleep);
+            
+        };
         
         // Print
         for (auto ixn_param_traj: _latt_traj->get_all_ixn_param_trajs()) {
@@ -299,8 +212,13 @@ namespace dblz {
             std::cout << "--- Solving adjoints ---" << std::endl;
         };
 
+        // Set zero endpoint
+        for (auto ixn_param_traj: _latt_traj->get_all_ixn_param_trajs()) {
+            ixn_param_traj->get_adjoint()->set_timepoint_zero_end_cond(timepoint_start_WSA + no_timesteps_WSA);
+        };
+        
         if (options.l2_reg) {
-            for (auto timepoint=_timepoint_start_lattice+_no_timesteps_lattice; timepoint>_timepoint_start_lattice; timepoint--) {
+            for (auto timepoint=timepoint_start_WSA + no_timesteps_WSA; timepoint>timepoint_start_WSA; timepoint--) {
                 for (auto ixn_param_traj: _latt_traj->get_all_ixn_param_trajs()) {
                     if (!ixn_param_traj->get_is_val_fixed_to_init_cond() && !ixn_param_traj->get_are_vals_fixed()) {
                         ixn_param_traj->get_adjoint()->solve_diff_eq_at_timepoint_to_minus_one_l2(timepoint,dt,options.l2_lambda,options.l2_center);
@@ -308,7 +226,7 @@ namespace dblz {
                 };
             };
         } else {
-            for (auto timepoint=_timepoint_start_lattice+_no_timesteps_lattice; timepoint>_timepoint_start_lattice; timepoint--) {
+            for (auto timepoint=timepoint_start_WSA + no_timesteps_WSA; timepoint>timepoint_start_WSA; timepoint--) {
                 for (auto ixn_param_traj: _latt_traj->get_all_ixn_param_trajs()) {
                     if (!ixn_param_traj->get_is_val_fixed_to_init_cond() && !ixn_param_traj->get_are_vals_fixed()) {
                         ixn_param_traj->get_adjoint()->solve_diff_eq_at_timepoint_to_minus_one(timepoint,dt);
@@ -361,21 +279,6 @@ namespace dblz {
         
         if (options.verbose) {
             std::cout << "--- [Finished] ---" << std::endl;
-        };
-    };
-    
-    // Many steps
-    void OptProblemDynamic::solve(int no_opt_steps, double dt, int no_mean_field_updates, int no_gibbs_sampling_steps, FNameTrajColl &fname_traj_coll, OptionsSolveDynamic options, OptionsWakeSleepDynamic options_wake_sleep) {
-        
-        for (int i_opt_step=1; i_opt_step<=no_opt_steps; i_opt_step++)
-        {
-            
-            std::cout << "------------------" << std::endl;
-            std::cout << "Opt step: " << i_opt_step << " / " << no_opt_steps << std::endl;
-            std::cout << "------------------" << std::endl;
-            
-            // Solve
-            solve_one_step(i_opt_step,dt,no_mean_field_updates,no_gibbs_sampling_steps,fname_traj_coll,options,options_wake_sleep);
         };
     };
 };

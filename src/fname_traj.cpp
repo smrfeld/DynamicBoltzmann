@@ -74,4 +74,18 @@ namespace dblz {
 	    std::vector<int>::const_iterator last = _idxs.begin() + size;
 	    return std::vector<int>(first,last);
 	};
+    
+    std::vector<std::vector<FName>> FNameTrajColl::get_random_subset_fnames(int size, int timepoint_start, int no_timesteps) {
+        std::vector<std::vector<FName>> fnames_coll;
+        std::vector<FName> fnames;
+        std::vector<int> idxs = get_random_subset(size);
+        for (auto timepoint=timepoint_start; timepoint<=timepoint_start+no_timesteps; timepoint++) {
+            fnames.clear();
+            for (auto const &idx: idxs) {
+                fnames.push_back(_fnames.at(idx).at(timepoint));
+            };
+            fnames_coll.push_back(fnames);
+        };
+        return fnames_coll;
+    };
 };

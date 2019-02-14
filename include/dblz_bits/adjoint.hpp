@@ -73,6 +73,12 @@ namespace dblz {
 		ITptr get_ixn_param_traj() const;
 
         // ***************
+        // MARK: - Set zero endpoint
+        // ***************
+        
+        void set_timepoint_zero_end_cond(int timepoint);
+        
+        // ***************
         // MARK: - Get value at timepoint
         // ***************
 

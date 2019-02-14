@@ -172,19 +172,4 @@ namespace dblz {
             std::cout << std::endl;
         };
     };
-    
-    // Many steps
-    void OptProblemStatic::solve(int no_opt_steps, int no_mean_field_updates, int no_gibbs_sampling_steps, FNameColl &fname_coll, OptionsSolveStatic options, OptionsWakeSleep options_wake_sleep) {
-        
-        for (int i_opt_step=1; i_opt_step<=no_opt_steps; i_opt_step++)
-        {
-            
-            std::cout << "------------------" << std::endl;
-            std::cout << "Opt step: " << i_opt_step << " / " << no_opt_steps << std::endl;
-            std::cout << "------------------" << std::endl;
-            
-            // Solve
-            solve_one_step(i_opt_step,no_mean_field_updates,no_gibbs_sampling_steps,fname_coll,options,options_wake_sleep);
-        };
-    };
 };

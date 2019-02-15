@@ -44,6 +44,9 @@ namespace dblz {
         // Gibbs sampling awake phase
         bool gibbs_sample_awake_phase = false;
         bool gibbs_sample_awake_phase_hidden_binary = true;
+        
+        // Sliding factor
+        double sliding_factor = 0.01;
     };
     
 	/****************************************
@@ -53,8 +56,8 @@ namespace dblz {
     typedef std::map<Sptr,arma::vec> layer_occ;
     typedef std::map<int, layer_occ> layers_map;
 
-    // enum class LatticeMode: unsigned int { NORMAL, CENTERED, BATCHNORM, CENTERED_M };
-    enum class LayerMode: unsigned int { NORMAL, CENTERED, BATCHNORM, CENTERED_M, CENTERED_PT, CENTERED_PT_M };
+    // First option
+    enum class LatticeMode: unsigned int { NORMAL, NORMAL_W_CENTERED_GRADIENT_VEC, NORMAL_W_CENTERED_GRADIENT_PT, CENTERED_PT };
 
     class Lattice
 	{
@@ -132,39 +135,14 @@ namespace dblz {
         // ***************
         
         // Mode
-        std::map<int, LayerMode> _mode;
-
-        // ***************
-        // MARK: Batch normalization
-        // ***************
-        
-        // Batch normalization parameters for the layers
-        // (layer) -> (parameter)
-        std::map<int,std::map<Sptr,Iptr>> _bn_beta, _bn_gamma;
-        
-        // Same but for beta-bar and gamma-bar (calculated from beta, gamma, means, vars)
-        // (chain type) -> (layer) -> (parameter)
-        std::map<MCType,std::map<int,std::map<Sptr,arma::vec>>> _bn_beta_bar, _bn_gamma_bar;
-        
-        // Means,vars over the current batch
-        // CHANGES over the steps of mean field / gibbs sampling
-        // (chain type) -> (layer) -> means/vars
-        std::map<MCType,std::map<int,std::map<Sptr,arma::vec>>> _bn_means, _bn_vars;
-        
-        // Small epsilon to prevent div by zero
-        double _bn_eps;
+        LatticeMode _mode;
         
         // ***************
         // MARK: - Centering
         // ***************
         
-        // Sliding factors for each layer
-        std::map<int, double> _c_sliding_factors;
-        
         // Moving average means for each layer
         std::map<int, std::map<Sptr, arma::vec>> _c_means;
-        
-        // Batch means for each layer
         std::map<int, std::map<Sptr, arma::vec>> _c_batch_means;
         
         // As above, but pointwise
@@ -192,19 +170,6 @@ namespace dblz {
         std::vector<int> _look_up_pos(int layer, int idx) const;
         
         // ***************
-        // MARK: Batch normalization
-        // ***************
-        
-        // Calculate means from activations
-        void _bn_calculate_means_vars_from_activations(MCType chain, int layer);
-        
-        // Calculate bar parameters from means, vars
-        void _bn_calculate_bar_params_from_means_vars(MCType chain, int layer);
-        
-        // Apply BN transform
-        void _bn_apply_affine_transform_to_all_chains(MCType chain, int layer);
-        
-        // ***************
         // MARK: - Constructor helpers
         // ***************
         
@@ -222,8 +187,7 @@ namespace dblz {
         // MARK: Constructor
         // ***************
         
-        Lattice(int no_dims, int box_length, std::vector<Sptr> species_visible, LayerMode layer_zero_mode);
-        Lattice(int no_dims, int box_length, std::vector<Sptr> species_visible, LayerMode layer_zero_mode, double layer_zero_sliding_factor);
+        Lattice(int no_dims, int box_length, std::vector<Sptr> species_visible, LatticeMode mode);
         Lattice(const Lattice& other);
 		Lattice(Lattice&& other);
 		Lattice& operator=(const Lattice& other);
@@ -238,7 +202,7 @@ namespace dblz {
         int get_box_length() const;
         int get_no_units_in_layer(int layer) const;
         int get_no_layers() const;
-        LayerMode get_layer_mode(int layer) const;
+        LatticeMode get_lattice_mode() const;
         
         // ***************
         // MARK: Markov chains
@@ -248,20 +212,10 @@ namespace dblz {
         void set_no_markov_chains(MCType type, int no_markov_chains);
         
         // ***************
-        // MARK: - Sliding factors
-        // ***************
-        
-        double get_sliding_factor(int layer) const;
-        void set_sliding_factor(int layer, double factor);
-        
-        // ***************
         // MARK: Add a layer
         // ***************
         
-        void _add_layer(int layer, int box_length, std::vector<Sptr> species, LayerMode mode);
-        void add_layer(int layer, int box_length, std::vector<Sptr> species, LayerMode mode, Iptr beta, Iptr gamma);
-        void add_layer(int layer, int box_length, std::vector<Sptr> species, LayerMode mode, double sliding_factor);
-        void add_layer(int layer, int box_length, std::vector<Sptr> species, LayerMode mode);
+        void add_layer(int layer, int box_length, std::vector<Sptr> species);
 
         // ***************
         // MARK: Biases/ixn params
@@ -337,13 +291,6 @@ namespace dblz {
         void activate_layer_committ(MCType chain, int layer);
 
         // ***************
-        // MARK: - Calculate params in BN mode
-        // ***************
-        
-        // Calculate BN params
-        void calculate_bn_params(MCType chain);
-        
-        // ***************
         // MARK: - Mean field / gibbs sampling
         // ***************
         
@@ -361,25 +308,17 @@ namespace dblz {
         // Make a pass activating upwards
         void activate_upward_pass(MCType chain, bool binary_hidden);
         void activate_upward_pass_with_2x_weights_1x_bias(MCType chain, bool binary_hidden);
-
-        // ***************
-        // MARK: - Get counts for visible layer
-        // ***************
-
-        /*
-        double get_count_vis(Sptr &sp) const;
-		double get_count_vis(Sptr &sp1, Sptr &sp2, bool reversibly) const;
-		double get_count_vis(Sptr &sp1, Sptr &sp2, Sptr &sp3, bool reversibly) const;
-		double get_count_vis(Sptr &sp1, Sptr &sp2, Sptr &sp3, Sptr &sp4, bool reversibly) const;
-         */
         
         // ***************
         // MARK: - Reap moments, both awake and asleep
         // ***************
-
-        // Also calculates the averages!
-        void reap_moments();
         
+        // Internals for the different modes
+        void reap_moments_normal();
+        void reap_moments_normal_w_centered_gradient_vec(double sliding_factor);
+        void reap_moments_normal_w_centered_gradient_pt(double sliding_factor);
+        void reap_moments_centered_pt(double sliding_factor);
+
         // ***************
         // MARK: - Write out centers
         // ***************

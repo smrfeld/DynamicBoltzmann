@@ -17,7 +17,7 @@ namespace dblz {
     class Lattice;
     
     enum class MCType: unsigned int;
-    enum class LayerMode: unsigned int;
+    enum class LatticeMode: unsigned int;
 
 	/****************************************
 	LatticeTraj
@@ -52,20 +52,12 @@ namespace dblz {
         // MARK: - Constructor
         // ***************
         
-        LatticeTraj(int no_dims, int box_length, std::vector<Sptr> species_visible, LayerMode layer_zero_mode, double layer_zero_sliding_factor);
-        LatticeTraj(int no_dims, int box_length, std::vector<Sptr> species_visible, LayerMode layer_zero_mode);
+        LatticeTraj(int no_dims, int box_length, std::vector<Sptr> species_visible, LatticeMode mode);
 		LatticeTraj(const LatticeTraj& other);
 		LatticeTraj(LatticeTraj&& other);
 		LatticeTraj& operator=(const LatticeTraj& other);
 		LatticeTraj& operator=(LatticeTraj&& other);
 		~LatticeTraj();
-
-        // ***************
-        // MARK: - Sliding factors
-        // ***************
-        
-        double get_sliding_factor(int layer) const;
-        void set_sliding_factor(int layer, double factor);
         
         // ***************
         // MARK: - No timesteps
@@ -105,8 +97,7 @@ namespace dblz {
         // ***************
         
         // Add layer
-        void add_layer(int layer, int box_length, std::vector<Sptr> species, LayerMode mode);
-        void add_layer(int layer, int box_length, std::vector<Sptr> species, LayerMode mode, double sliding_factors);
+        void add_layer(int layer, int box_length, std::vector<Sptr> species);
 
 		// Biases
         void set_bias_of_layer(int layer, Sptr sp, ITptr bias);

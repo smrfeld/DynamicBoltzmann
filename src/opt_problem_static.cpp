@@ -26,11 +26,8 @@ namespace dblz {
      Constructor
      ********************/
     
-    OptProblemStatic::OptProblemStatic(std::shared_ptr<Lattice> latt, int no_markov_chains_awake, int no_markov_chains_asleep) {
+    OptProblemStatic::OptProblemStatic(std::shared_ptr<Lattice> latt) {
         _latt = latt;
-        
-        set_no_markov_chains(MCType::AWAKE,no_markov_chains_awake);
-        set_no_markov_chains(MCType::ASLEEP,no_markov_chains_asleep);
     };
     OptProblemStatic::OptProblemStatic(const OptProblemStatic& other) {
         _copy(other);
@@ -58,27 +55,14 @@ namespace dblz {
     
     void OptProblemStatic::_clean_up() {};
     void OptProblemStatic::_move(OptProblemStatic &other) {
-        _no_markov_chains = other._no_markov_chains;
         _latt = std::move(other._latt);
     };
     void OptProblemStatic::_copy(const OptProblemStatic& other) {
-        _no_markov_chains = other._no_markov_chains;
         if (other._latt) {
             _latt = std::make_shared<Lattice>(*other._latt);
+        } else {
+            _latt = nullptr;
         };
-    };
-    
-    /********************
-     Init structures
-     ********************/
-
-    void OptProblemStatic::set_no_markov_chains(MCType chain, int no_markov_chains) {
-        
-        // Store
-        _no_markov_chains[chain] = no_markov_chains;
-        
-        // Lattice
-        _latt->set_no_markov_chains(chain, no_markov_chains);
     };
     
     /********************
@@ -104,7 +88,8 @@ namespace dblz {
          Wake/asleep loop
          *****/
         
-        auto fnames = fname_coll.get_random_subset_fnames(_no_markov_chains.at(MCType::AWAKE));
+        int no_markov_awake = _latt->get_no_markov_chains(MCType::AWAKE);
+        auto fnames = fname_coll.get_random_subset_fnames(no_markov_awake);
         
         _latt->wake_sleep_loop(i_opt_step, no_mean_field_updates, no_gibbs_sampling_steps, fnames, options_wake_sleep);
         

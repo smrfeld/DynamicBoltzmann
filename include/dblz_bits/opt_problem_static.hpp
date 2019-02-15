@@ -60,9 +60,6 @@ namespace dblz {
         
     protected:
         
-        // No markov chains
-        std::map<MCType,int> _no_markov_chains;
-        
         // Lattice
         std::shared_ptr<Lattice> _latt;
         
@@ -77,18 +74,12 @@ namespace dblz {
          Constructor
          ********************/
         
-        OptProblemStatic(std::shared_ptr<Lattice> latt, int no_markov_chains_awake, int no_markov_chains_asleep);
+        OptProblemStatic(std::shared_ptr<Lattice> latt);
         OptProblemStatic(const OptProblemStatic& other);
         OptProblemStatic(OptProblemStatic&& other);
         OptProblemStatic& operator=(const OptProblemStatic &other);
         OptProblemStatic& operator=(OptProblemStatic &&other);
         ~OptProblemStatic();
-        
-        /********************
-         Init structures
-         ********************/
-        
-        void set_no_markov_chains(MCType chain, int no_markov_chains);
         
         /********************
          Solve

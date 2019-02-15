@@ -31,13 +31,8 @@ namespace dblz {
      Constructor
      ********************/
     
-    OptProblemDynamic::OptProblemDynamic(std::shared_ptr<LatticeTraj> latt_traj, int no_markov_chains_awake, int no_markov_chains_asleep, int no_timesteps_ixn_params, int timepoint_start_lattice, int no_timesteps_lattice) {
+    OptProblemDynamic::OptProblemDynamic(std::shared_ptr<LatticeTraj> latt_traj) {
         _latt_traj = latt_traj;
-
-        set_no_timesteps_ixn_params(no_timesteps_ixn_params); // NOTE: must set this first!
-        set_no_timesteps_lattice(timepoint_start_lattice, no_timesteps_lattice);
-        set_no_markov_chains(MCType::AWAKE,no_markov_chains_awake);
-        set_no_markov_chains(MCType::ASLEEP,no_markov_chains_asleep);
     };
     OptProblemDynamic::OptProblemDynamic(const OptProblemDynamic& other) {
         _copy(other);
@@ -65,44 +60,26 @@ namespace dblz {
     
     void OptProblemDynamic::_clean_up() {};
     void OptProblemDynamic::_move(OptProblemDynamic &other) {
-        _no_markov_chains = other._no_markov_chains;
         _latt_traj = std::move(other._latt_traj);
-        _no_timesteps_ixn_params = other._no_timesteps_ixn_params;
-        _no_timepoints_ixn_params = other._no_timepoints_ixn_params;
-        _timepoint_start_lattice = other._timepoint_start_lattice;
-        _no_timesteps_lattice = other._no_timesteps_lattice;
-        _no_timepoints_lattice = other._no_timepoints_lattice;
     };
     void OptProblemDynamic::_copy(const OptProblemDynamic& other) {
-        _no_markov_chains = other._no_markov_chains;
         if (other._latt_traj) {
             _latt_traj = std::make_shared<LatticeTraj>(*other._latt_traj);
+        } else {
+            _latt_traj = nullptr;
         };
-        _no_timesteps_ixn_params = other._no_timesteps_ixn_params;
-        _no_timepoints_ixn_params = other._no_timepoints_ixn_params;
-        _timepoint_start_lattice = other._timepoint_start_lattice;
-        _no_timesteps_lattice = other._no_timesteps_lattice;
-        _no_timepoints_lattice = other._no_timepoints_lattice;
     };
     
     /********************
      Init structures
      ********************/
 
+    /*
     void OptProblemDynamic::set_no_markov_chains(MCType chain, int no_markov_chains) {
         
         // Store
         _no_markov_chains[chain] = no_markov_chains;
-        
-        // Moments
-        /*
-        for (auto ixn_param_traj: _latt_traj->get_all_ixn_param_trajs()) {
-            for (auto timepoint=0; timepoint<_no_timepoints_ixn_params; timepoint++) {
-                ixn_param_traj->get_ixn_param_at_timepoint(timepoint)->get_moment()->set_no_markov_chains(chain, no_markov_chains);
-            };
-        };
-         */
-        
+     
         // Lattice
         _latt_traj->set_no_markov_chains(chain, no_markov_chains);
     };
@@ -120,13 +97,14 @@ namespace dblz {
         
         _latt_traj->set_no_timesteps(_timepoint_start_lattice, _no_timesteps_lattice);
     };
+    */
     
     /********************
      Solve
      ********************/
     
     // Check if options passed are valid
-    void OptProblemDynamic::check_options(int timepoint_start_SIP, int no_timesteps_SIP, int timepoint_start_WSA, int no_timesteps_WSA, double dt, int no_mean_field_updates, int no_gibbs_sampling_steps, OptionsSolveDynamic options, OptionsWakeSleep options_wake_sleep) {
+    void OptProblemDynamic::check_options(int timepoint_start_SIP, int no_timesteps_SIP, int timepoint_start_WS, int no_timesteps_WS, int timepoint_start_A, int no_timesteps_A, double dt, int no_mean_field_updates, int no_gibbs_sampling_steps, OptionsSolveDynamic options, OptionsWakeSleep options_wake_sleep) {
         if (options.solver == Solver::SGD || options.solver == Solver::NESTEROV) {
             std::cerr << ">>> OptProblemDynamic::check_options <<< Error: only Adam is currently supported as a solver" << std::endl;
             exit(EXIT_FAILURE);
@@ -134,14 +112,14 @@ namespace dblz {
     };
     
     // One step
-    void OptProblemDynamic::solve_one_step(int i_opt_step, int timepoint_start_SIP, int no_timesteps_SIP, int timepoint_start_WSA, int no_timesteps_WSA, double dt, int no_mean_field_updates, int no_gibbs_sampling_steps, FNameTrajColl &fname_traj_coll, OptionsSolveDynamic options, OptionsWakeSleep options_wake_sleep) {
+    void OptProblemDynamic::solve_one_step(int i_opt_step, int timepoint_start_SIP, int no_timesteps_SIP, int timepoint_start_WS, int no_timesteps_WS, int timepoint_start_A, int no_timesteps_A, double dt, int no_mean_field_updates, int no_gibbs_sampling_steps, FNameTrajColl &fname_traj_coll, OptionsSolveDynamic options, OptionsWakeSleep options_wake_sleep) {
         
         /*****
          Check options
          *****/
         
         if (options.should_check_options) {
-            check_options(timepoint_start_SIP, no_timesteps_SIP, timepoint_start_WSA, no_timesteps_WSA, dt, no_mean_field_updates, no_gibbs_sampling_steps, options, options_wake_sleep);
+            check_options(timepoint_start_SIP, no_timesteps_SIP, timepoint_start_WS, no_timesteps_WS, timepoint_start_A, no_timesteps_A, dt, no_mean_field_updates, no_gibbs_sampling_steps, options, options_wake_sleep);
         };
         
         /*****
@@ -161,24 +139,26 @@ namespace dblz {
          Wake/asleep loop
          *****/
         
-        std::vector<std::vector<FName>> fname_coll = fname_traj_coll.get_random_subset_fnames(_no_markov_chains.at(MCType::AWAKE), timepoint_start_WSA, no_timesteps_WSA);
+        int no_awake_chains = _latt_traj->get_no_markov_chains(MCType::AWAKE);
+        std::vector<std::vector<FName>> fname_coll = fname_traj_coll.get_random_subset_fnames(no_awake_chains, timepoint_start_WS, no_timesteps_WS);
         
-        for (auto timepoint=timepoint_start_WSA; timepoint<=timepoint_start_WSA+no_timesteps_WSA; timepoint++) {
+        for (auto timepoint=timepoint_start_WS; timepoint<=timepoint_start_WS+no_timesteps_WS; timepoint++) {
             
-            _latt_traj->get_lattice_at_timepoint(timepoint)->wake_sleep_loop(i_opt_step, no_mean_field_updates, no_gibbs_sampling_steps, fname_coll.at(timepoint-timepoint_start_WSA), options_wake_sleep);
+            _latt_traj->get_lattice_at_timepoint(timepoint)->wake_sleep_loop(i_opt_step, no_mean_field_updates, no_gibbs_sampling_steps, fname_coll.at(timepoint-timepoint_start_WS), options_wake_sleep);
             
         };
         
         // Print
         if (options.verbose) {
             for (auto ixn_param_traj: _latt_traj->get_all_ixn_param_trajs()) {
-                std::cout << ixn_param_traj->get_name() << " [" << _timepoint_start_lattice << "," << _timepoint_start_lattice+_no_timesteps_lattice << "]" << std::endl;
                 
                 // Print traj of ixn params
-                ixn_param_traj->print_val_traj(_timepoint_start_lattice, _no_timesteps_lattice);
+                std::cout << ixn_param_traj->get_name() << " [" << timepoint_start_SIP << "," << timepoint_start_SIP+no_timesteps_SIP << "]" << std::endl;
+                ixn_param_traj->print_val_traj(timepoint_start_SIP, no_timesteps_SIP);
                 
                 // Print moment traj
-                ixn_param_traj->print_moment_traj(_timepoint_start_lattice, _no_timesteps_lattice);
+                std::cout << ixn_param_traj->get_name() << " moments [" << timepoint_start_WS << "," << timepoint_start_WS+no_timesteps_WS << "]" << std::endl;
+                ixn_param_traj->print_moment_traj(timepoint_start_WS, no_timesteps_WS);
             };
         };
         
@@ -188,11 +168,11 @@ namespace dblz {
         
         // Set zero endpoint
         for (auto ixn_param_traj: _latt_traj->get_all_ixn_param_trajs()) {
-            ixn_param_traj->get_adjoint()->set_timepoint_zero_end_cond(timepoint_start_WSA + no_timesteps_WSA);
+            ixn_param_traj->get_adjoint()->set_timepoint_zero_end_cond(timepoint_start_A + no_timesteps_A);
         };
         
         if (options.l2_reg) {
-            for (auto timepoint=timepoint_start_WSA + no_timesteps_WSA; timepoint>timepoint_start_WSA; timepoint--) {
+            for (auto timepoint=timepoint_start_A + no_timesteps_A; timepoint>timepoint_start_A; timepoint--) {
                 for (auto ixn_param_traj: _latt_traj->get_all_ixn_param_trajs()) {
                     if (!ixn_param_traj->get_is_val_fixed_to_init_cond() && !ixn_param_traj->get_are_vals_fixed()) {
                         ixn_param_traj->get_adjoint()->solve_diff_eq_at_timepoint_to_minus_one_l2(timepoint,dt,options.l2_lambda,options.l2_center);
@@ -200,7 +180,7 @@ namespace dblz {
                 };
             };
         } else {
-            for (auto timepoint=timepoint_start_WSA + no_timesteps_WSA; timepoint>timepoint_start_WSA; timepoint--) {
+            for (auto timepoint=timepoint_start_A + no_timesteps_A; timepoint>timepoint_start_A; timepoint--) {
                 for (auto ixn_param_traj: _latt_traj->get_all_ixn_param_trajs()) {
                     if (!ixn_param_traj->get_is_val_fixed_to_init_cond() && !ixn_param_traj->get_are_vals_fixed()) {
                         ixn_param_traj->get_adjoint()->solve_diff_eq_at_timepoint_to_minus_one(timepoint,dt);
@@ -216,7 +196,7 @@ namespace dblz {
         for (auto ixn_param_traj: _latt_traj->get_all_ixn_param_trajs()) {
             if (!ixn_param_traj->get_is_val_fixed_to_init_cond() && !ixn_param_traj->get_are_vals_fixed()) {
                 
-                ixn_param_traj->get_diff_eq_rhs()->update_calculate_and_store(_timepoint_start_lattice,_timepoint_start_lattice+_no_timesteps_lattice,dt);
+                ixn_param_traj->get_diff_eq_rhs()->update_calculate_and_store(timepoint_start_A,timepoint_start_A+no_timesteps_A,dt);
             };
         };
         

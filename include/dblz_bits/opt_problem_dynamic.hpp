@@ -59,16 +59,6 @@ namespace dblz {
         
     protected:
         
-        // No markov chains
-        std::map<MCType,int> _no_markov_chains;
-        
-        // No timesteps
-        int _no_timesteps_ixn_params;
-        int _no_timepoints_ixn_params;
-        int _timepoint_start_lattice;
-        int _no_timesteps_lattice;
-        int _no_timepoints_lattice;
-        
         // Lattice
         std::shared_ptr<LatticeTraj> _latt_traj;
         
@@ -83,32 +73,24 @@ namespace dblz {
          Constructor
          ********************/
         
-        OptProblemDynamic(std::shared_ptr<LatticeTraj> latt_traj, int no_markov_chains_awake, int no_markov_chains_asleep, int no_timesteps_ixn_params, int timepoint_start_lattice, int no_timesteps_lattice);
+        OptProblemDynamic(std::shared_ptr<LatticeTraj> latt_traj);
         OptProblemDynamic(const OptProblemDynamic& other);
         OptProblemDynamic(OptProblemDynamic&& other);
         OptProblemDynamic& operator=(const OptProblemDynamic &other);
         OptProblemDynamic& operator=(OptProblemDynamic &&other);
         ~OptProblemDynamic();
-        
-        /********************
-         Init structures
-         ********************/
-        
-        void set_no_markov_chains(MCType chain, int no_markov_chains);
-        void set_no_timesteps_ixn_params(int no_timesteps_ixn_params);
-        void set_no_timesteps_lattice(int timepoint_start_lattice, int no_timesteps_lattice);
-        
+
         /********************
          Solve
          ********************/
         
         // Check if options passed are valid
-        void check_options(int timepoint_start_SIP, int no_timesteps_SIP, int timepoint_start_WSA, int no_timesteps_WSA, double dt, int no_mean_field_updates, int no_gibbs_sampling_steps, OptionsSolveDynamic options, OptionsWakeSleep options_wake_sleep);
+        void check_options(int timepoint_start_SIP, int no_timesteps_SIP, int timepoint_start_WS, int no_timesteps_WS, int timepoint_start_A, int no_timesteps_A, double dt, int no_mean_field_updates, int no_gibbs_sampling_steps, OptionsSolveDynamic options, OptionsWakeSleep options_wake_sleep);
         
         // One step
         // SIP = solve ixn params
         // WSA = wake/sleep/adjoint
-        void solve_one_step(int i_opt_step, int timepoint_start_SIP, int no_timesteps_SIP, int timepoint_start_WSA, int no_timesteps_WSA, double dt, int no_mean_field_updates, int no_gibbs_sampling_steps, FNameTrajColl &fname_traj_coll, OptionsSolveDynamic options, OptionsWakeSleep options_wake_sleep);
+        void solve_one_step(int i_opt_step, int timepoint_start_SIP, int no_timesteps_SIP, int timepoint_start_WS, int no_timesteps_WS, int timepoint_start_A, int no_timesteps_A, double dt, int no_mean_field_updates, int no_gibbs_sampling_steps, FNameTrajColl &fname_traj_coll, OptionsSolveDynamic options, OptionsWakeSleep options_wake_sleep);
     };
     
 };

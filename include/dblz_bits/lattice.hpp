@@ -54,7 +54,7 @@ namespace dblz {
     typedef std::map<int, layer_occ> layers_map;
 
     // enum class LatticeMode: unsigned int { NORMAL, CENTERED, BATCHNORM, CENTERED_M };
-    enum class LayerMode: unsigned int { NORMAL, CENTERED, BATCHNORM, CENTERED_M, CENTERED_PT };
+    enum class LayerMode: unsigned int { NORMAL, CENTERED, BATCHNORM, CENTERED_M, CENTERED_PT, CENTERED_PT_M };
 
     class Lattice
 	{
@@ -352,6 +352,7 @@ namespace dblz {
         
         // Gibbs sampling for awake phase
         void gibbs_sampling_step_awake(bool binary_hidden);
+        void gibbs_sampling_step_parallel_awake(bool binary_hidden);
 
         // Gibbs sampling
         void gibbs_sampling_step(bool binary_visible, bool binary_hidden);
@@ -386,8 +387,8 @@ namespace dblz {
         void read_centers_from_file(int layer, std::string fname);
         void write_centers_to_file(int layer, std::string fname) const;
         
-        void read_center_pt_from_file(int layer, std::string fname);
-        void write_center_pt_to_file(int layer, std::string fname) const;
+        void read_center_pts_from_file(std::string fname);
+        void write_center_pts_to_file(std::string fname) const;
         
         // ***************
         // MARK: - Wake/sleep

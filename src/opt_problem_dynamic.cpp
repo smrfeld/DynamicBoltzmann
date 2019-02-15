@@ -140,26 +140,14 @@ namespace dblz {
          Check options
          *****/
         
-        if (options.verbose) {
-            std::cout << "--- Checking options ---" << std::endl;
-        };
-        
         if (options.should_check_options) {
             check_options(timepoint_start_SIP, no_timesteps_SIP, timepoint_start_WSA, no_timesteps_WSA, dt, no_mean_field_updates, no_gibbs_sampling_steps, options, options_wake_sleep);
-        };
-        
-        if (options.verbose) {
-            std::cout << "--- [Finished] ---" << std::endl;
         };
         
         /*****
          Solve diff eq for F
          *****/
         
-        if (options.verbose) {
-            std::cout << "--- Solving diff eqs ---" << std::endl;
-        };
-
         // Solve over all time
         for (auto timepoint=timepoint_start_SIP; timepoint<timepoint_start_SIP+no_timesteps_SIP; timepoint++) {
             for (auto ixn_param_traj: _latt_traj->get_all_ixn_param_trajs()) {
@@ -169,17 +157,9 @@ namespace dblz {
             };
         };
         
-        if (options.verbose) {
-            std::cout << "--- [Finished] ---" << std::endl;
-        };
-
         /*****
          Wake/asleep loop
          *****/
-        
-        if (options.verbose) {
-            std::cout << "--- Wake-sleep ---" << std::endl;
-        };
         
         std::vector<std::vector<FName>> fname_coll = fname_traj_coll.get_random_subset_fnames(_no_markov_chains.at(MCType::AWAKE), timepoint_start_WSA, no_timesteps_WSA);
         
@@ -190,28 +170,22 @@ namespace dblz {
         };
         
         // Print
-        for (auto ixn_param_traj: _latt_traj->get_all_ixn_param_trajs()) {
-            std::cout << ixn_param_traj->get_name() << " [" << _timepoint_start_lattice << "," << _timepoint_start_lattice+_no_timesteps_lattice << "]" << std::endl;
-            
-            // Print traj of ixn params
-            ixn_param_traj->print_val_traj(_timepoint_start_lattice, _no_timesteps_lattice);
-            
-            // Print moment traj
-            ixn_param_traj->print_moment_traj(_timepoint_start_lattice, _no_timesteps_lattice);
+        if (options.verbose) {
+            for (auto ixn_param_traj: _latt_traj->get_all_ixn_param_trajs()) {
+                std::cout << ixn_param_traj->get_name() << " [" << _timepoint_start_lattice << "," << _timepoint_start_lattice+_no_timesteps_lattice << "]" << std::endl;
+                
+                // Print traj of ixn params
+                ixn_param_traj->print_val_traj(_timepoint_start_lattice, _no_timesteps_lattice);
+                
+                // Print moment traj
+                ixn_param_traj->print_moment_traj(_timepoint_start_lattice, _no_timesteps_lattice);
+            };
         };
         
-        if (options.verbose) {
-            std::cout << "--- [Finished] ---" << std::endl;
-        };
-
         /********************
          Solve diff eq for adjoint
          ********************/
         
-        if (options.verbose) {
-            std::cout << "--- Solving adjoints ---" << std::endl;
-        };
-
         // Set zero endpoint
         for (auto ixn_param_traj: _latt_traj->get_all_ixn_param_trajs()) {
             ixn_param_traj->get_adjoint()->set_timepoint_zero_end_cond(timepoint_start_WSA + no_timesteps_WSA);
@@ -234,18 +208,10 @@ namespace dblz {
                 };
             };
         };
-        
-        if (options.verbose) {
-            std::cout << "--- [Finished] ---" << std::endl;
-        };
 
         /********************
          Form the update
          ********************/
-        
-        if (options.verbose) {
-            std::cout << "--- Forming update ---" << std::endl;
-        };
 
         for (auto ixn_param_traj: _latt_traj->get_all_ixn_param_trajs()) {
             if (!ixn_param_traj->get_is_val_fixed_to_init_cond() && !ixn_param_traj->get_are_vals_fixed()) {
@@ -254,18 +220,10 @@ namespace dblz {
             };
         };
         
-        if (options.verbose) {
-            std::cout << "--- [Finished] ---" << std::endl;
-        };
-
         /********************
          Committ the update
          ********************/
         
-        if (options.verbose) {
-            std::cout << "--- Committing update ---" << std::endl;
-        };
-
         if (options.solver == Solver::ADAM) {
             for (auto &ixn_param_traj: _latt_traj->get_all_ixn_param_trajs()) {
                 if (!ixn_param_traj->get_is_val_fixed_to_init_cond() && !ixn_param_traj->get_are_vals_fixed()) {
@@ -275,10 +233,6 @@ namespace dblz {
         } else {
             std::cerr << ">>> OptProblemDynamic::solve_one_step <<< Solvers other than Adam are currently not supported" << std::endl;
             exit(EXIT_FAILURE);
-        };
-        
-        if (options.verbose) {
-            std::cout << "--- [Finished] ---" << std::endl;
         };
     };
 };

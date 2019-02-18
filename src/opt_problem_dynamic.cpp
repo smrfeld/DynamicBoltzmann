@@ -126,28 +126,31 @@ namespace dblz {
          Solve diff eq for F
          *****/
         
+        clock_t t0 = clock();
+        
         // Solve over all time
-        std::map<ITptr,double> vals;
-        std::map<ITptr,double> vals_next;
+        std::map<ITptr,std::vector<double>> vals;
         for (auto timepoint=timepoint_start_SIP; timepoint<timepoint_start_SIP+no_timesteps_SIP; timepoint++) {
             // Get initial vals at this timepoint
             for (auto ixn_param_traj: _latt_traj->get_all_ixn_param_trajs()) {
-                vals[ixn_param_traj] = ixn_param_traj->get_ixn_param_at_timepoint(timepoint)->get_val();
+                vals[ixn_param_traj] = std::vector<double>(options.no_steps_per_step_IP+1);
+                vals[ixn_param_traj][0] = ixn_param_traj->get_ixn_param_at_timepoint(timepoint)->get_val();
             };
             
             // Calculate diff eqs to a new step
             for (auto i=0; i<options.no_steps_per_step_IP; i++) {
                 for (auto ixn_param_traj: _latt_traj->get_all_ixn_param_trajs()) {
-                    vals_next[ixn_param_traj] = vals.at(ixn_param_traj) + (dt / options.no_steps_per_step_IP) * ixn_param_traj->get_diff_eq_rhs()->get_val_from_map(vals);
+                    if (!ixn_param_traj->get_is_val_fixed_to_init_cond() && !ixn_param_traj->get_are_vals_fixed()) {
+                        vals[ixn_param_traj][i+1] = vals.at(ixn_param_traj).at(i) + (dt / options.no_steps_per_step_IP) * ixn_param_traj->get_diff_eq_rhs()->get_val_from_map(vals, i);
+                    } else {
+                        vals[ixn_param_traj][i+1] = vals.at(ixn_param_traj).at(i);
+                    };
                 };
-                
-                // Advance
-                vals = vals_next;
             };
             
             // Write final vals
             for (auto ixn_param_traj: _latt_traj->get_all_ixn_param_trajs()) {
-                ixn_param_traj->get_ixn_param_at_timepoint(timepoint+1)->set_val(vals.at(ixn_param_traj));
+                ixn_param_traj->get_ixn_param_at_timepoint(timepoint+1)->set_val(vals.at(ixn_param_traj).at(options.no_steps_per_step_IP));
             };
         };
         
@@ -164,6 +167,8 @@ namespace dblz {
         /*****
          Wake/asleep loop
          *****/
+        
+        clock_t t1 = clock();
         
         int no_awake_chains = _latt_traj->get_no_markov_chains(MCType::AWAKE);
         std::vector<std::vector<FName>> fname_coll = fname_traj_coll.get_random_subset_fnames(no_awake_chains, timepoint_start_WS, no_timesteps_WS);
@@ -192,6 +197,8 @@ namespace dblz {
          Solve diff eq for adjoint
          ********************/
         
+        clock_t t2 = clock();
+        
         // Set zero endpoint
         for (auto ixn_param_traj: _latt_traj->get_all_ixn_param_trajs()) {
             ixn_param_traj->get_adjoint()->set_timepoint_zero_end_cond(timepoint_start_A + no_timesteps_A);
@@ -218,7 +225,9 @@ namespace dblz {
         /********************
          Form the update
          ********************/
-
+        
+        clock_t t3 = clock();
+        
         for (auto ixn_param_traj: _latt_traj->get_all_ixn_param_trajs()) {
             if (!ixn_param_traj->get_is_val_fixed_to_init_cond() && !ixn_param_traj->get_are_vals_fixed()) {
                 
@@ -230,6 +239,8 @@ namespace dblz {
          Committ the update
          ********************/
         
+        clock_t t4 = clock();
+
         if (options.solver == Solver::ADAM) {
             for (auto &ixn_param_traj: _latt_traj->get_all_ixn_param_trajs()) {
                 if (!ixn_param_traj->get_is_val_fixed_to_init_cond() && !ixn_param_traj->get_are_vals_fixed()) {
@@ -239,6 +250,18 @@ namespace dblz {
         } else {
             std::cerr << ">>> OptProblemDynamic::solve_one_step <<< Solvers other than Adam are currently not supported" << std::endl;
             exit(EXIT_FAILURE);
+        };
+        
+        clock_t t5 = clock();
+        
+        if (options.verbose_timing) {
+            double dt1 = (t1-t0)  / (double) CLOCKS_PER_SEC;
+            double dt2 = (t2-t1)  / (double) CLOCKS_PER_SEC;
+            double dt3 = (t3-t2)  / (double) CLOCKS_PER_SEC;
+            double dt4 = (t4-t3)  / (double) CLOCKS_PER_SEC;
+            double dt5 = (t5-t4)  / (double) CLOCKS_PER_SEC;
+            double dt_tot = dt1 + dt2 + dt3 + dt4 + dt5;
+            std::cout << "[time " << dt_tot << "] [F " << dt1/dt_tot << "] [wake/sleep " << dt2/dt_tot << "] [adj " << dt3/dt_tot << "] [form update " << dt4/dt_tot << "] [commit update " << dt5/dt_tot << "]" << std::endl;
         };
     };
 };

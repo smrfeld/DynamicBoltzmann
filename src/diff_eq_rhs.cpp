@@ -376,9 +376,9 @@ namespace dblz {
             _abscissas[dim] = _domain[dim]->get_ixn_param_traj()->get_ixn_param_at_timepoint(timepoint)->get_val();
 		};
 	};
-    void DiffEqRHS::_form_abscissas(const std::map<ITptr,double>& vals) const {
+    void DiffEqRHS::_form_abscissas(const std::map<ITptr,std::vector<double>>& vals, int idx) const {
         for (auto dim=0; dim<_no_dims; dim++) {
-            _abscissas[dim] = vals.at(_domain[dim]->get_ixn_param_traj());
+            _abscissas[dim] = vals.at(_domain[dim]->get_ixn_param_traj()).at(idx);
         };
     };
 
@@ -386,8 +386,8 @@ namespace dblz {
         _form_abscissas(timepoint);
         return Grid::get_val(_abscissas);
 	};
-    double DiffEqRHS::get_val_from_map(const std::map<ITptr,double>& vals) const {
-        _form_abscissas(vals);
+    double DiffEqRHS::get_val_from_map(const std::map<ITptr,std::vector<double>>& vals, int idx) const {
+        _form_abscissas(vals, idx);
         return Grid::get_val(_abscissas);
     };
     
@@ -544,8 +544,11 @@ namespace dblz {
             
             // Set the updates to zero
             // But do NOT clear the keys!
-            _updates[pr.first] = std::vector<double>(_no_coeffs,0.0);
+            // _updates[pr.first] = std::vector<double>(_no_coeffs,0.0);
         };
+        
+        // WHY NOT? Clear...
+        _updates.clear();
     };
     
     // Verbose

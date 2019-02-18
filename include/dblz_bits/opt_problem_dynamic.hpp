@@ -33,6 +33,7 @@ namespace dblz {
         
         // Verbosity
         bool verbose = false;
+        bool verbose_timing = true;
         
         // L2 Reg mode
         bool l2_reg = false;
@@ -52,7 +53,6 @@ namespace dblz {
         
         // No steps per step for ixn params/adjoint
         int no_steps_per_step_IP = 1;
-        int no_steps_per_step_A = 1;
     };
     
     /****************************************

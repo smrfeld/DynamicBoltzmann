@@ -376,11 +376,21 @@ namespace dblz {
             _abscissas[dim] = _domain[dim]->get_ixn_param_traj()->get_ixn_param_at_timepoint(timepoint)->get_val();
 		};
 	};
+    void DiffEqRHS::_form_abscissas(const std::map<ITptr,double>& vals) const {
+        for (auto dim=0; dim<_no_dims; dim++) {
+            _abscissas[dim] = vals.at(_domain[dim]->get_ixn_param_traj());
+        };
+    };
 
 	double DiffEqRHS::get_val_at_timepoint(int timepoint) const {
         _form_abscissas(timepoint);
         return Grid::get_val(_abscissas);
 	};
+    double DiffEqRHS::get_val_from_map(const std::map<ITptr,double>& vals) const {
+        _form_abscissas(vals);
+        return Grid::get_val(_abscissas);
+    };
+    
 	double DiffEqRHS::get_deriv_wrt_u_at_timepoint(int timepoint, q3c1::IdxSet global_vertex_idxs, std::vector<q3c1::DimType> dim_types) const {
         _form_abscissas(timepoint);
 		return Grid::get_deriv_wrt_coeff(_abscissas, global_vertex_idxs, dim_types);

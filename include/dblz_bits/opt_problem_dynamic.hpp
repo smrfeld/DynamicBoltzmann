@@ -49,6 +49,10 @@ namespace dblz {
         double adam_beta_1 = 0.9;
         double adam_beta_2 = 0.999;
         double adam_eps = 0.00000001;
+        
+        // No steps per step for ixn params/adjoint
+        int no_steps_per_step_IP = 1;
+        int no_steps_per_step_A = 1;
     };
     
     /****************************************

@@ -127,6 +127,31 @@ namespace dblz {
          *****/
         
         // Solve over all time
+        std::map<ITptr,double> vals;
+        std::map<ITptr,double> vals_next;
+        for (auto timepoint=timepoint_start_SIP; timepoint<timepoint_start_SIP+no_timesteps_SIP; timepoint++) {
+            // Get initial vals at this timepoint
+            for (auto ixn_param_traj: _latt_traj->get_all_ixn_param_trajs()) {
+                vals[ixn_param_traj] = ixn_param_traj->get_ixn_param_at_timepoint(timepoint)->get_val();
+            };
+            
+            // Calculate diff eqs to a new step
+            for (auto i=0; i<options.no_steps_per_step_IP; i++) {
+                for (auto ixn_param_traj: _latt_traj->get_all_ixn_param_trajs()) {
+                    vals_next[ixn_param_traj] = vals.at(ixn_param_traj) + (dt / options.no_steps_per_step_IP) * ixn_param_traj->get_diff_eq_rhs()->get_val_from_map(vals);
+                };
+                
+                // Advance
+                vals = vals_next;
+            };
+            
+            // Write final vals
+            for (auto ixn_param_traj: _latt_traj->get_all_ixn_param_trajs()) {
+                ixn_param_traj->get_ixn_param_at_timepoint(timepoint+1)->set_val(vals.at(ixn_param_traj));
+            };
+        };
+        
+        /*
         for (auto timepoint=timepoint_start_SIP; timepoint<timepoint_start_SIP+no_timesteps_SIP; timepoint++) {
             for (auto ixn_param_traj: _latt_traj->get_all_ixn_param_trajs()) {
                 if (!ixn_param_traj->get_is_val_fixed_to_init_cond() && !ixn_param_traj->get_are_vals_fixed()) {
@@ -134,6 +159,7 @@ namespace dblz {
                 };
             };
         };
+         */
         
         /*****
          Wake/asleep loop

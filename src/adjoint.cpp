@@ -201,14 +201,14 @@ namespace dblz {
         _vals[timepoint-1] = _vals[timepoint] - dt * (moment_delta - deriv);
 	};
     
-    void Adjoint::solve_diff_eq_at_timepoint_to_minus_one_l2(int timepoint, double dt, const std::map<ITptr,double> &l2_lambda, const std::map<ITptr,double> &l2_center) {
+    void Adjoint::solve_diff_eq_at_timepoint_to_minus_one_l2(int timepoint, double dt, double l2_lambda, double l2_center) {
 
         // Solve
         solve_diff_eq_at_timepoint_to_minus_one(timepoint, dt);
         
         // L2 reg
         double ixn_param_val = _ixn_param_traj->get_ixn_param_at_timepoint(timepoint)->get_val();
-        double l2_term = 2.0 * l2_lambda.at(_ixn_param_traj) * (ixn_param_val-l2_center.at(_ixn_param_traj));
+        double l2_term = 2.0 * l2_lambda * (ixn_param_val - l2_center);
         
         // Step
         _vals[timepoint-1] -= dt * l2_term;

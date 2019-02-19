@@ -89,7 +89,7 @@ namespace dblz {
         // ***************
 
 		void solve_diff_eq_at_timepoint_to_minus_one(int timepoint, double dt);
-        void solve_diff_eq_at_timepoint_to_minus_one_l2(int timepoint, double dt, const std::map<ITptr,double> &l2_lambda, const std::map<ITptr,double> &l2_center);
+        void solve_diff_eq_at_timepoint_to_minus_one_l2(int timepoint, double dt, double l2_lambda, double l2_center);
 
         // ***************
         // MARK: - Write to file

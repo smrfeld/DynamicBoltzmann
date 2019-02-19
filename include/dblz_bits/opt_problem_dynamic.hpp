@@ -39,7 +39,11 @@ namespace dblz {
         bool l2_reg = false;
         std::map<std::shared_ptr<IxnParamTraj>,double> l2_lambda;
         std::map<std::shared_ptr<IxnParamTraj>,double> l2_center;
-                
+        
+        // Pointwise l2_reg
+        bool l2_reg_center_traj = false;
+        std::map<std::shared_ptr<IxnParamTraj>,std::map<int,double>> l2_center_traj;
+
         // Options for the solvers
         Solver solver = Solver::ADAM;
         

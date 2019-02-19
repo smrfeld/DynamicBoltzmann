@@ -444,8 +444,14 @@ namespace dblz {
 
 	// Committ the update
     void DiffEqRHS::update_committ_stored_sgd() {
-        std::cerr << ">>> DiffEqRHS::update_committ_stored_sgd <<< Unsupported currently" << std::endl;
-        exit(EXIT_FAILURE);
+        for (auto pr: _updates) {
+            for (auto i=0; i<_no_coeffs; i++) {
+                pr.first->get_bf(_coeff_order.at(i))->increment_coeff(- _lr * pr.second.at(i));
+            };
+        };
+        
+        // WHY NOT? Clear...
+        _updates.clear();
     };
     void DiffEqRHS::update_committ_stored_nesterov(double nesterov_acc) {
         std::cerr << ">>> DiffEqRHS::update_committ_stored_nesterov <<< Unsupported currently" << std::endl;
@@ -467,18 +473,6 @@ namespace dblz {
         double mhat, vhat, update_val;
         std::map<q3c1::Vertex*,std::vector<double>>::iterator itm, itv;
         for (auto pr: _updates) {
-            // _updates is never cleared
-            // Therefore it will always contain the complete set of keys!
-            // However, _adam_m and _adam_v may not contain the keys!
-            
-            /*
-            std::cout << "update_committ_stored_adam: finding ptr = " << pr.first << " in _adam_m = " << _adam_m << std::endl;
-            std::cout << "before starting: updates are:" << std::endl;
-            for (auto i=0; i<_no_coeffs; i++) {
-                std::cout << pr.second[i] << " ";
-            };
-            std::cout << std::endl;
-             */
             
             // adam_m
             itm = _adam_m->find(pr.first);
@@ -538,7 +532,7 @@ namespace dblz {
                     };
                 };
                 
-                pr.first->get_bf(_coeff_order[i])->increment_coeff(update_val);
+                pr.first->get_bf(_coeff_order.at(i))->increment_coeff(update_val);
                 // std::cout << "update_committ_stored_adam: ptr: " << pr.first << " idx: " << i << " update: " << - dopt * mhat / (sqrt(vhat) + eps) << std::endl;
             };
             

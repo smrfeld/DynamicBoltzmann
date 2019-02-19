@@ -105,8 +105,8 @@ namespace dblz {
     
     // Check if options passed are valid
     void OptProblemDynamic::check_options(int timepoint_start_SIP, int no_timesteps_SIP, int timepoint_start_WS, int no_timesteps_WS, int timepoint_start_A, int no_timesteps_A, double dt, int no_mean_field_updates, int no_gibbs_sampling_steps, OptionsSolveDynamic options, OptionsWakeSleep options_wake_sleep) {
-        if (options.solver == Solver::SGD || options.solver == Solver::NESTEROV) {
-            std::cerr << ">>> OptProblemDynamic::check_options <<< Error: only Adam is currently supported as a solver" << std::endl;
+        if (options.solver == Solver::NESTEROV) {
+            std::cerr << ">>> OptProblemDynamic::check_options <<< Error: Nesterov is not currently supported as a solver" << std::endl;
             exit(EXIT_FAILURE);
         };
     };
@@ -140,7 +140,7 @@ namespace dblz {
             // Calculate diff eqs to a new step
             for (auto i=0; i<options.no_steps_per_step_IP; i++) {
                 for (auto ixn_param_traj: _latt_traj->get_all_ixn_param_trajs()) {
-                    if (!ixn_param_traj->get_is_val_fixed_to_init_cond() && !ixn_param_traj->get_are_vals_fixed()) {
+                    if (!ixn_param_traj->get_is_val_fixed()) {
                         vals[ixn_param_traj][i+1] = vals.at(ixn_param_traj).at(i) + (dt / options.no_steps_per_step_IP) * ixn_param_traj->get_diff_eq_rhs()->get_val_from_map(vals, i);
                     } else {
                         vals[ixn_param_traj][i+1] = vals.at(ixn_param_traj).at(i);
@@ -150,7 +150,9 @@ namespace dblz {
             
             // Write final vals
             for (auto ixn_param_traj: _latt_traj->get_all_ixn_param_trajs()) {
-                ixn_param_traj->get_ixn_param_at_timepoint(timepoint+1)->set_val(vals.at(ixn_param_traj).at(options.no_steps_per_step_IP));
+                if (!ixn_param_traj->get_is_val_fixed()) {
+                    ixn_param_traj->get_ixn_param_at_timepoint(timepoint+1)->set_val(vals.at(ixn_param_traj).at(options.no_steps_per_step_IP));
+                };
             };
         };
         
@@ -179,6 +181,28 @@ namespace dblz {
             
         };
         
+        // Reap the needed
+        // Before timepoint_start_A: don't slide means!
+        // At & afer timepoint_start_A: slide means!
+        bool slide_means;
+        for (auto timepoint=timepoint_start_WS; timepoint<=timepoint_start_WS+no_timesteps_WS; timepoint++) {
+            if (timepoint < timepoint_start_A) {
+                slide_means = false;
+            } else {
+                slide_means = true;
+            };
+            
+            if (_latt_traj->get_lattice_at_timepoint(timepoint)->get_lattice_mode() == LatticeMode::NORMAL) {
+                _latt_traj->get_lattice_at_timepoint(timepoint)->reap_moments_and_slide_centers_normal();
+            } else if (_latt_traj->get_lattice_at_timepoint(timepoint)->get_lattice_mode() == LatticeMode::NORMAL_W_CENTERED_GRADIENT_PT) {
+                _latt_traj->get_lattice_at_timepoint(timepoint)->reap_moments_and_slide_centers_normal_w_centered_gradient_pt(slide_means,options_wake_sleep.sliding_factor);
+            } else if (_latt_traj->get_lattice_at_timepoint(timepoint)->get_lattice_mode() == LatticeMode::NORMAL_W_CENTERED_GRADIENT_VEC) {
+                _latt_traj->get_lattice_at_timepoint(timepoint)->reap_moments_and_slide_centers_normal_w_centered_gradient_vec(slide_means,options_wake_sleep.sliding_factor);
+            } else if (_latt_traj->get_lattice_at_timepoint(timepoint)->get_lattice_mode() == LatticeMode::CENTERED_PT) {
+                _latt_traj->get_lattice_at_timepoint(timepoint)->reap_moments_and_slide_centers_centered_pt(slide_means,options_wake_sleep.sliding_factor);
+            };
+        };
+        
         // Print
         if (options.verbose) {
             for (auto ixn_param_traj: _latt_traj->get_all_ixn_param_trajs()) {
@@ -205,17 +229,27 @@ namespace dblz {
         };
         
         if (options.l2_reg) {
-            for (auto timepoint=timepoint_start_A + no_timesteps_A; timepoint>timepoint_start_A; timepoint--) {
-                for (auto ixn_param_traj: _latt_traj->get_all_ixn_param_trajs()) {
-                    if (!ixn_param_traj->get_is_val_fixed_to_init_cond() && !ixn_param_traj->get_are_vals_fixed()) {
-                        ixn_param_traj->get_adjoint()->solve_diff_eq_at_timepoint_to_minus_one_l2(timepoint,dt,options.l2_lambda,options.l2_center);
+            if (options.l2_reg_center_traj) {
+                for (auto timepoint=timepoint_start_A + no_timesteps_A; timepoint>timepoint_start_A; timepoint--) {
+                    for (auto ixn_param_traj: _latt_traj->get_all_ixn_param_trajs()) {
+                        if (!ixn_param_traj->get_is_val_fixed()) {
+                            ixn_param_traj->get_adjoint()->solve_diff_eq_at_timepoint_to_minus_one_l2(timepoint,dt,options.l2_lambda.at(ixn_param_traj),options.l2_center_traj.at(ixn_param_traj).at(timepoint));
+                        };
+                    };
+                };
+            } else {
+                for (auto timepoint=timepoint_start_A + no_timesteps_A; timepoint>timepoint_start_A; timepoint--) {
+                    for (auto ixn_param_traj: _latt_traj->get_all_ixn_param_trajs()) {
+                        if (!ixn_param_traj->get_is_val_fixed()) {
+                            ixn_param_traj->get_adjoint()->solve_diff_eq_at_timepoint_to_minus_one_l2(timepoint,dt,options.l2_lambda.at(ixn_param_traj),options.l2_center.at(ixn_param_traj));
+                        };
                     };
                 };
             };
         } else {
             for (auto timepoint=timepoint_start_A + no_timesteps_A; timepoint>timepoint_start_A; timepoint--) {
                 for (auto ixn_param_traj: _latt_traj->get_all_ixn_param_trajs()) {
-                    if (!ixn_param_traj->get_is_val_fixed_to_init_cond() && !ixn_param_traj->get_are_vals_fixed()) {
+                    if (!ixn_param_traj->get_is_val_fixed()) {
                         ixn_param_traj->get_adjoint()->solve_diff_eq_at_timepoint_to_minus_one(timepoint,dt);
                     };
                 };
@@ -229,8 +263,7 @@ namespace dblz {
         clock_t t3 = clock();
         
         for (auto ixn_param_traj: _latt_traj->get_all_ixn_param_trajs()) {
-            if (!ixn_param_traj->get_is_val_fixed_to_init_cond() && !ixn_param_traj->get_are_vals_fixed()) {
-                
+            if (!ixn_param_traj->get_is_val_fixed()) {
                 ixn_param_traj->get_diff_eq_rhs()->update_calculate_and_store(timepoint_start_A,timepoint_start_A+no_timesteps_A,dt);
             };
         };
@@ -243,8 +276,14 @@ namespace dblz {
 
         if (options.solver == Solver::ADAM) {
             for (auto &ixn_param_traj: _latt_traj->get_all_ixn_param_trajs()) {
-                if (!ixn_param_traj->get_is_val_fixed_to_init_cond() && !ixn_param_traj->get_are_vals_fixed()) {
+                if (!ixn_param_traj->get_is_val_fixed()) {
                     ixn_param_traj->get_diff_eq_rhs()->update_committ_stored_adam(i_opt_step,options.adam_beta_1,options.adam_beta_2,options.adam_eps);
+                };
+            };
+        } else if (options.solver == Solver::SGD) {
+            for (auto &ixn_param_traj: _latt_traj->get_all_ixn_param_trajs()) {
+                if (!ixn_param_traj->get_is_val_fixed()) {
+                    ixn_param_traj->get_diff_eq_rhs()->update_committ_stored_sgd();
                 };
             };
         } else {

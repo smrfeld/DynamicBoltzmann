@@ -29,10 +29,6 @@ namespace dblz {
         // Adjoint
         std::shared_ptr<Adjoint> _adjoint;
 
-        // Fixed value at the init cond
-        bool _is_val_fixed_to_init_cond;
-        bool _are_vals_fixed;
-
         // Diff eq RHS
         std::shared_ptr<DiffEqRHS> _diff_eq;
         
@@ -50,6 +46,9 @@ namespace dblz {
         int _no_timesteps;
         int _no_timepoints; // = timepoints + 1
         
+        // Fixed value
+        bool _is_val_fixed;
+
         // Copy, clean up
         void _clean_up();
         void _copy(const IxnParamTraj& other);
@@ -83,6 +82,13 @@ namespace dblz {
 		const std::vector<std::pair<std::shared_ptr<DiffEqRHS>,int>>& get_diff_eq_dependencies() const;
 
         // ***************
+        // MARK: - Fix
+        // ***************
+        
+        void set_fix_value(bool fixed);
+        bool get_is_val_fixed() const;
+        
+        // ***************
         // MARK: - Timesteps
         // ***************
         
@@ -95,16 +101,6 @@ namespace dblz {
 
 		double get_init_cond() const;
 		void set_init_cond(double init_cond);
-
-        // ***************
-        // MARK: - Fixed value
-        // ***************
-
-		void set_is_val_fixed_to_init_cond(bool fixed);
-		bool get_is_val_fixed_to_init_cond() const;
-
-		void set_are_vals_fixed(bool fixed);
-		bool get_are_vals_fixed() const;
 
         // ***************
         // MARK: - Name, type

@@ -35,14 +35,13 @@ namespace dblz {
         // Adjoint
         _adjoint = nullptr;
 
-        _is_val_fixed_to_init_cond = false;
-        _are_vals_fixed = false;
-
         // Diff eq
         _diff_eq = nullptr;
         
         // No timesteps
         set_no_timesteps(0);
+        
+        _is_val_fixed = false;
 	};
 	IxnParamTraj::IxnParamTraj(const IxnParamTraj& other) {
 		_copy(other);
@@ -74,9 +73,6 @@ namespace dblz {
 	void IxnParamTraj::_copy(const IxnParamTraj& other) {
         _adjoint = other._adjoint;
         
-        _is_val_fixed_to_init_cond = other._is_val_fixed_to_init_cond;
-        _are_vals_fixed = other._are_vals_fixed;
-        
         _diff_eq = other._diff_eq;
         
         _diff_eq_dependencies = other._diff_eq_dependencies;
@@ -87,13 +83,12 @@ namespace dblz {
         
         _no_timesteps = other._no_timesteps;
         _no_timepoints = other._no_timepoints;
+        
+        _is_val_fixed = other._is_val_fixed;
     };
 	void IxnParamTraj::_move(IxnParamTraj& other) {
         _adjoint = other._adjoint;
         
-        _is_val_fixed_to_init_cond = other._is_val_fixed_to_init_cond;
-        _are_vals_fixed = other._are_vals_fixed;
-        
         _diff_eq = other._diff_eq;
         
         _diff_eq_dependencies = other._diff_eq_dependencies;
@@ -104,17 +99,18 @@ namespace dblz {
         
         _no_timesteps = other._no_timesteps;
         _no_timepoints = other._no_timepoints;
+        
+        _is_val_fixed = other._is_val_fixed;
 
 		// Reset the other
         other._adjoint = nullptr;
-        other._is_val_fixed_to_init_cond = false;
-        other._are_vals_fixed = false;
         other._diff_eq = nullptr;
         other._diff_eq_dependencies.clear();
         other._ixn_params.clear();
         other._init_cond = 0.0;
         other._no_timesteps = 0;
         other._no_timepoints = 1;
+        other._is_val_fixed = false;
     };
 
     // ***************
@@ -151,6 +147,17 @@ namespace dblz {
 	const std::vector<std::pair<std::shared_ptr<DiffEqRHS>,int>>& IxnParamTraj::get_diff_eq_dependencies() const {
 		return _diff_eq_dependencies;
 	};
+    
+    // ***************
+    // MARK: - Fix
+    // ***************
+    
+    void IxnParamTraj::set_fix_value(bool fixed) {
+        _is_val_fixed = fixed;
+    };
+    bool IxnParamTraj::get_is_val_fixed() const {
+        return _is_val_fixed;
+    };
 
     // ***************
     // MARK: - Timesteps
@@ -168,12 +175,6 @@ namespace dblz {
             exit(EXIT_FAILURE);
         };
         
-        // If the value is fixed to the initial condition, update
-        set_is_val_fixed_to_init_cond(_is_val_fixed_to_init_cond);
-
-        // If the value is fixed, update
-		set_are_vals_fixed(_are_vals_fixed);
-
 		// Adjust ixn params
         while (_ixn_params.size() < _no_timepoints) {
             // Add
@@ -202,43 +203,7 @@ namespace dblz {
         if (_no_timepoints >= 1) {
             _ixn_params.front()->set_val(_init_cond);
         };
-        
-		// If value is fixed to initial condition, update the value now
-		set_is_val_fixed_to_init_cond(_is_val_fixed_to_init_cond);
-	};
-
-    // ***************
-    // MARK: - Fix value to IC
-    // ***************
-
-	void IxnParamTraj::set_is_val_fixed_to_init_cond(bool fixed) {
-		_is_val_fixed_to_init_cond = fixed;
-        
-        if (_is_val_fixed_to_init_cond) {
-            for (auto ixn: _ixn_params) {
-                ixn->set_val(_init_cond);
-                ixn->set_fix_value(true);
-            };
-        } else {
-            for (auto ixn: _ixn_params) {
-                ixn->set_val(_init_cond);
-                ixn->set_fix_value(false);
-            };
-        };
     };
-	bool IxnParamTraj::get_is_val_fixed_to_init_cond() const {
-		return _is_val_fixed_to_init_cond;
-	};
-
-	void IxnParamTraj::set_are_vals_fixed(bool fixed) {
-		_are_vals_fixed = fixed;
-        for (auto ixn: _ixn_params) {
-            ixn->set_fix_value(_are_vals_fixed);
-        };
-	};
-	bool IxnParamTraj::get_are_vals_fixed() const {
-		return _are_vals_fixed;
-	};
 
     // ***************
     // MARK: - Name, type
@@ -264,11 +229,6 @@ namespace dblz {
 	};
 
 	void IxnParamTraj::solve_diff_eq_at_timepoint_to_plus_one(int timepoint, double dt) {
-		if (_is_val_fixed_to_init_cond) { // Do nothing if val is fixed
-			std::cerr << ">>> Error: IxnParamTraj::solve_diff_eq_at_timepoint_to_plus_one <<< ixn param: " << get_name() << " is fixed!" << std::endl;
-			exit(EXIT_FAILURE);
-		};
-
 		if (timepoint >= _no_timepoints) {
 			std::cerr << ">>> Error: IxnParamTraj::solve_diff_eq_at_timepoint_to_plus_one <<< " << timepoint << " is out of bounds: " << _no_timepoints << std::endl;
 			exit(EXIT_FAILURE);

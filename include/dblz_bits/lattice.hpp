@@ -161,6 +161,15 @@ namespace dblz {
         void _add_to_all_ixns_vec(Iptr ixn);
         
         // ***************
+        // MARK: - Persistent data structures
+        // ***************
+        
+        std::map<int,arma::vec> _pst_prop;
+        std::map<int,arma::vec> _pst_r;
+        std::map<int,arma::vec> _pst_sign_of_r;
+        std::map<int,arma::vec> _pst_sign_of_r_new;
+
+        // ***************
         // MARK: Look up sites
         // ***************
         
@@ -282,16 +291,8 @@ namespace dblz {
         
         // 1. Calculate activation given layer above or below or both
         void activate_layer_calculate_from_below(MCType chain, int layer); // figures out which normal or centered
-        void activate_layer_calculate_from_below_centered(MCType chain, int layer);
-        void activate_layer_calculate_from_below_normal(MCType chain, int layer);
-
         void activate_layer_calculate_from_above(MCType chain, int layer); // figures out which normal or centered
-        void activate_layer_calculate_from_above_centered(MCType chain, int layer);
-        void activate_layer_calculate_from_above_normal(MCType chain, int layer);
-
         void activate_layer_calculate_from_both(MCType chain, int layer); // figures out which normal or centered
-        void activate_layer_calculate_from_both_centered(MCType chain, int layer);
-        void activate_layer_calculate_from_both_normal(MCType chain, int layer);
 
         // (2) Convert activations to probs
         void activate_layer_convert_to_probs(MCType chain, int layer, bool binary);
@@ -305,32 +306,17 @@ namespace dblz {
         
         // Variational inference ie mean field
         void mean_field_hiddens_step(); // figures out which normal or centered
-        void mean_field_hiddens_step_normal();
-        void mean_field_hiddens_step_centered();
 
         // Gibbs sampling for awake phase
         void gibbs_sampling_step_awake(bool binary_hidden); // figures out which normal or centered
-        void gibbs_sampling_step_awake_normal(bool binary_hidden);
-        void gibbs_sampling_step_awake_centered(bool binary_hidden);
-
         void gibbs_sampling_step_parallel_awake(bool binary_hidden); // figures out which normal or centered
-        void gibbs_sampling_step_parallel_awake_normal(bool binary_hidden);
-        void gibbs_sampling_step_parallel_awake_centered(bool binary_hidden);
 
         // Gibbs sampling
         void gibbs_sampling_step(bool binary_visible, bool binary_hidden); // figures out which normal or centered
-        void gibbs_sampling_step_normal(bool binary_visible, bool binary_hidden);
-        void gibbs_sampling_step_centered(bool binary_visible, bool binary_hidden);
-
         void gibbs_sampling_step_parallel(bool binary_visible, bool binary_hidden); // figures out which normal or centered
-        void gibbs_sampling_step_parallel_normal(bool binary_visible, bool binary_hidden);
-        void gibbs_sampling_step_parallel_centered(bool binary_visible, bool binary_hidden);
 
         // Make a pass activating upwards
         void activate_upward_pass(MCType chain, bool binary_hidden); // figures out which normal or centered
-        void activate_upward_pass_normal(MCType chain, bool binary_hidden);
-        void activate_upward_pass_centered(MCType chain, bool binary_hidden);
-
         void activate_upward_pass_with_2x_weights_1x_bias(MCType chain, bool binary_hidden); // figures out which normal or centered
 
         // ***************

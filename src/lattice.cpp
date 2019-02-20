@@ -109,6 +109,11 @@ namespace dblz {
         
         _cpt_means = other._cpt_means;
         _cpt_batch_means = other._cpt_batch_means;
+        
+        _pst_prop = other._pst_prop;
+        _pst_r = other._pst_r;
+        _pst_sign_of_r = other._pst_sign_of_r;
+        _pst_sign_of_r_new = other._pst_sign_of_r_new;
     };
 	void Lattice::_move(Lattice& other) {
         _no_dims = other._no_dims;
@@ -143,6 +148,11 @@ namespace dblz {
         
         _cpt_means = other._cpt_means;
         _cpt_batch_means = other._cpt_batch_means;
+    
+        _pst_prop = other._pst_prop;
+        _pst_r = other._pst_r;
+        _pst_sign_of_r = other._pst_sign_of_r;
+        _pst_sign_of_r_new = other._pst_sign_of_r_new;
         
 		// Reset other
 		other._no_dims = 0;
@@ -175,6 +185,11 @@ namespace dblz {
         
         other._cpt_means.clear();
         other._cpt_batch_means.clear();
+        
+        other._pst_prop.clear();
+        other._pst_r.clear();
+        other._pst_sign_of_r.clear();
+        other._pst_sign_of_r_new.clear();
 	};
     
     /****************************************
@@ -390,6 +405,12 @@ namespace dblz {
                 _cpt_batch_means[layer][sp] = 0.5;
             };
         };
+        
+        // Persistent data structures
+        _pst_prop[layer] = arma::vec(no_units);
+        _pst_r[layer] = arma::vec(no_units);
+        _pst_sign_of_r[layer] = arma::vec(no_units);
+        _pst_sign_of_r_new[layer] = arma::vec(no_units);
     };
     
 	/********************
@@ -578,8 +599,7 @@ namespace dblz {
     };
     void Lattice::_binarize_all_units_in_layer(MCType chain, int i_chain, int layer, bool act) {
         // Random vec
-        int no_units = get_no_units_in_layer(layer);
-        auto r = arma::vec(no_units,arma::fill::randu);
+        _pst_r.at(layer).fill(arma::fill::randu);
         
         // Helpers
         
@@ -588,8 +608,8 @@ namespace dblz {
         // 1 -> 1 => not this species
         // 1 -> -1 => this species
         // -1 -> -1 => not this species
-        auto sign_of_r = arma::vec(no_units,arma::fill::ones);
-        auto sign_of_r_new = sign_of_r;
+        _pst_sign_of_r.at(layer).fill(arma::fill::ones);
+        _pst_sign_of_r_new.at(layer).fill(arma::fill::ones);
 
         // _latt or _latt_act?
         if (act) {
@@ -600,10 +620,10 @@ namespace dblz {
             // Finally: we (flip) are at max propensity = 1.0, rand value is below
             for (auto sp: _species_possible_vec.at(layer)) {
                 // Subtract prob from r
-                r -= _mc_chains_act[chain][i_chain][layer][sp];
+                _pst_r[layer] -= _mc_chains_act[chain][i_chain][layer][sp];
                 
                 // New flip vector
-                sign_of_r_new = sign(r);
+                _pst_sign_of_r_new[layer] = sign(_pst_r.at(layer));
                 
                 // Difference
                 // sign_of_r -> sign_of_r_new
@@ -612,20 +632,20 @@ namespace dblz {
                 // -1 -> -1 => not this species [0]
                 // 0.5 * (sign_of_r - sign_of_r_new) encodes the [brackets]
                 
-                _mc_chains_act[chain][i_chain][layer][sp] = 0.5 * (sign_of_r - sign_of_r_new);
+                _mc_chains_act[chain][i_chain][layer][sp] = 0.5 * (_pst_sign_of_r.at(layer) - _pst_sign_of_r_new.at(layer));
                 
                 // Old flip vector = new flip vector
-                sign_of_r = sign_of_r_new;
+                _pst_sign_of_r[layer] = _pst_sign_of_r_new.at(layer);
             };
             // Finally: if still above the final propensity, it is the empty species! This means all are zero, so no further adjustment needed!
             
         } else {
 
             for (auto sp: _species_possible_vec.at(layer)) {
-                r -= _mc_chains[chain][i_chain][layer][sp];
-                sign_of_r_new = sign(r);
-                _mc_chains[chain][i_chain][layer][sp] = 0.5 * (sign_of_r - sign_of_r_new);
-                sign_of_r = sign_of_r_new;
+                _pst_r[layer] -= _mc_chains[chain][i_chain][layer][sp];
+                _pst_sign_of_r_new[layer] = sign(_pst_r.at(layer));
+                _mc_chains[chain][i_chain][layer][sp] = 0.5 * (_pst_sign_of_r.at(layer) - _pst_sign_of_r_new.at(layer));
+                _pst_sign_of_r[layer] = _pst_sign_of_r_new.at(layer);
             };
         };
     };
@@ -848,43 +868,36 @@ namespace dblz {
         
         if (_mode == LatticeMode::NORMAL || _mode == LatticeMode::NORMAL_W_CENTERED_GRADIENT_PT || _mode == LatticeMode::NORMAL_W_CENTERED_GRADIENT_VEC) {
             
-            activate_layer_calculate_from_below_normal(chain,layer);
-            
-        } else if (_mode == LatticeMode::CENTERED_PT) {
-            
-            activate_layer_calculate_from_below_centered(chain,layer);
-
-        };
-    };
-    void Lattice::activate_layer_calculate_from_below_centered(MCType chain, int layer) {
-        for (auto i_chain=0; i_chain<_no_markov_chains.at(chain); i_chain++) {
-            
-            for (auto sp: _species_possible_vec.at(layer)) {
-                
-                // bias term
-                _mc_chains_act[chain][i_chain][layer][sp].fill(get_bias_in_layer(layer, sp));
-                
-                // ixns
-                for (auto &given_sp: _species_possible_vec.at(layer-1)) {
+            for (auto i_chain=0; i_chain<_no_markov_chains.at(chain); i_chain++) {
+                for (auto sp: _species_possible_vec.at(layer)) {
                     
-                    // Activate from below
-                    _mc_chains_act[chain][i_chain][layer][sp] += get_ixn_between_layers(layer-1, given_sp, layer, sp) * ( _adj.at(layer-1).at(layer) * ( _mc_chains.at(chain).at(i_chain).at(layer-1).at(given_sp) - _cpt_means.at(layer-1).at(given_sp) ) );
+                    // bias term
+                    _mc_chains_act[chain][i_chain][layer][sp].fill(get_bias_in_layer(layer, sp));
+                    
+                    // ixns
+                    for (auto &given_sp: _species_possible_vec.at(layer-1)) {
+                        
+                        // Activate from below
+                        _mc_chains_act[chain][i_chain][layer][sp] += get_ixn_between_layers(layer-1, given_sp, layer, sp) * ( _adj.at(layer-1).at(layer) * _mc_chains.at(chain).at(i_chain).at(layer-1).at(given_sp) );
+                    };
                 };
             };
-        };
-    };
-    void Lattice::activate_layer_calculate_from_below_normal(MCType chain, int layer) {
-        for (auto i_chain=0; i_chain<_no_markov_chains.at(chain); i_chain++) {
-            for (auto sp: _species_possible_vec.at(layer)) {
+
+        } else if (_mode == LatticeMode::CENTERED_PT) {
+            
+            for (auto i_chain=0; i_chain<_no_markov_chains.at(chain); i_chain++) {
                 
-                // bias term
-                _mc_chains_act[chain][i_chain][layer][sp].fill(get_bias_in_layer(layer, sp));
-                
-                // ixns
-                for (auto &given_sp: _species_possible_vec.at(layer-1)) {
+                for (auto sp: _species_possible_vec.at(layer)) {
                     
-                    // Activate from below
-                    _mc_chains_act[chain][i_chain][layer][sp] += get_ixn_between_layers(layer-1, given_sp, layer, sp) * ( _adj.at(layer-1).at(layer) * _mc_chains.at(chain).at(i_chain).at(layer-1).at(given_sp) );
+                    // bias term
+                    _mc_chains_act[chain][i_chain][layer][sp].fill(get_bias_in_layer(layer, sp));
+                    
+                    // ixns
+                    for (auto &given_sp: _species_possible_vec.at(layer-1)) {
+                        
+                        // Activate from below
+                        _mc_chains_act[chain][i_chain][layer][sp] += get_ixn_between_layers(layer-1, given_sp, layer, sp) * ( _adj.at(layer-1).at(layer) * ( _mc_chains.at(chain).at(i_chain).at(layer-1).at(given_sp) - _cpt_means.at(layer-1).at(given_sp) ) );
+                    };
                 };
             };
         };
@@ -894,43 +907,36 @@ namespace dblz {
         
         if (_mode == LatticeMode::NORMAL || _mode == LatticeMode::NORMAL_W_CENTERED_GRADIENT_PT || _mode == LatticeMode::NORMAL_W_CENTERED_GRADIENT_VEC) {
 
-            activate_layer_calculate_from_above_normal(chain,layer);
-            
-        } else if (_mode == LatticeMode::CENTERED_PT) {
-            
-            activate_layer_calculate_from_above_centered(chain,layer);
-
-        };
-    };
-    void Lattice::activate_layer_calculate_from_above_centered(MCType chain, int layer) {
-        for (auto i_chain=0; i_chain<_no_markov_chains.at(chain); i_chain++) {
-            
-            for (auto sp: _species_possible_vec.at(layer)) {
-                
-                // bias term
-                _mc_chains_act[chain][i_chain][layer][sp].fill(get_bias_in_layer(layer, sp));
-                
-                // ixns
-                for (auto given_sp: _species_possible_vec.at(layer+1)) {
+            for (auto i_chain=0; i_chain<_no_markov_chains.at(chain); i_chain++) {
+                for (auto sp: _species_possible_vec.at(layer)) {
                     
-                    // Activate from above
-                    _mc_chains_act[chain][i_chain][layer][sp] += get_ixn_between_layers(layer+1, given_sp, layer, sp) * ( _adj.at(layer+1).at(layer) * ( _mc_chains.at(chain).at(i_chain).at(layer+1).at(given_sp) - _cpt_means.at(layer+1).at(given_sp) ) );
+                    // bias term
+                    _mc_chains_act[chain][i_chain][layer][sp].fill(get_bias_in_layer(layer, sp));
+                    
+                    // ixns
+                    for (auto given_sp: _species_possible_vec.at(layer+1)) {
+                        
+                        // Activate from above
+                        _mc_chains_act[chain][i_chain][layer][sp] += get_ixn_between_layers(layer+1, given_sp, layer, sp) * ( _adj.at(layer+1).at(layer) * _mc_chains.at(chain).at(i_chain).at(layer+1).at(given_sp) );
+                    };
                 };
             };
-        };
-    };
-    void Lattice::activate_layer_calculate_from_above_normal(MCType chain, int layer) {
-        for (auto i_chain=0; i_chain<_no_markov_chains.at(chain); i_chain++) {
-            for (auto sp: _species_possible_vec.at(layer)) {
+
+        } else if (_mode == LatticeMode::CENTERED_PT) {
+            
+            for (auto i_chain=0; i_chain<_no_markov_chains.at(chain); i_chain++) {
                 
-                // bias term
-                _mc_chains_act[chain][i_chain][layer][sp].fill(get_bias_in_layer(layer, sp));
-                
-                // ixns
-                for (auto given_sp: _species_possible_vec.at(layer+1)) {
+                for (auto sp: _species_possible_vec.at(layer)) {
                     
-                    // Activate from above
-                    _mc_chains_act[chain][i_chain][layer][sp] += get_ixn_between_layers(layer+1, given_sp, layer, sp) * ( _adj.at(layer+1).at(layer) * _mc_chains.at(chain).at(i_chain).at(layer+1).at(given_sp) );
+                    // bias term
+                    _mc_chains_act[chain][i_chain][layer][sp].fill(get_bias_in_layer(layer, sp));
+                    
+                    // ixns
+                    for (auto given_sp: _species_possible_vec.at(layer+1)) {
+                        
+                        // Activate from above
+                        _mc_chains_act[chain][i_chain][layer][sp] += get_ixn_between_layers(layer+1, given_sp, layer, sp) * ( _adj.at(layer+1).at(layer) * ( _mc_chains.at(chain).at(i_chain).at(layer+1).at(given_sp) - _cpt_means.at(layer+1).at(given_sp) ) );
+                    };
                 };
             };
         };
@@ -940,47 +946,41 @@ namespace dblz {
     
         if (_mode == LatticeMode::NORMAL || _mode == LatticeMode::NORMAL_W_CENTERED_GRADIENT_PT || _mode == LatticeMode::NORMAL_W_CENTERED_GRADIENT_VEC) {
             
-            activate_layer_calculate_from_both_normal(chain,layer);
+            for (auto i_chain=0; i_chain<_no_markov_chains.at(chain); i_chain++) {
+                for (auto sp: _species_possible_vec.at(layer)) {
+                    
+                    // bias term
+                    _mc_chains_act[chain][i_chain][layer][sp].fill(get_bias_in_layer(layer, sp));
+                    
+                    // Activate from above
+                    for (auto given_sp: _species_possible_vec.at(layer+1)) {
+                        _mc_chains_act[chain][i_chain][layer][sp] += get_ixn_between_layers(layer+1, given_sp, layer, sp) * ( _adj.at(layer+1).at(layer) * _mc_chains.at(chain).at(i_chain).at(layer+1).at(given_sp) );
+                    };
+                    
+                    // Activate from below
+                    for (auto given_sp: _species_possible_vec.at(layer-1)) {
+                        _mc_chains_act[chain][i_chain][layer][sp] += get_ixn_between_layers(layer-1, given_sp, layer, sp) * ( _adj.at(layer-1).at(layer) * _mc_chains.at(chain).at(i_chain).at(layer-1).at(given_sp) );
+                    };
+                };
+            };
 
         } else if (_mode == LatticeMode::CENTERED_PT) {
             
-            activate_layer_calculate_from_both_centered(chain,layer);
-        };
-    };
-    void Lattice::activate_layer_calculate_from_both_centered(MCType chain, int layer) {
-        for (auto i_chain=0; i_chain<_no_markov_chains.at(chain); i_chain++) {
-            for (auto sp: _species_possible_vec.at(layer)) {
-                
-                // bias term
-                _mc_chains_act[chain][i_chain][layer][sp].fill(get_bias_in_layer(layer, sp));
-                
-                // Activate from above
-                for (auto given_sp: _species_possible_vec.at(layer+1)) {
-                    _mc_chains_act[chain][i_chain][layer][sp] += get_ixn_between_layers(layer+1, given_sp, layer, sp) * ( _adj.at(layer+1).at(layer) * ( _mc_chains.at(chain).at(i_chain).at(layer+1).at(given_sp) - _cpt_means.at(layer+1).at(given_sp) ) );
-                };
-                
-                // Activate from below
-                for (auto given_sp: _species_possible_vec.at(layer-1)) {
-                    _mc_chains_act[chain][i_chain][layer][sp] += get_ixn_between_layers(layer-1, given_sp, layer, sp) * ( _adj.at(layer-1).at(layer) * ( _mc_chains.at(chain).at(i_chain).at(layer-1).at(given_sp) - _cpt_means.at(layer-1).at(given_sp) ) );
-                };
-            };
-        };
-    };
-    void Lattice::activate_layer_calculate_from_both_normal(MCType chain, int layer) {
-        for (auto i_chain=0; i_chain<_no_markov_chains.at(chain); i_chain++) {
-            for (auto sp: _species_possible_vec.at(layer)) {
-                
-                // bias term
-                _mc_chains_act[chain][i_chain][layer][sp].fill(get_bias_in_layer(layer, sp));
-                
-                // Activate from above
-                for (auto given_sp: _species_possible_vec.at(layer+1)) {
-                    _mc_chains_act[chain][i_chain][layer][sp] += get_ixn_between_layers(layer+1, given_sp, layer, sp) * ( _adj.at(layer+1).at(layer) * _mc_chains.at(chain).at(i_chain).at(layer+1).at(given_sp) );
-                };
-                
-                // Activate from below
-                for (auto given_sp: _species_possible_vec.at(layer-1)) {
-                    _mc_chains_act[chain][i_chain][layer][sp] += get_ixn_between_layers(layer-1, given_sp, layer, sp) * ( _adj.at(layer-1).at(layer) * _mc_chains.at(chain).at(i_chain).at(layer-1).at(given_sp) );
+            for (auto i_chain=0; i_chain<_no_markov_chains.at(chain); i_chain++) {
+                for (auto sp: _species_possible_vec.at(layer)) {
+                    
+                    // bias term
+                    _mc_chains_act[chain][i_chain][layer][sp].fill(get_bias_in_layer(layer, sp));
+                    
+                    // Activate from above
+                    for (auto given_sp: _species_possible_vec.at(layer+1)) {
+                        _mc_chains_act[chain][i_chain][layer][sp] += get_ixn_between_layers(layer+1, given_sp, layer, sp) * ( _adj.at(layer+1).at(layer) * ( _mc_chains.at(chain).at(i_chain).at(layer+1).at(given_sp) - _cpt_means.at(layer+1).at(given_sp) ) );
+                    };
+                    
+                    // Activate from below
+                    for (auto given_sp: _species_possible_vec.at(layer-1)) {
+                        _mc_chains_act[chain][i_chain][layer][sp] += get_ixn_between_layers(layer-1, given_sp, layer, sp) * ( _adj.at(layer-1).at(layer) * ( _mc_chains.at(chain).at(i_chain).at(layer-1).at(given_sp) - _cpt_means.at(layer-1).at(given_sp) ) );
+                    };
                 };
             };
         };
@@ -989,25 +989,23 @@ namespace dblz {
     // (2) Convert activations to probs
     void Lattice::activate_layer_convert_to_probs(MCType chain, int layer, bool binary) {
         
-        int no_units = get_no_units_in_layer(layer);
-        
         // Starts at 1.0 = exp(0) for empty
-        auto prop_tot = arma::vec(no_units,arma::fill::ones);
+        _pst_prop.at(layer).fill(arma::fill::ones);
 
         // All chains
         for (auto i_chain=0; i_chain<_no_markov_chains.at(chain); i_chain++) {
         
             // Convert activations to propensities via exp
             // Also calculate total propensity
-            prop_tot.fill(arma::fill::ones);
+            _pst_prop.at(layer).fill(arma::fill::ones);
             for (auto sp: _species_possible_vec.at(layer)) {
                 _mc_chains_act[chain][i_chain][layer][sp].transform( [](double val) { return (exp(val)); } );
-                prop_tot += _mc_chains_act[chain][i_chain][layer][sp];
+                _pst_prop[layer] += _mc_chains_act[chain][i_chain][layer][sp];
             };
             
             // Divide by total to normalize
             for (auto sp: _species_possible_vec.at(layer)) {
-                _mc_chains_act[chain][i_chain][layer][sp] /= prop_tot;
+                _mc_chains_act[chain][i_chain][layer][sp] /= _pst_prop.at(layer);
             };
         };
             
@@ -1035,58 +1033,30 @@ namespace dblz {
     
     // Variational inference
     void Lattice::mean_field_hiddens_step() {
-    
-        if (_mode == LatticeMode::NORMAL || _mode == LatticeMode::NORMAL_W_CENTERED_GRADIENT_PT || _mode == LatticeMode::NORMAL_W_CENTERED_GRADIENT_VEC) {
-            mean_field_hiddens_step_normal();
-        } else {
-            mean_field_hiddens_step_centered();
-        };
-    };
-    void Lattice::mean_field_hiddens_step_normal() {
         
         // Activate all layers
         for (auto layer=1; layer<_no_layers-1; layer++) {
-            activate_layer_calculate_from_both_normal(MCType::AWAKE, layer);
+            activate_layer_calculate_from_both(MCType::AWAKE, layer);
             activate_layer_convert_to_probs(MCType::AWAKE, layer, false);
             activate_layer_committ(MCType::AWAKE, layer);
         };
         // Last layer
-        activate_layer_calculate_from_below_normal(MCType::AWAKE, _no_layers-1);
-        activate_layer_convert_to_probs(MCType::AWAKE, _no_layers-1, false);
-        activate_layer_committ(MCType::AWAKE, _no_layers-1);
-    };
-    void Lattice::mean_field_hiddens_step_centered() {
-        
-        // Activate all layers
-        for (auto layer=1; layer<_no_layers-1; layer++) {
-            activate_layer_calculate_from_both_centered(MCType::AWAKE, layer);
-            activate_layer_convert_to_probs(MCType::AWAKE, layer, false);
-            activate_layer_committ(MCType::AWAKE, layer);
-        };
-        // Last layer
-        activate_layer_calculate_from_below_centered(MCType::AWAKE, _no_layers-1);
+        activate_layer_calculate_from_below(MCType::AWAKE, _no_layers-1);
         activate_layer_convert_to_probs(MCType::AWAKE, _no_layers-1, false);
         activate_layer_committ(MCType::AWAKE, _no_layers-1);
     };
 
     // Sample
     void Lattice::gibbs_sampling_step_awake(bool binary_hidden) {
-        if (_mode == LatticeMode::NORMAL || _mode == LatticeMode::NORMAL_W_CENTERED_GRADIENT_PT || _mode == LatticeMode::NORMAL_W_CENTERED_GRADIENT_VEC) {
-            gibbs_sampling_step_awake_normal(binary_hidden);
-        } else {
-            gibbs_sampling_step_awake_centered(binary_hidden);
-        };
-    };
-    void Lattice::gibbs_sampling_step_awake_normal(bool binary_hidden) {
         
         // Activate in two blocks: odds and evens!
         
         // First the odd layers
         for (auto layer=1; layer<_no_layers; layer += 2) {
             if (layer != _no_layers-1) {
-                activate_layer_calculate_from_both_normal(MCType::AWAKE, layer);
+                activate_layer_calculate_from_both(MCType::AWAKE, layer);
             } else {
-                activate_layer_calculate_from_below_normal(MCType::AWAKE, layer);
+                activate_layer_calculate_from_below(MCType::AWAKE, layer);
             };
             activate_layer_convert_to_probs(MCType::AWAKE, layer, binary_hidden);
             activate_layer_committ(MCType::AWAKE, layer);
@@ -1096,36 +1066,9 @@ namespace dblz {
         // Other layers
         for (auto layer=2; layer<_no_layers; layer += 2) {
             if (layer != _no_layers-1) {
-                activate_layer_calculate_from_both_normal(MCType::AWAKE, layer);
+                activate_layer_calculate_from_both(MCType::AWAKE, layer);
             } else {
-                activate_layer_calculate_from_below_normal(MCType::AWAKE, layer);
-            };
-            activate_layer_convert_to_probs(MCType::AWAKE, layer, binary_hidden);
-            activate_layer_committ(MCType::AWAKE, layer);
-        };
-    };
-    void Lattice::gibbs_sampling_step_awake_centered(bool binary_hidden) {
-        
-        // Activate in two blocks: odds and evens!
-        
-        // First the odd layers
-        for (auto layer=1; layer<_no_layers; layer += 2) {
-            if (layer != _no_layers-1) {
-                activate_layer_calculate_from_both_centered(MCType::AWAKE, layer);
-            } else {
-                activate_layer_calculate_from_below_centered(MCType::AWAKE, layer);
-            };
-            activate_layer_convert_to_probs(MCType::AWAKE, layer, binary_hidden);
-            activate_layer_committ(MCType::AWAKE, layer);
-        };
-        
-        // Next the even layers
-        // Other layers
-        for (auto layer=2; layer<_no_layers; layer += 2) {
-            if (layer != _no_layers-1) {
-                activate_layer_calculate_from_both_centered(MCType::AWAKE, layer);
-            } else {
-                activate_layer_calculate_from_below_centered(MCType::AWAKE, layer);
+                activate_layer_calculate_from_below(MCType::AWAKE, layer);
             };
             activate_layer_convert_to_probs(MCType::AWAKE, layer, binary_hidden);
             activate_layer_committ(MCType::AWAKE, layer);
@@ -1134,31 +1077,10 @@ namespace dblz {
     
     void Lattice::gibbs_sampling_step_parallel_awake(bool binary_hidden) {
         
-        if (_mode == LatticeMode::NORMAL || _mode == LatticeMode::NORMAL_W_CENTERED_GRADIENT_PT || _mode == LatticeMode::NORMAL_W_CENTERED_GRADIENT_VEC) {
-            gibbs_sampling_step_parallel_awake_normal(binary_hidden);
-        } else {
-            gibbs_sampling_step_parallel_awake_centered(binary_hidden);
-        };
-    };
-    void Lattice::gibbs_sampling_step_parallel_awake_normal(bool binary_hidden) {
-        
         for (auto layer=1; layer<_no_layers-1; layer++) {
-            activate_layer_calculate_from_both_normal(MCType::AWAKE, layer);
+            activate_layer_calculate_from_both(MCType::AWAKE, layer);
         };
-        activate_layer_calculate_from_below_normal(MCType::AWAKE, _no_layers-1);
-        
-        // Convert activations to probabilities and committ
-        for (auto layer=1; layer<_no_layers; layer++) {
-            activate_layer_convert_to_probs(MCType::AWAKE, layer, binary_hidden);
-            activate_layer_committ(MCType::AWAKE, layer);
-        };
-    };
-    void Lattice::gibbs_sampling_step_parallel_awake_centered(bool binary_hidden) {
-        
-        for (auto layer=1; layer<_no_layers-1; layer++) {
-            activate_layer_calculate_from_both_centered(MCType::AWAKE, layer);
-        };
-        activate_layer_calculate_from_below_centered(MCType::AWAKE, _no_layers-1);
+        activate_layer_calculate_from_below(MCType::AWAKE, _no_layers-1);
         
         // Convert activations to probabilities and committ
         for (auto layer=1; layer<_no_layers; layer++) {
@@ -1170,22 +1092,14 @@ namespace dblz {
     // Sample
     void Lattice::gibbs_sampling_step(bool binary_visible, bool binary_hidden) {
         
-        if (_mode == LatticeMode::NORMAL || _mode == LatticeMode::NORMAL_W_CENTERED_GRADIENT_PT || _mode == LatticeMode::NORMAL_W_CENTERED_GRADIENT_VEC) {
-            gibbs_sampling_step_normal(binary_visible,binary_hidden);
-        } else {
-            gibbs_sampling_step_centered(binary_visible,binary_hidden);
-        };
-    };
-    void Lattice::gibbs_sampling_step_normal(bool binary_visible, bool binary_hidden) {
-        
         // Activate in two blocks: odds and evens!
         
         // First the odd layers
         for (auto layer=1; layer<_no_layers; layer += 2) {
             if (layer != _no_layers-1) {
-                activate_layer_calculate_from_both_normal(MCType::ASLEEP, layer);
+                activate_layer_calculate_from_both(MCType::ASLEEP, layer);
             } else {
-                activate_layer_calculate_from_below_normal(MCType::ASLEEP, layer);
+                activate_layer_calculate_from_below(MCType::ASLEEP, layer);
             };
             activate_layer_convert_to_probs(MCType::ASLEEP, layer, binary_hidden);
             activate_layer_committ(MCType::ASLEEP, layer);
@@ -1193,46 +1107,15 @@ namespace dblz {
         
         // Next the even layers
         // Zeroth layer
-        activate_layer_calculate_from_above_normal(MCType::ASLEEP, 0);
+        activate_layer_calculate_from_above(MCType::ASLEEP, 0);
         activate_layer_convert_to_probs(MCType::ASLEEP, 0, binary_visible);
         activate_layer_committ(MCType::ASLEEP, 0);
         // Other layers
         for (auto layer=2; layer<_no_layers; layer += 2) {
             if (layer != _no_layers-1) {
-                activate_layer_calculate_from_both_normal(MCType::ASLEEP, layer);
+                activate_layer_calculate_from_both(MCType::ASLEEP, layer);
             } else {
-                activate_layer_calculate_from_below_normal(MCType::ASLEEP, layer);
-            };
-            activate_layer_convert_to_probs(MCType::ASLEEP, layer, binary_hidden);
-            activate_layer_committ(MCType::ASLEEP, layer);
-        };
-    };
-    void Lattice::gibbs_sampling_step_centered(bool binary_visible, bool binary_hidden) {
-        
-        // Activate in two blocks: odds and evens!
-        
-        // First the odd layers
-        for (auto layer=1; layer<_no_layers; layer += 2) {
-            if (layer != _no_layers-1) {
-                activate_layer_calculate_from_both_centered(MCType::ASLEEP, layer);
-            } else {
-                activate_layer_calculate_from_below_centered(MCType::ASLEEP, layer);
-            };
-            activate_layer_convert_to_probs(MCType::ASLEEP, layer, binary_hidden);
-            activate_layer_committ(MCType::ASLEEP, layer);
-        };
-        
-        // Next the even layers
-        // Zeroth layer
-        activate_layer_calculate_from_above_centered(MCType::ASLEEP, 0);
-        activate_layer_convert_to_probs(MCType::ASLEEP, 0, binary_visible);
-        activate_layer_committ(MCType::ASLEEP, 0);
-        // Other layers
-        for (auto layer=2; layer<_no_layers; layer += 2) {
-            if (layer != _no_layers-1) {
-                activate_layer_calculate_from_both_centered(MCType::ASLEEP, layer);
-            } else {
-                activate_layer_calculate_from_below_centered(MCType::ASLEEP, layer);
+                activate_layer_calculate_from_below(MCType::ASLEEP, layer);
             };
             activate_layer_convert_to_probs(MCType::ASLEEP, layer, binary_hidden);
             activate_layer_committ(MCType::ASLEEP, layer);
@@ -1241,39 +1124,13 @@ namespace dblz {
 
     void Lattice::gibbs_sampling_step_parallel(bool binary_visible, bool binary_hidden) {
         
-        if (_mode == LatticeMode::NORMAL || _mode == LatticeMode::NORMAL_W_CENTERED_GRADIENT_PT || _mode == LatticeMode::NORMAL_W_CENTERED_GRADIENT_VEC) {
-            gibbs_sampling_step_parallel_normal(binary_visible,binary_hidden);
-        } else {
-            gibbs_sampling_step_parallel_centered(binary_visible,binary_hidden);
-        };
-    };
-    void Lattice::gibbs_sampling_step_parallel_normal(bool binary_visible, bool binary_hidden) {
-        
         // Activate in parallel
         
-        activate_layer_calculate_from_above_normal(MCType::ASLEEP, 0);
+        activate_layer_calculate_from_above(MCType::ASLEEP, 0);
         for (auto layer=1; layer<_no_layers-1; layer++) {
-            activate_layer_calculate_from_both_normal(MCType::ASLEEP, layer);
+            activate_layer_calculate_from_both(MCType::ASLEEP, layer);
         };
-        activate_layer_calculate_from_below_normal(MCType::ASLEEP, _no_layers-1);
-        
-        // Convert activations to probabilities and committ
-        activate_layer_convert_to_probs(MCType::ASLEEP, 0, binary_visible);
-        activate_layer_committ(MCType::ASLEEP, 0);
-        for (auto layer=1; layer<_no_layers; layer++) {
-            activate_layer_convert_to_probs(MCType::ASLEEP, layer, binary_hidden);
-            activate_layer_committ(MCType::ASLEEP, layer);
-        };
-    };
-    void Lattice::gibbs_sampling_step_parallel_centered(bool binary_visible, bool binary_hidden) {
-        
-        // Activate in parallel
-        
-        activate_layer_calculate_from_above_centered(MCType::ASLEEP, 0);
-        for (auto layer=1; layer<_no_layers-1; layer++) {
-            activate_layer_calculate_from_both_centered(MCType::ASLEEP, layer);
-        };
-        activate_layer_calculate_from_below_centered(MCType::ASLEEP, _no_layers-1);
+        activate_layer_calculate_from_below(MCType::ASLEEP, _no_layers-1);
         
         // Convert activations to probabilities and committ
         activate_layer_convert_to_probs(MCType::ASLEEP, 0, binary_visible);
@@ -1287,31 +1144,14 @@ namespace dblz {
     // Make a pass activating upwards
     void Lattice::activate_upward_pass(MCType chain, bool binary_hidden) {
         
-        if (_mode == LatticeMode::NORMAL || _mode == LatticeMode::NORMAL_W_CENTERED_GRADIENT_PT || _mode == LatticeMode::NORMAL_W_CENTERED_GRADIENT_VEC) {
-            activate_upward_pass_normal(chain,binary_hidden);
-        } else {
-            activate_upward_pass_centered(chain,binary_hidden);
-        };
-    };
-    void Lattice::activate_upward_pass_normal(MCType chain, bool binary_hidden) {
-        
         // All layers
         for (auto layer=1; layer<_no_layers; layer++) {
-            activate_layer_calculate_from_below_normal(chain, layer);
+            activate_layer_calculate_from_below(chain, layer);
             activate_layer_convert_to_probs(chain, layer, binary_hidden);
             activate_layer_committ(chain, layer);
         };
     };
-    void Lattice::activate_upward_pass_centered(MCType chain, bool binary_hidden) {
-        
-        // All layers
-        for (auto layer=1; layer<_no_layers; layer++) {
-            activate_layer_calculate_from_below_centered(chain, layer);
-            activate_layer_convert_to_probs(chain, layer, binary_hidden);
-            activate_layer_committ(chain, layer);
-        };
-    };
-    
+
     void Lattice::activate_upward_pass_with_2x_weights_1x_bias(MCType chain, bool binary_hidden) {
         // Copy over the mults for safekeeping
         std::map<int, std::map<int, double>> o2_mults = _o2_mults;

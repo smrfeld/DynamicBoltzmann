@@ -73,7 +73,8 @@ namespace dblz {
         
         void print_val_traj(int timepoint_start, int no_timesteps) const;
         void print_moment_traj(int timepoint_start, int no_timesteps) const;
-                
+        void print_moment_diff_traj(int timepoint_start, int no_timesteps) const;
+
         // ***************
         // MARK: - Diff eq rhs that this ixn param appears in
         // ***************

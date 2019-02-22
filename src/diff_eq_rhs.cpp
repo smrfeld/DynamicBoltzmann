@@ -406,12 +406,15 @@ namespace dblz {
 
     void DiffEqRHS::update_calculate_and_store(int timepoint_start, int timepoint_end, double dt) {
 
+        // Clear before starting
+        _updates.clear();
+        
 		// Adjoint
 		double adjoint_val;
 
 		// Updates
 		std::map<q3c1::Vertex*,std::vector<double>> updates;
-
+        
 		// Go through all times
 		for (auto timepoint=timepoint_start; timepoint<=timepoint_end; timepoint++) {
 
@@ -444,14 +447,39 @@ namespace dblz {
 
 	// Committ the update
     void DiffEqRHS::update_committ_stored_sgd() {
-        for (auto pr: _updates) {
-            for (auto i=0; i<_no_coeffs; i++) {
-                pr.first->get_bf(_coeff_order.at(i))->increment_coeff(- _lr * pr.second.at(i));
+        if (_mag_max_update) {
+            
+            for (auto pr: _updates) {
+                for (auto i=0; i<_no_coeffs; i++) {
+                    if (-_lr * pr.second.at(i) > (*_mag_max_update)) {
+                        pr.first->get_bf(_coeff_order.at(i))->increment_coeff(*_mag_max_update);
+                    } else if (-_lr * pr.second.at(i) < -1.0 * (*_mag_max_update)) {
+                        pr.first->get_bf(_coeff_order.at(i))->increment_coeff(-1.0 * *_mag_max_update);
+                    } else {
+                        pr.first->get_bf(_coeff_order.at(i))->increment_coeff(- _lr * pr.second.at(i));
+                    };
+                };
             };
+            
+        } else {
+            
+            double ave_mag=0.0,max_mag=0.0;
+            int counts = 0;
+            for (auto pr: _updates) {
+                for (auto i=0; i<_no_coeffs; i++) {
+                    pr.first->get_bf(_coeff_order.at(i))->increment_coeff(- _lr * pr.second.at(i));
+                    if (i==0) {
+                        ave_mag += abs( _lr * pr.second.at(i) );
+                        max_mag = std::max(max_mag,abs( _lr * pr.second.at(i) ));
+                        counts++;
+                    };
+                };
+            };
+            ave_mag /= counts;
+            
+            std::cout << _name << ": average magnitude of updates: " << ave_mag << std::endl;
+            std::cout << _name << ": max magnitude of updates: " << max_mag << std::endl;
         };
-        
-        // WHY NOT? Clear...
-        _updates.clear();
     };
     void DiffEqRHS::update_committ_stored_nesterov(double nesterov_acc) {
         std::cerr << ">>> DiffEqRHS::update_committ_stored_nesterov <<< Unsupported currently" << std::endl;
@@ -540,9 +568,6 @@ namespace dblz {
             // But do NOT clear the keys!
             // _updates[pr.first] = std::vector<double>(_no_coeffs,0.0);
         };
-        
-        // WHY NOT? Clear...
-        _updates.clear();
     };
     
     // Verbose

@@ -1291,6 +1291,7 @@ namespace dblz {
         Sptr sp1, sp2;
         arma::sp_mat::iterator mit, mit_end;
         std::shared_ptr<Moment> moment;
+        arma::sp_mat* wm = nullptr;
         for (auto &o2_ixn_layer_1: _o2_ixn_dict) {
             layer1 = o2_ixn_layer_1.first;
             for (auto &sp_pr_1: o2_ixn_layer_1.second) {
@@ -1310,16 +1311,30 @@ namespace dblz {
                         moment = sp_pr_2.second->get_moment();
                     
                         // Awake
-                        moment->reset_weight_matrix(MCType::AWAKE);
-                        for (auto i_chain=0; i_chain<_no_markov_chains.at(MCType::AWAKE); i_chain++) {
-                            moment->increment_weight_matrix(MCType::AWAKE, _adj.at(layer1).at(layer2) % ( (_mc_chains.at(MCType::AWAKE).at(i_chain).at(layer2).at(sp2) - _c_means.at(layer2).at(sp2)) * (_mc_chains.at(MCType::AWAKE).at(i_chain).at(layer1).at(sp1).t() - _c_means.at(layer1).at(sp1).t()) ) / _no_markov_chains.at(MCType::AWAKE));
+                        if (!moment->get_is_awake_moment_fixed()) {
+                            wm = moment->get_weight_matrix_ptr(MCType::AWAKE);
+                            moment->reset_weight_matrix(MCType::AWAKE);
+                            for (auto i_chain=0; i_chain<_no_markov_chains.at(MCType::AWAKE); i_chain++) {
+                                mit = _adj.at(layer1).at(layer2).begin();
+                                mit_end = _adj.at(layer1).at(layer2).end();
+                                for(; mit != mit_end; ++mit) {
+                                    (*wm)(mit.row(),mit.col()) += ( _mc_chains.at(MCType::AWAKE).at(i_chain).at(layer2).at(sp2)(mit.row()) - _c_means.at(layer2).at(sp2)(mit.row()) ) * ( _mc_chains.at(MCType::AWAKE).at(i_chain).at(layer1).at(sp1)(mit.col()) - _c_means.at(layer1).at(sp1)(mit.col()) ) / _no_markov_chains.at(MCType::AWAKE);
+                                };
+                                // moment->increment_weight_matrix(MCType::AWAKE, _adj.at(layer1).at(layer2) % ( (_mc_chains.at(MCType::AWAKE).at(i_chain).at(layer2).at(sp2) - _c_means.at(layer2).at(sp2)) * (_mc_chains.at(MCType::AWAKE).at(i_chain).at(layer1).at(sp1).t() - _c_means.at(layer1).at(sp1).t()) ) / _no_markov_chains.at(MCType::AWAKE));
+                            };
+                            moment->set_moment_to_weight_matrix_sum(MCType::AWAKE);
                         };
-                        moment->set_moment_to_weight_matrix_sum(MCType::AWAKE);
                         
                         // Asleep
+                        wm = moment->get_weight_matrix_ptr(MCType::AWAKE);
                         moment->reset_weight_matrix(MCType::ASLEEP);
                         for (auto i_chain=0; i_chain<_no_markov_chains.at(MCType::ASLEEP); i_chain++) {
-                            moment->increment_weight_matrix(MCType::ASLEEP, _adj.at(layer1).at(layer2) % ( (_mc_chains.at(MCType::ASLEEP).at(i_chain).at(layer2).at(sp2) - _c_means.at(layer2).at(sp2)) * (_mc_chains.at(MCType::ASLEEP).at(i_chain).at(layer1).at(sp1).t() - _c_means.at(layer1).at(sp1).t()) ) / _no_markov_chains.at(MCType::ASLEEP));
+                            mit = _adj.at(layer1).at(layer2).begin();
+                            mit_end = _adj.at(layer1).at(layer2).end();
+                            for(; mit != mit_end; ++mit) {
+                                (*wm)(mit.row(),mit.col()) += ( _mc_chains.at(MCType::ASLEEP).at(i_chain).at(layer2).at(sp2)(mit.row()) - _c_means.at(layer2).at(sp2)(mit.row()) ) * ( _mc_chains.at(MCType::ASLEEP).at(i_chain).at(layer1).at(sp1)(mit.col()) - _c_means.at(layer1).at(sp1)(mit.col()) ) / _no_markov_chains.at(MCType::ASLEEP);
+                            };
+                            // moment->increment_weight_matrix(MCType::ASLEEP, _adj.at(layer1).at(layer2) % ( (_mc_chains.at(MCType::ASLEEP).at(i_chain).at(layer2).at(sp2) - _c_means.at(layer2).at(sp2)) * (_mc_chains.at(MCType::ASLEEP).at(i_chain).at(layer1).at(sp1).t() - _c_means.at(layer1).at(sp1).t()) ) / _no_markov_chains.at(MCType::ASLEEP));
                         };
                         moment->set_moment_to_weight_matrix_sum(MCType::ASLEEP);
                         
@@ -1879,13 +1894,24 @@ namespace dblz {
     // MARK: - Set centers
     // ***************
     
-    double Lattice::get_center_for_species_in_layer(int layer, Sptr species) const {
+    double Lattice::get_center_pt_for_species_in_layer(int layer, Sptr species) const {
         return _cpt_means.at(layer).at(species);
     };
-    void Lattice::set_center_for_species_in_layer(int layer, Sptr species, double center) {
+    void Lattice::set_center_pt_for_species_in_layer(int layer, Sptr species, double center) {
         _cpt_means[layer][species] = center;
     };
 
+    arma::vec Lattice::get_center_vec_for_species_in_layer(int layer, Sptr species) const {
+        return _c_means.at(layer).at(species);
+    };
+    void Lattice::set_center_vec_for_species_in_layer(int layer, Sptr species, arma::vec center) {
+        _c_means[layer][species] = center;
+    };
+    void Lattice::set_center_vec_for_species_in_layer(int layer, Sptr species, double center) {
+        int no_units = get_no_units_in_layer(layer);
+        _c_means[layer][species] = center * arma::vec(no_units,arma::fill::ones);
+    };
+    
     // ***************
     // MARK: - Add ixn to all ixns vec
     // ***************
@@ -1943,6 +1969,7 @@ namespace dblz {
             for (auto i=0; i<no_mean_field_updates; i++) {
                 mean_field_hiddens_step();
             };
+            // gibbs_sampling_step_awake(true);
             
         } else {
             
@@ -1957,9 +1984,9 @@ namespace dblz {
         if (options.write_after_awake) {
             for (auto i_chain=0; i_chain<_no_markov_chains[MCType::AWAKE]; i_chain++) {
                 for (auto layer=0; layer<_no_layers; layer++) {
-                    bool write_binary = false;
-                    if (layer == 0) {
-                        write_binary = true;
+                    bool write_binary = true;
+                    if (layer != 0) {
+                        write_binary = false;
                     };
                     write_layer_to_file(MCType::AWAKE, i_chain, layer, options.write_after_awake_dir+"/"+pad_str(i_chain,2)+"_"+pad_str(layer,2)+".txt", write_binary);
                 };
@@ -1990,9 +2017,9 @@ namespace dblz {
         if (options.write_after_asleep) {
             for (auto i_chain=0; i_chain<_no_markov_chains[MCType::ASLEEP]; i_chain++) {
                 for (auto layer=0; layer<_no_layers; layer++) {
-                    bool write_binary = false;
-                    if (layer == 0) {
-                        write_binary = true;
+                    bool write_binary = true;
+                    if (layer != 0) {
+                        write_binary = false;
                     };
                     write_layer_to_file(MCType::ASLEEP, i_chain, layer, options.write_after_asleep_dir+"/"+pad_str(i_chain,2)+"_"+pad_str(layer,2)+".txt", write_binary);
                 };

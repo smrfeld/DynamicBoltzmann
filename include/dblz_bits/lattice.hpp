@@ -342,8 +342,12 @@ namespace dblz {
         // MARK: - Set centers
         // ***************
         
-        double get_center_for_species_in_layer(int layer, Sptr species) const;
-        void set_center_for_species_in_layer(int layer, Sptr species, double center);
+        double get_center_pt_for_species_in_layer(int layer, Sptr species) const;
+        void set_center_pt_for_species_in_layer(int layer, Sptr species, double center);
+
+        arma::vec get_center_vec_for_species_in_layer(int layer, Sptr species) const;
+        void set_center_vec_for_species_in_layer(int layer, Sptr species, arma::vec center);
+        void set_center_vec_for_species_in_layer(int layer, Sptr species, double center);
 
         // ***************
         // MARK: - Wake/sleep

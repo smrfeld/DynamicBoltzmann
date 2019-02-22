@@ -137,6 +137,16 @@ namespace dblz {
         std::cout << std::endl;
     };
     
+    void IxnParamTraj::print_moment_diff_traj(int timepoint_start, int no_timesteps) const {
+        for (auto timepoint=timepoint_start; timepoint<=timepoint_start+no_timesteps; timepoint++) {
+            std::cout << _diff_eq->get_lr() * ( _ixn_params.at(timepoint)->get_moment()->get_moment(MCType::AWAKE) - _ixn_params.at(timepoint)->get_moment()->get_moment(MCType::ASLEEP) );
+            if (timepoint != timepoint_start+no_timesteps) {
+                std::cout << " ";
+            };
+        };
+        std::cout << std::endl;
+    };
+    
     // ***************
     // MARK: - Diff eq rhs that this ixn param appears in
     // ***************

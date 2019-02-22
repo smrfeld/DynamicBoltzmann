@@ -175,21 +175,41 @@ namespace dblz {
         int no_awake_chains = _latt_traj->get_no_markov_chains(MCType::AWAKE);
         std::vector<std::vector<FName>> fname_coll = fname_traj_coll.get_random_subset_fnames(no_awake_chains, timepoint_start_WS, no_timesteps_WS);
         
+        /*
+        auto options_wake_sleep_2 = options_wake_sleep;
+        options_wake_sleep_2.write_after_awake = true;
+        options_wake_sleep_2.write_after_asleep = true;
+        options_wake_sleep_2.write_after_awake_dir = "../data/learn_traj/awake_phase_11";
+        options_wake_sleep_2.write_after_asleep_dir = "../data/learn_traj/asleep_phase_11";
+         */
+        
         for (auto timepoint=timepoint_start_WS; timepoint<=timepoint_start_WS+no_timesteps_WS; timepoint++) {
             
-            _latt_traj->get_lattice_at_timepoint(timepoint)->wake_sleep_loop(i_opt_step, no_mean_field_updates, no_gibbs_sampling_steps, fname_coll.at(timepoint-timepoint_start_WS), options_wake_sleep);
+            // if (timepoint != 11) {
             
+            _latt_traj->get_lattice_at_timepoint(timepoint)->wake_sleep_loop(i_opt_step, no_mean_field_updates, no_gibbs_sampling_steps, fname_coll.at(timepoint-timepoint_start_WS), options_wake_sleep);
+            /*
+            } else {
+                _latt_traj->get_lattice_at_timepoint(timepoint)->wake_sleep_loop(i_opt_step, no_mean_field_updates, no_gibbs_sampling_steps, fname_coll.at(timepoint-timepoint_start_WS), options_wake_sleep_2);
+
+                
+            };
+             */
         };
         
-        // Reap the needed
+        // Reap the moments
         // Before timepoint_start_A: don't slide means!
         // At & afer timepoint_start_A: slide means!
+        // Never slide at timepoint_start_SIP (initial condition)
         bool slide_means;
         for (auto timepoint=timepoint_start_WS; timepoint<=timepoint_start_WS+no_timesteps_WS; timepoint++) {
             if (timepoint < timepoint_start_A) {
                 slide_means = false;
             } else {
                 slide_means = true;
+            };
+            if (timepoint == timepoint_start_SIP) {
+                slide_means = false;
             };
             
             if (_latt_traj->get_lattice_at_timepoint(timepoint)->get_lattice_mode() == LatticeMode::NORMAL) {
@@ -208,12 +228,16 @@ namespace dblz {
             for (auto ixn_param_traj: _latt_traj->get_all_ixn_param_trajs()) {
                 
                 // Print traj of ixn params
+                /*
                 std::cout << ixn_param_traj->get_name() << " [" << timepoint_start_SIP << "," << timepoint_start_SIP+no_timesteps_SIP << "]" << std::endl;
                 ixn_param_traj->print_val_traj(timepoint_start_SIP, no_timesteps_SIP);
+                 */
                 
                 // Print moment traj
-                std::cout << ixn_param_traj->get_name() << " moments [" << timepoint_start_WS << "," << timepoint_start_WS+no_timesteps_WS << "]" << std::endl;
-                ixn_param_traj->print_moment_traj(timepoint_start_WS, no_timesteps_WS);
+                if (ixn_param_traj->get_type() == IxnParamType::W || ixn_param_traj->get_type() == IxnParamType::X) {
+                    std::cout << ixn_param_traj->get_name() << " moments [" << timepoint_start_WS << "," << timepoint_start_WS+no_timesteps_WS << "]" << std::endl;
+                    ixn_param_traj->print_moment_diff_traj(timepoint_start_WS, no_timesteps_WS);
+                };
             };
         };
         

@@ -172,6 +172,10 @@ namespace dblz {
 
 		const std::vector<Domain1D*>& get_domain() const;
 
+        // Get cell at timepoint
+        q3c1::Cell* get_cell_at_timepoint(int timepoint) const;
+        
+        // Get val
 		double get_val_at_timepoint(int timepoint) const;
         double get_val_from_map(const std::map<ITptr,std::vector<double>>& vals, int idx) const;
         

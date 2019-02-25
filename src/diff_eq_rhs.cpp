@@ -382,6 +382,11 @@ namespace dblz {
         };
     };
 
+    q3c1::Cell* DiffEqRHS::get_cell_at_timepoint(int timepoint) const {
+        _form_abscissas(timepoint);
+        return get_cell(_abscissas).first;
+    };
+    
 	double DiffEqRHS::get_val_at_timepoint(int timepoint) const {
         _form_abscissas(timepoint);
         return Grid::get_val(_abscissas);

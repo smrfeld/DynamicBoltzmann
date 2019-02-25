@@ -167,13 +167,70 @@ namespace dblz {
          */
         
         /*****
+        Adjust adjoint range
+         *****/
+        
+        int timepoint_start_A_use = timepoint_start_A;
+        int no_timesteps_A_use = no_timesteps_A;
+        int timepoint_start_WS_use = timepoint_start_WS;
+        int no_timesteps_WS_use = no_timesteps_WS;
+        
+        // Look at the cell in timepoint_start_A_use
+        // Extend adjoint range to any timesteps also in this cell
+        q3c1::Cell* cell = nullptr, *cell_prev = nullptr;
+        bool repeat = false;
+        if (timepoint_start_A_use != 0) {
+            do {
+                // Dont repeat
+                repeat = false;
+                // Run through all ixn params
+                for (auto ixn: _latt_traj->get_all_ixn_param_trajs()) {
+                    // Get the cell at timepoint_start_A_use
+                    cell = ixn->get_diff_eq_rhs()->get_cell_at_timepoint(timepoint_start_A_use);
+                    cell_prev = ixn->get_diff_eq_rhs()->get_cell_at_timepoint(timepoint_start_A_use-1);
+                    if (cell == cell_prev) {
+                        // Same cell, extend adjoint domain
+                        timepoint_start_A_use -= 1;
+                        no_timesteps_A_use += 1;
+                        // Ensure that this is covered by the wake-sleep range
+                        if (timepoint_start_A_use < timepoint_start_WS_use) {
+                            timepoint_start_WS_use = timepoint_start_A_use;
+                        };
+                        if (timepoint_start_WS_use + no_timesteps_WS_use < timepoint_start_A_use + no_timesteps_A_use) {
+                            no_timesteps_WS_use = timepoint_start_A_use + no_timesteps_A_use - timepoint_start_WS_use;
+                        };
+                        // Restart the search
+                        repeat = true;
+                        break;
+                    };
+                };
+            } while (repeat && timepoint_start_A_use != 0);
+        };
+        std::cout << "Adjoint range is: " << timepoint_start_A_use << " to: " << timepoint_start_A_use + no_timesteps_A_use << std::endl;
+        std::cout << "Wake/sleep range is: " << timepoint_start_WS_use << " to: " << timepoint_start_WS_use + no_timesteps_WS_use << std::endl;
+
+        // Free all cells at timepoint start and after
+        for (auto timepoint=timepoint_start_A_use; timepoint<=timepoint_start_A_use+no_timesteps_A_use; timepoint++) {
+            for (auto ixn: _latt_traj->get_all_ixn_param_trajs()) {
+                ixn->get_diff_eq_rhs()->fix_all_verts_around_at_timepoint(timepoint, false);
+            };
+        };
+        
+        // Fix all cells before the adjoint timepoint start
+        for (auto timepoint=0; timepoint<timepoint_start_A_use; timepoint++) {
+            for (auto ixn: _latt_traj->get_all_ixn_param_trajs()) {
+                ixn->get_diff_eq_rhs()->fix_all_verts_around_at_timepoint(timepoint, true);
+            };
+        };
+
+        /*****
          Wake/asleep loop
          *****/
         
         clock_t t1 = clock();
         
         int no_awake_chains = _latt_traj->get_no_markov_chains(MCType::AWAKE);
-        std::vector<std::vector<FName>> fname_coll = fname_traj_coll.get_random_subset_fnames(no_awake_chains, timepoint_start_WS, no_timesteps_WS);
+        std::vector<std::vector<FName>> fname_coll = fname_traj_coll.get_random_subset_fnames(no_awake_chains, timepoint_start_WS_use, no_timesteps_WS_use);
         
         /*
         auto options_wake_sleep_2 = options_wake_sleep;
@@ -183,14 +240,14 @@ namespace dblz {
         options_wake_sleep_2.write_after_asleep_dir = "../data/learn_traj/asleep_phase_11";
          */
         
-        for (auto timepoint=timepoint_start_WS; timepoint<=timepoint_start_WS+no_timesteps_WS; timepoint++) {
+        for (auto timepoint=timepoint_start_WS_use; timepoint<=timepoint_start_WS_use+no_timesteps_WS_use; timepoint++) {
             
             // if (timepoint != 11) {
             
-            _latt_traj->get_lattice_at_timepoint(timepoint)->wake_sleep_loop(i_opt_step, no_mean_field_updates, no_gibbs_sampling_steps, fname_coll.at(timepoint-timepoint_start_WS), options_wake_sleep);
+            _latt_traj->get_lattice_at_timepoint(timepoint)->wake_sleep_loop(i_opt_step, no_mean_field_updates, no_gibbs_sampling_steps, fname_coll.at(timepoint-timepoint_start_WS_use), options_wake_sleep);
             /*
             } else {
-                _latt_traj->get_lattice_at_timepoint(timepoint)->wake_sleep_loop(i_opt_step, no_mean_field_updates, no_gibbs_sampling_steps, fname_coll.at(timepoint-timepoint_start_WS), options_wake_sleep_2);
+                _latt_traj->get_lattice_at_timepoint(timepoint)->wake_sleep_loop(i_opt_step, no_mean_field_updates, no_gibbs_sampling_steps, fname_coll.at(timepoint-timepoint_start_WS_use), options_wake_sleep_2);
 
                 
             };
@@ -204,8 +261,8 @@ namespace dblz {
         // At & afer timepoint_start_A: slide means!
         // Never slide at timepoint_start_SIP (initial condition)
         bool slide_means;
-        for (auto timepoint=timepoint_start_WS; timepoint<=timepoint_start_WS+no_timesteps_WS; timepoint++) {
-            if (timepoint < timepoint_start_A) {
+        for (auto timepoint=timepoint_start_WS_use; timepoint<=timepoint_start_WS_use+no_timesteps_WS_use; timepoint++) {
+            if (timepoint < timepoint_start_A_use) {
                 slide_means = false;
             } else {
                 slide_means = true;
@@ -237,8 +294,8 @@ namespace dblz {
                 
                 // Print moment traj
                 if (ixn_param_traj->get_type() == IxnParamType::W || ixn_param_traj->get_type() == IxnParamType::X) {
-                    std::cout << ixn_param_traj->get_name() << " moments [" << timepoint_start_WS << "," << timepoint_start_WS+no_timesteps_WS << "]" << std::endl;
-                    ixn_param_traj->print_moment_diff_traj(timepoint_start_WS, no_timesteps_WS);
+                    std::cout << ixn_param_traj->get_name() << " moments [" << timepoint_start_WS_use << "," << timepoint_start_WS_use+no_timesteps_WS_use << "]" << std::endl;
+                    ixn_param_traj->print_moment_diff_traj(timepoint_start_WS_use, no_timesteps_WS_use);
                 };
             };
         };
@@ -251,12 +308,12 @@ namespace dblz {
         
         // Set zero endpoint
         for (auto ixn_param_traj: _latt_traj->get_all_ixn_param_trajs()) {
-            ixn_param_traj->get_adjoint()->set_timepoint_zero_end_cond(timepoint_start_A + no_timesteps_A);
+            ixn_param_traj->get_adjoint()->set_timepoint_zero_end_cond(timepoint_start_A_use + no_timesteps_A_use);
         };
         
         if (options.l2_reg) {
             if (options.l2_reg_center_traj) {
-                for (auto timepoint=timepoint_start_A + no_timesteps_A; timepoint>timepoint_start_A; timepoint--) {
+                for (auto timepoint=timepoint_start_A_use + no_timesteps_A_use; timepoint>timepoint_start_A_use; timepoint--) {
                     for (auto ixn_param_traj: _latt_traj->get_all_ixn_param_trajs()) {
                         if (!ixn_param_traj->get_is_val_fixed()) {
                             ixn_param_traj->get_adjoint()->solve_diff_eq_at_timepoint_to_minus_one_l2(timepoint,dt,options.l2_lambda.at(ixn_param_traj),options.l2_center_traj.at(ixn_param_traj).at(timepoint));
@@ -264,7 +321,7 @@ namespace dblz {
                     };
                 };
             } else {
-                for (auto timepoint=timepoint_start_A + no_timesteps_A; timepoint>timepoint_start_A; timepoint--) {
+                for (auto timepoint=timepoint_start_A_use + no_timesteps_A_use; timepoint>timepoint_start_A_use; timepoint--) {
                     for (auto ixn_param_traj: _latt_traj->get_all_ixn_param_trajs()) {
                         if (!ixn_param_traj->get_is_val_fixed()) {
                             ixn_param_traj->get_adjoint()->solve_diff_eq_at_timepoint_to_minus_one_l2(timepoint,dt,options.l2_lambda.at(ixn_param_traj),options.l2_center.at(ixn_param_traj));
@@ -273,7 +330,7 @@ namespace dblz {
                 };
             };
         } else {
-            for (auto timepoint=timepoint_start_A + no_timesteps_A; timepoint>timepoint_start_A; timepoint--) {
+            for (auto timepoint=timepoint_start_A_use + no_timesteps_A_use; timepoint>timepoint_start_A_use; timepoint--) {
                 for (auto ixn_param_traj: _latt_traj->get_all_ixn_param_trajs()) {
                     if (!ixn_param_traj->get_is_val_fixed()) {
                         ixn_param_traj->get_adjoint()->solve_diff_eq_at_timepoint_to_minus_one(timepoint,dt);
@@ -290,7 +347,7 @@ namespace dblz {
         
         for (auto ixn_param_traj: _latt_traj->get_all_ixn_param_trajs()) {
             if (!ixn_param_traj->get_is_val_fixed()) {
-                ixn_param_traj->get_diff_eq_rhs()->update_calculate_and_store(timepoint_start_A,timepoint_start_A+no_timesteps_A,dt);
+                ixn_param_traj->get_diff_eq_rhs()->update_calculate_and_store(timepoint_start_A_use,timepoint_start_A_use+no_timesteps_A_use,dt);
             };
         };
         

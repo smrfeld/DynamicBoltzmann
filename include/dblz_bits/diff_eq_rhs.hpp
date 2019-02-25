@@ -181,6 +181,12 @@ namespace dblz {
 		// Spatial deriv
 		double get_deriv_wrt_nu_at_timepoint(int timepoint, int deriv_dim) const;
 
+        // ***************
+        // MARK: - Fix vertices at some timepoint
+        // ***************
+        
+        void fix_all_verts_around_at_timepoint(int timepoint, bool fixed) const;
+        
 		/********************
 		Update
 		********************/

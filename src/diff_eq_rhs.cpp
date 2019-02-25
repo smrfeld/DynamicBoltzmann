@@ -400,6 +400,20 @@ namespace dblz {
 		return Grid::get_deriv_wrt_abscissa(_abscissas, deriv_dim);
 	};
 
+    // ***************
+    // MARK: - Fix vertices at some timepoint
+    // ***************
+    
+    void DiffEqRHS::fix_all_verts_around_at_timepoint(int timepoint, bool fixed) const {
+        _form_abscissas(timepoint);
+        std::pair<q3c1::Cell*,std::vector<double>> cell_pr = get_cell(_abscissas);
+        for (auto vert_pr: cell_pr.first->get_all_vertices()) {
+            for (auto bf: vert_pr.second->get_bfs()) {
+                bf->set_is_val_fixed(fixed);
+            };
+        };
+    };
+    
 	/********************
 	Update
 	********************/
@@ -463,22 +477,24 @@ namespace dblz {
             
         } else {
             
-            double ave_mag=0.0,max_mag=0.0;
-            int counts = 0;
+            // double ave_mag=0.0,max_mag=0.0;
+            // int counts = 0;
             for (auto pr: _updates) {
                 for (auto i=0; i<_no_coeffs; i++) {
                     pr.first->get_bf(_coeff_order.at(i))->increment_coeff(- _lr * pr.second.at(i));
+                    /*
                     if (i==0) {
                         ave_mag += abs( _lr * pr.second.at(i) );
                         max_mag = std::max(max_mag,abs( _lr * pr.second.at(i) ));
                         counts++;
                     };
+                     */
                 };
             };
-            ave_mag /= counts;
+            // ave_mag /= counts;
             
-            std::cout << _name << ": average magnitude of updates: " << ave_mag << std::endl;
-            std::cout << _name << ": max magnitude of updates: " << max_mag << std::endl;
+            // std::cout << _name << ": average magnitude of updates: " << ave_mag << std::endl;
+            // std::cout << _name << ": max magnitude of updates: " << max_mag << std::endl;
         };
     };
     void DiffEqRHS::update_committ_stored_nesterov(double nesterov_acc) {

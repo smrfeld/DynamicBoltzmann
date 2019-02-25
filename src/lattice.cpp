@@ -1206,24 +1206,26 @@ namespace dblz {
                         sp2 = sp_pr_2.first;
                         moment = sp_pr_2.second->get_moment();
                         
-                        // Awake
+                        // Reset moments
                         if (!moment->get_is_awake_moment_fixed()) {
                             moment->reset_moment(MCType::AWAKE);
-                            for (auto i_chain=0; i_chain<_no_markov_chains.at(MCType::AWAKE); i_chain++) {
-                                mit = _adj.at(layer1).at(layer2).begin();
-                                mit_end = _adj.at(layer1).at(layer2).end();
-                                for(; mit != mit_end; ++mit) {
+                        };
+                        moment->reset_moment(MCType::ASLEEP);
+
+                        // Iterate over adj matrix
+                        mit = _adj.at(layer1).at(layer2).begin();
+                        mit_end = _adj.at(layer1).at(layer2).end();
+                        for(; mit != mit_end; ++mit) {
+                            
+                            // Iterate over awake chains
+                            if (!moment->get_is_awake_moment_fixed()) {
+                                for (auto i_chain=0; i_chain<_no_markov_chains.at(MCType::AWAKE); i_chain++) {
                                     moment->increment_moment(MCType::AWAKE, _mc_chains.at(MCType::AWAKE).at(i_chain).at(layer2).at(sp2)(mit.row()) * _mc_chains.at(MCType::AWAKE).at(i_chain).at(layer1).at(sp1)(mit.col()) / _no_markov_chains.at(MCType::AWAKE) );
                                 };
                             };
-                        };
                         
-                        // Asleep phase
-                        moment->reset_moment(MCType::ASLEEP);
-                        for (auto i_chain=0; i_chain<_no_markov_chains.at(MCType::ASLEEP); i_chain++) {
-                            mit = _adj.at(layer1).at(layer2).begin();
-                            mit_end = _adj.at(layer1).at(layer2).end();
-                            for(; mit != mit_end; ++mit) {
+                            // Iterate over asleep chains
+                            for (auto i_chain=0; i_chain<_no_markov_chains.at(MCType::ASLEEP); i_chain++) {
                                 moment->increment_moment(MCType::ASLEEP, _mc_chains.at(MCType::ASLEEP).at(i_chain).at(layer2).at(sp2)(mit.row()) * _mc_chains.at(MCType::ASLEEP).at(i_chain).at(layer1).at(sp1)(mit.col()) / _no_markov_chains.at(MCType::ASLEEP) );
                             };
                         };

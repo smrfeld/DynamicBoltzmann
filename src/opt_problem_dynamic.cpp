@@ -197,6 +197,8 @@ namespace dblz {
              */
         };
         
+        clock_t t2 = clock();
+
         // Reap the moments
         // Before timepoint_start_A: don't slide means!
         // At & afer timepoint_start_A: slide means!
@@ -245,7 +247,7 @@ namespace dblz {
          Solve diff eq for adjoint
          ********************/
         
-        clock_t t2 = clock();
+        clock_t t3 = clock();
         
         // Set zero endpoint
         for (auto ixn_param_traj: _latt_traj->get_all_ixn_param_trajs()) {
@@ -284,7 +286,7 @@ namespace dblz {
          Form the update
          ********************/
         
-        clock_t t3 = clock();
+        clock_t t4 = clock();
         
         for (auto ixn_param_traj: _latt_traj->get_all_ixn_param_trajs()) {
             if (!ixn_param_traj->get_is_val_fixed()) {
@@ -296,7 +298,7 @@ namespace dblz {
          Committ the update
          ********************/
         
-        clock_t t4 = clock();
+        clock_t t5 = clock();
 
         if (options.solver == Solver::ADAM) {
             for (auto &ixn_param_traj: _latt_traj->get_all_ixn_param_trajs()) {
@@ -315,7 +317,7 @@ namespace dblz {
             exit(EXIT_FAILURE);
         };
         
-        clock_t t5 = clock();
+        clock_t t6 = clock();
         
         if (options.verbose_timing) {
             double dt1 = (t1-t0)  / (double) CLOCKS_PER_SEC;
@@ -323,8 +325,9 @@ namespace dblz {
             double dt3 = (t3-t2)  / (double) CLOCKS_PER_SEC;
             double dt4 = (t4-t3)  / (double) CLOCKS_PER_SEC;
             double dt5 = (t5-t4)  / (double) CLOCKS_PER_SEC;
-            double dt_tot = dt1 + dt2 + dt3 + dt4 + dt5;
-            std::cout << "[time " << dt_tot << "] [F " << dt1/dt_tot << "] [wake/sleep " << dt2/dt_tot << "] [adj " << dt3/dt_tot << "] [form update " << dt4/dt_tot << "] [commit update " << dt5/dt_tot << "]" << std::endl;
+            double dt6 = (t6-t5)  / (double) CLOCKS_PER_SEC;
+            double dt_tot = dt1 + dt2 + dt3 + dt4 + dt5 + dt6;
+            std::cout << "[time " << dt_tot << "] [F " << dt1/dt_tot << "] [wake/sleep " << dt2/dt_tot << "] [reap " << dt3/dt_tot << "] [adj " << dt4/dt_tot << "] [form update " << dt5/dt_tot << "] [commit update " << dt6/dt_tot << "]" << std::endl;
         };
     };
 };

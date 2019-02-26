@@ -208,18 +208,18 @@ namespace dblz {
         };
         std::cout << "Adjoint range is: " << timepoint_start_A_use << " to: " << timepoint_start_A_use + no_timesteps_A_use << std::endl;
         std::cout << "Wake/sleep range is: " << timepoint_start_WS_use << " to: " << timepoint_start_WS_use + no_timesteps_WS_use << std::endl;
-
-        // Free all cells at timepoint start and after
-        for (auto timepoint=timepoint_start_A_use; timepoint<=timepoint_start_A_use+no_timesteps_A_use; timepoint++) {
-            for (auto ixn: _latt_traj->get_all_ixn_param_trajs()) {
-                ixn->get_diff_eq_rhs()->fix_all_verts_around_at_timepoint(timepoint, false);
-            };
-        };
         
         // Fix all cells before the adjoint timepoint start
         for (auto timepoint=0; timepoint<timepoint_start_A_use; timepoint++) {
             for (auto ixn: _latt_traj->get_all_ixn_param_trajs()) {
                 ixn->get_diff_eq_rhs()->fix_all_verts_around_at_timepoint(timepoint, true);
+            };
+        };
+        
+        // Free all cells at timepoint start and after
+        for (auto timepoint=timepoint_start_A_use; timepoint<=timepoint_start_A_use+no_timesteps_A_use; timepoint++) {
+            for (auto ixn: _latt_traj->get_all_ixn_param_trajs()) {
+                ixn->get_diff_eq_rhs()->fix_all_verts_around_at_timepoint(timepoint, false);
             };
         };
 

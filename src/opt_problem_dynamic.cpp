@@ -114,6 +114,28 @@ namespace dblz {
     // One step
     void OptProblemDynamic::solve_one_step(int i_opt_step, int timepoint_start_SIP, int no_timesteps_SIP, int timepoint_start_WS, int no_timesteps_WS, int timepoint_start_A, int no_timesteps_A, double dt, int no_mean_field_updates, int no_gibbs_sampling_steps, FNameTrajColl &fname_traj_coll, OptionsSolveDynamic options, OptionsWakeSleep options_wake_sleep) {
         
+        
+        solve_one_step_without_committ(i_opt_step,timepoint_start_SIP,no_timesteps_SIP,timepoint_start_WS,no_timesteps_WS,timepoint_start_A,no_timesteps_A,dt,no_mean_field_updates,no_gibbs_sampling_steps,fname_traj_coll,options,options_wake_sleep);
+        
+        committ_step(i_opt_step, options);
+        
+        /*
+        if (options.verbose_timing) {
+            double dt1 = (t1-t0)  / (double) CLOCKS_PER_SEC;
+            double dt2 = (t2-t1)  / (double) CLOCKS_PER_SEC;
+            double dt3 = (t3-t2)  / (double) CLOCKS_PER_SEC;
+            double dt4 = (t4-t3)  / (double) CLOCKS_PER_SEC;
+            double dt5 = (t5-t4)  / (double) CLOCKS_PER_SEC;
+            double dt6 = (t6-t5)  / (double) CLOCKS_PER_SEC;
+            double dt_tot = dt1 + dt2 + dt3 + dt4 + dt5 + dt6;
+            std::cout << "[time " << dt_tot << "] [F " << dt1/dt_tot << "] [wake/sleep " << dt2/dt_tot << "] [reap " << dt3/dt_tot << "] [adj " << dt4/dt_tot << "] [form update " << dt5/dt_tot << "] [commit update " << dt6/dt_tot << "]" << std::endl;
+        };
+         */
+    };
+    
+    
+    void OptProblemDynamic::solve_one_step_without_committ(int i_opt_step, int timepoint_start_SIP, int no_timesteps_SIP, int timepoint_start_WS, int no_timesteps_WS, int timepoint_start_A, int no_timesteps_A, double dt, int no_mean_field_updates, int no_gibbs_sampling_steps, FNameTrajColl &fname_traj_coll, OptionsSolveDynamic options, OptionsWakeSleep options_wake_sleep) {
+        
         /*****
          Check options
          *****/
@@ -157,17 +179,17 @@ namespace dblz {
         };
         
         /*
-        for (auto timepoint=timepoint_start_SIP; timepoint<timepoint_start_SIP+no_timesteps_SIP; timepoint++) {
-            for (auto ixn_param_traj: _latt_traj->get_all_ixn_param_trajs()) {
-                if (!ixn_param_traj->get_is_val_fixed_to_init_cond() && !ixn_param_traj->get_are_vals_fixed()) {
-                    ixn_param_traj->solve_diff_eq_at_timepoint_to_plus_one(timepoint,dt);
-                };
-            };
-        };
+         for (auto timepoint=timepoint_start_SIP; timepoint<timepoint_start_SIP+no_timesteps_SIP; timepoint++) {
+         for (auto ixn_param_traj: _latt_traj->get_all_ixn_param_trajs()) {
+         if (!ixn_param_traj->get_is_val_fixed_to_init_cond() && !ixn_param_traj->get_are_vals_fixed()) {
+         ixn_param_traj->solve_diff_eq_at_timepoint_to_plus_one(timepoint,dt);
+         };
+         };
+         };
          */
         
         /*****
-        Adjust adjoint range
+         Adjust adjoint range
          *****/
         
         int timepoint_start_A_use = timepoint_start_A;
@@ -222,7 +244,7 @@ namespace dblz {
                 ixn->get_diff_eq_rhs()->fix_all_verts_around_at_timepoint(timepoint, false);
             };
         };
-
+        
         /*****
          Wake/asleep loop
          *****/
@@ -233,11 +255,11 @@ namespace dblz {
         std::vector<std::vector<FName>> fname_coll = fname_traj_coll.get_random_subset_fnames(no_awake_chains, timepoint_start_WS_use, no_timesteps_WS_use);
         
         /*
-        auto options_wake_sleep_2 = options_wake_sleep;
-        options_wake_sleep_2.write_after_awake = true;
-        options_wake_sleep_2.write_after_asleep = true;
-        options_wake_sleep_2.write_after_awake_dir = "../data/learn_traj/awake_phase_11";
-        options_wake_sleep_2.write_after_asleep_dir = "../data/learn_traj/asleep_phase_11";
+         auto options_wake_sleep_2 = options_wake_sleep;
+         options_wake_sleep_2.write_after_awake = true;
+         options_wake_sleep_2.write_after_asleep = true;
+         options_wake_sleep_2.write_after_awake_dir = "../data/learn_traj/awake_phase_11";
+         options_wake_sleep_2.write_after_asleep_dir = "../data/learn_traj/asleep_phase_11";
          */
         
         for (auto timepoint=timepoint_start_WS_use; timepoint<=timepoint_start_WS_use+no_timesteps_WS_use; timepoint++) {
@@ -246,16 +268,16 @@ namespace dblz {
             
             _latt_traj->get_lattice_at_timepoint(timepoint)->wake_sleep_loop(i_opt_step, no_mean_field_updates, no_gibbs_sampling_steps, fname_coll.at(timepoint-timepoint_start_WS_use), options_wake_sleep);
             /*
-            } else {
-                _latt_traj->get_lattice_at_timepoint(timepoint)->wake_sleep_loop(i_opt_step, no_mean_field_updates, no_gibbs_sampling_steps, fname_coll.at(timepoint-timepoint_start_WS_use), options_wake_sleep_2);
-
-                
-            };
+             } else {
+             _latt_traj->get_lattice_at_timepoint(timepoint)->wake_sleep_loop(i_opt_step, no_mean_field_updates, no_gibbs_sampling_steps, fname_coll.at(timepoint-timepoint_start_WS_use), options_wake_sleep_2);
+             
+             
+             };
              */
         };
         
         clock_t t2 = clock();
-
+        
         // Reap the moments
         // Before timepoint_start_A: don't slide means!
         // At & afer timepoint_start_A: slide means!
@@ -288,8 +310,8 @@ namespace dblz {
                 
                 // Print traj of ixn params
                 /*
-                std::cout << ixn_param_traj->get_name() << " [" << timepoint_start_SIP << "," << timepoint_start_SIP+no_timesteps_SIP << "]" << std::endl;
-                ixn_param_traj->print_val_traj(timepoint_start_SIP, no_timesteps_SIP);
+                 std::cout << ixn_param_traj->get_name() << " [" << timepoint_start_SIP << "," << timepoint_start_SIP+no_timesteps_SIP << "]" << std::endl;
+                 ixn_param_traj->print_val_traj(timepoint_start_SIP, no_timesteps_SIP);
                  */
                 
                 // Print moment traj
@@ -338,7 +360,7 @@ namespace dblz {
                 };
             };
         };
-
+        
         /********************
          Form the update
          ********************/
@@ -350,13 +372,16 @@ namespace dblz {
                 ixn_param_traj->get_diff_eq_rhs()->update_calculate_and_store(timepoint_start_A_use,timepoint_start_A_use+no_timesteps_A_use,dt);
             };
         };
+    };
+    
+    void OptProblemDynamic::committ_step(int i_opt_step, OptionsSolveDynamic options) {
         
         /********************
          Committ the update
          ********************/
         
         clock_t t5 = clock();
-
+        
         if (options.solver == Solver::ADAM) {
             for (auto &ixn_param_traj: _latt_traj->get_all_ixn_param_trajs()) {
                 if (!ixn_param_traj->get_is_val_fixed()) {
@@ -375,16 +400,5 @@ namespace dblz {
         };
         
         clock_t t6 = clock();
-        
-        if (options.verbose_timing) {
-            double dt1 = (t1-t0)  / (double) CLOCKS_PER_SEC;
-            double dt2 = (t2-t1)  / (double) CLOCKS_PER_SEC;
-            double dt3 = (t3-t2)  / (double) CLOCKS_PER_SEC;
-            double dt4 = (t4-t3)  / (double) CLOCKS_PER_SEC;
-            double dt5 = (t5-t4)  / (double) CLOCKS_PER_SEC;
-            double dt6 = (t6-t5)  / (double) CLOCKS_PER_SEC;
-            double dt_tot = dt1 + dt2 + dt3 + dt4 + dt5 + dt6;
-            std::cout << "[time " << dt_tot << "] [F " << dt1/dt_tot << "] [wake/sleep " << dt2/dt_tot << "] [reap " << dt3/dt_tot << "] [adj " << dt4/dt_tot << "] [form update " << dt5/dt_tot << "] [commit update " << dt6/dt_tot << "]" << std::endl;
-        };
     };
 };

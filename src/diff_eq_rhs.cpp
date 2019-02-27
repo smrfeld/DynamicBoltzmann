@@ -424,9 +424,6 @@ namespace dblz {
 	********************/
 
     void DiffEqRHS::update_calculate_and_store(int timepoint_start, int timepoint_end, double dt) {
-
-        // Clear before starting
-        _updates.clear();
         
 		// Adjoint
 		double adjoint_val;
@@ -501,6 +498,9 @@ namespace dblz {
             // std::cout << _name << ": average magnitude of updates: " << ave_mag << std::endl;
             // std::cout << _name << ": max magnitude of updates: " << max_mag << std::endl;
         };
+        
+        // Clear before starting
+        _updates.clear();
     };
     void DiffEqRHS::update_committ_stored_nesterov(double nesterov_acc) {
         std::cerr << ">>> DiffEqRHS::update_committ_stored_nesterov <<< Unsupported currently" << std::endl;
@@ -589,6 +589,9 @@ namespace dblz {
             // But do NOT clear the keys!
             // _updates[pr.first] = std::vector<double>(_no_coeffs,0.0);
         };
+        
+        // Clear before starting
+        _updates.clear();
     };
     
     // Verbose

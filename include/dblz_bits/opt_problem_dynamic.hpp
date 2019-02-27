@@ -57,6 +57,9 @@ namespace dblz {
         
         // No steps per step for ixn params/adjoint
         int no_steps_per_step_IP = 1;
+        
+        // Locking mode is on/off
+        bool locking_mode = false;
     };
     
     /****************************************

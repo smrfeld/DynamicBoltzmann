@@ -115,7 +115,7 @@ namespace dblz {
     void OptProblemDynamic::solve_one_step(int i_opt_step, int timepoint_start_SIP, int no_timesteps_SIP, int timepoint_start_WS, int no_timesteps_WS, int timepoint_start_A, int no_timesteps_A, double dt, int no_mean_field_updates, int no_gibbs_sampling_steps, FNameTrajColl &fname_traj_coll, OptionsSolveDynamic options, OptionsWakeSleep options_wake_sleep) {
         
         
-        solve_one_step_without_committ(i_opt_step,timepoint_start_SIP,no_timesteps_SIP,timepoint_start_WS,no_timesteps_WS,timepoint_start_A,no_timesteps_A,dt,no_mean_field_updates,no_gibbs_sampling_steps,fname_traj_coll,options,options_wake_sleep);
+    solve_one_step_without_committ(i_opt_step,timepoint_start_SIP,no_timesteps_SIP,timepoint_start_WS,no_timesteps_WS,timepoint_start_A,no_timesteps_A,dt,no_mean_field_updates,no_gibbs_sampling_steps,fname_traj_coll,options,options_wake_sleep);
         
         committ_step(i_opt_step, options);
         
@@ -197,51 +197,54 @@ namespace dblz {
         int timepoint_start_WS_use = timepoint_start_WS;
         int no_timesteps_WS_use = no_timesteps_WS;
         
-        // Look at the cell in timepoint_start_A_use
-        // Extend adjoint range to any timesteps also in this cell
-        q3c1::Cell* cell = nullptr, *cell_prev = nullptr;
-        bool repeat = false;
-        if (timepoint_start_A_use != 0) {
-            do {
-                // Dont repeat
-                repeat = false;
-                // Run through all ixn params
-                for (auto ixn: _latt_traj->get_all_ixn_param_trajs()) {
-                    // Get the cell at timepoint_start_A_use
-                    cell = ixn->get_diff_eq_rhs()->get_cell_at_timepoint(timepoint_start_A_use);
-                    cell_prev = ixn->get_diff_eq_rhs()->get_cell_at_timepoint(timepoint_start_A_use-1);
-                    if (cell == cell_prev) {
-                        // Same cell, extend adjoint domain
-                        timepoint_start_A_use -= 1;
-                        no_timesteps_A_use += 1;
-                        // Ensure that this is covered by the wake-sleep range
-                        if (timepoint_start_A_use < timepoint_start_WS_use) {
-                            timepoint_start_WS_use = timepoint_start_A_use;
+        if (options.locking_mode) {
+        
+            // Look at the cell in timepoint_start_A_use
+            // Extend adjoint range to any timesteps also in this cell
+            q3c1::Cell* cell = nullptr, *cell_prev = nullptr;
+            bool repeat = false;
+            if (timepoint_start_A_use != 0) {
+                do {
+                    // Dont repeat
+                    repeat = false;
+                    // Run through all ixn params
+                    for (auto ixn: _latt_traj->get_all_ixn_param_trajs()) {
+                        // Get the cell at timepoint_start_A_use
+                        cell = ixn->get_diff_eq_rhs()->get_cell_at_timepoint(timepoint_start_A_use);
+                        cell_prev = ixn->get_diff_eq_rhs()->get_cell_at_timepoint(timepoint_start_A_use-1);
+                        if (cell == cell_prev) {
+                            // Same cell, extend adjoint domain
+                            timepoint_start_A_use -= 1;
+                            no_timesteps_A_use += 1;
+                            // Ensure that this is covered by the wake-sleep range
+                            if (timepoint_start_A_use < timepoint_start_WS_use) {
+                                timepoint_start_WS_use = timepoint_start_A_use;
+                            };
+                            if (timepoint_start_WS_use + no_timesteps_WS_use < timepoint_start_A_use + no_timesteps_A_use) {
+                                no_timesteps_WS_use = timepoint_start_A_use + no_timesteps_A_use - timepoint_start_WS_use;
+                            };
+                            // Restart the search
+                            repeat = true;
+                            break;
                         };
-                        if (timepoint_start_WS_use + no_timesteps_WS_use < timepoint_start_A_use + no_timesteps_A_use) {
-                            no_timesteps_WS_use = timepoint_start_A_use + no_timesteps_A_use - timepoint_start_WS_use;
-                        };
-                        // Restart the search
-                        repeat = true;
-                        break;
                     };
-                };
-            } while (repeat && timepoint_start_A_use != 0);
-        };
-        std::cout << "Adjoint range is: " << timepoint_start_A_use << " to: " << timepoint_start_A_use + no_timesteps_A_use << std::endl;
-        std::cout << "Wake/sleep range is: " << timepoint_start_WS_use << " to: " << timepoint_start_WS_use + no_timesteps_WS_use << std::endl;
-        
-        // Fix all cells before the adjoint timepoint start
-        for (auto timepoint=0; timepoint<timepoint_start_A_use; timepoint++) {
-            for (auto ixn: _latt_traj->get_all_ixn_param_trajs()) {
-                ixn->get_diff_eq_rhs()->fix_all_verts_around_at_timepoint(timepoint, true);
+                } while (repeat && timepoint_start_A_use != 0);
             };
-        };
-        
-        // Free all cells at timepoint start and after
-        for (auto timepoint=timepoint_start_A_use; timepoint<=timepoint_start_A_use+no_timesteps_A_use; timepoint++) {
-            for (auto ixn: _latt_traj->get_all_ixn_param_trajs()) {
-                ixn->get_diff_eq_rhs()->fix_all_verts_around_at_timepoint(timepoint, false);
+            std::cout << "Adjoint range is: " << timepoint_start_A_use << " to: " << timepoint_start_A_use + no_timesteps_A_use << std::endl;
+            std::cout << "Wake/sleep range is: " << timepoint_start_WS_use << " to: " << timepoint_start_WS_use + no_timesteps_WS_use << std::endl;
+            
+            // Fix all cells before the adjoint timepoint start
+            for (auto timepoint=0; timepoint<timepoint_start_A_use; timepoint++) {
+                for (auto ixn: _latt_traj->get_all_ixn_param_trajs()) {
+                    ixn->get_diff_eq_rhs()->fix_all_verts_around_at_timepoint(timepoint, true);
+                };
+            };
+            
+            // Free all cells at timepoint start and after
+            for (auto timepoint=timepoint_start_A_use; timepoint<=timepoint_start_A_use+no_timesteps_A_use; timepoint++) {
+                for (auto ixn: _latt_traj->get_all_ixn_param_trajs()) {
+                    ixn->get_diff_eq_rhs()->fix_all_verts_around_at_timepoint(timepoint, false);
+                };
             };
         };
         

@@ -2042,4 +2042,64 @@ namespace dblz {
             std::cout << std::endl;
         };
     };
+    
+    void Lattice::wake_sleep_loop_cd(int i_opt_step, int no_cd_steps, std::vector<FName> &fnames, OptionsWakeSleep options) {
+        if (options.verbose) {
+            std::cout << "--- Wake/sleep loop ---" << std::endl;
+        };
+        
+        // AWAKE PHASE
+        
+        clock_t t0 = clock();
+        
+        // Read in the batch
+        for (int i_chain=0; i_chain<_no_markov_chains[MCType::AWAKE]; i_chain++)
+        {
+            read_layer_from_file(MCType::AWAKE, i_chain, 0, fnames[i_chain].name, fnames[i_chain].binary);
+        };
+        
+        clock_t t1 = clock();
+        
+        // AWAKE PHASE
+        gibbs_sampling_step_awake(options.gibbs_sample_awake_phase_hidden_binary);
+
+        // Copy to asleep
+        _mc_chains[MCType::ASLEEP] = _mc_chains[MCType::AWAKE];
+        
+        clock_t t2 = clock();
+        
+        // ASLEEP PHASE - PERSISTENT_CD
+        
+        // Run CD sampling
+        
+        // Sample vis, hidden
+        for (int i_sampling_step=0; i_sampling_step<no_cd_steps-1; i_sampling_step++)
+        {
+            gibbs_sampling_step(options.is_asleep_visible_binary, options.is_asleep_hidden_binary);
+        };
+        // Final step
+        if (options.is_asleep_visible_binary_final && options.is_asleep_hidden_binary_final) {
+            // All binary
+            gibbs_sampling_step(options.is_asleep_visible_binary_final, options.is_asleep_hidden_binary_final);
+        } else {
+            // Parallel for non-binary options
+            gibbs_sampling_step_parallel(options.is_asleep_visible_binary_final, options.is_asleep_hidden_binary_final);
+        };
+        
+        clock_t t3 = clock();
+        
+        double dt1 = (t1-t0)  / (double) CLOCKS_PER_SEC;
+        double dt2 = (t2-t1)  / (double) CLOCKS_PER_SEC;
+        double dt3 = (t3-t2)  / (double) CLOCKS_PER_SEC;
+        double dt_tot = dt1 + dt2 + dt3;
+        if (options.verbose_timing) {
+            std::cout << "[time " << dt_tot << "] [read " << dt1/dt_tot << "] [awake " << dt2/dt_tot << "] [asleep " << dt3/dt_tot << "]" << std::endl;
+        };
+        
+        if (options.verbose) {
+            std::cout << "--- [Finished] Wake/sleep ---" << std::endl;
+            std::cout << std::endl;
+        };
+    };
+
 };

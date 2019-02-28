@@ -354,5 +354,6 @@ namespace dblz {
         // ***************
         
         void wake_sleep_loop(int i_opt_step, int no_mean_field_updates, int no_gibbs_sampling_steps, std::vector<FName> &fnames, OptionsWakeSleep options);
-	};
+        void wake_sleep_loop_cd(int i_opt_step, int no_cd_steps, std::vector<FName> &fnames, OptionsWakeSleep options);
+    };
 };

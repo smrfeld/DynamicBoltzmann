@@ -113,8 +113,7 @@ namespace dblz {
     
     // One step
     void OptProblemDynamic::solve_one_step(int i_opt_step, int timepoint_start_SIP, int no_timesteps_SIP, int timepoint_start_WS, int no_timesteps_WS, int timepoint_start_A, int no_timesteps_A, double dt, int no_mean_field_updates, int no_gibbs_sampling_steps, FNameTrajColl &fname_traj_coll, OptionsSolveDynamic options, OptionsWakeSleep options_wake_sleep) {
-        
-        
+
     solve_one_step_without_committ(i_opt_step,timepoint_start_SIP,no_timesteps_SIP,timepoint_start_WS,no_timesteps_WS,timepoint_start_A,no_timesteps_A,dt,no_mean_field_updates,no_gibbs_sampling_steps,fname_traj_coll,options,options_wake_sleep);
         
         committ_step(i_opt_step, options);
@@ -256,27 +255,9 @@ namespace dblz {
         
         int no_awake_chains = _latt_traj->get_no_markov_chains(MCType::AWAKE);
         std::vector<std::vector<FName>> fname_coll = fname_traj_coll.get_random_subset_fnames(no_awake_chains, timepoint_start_WS_use, no_timesteps_WS_use);
-        
-        /*
-         auto options_wake_sleep_2 = options_wake_sleep;
-         options_wake_sleep_2.write_after_awake = true;
-         options_wake_sleep_2.write_after_asleep = true;
-         options_wake_sleep_2.write_after_awake_dir = "../data/learn_traj/awake_phase_11";
-         options_wake_sleep_2.write_after_asleep_dir = "../data/learn_traj/asleep_phase_11";
-         */
-        
+
         for (auto timepoint=timepoint_start_WS_use; timepoint<=timepoint_start_WS_use+no_timesteps_WS_use; timepoint++) {
-            
-            // if (timepoint != 11) {
-            
             _latt_traj->get_lattice_at_timepoint(timepoint)->wake_sleep_loop(i_opt_step, no_mean_field_updates, no_gibbs_sampling_steps, fname_coll.at(timepoint-timepoint_start_WS_use), options_wake_sleep);
-            /*
-             } else {
-             _latt_traj->get_lattice_at_timepoint(timepoint)->wake_sleep_loop(i_opt_step, no_mean_field_updates, no_gibbs_sampling_steps, fname_coll.at(timepoint-timepoint_start_WS_use), options_wake_sleep_2);
-             
-             
-             };
-             */
         };
         
         clock_t t2 = clock();

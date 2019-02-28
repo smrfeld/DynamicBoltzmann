@@ -2082,7 +2082,7 @@ namespace dblz {
         // Sample vis, hidden repeadedly
         for (int i_sampling_step=0; i_sampling_step<no_cd_steps-1; i_sampling_step++)
         {
-            activate_layer_calculate_from_below(MCType::ASLEEP, 0);
+            activate_layer_calculate_from_above(MCType::ASLEEP, 0);
             activate_layer_convert_to_probs(MCType::ASLEEP, 0, true);
             activate_layer_committ(MCType::ASLEEP, 0);
 
@@ -2091,7 +2091,7 @@ namespace dblz {
             activate_layer_committ(MCType::ASLEEP, 1);
         };
         // Final step: use probs for hidden layer
-        activate_layer_calculate_from_below(MCType::ASLEEP, 0);
+        activate_layer_calculate_from_above(MCType::ASLEEP, 0);
         activate_layer_convert_to_probs(MCType::ASLEEP, 0, true);
         activate_layer_committ(MCType::ASLEEP, 0);
         

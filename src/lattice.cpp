@@ -1936,10 +1936,7 @@ namespace dblz {
     // MARK: - Wake/sleep loop
     // ***************
     
-    void Lattice::wake_sleep_loop(int i_opt_step, int no_mean_field_updates, int no_gibbs_sampling_steps, std::vector<FName> &fnames, OptionsWakeSleep options) {
-        if (options.verbose) {
-            std::cout << "--- Wake/sleep loop ---" << std::endl;
-        };
+    void Lattice::wake_sleep_loop_bm_pcd(int i_opt_step, int no_mean_field_updates, int no_gibbs_sampling_steps, std::vector<FName> &fnames, OptionsWakeSleep_BM_PCD options) {
         
         // AWAKE PHASE
         
@@ -2036,17 +2033,9 @@ namespace dblz {
         if (options.verbose_timing) {
             std::cout << "[time " << dt_tot << "] [read " << dt1/dt_tot << "] [up " << dt2/dt_tot << "] [mf " << dt3/dt_tot << "] [gibbs " << dt4/dt_tot << "]" << std::endl;
         };
-        
-        if (options.verbose) {
-            std::cout << "--- [Finished] Wake/sleep ---" << std::endl;
-            std::cout << std::endl;
-        };
     };
     
-    void Lattice::wake_sleep_loop_cd(int i_opt_step, int no_cd_steps, std::vector<FName> &fnames, OptionsWakeSleep options) {
-        if (options.verbose) {
-            std::cout << "--- Wake/sleep loop ---" << std::endl;
-        };
+    void Lattice::wake_sleep_loop_rbm_cd(int i_opt_step, int no_cd_steps, std::vector<FName> &fnames, OptionsWakeSleep_RBM_CD options) {
         
         // AWAKE PHASE
         
@@ -2108,11 +2097,5 @@ namespace dblz {
         if (options.verbose_timing) {
             std::cout << "[time " << dt_tot << "] [read " << dt1/dt_tot << "] [awake " << dt2/dt_tot << "] [asleep " << dt3/dt_tot << "]" << std::endl;
         };
-        
-        if (options.verbose) {
-            std::cout << "--- [Finished] Wake/sleep ---" << std::endl;
-            std::cout << std::endl;
-        };
     };
-
 };

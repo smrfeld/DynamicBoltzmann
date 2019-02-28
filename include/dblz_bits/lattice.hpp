@@ -20,10 +20,9 @@ namespace dblz {
      OptProblemStatic Options
      ****************************************/
     
-    struct OptionsWakeSleep {
+    struct OptionsWakeSleep_BM_PCD {
         
         // Verbosity
-        bool verbose = false;
         bool verbose_timing = true;
         
         // Sampling options
@@ -45,11 +44,15 @@ namespace dblz {
         // Gibbs sampling awake phase
         bool gibbs_sample_awake_phase = false;
         bool gibbs_sample_awake_phase_hidden_binary = true;
-        
-        // Sliding factor
-        double sliding_factor = 0.01;
     };
     
+    struct OptionsWakeSleep_RBM_CD {
+      
+        // Verbosity
+        bool verbose_timing = true;
+
+    };
+
 	/****************************************
 	Lattice
 	****************************************/
@@ -353,7 +356,7 @@ namespace dblz {
         // MARK: - Wake/sleep
         // ***************
         
-        void wake_sleep_loop(int i_opt_step, int no_mean_field_updates, int no_gibbs_sampling_steps, std::vector<FName> &fnames, OptionsWakeSleep options);
-        void wake_sleep_loop_cd(int i_opt_step, int no_cd_steps, std::vector<FName> &fnames, OptionsWakeSleep options);
+        void wake_sleep_loop_bm_pcd(int i_opt_step, int no_mean_field_updates, int no_gibbs_sampling_steps, std::vector<FName> &fnames, OptionsWakeSleep_BM_PCD options);
+        void wake_sleep_loop_rbm_cd(int i_opt_step, int no_cd_steps, std::vector<FName> &fnames, OptionsWakeSleep_RBM_CD options);
     };
 };

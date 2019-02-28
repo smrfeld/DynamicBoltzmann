@@ -13,13 +13,14 @@ namespace dblz {
     class IxnParamTraj;
     class LatticeTraj;
     class FNameTrajColl;
-    struct OptionsWakeSleep;
-    
+    struct OptionsWakeSleep_BM_PCD;
+    struct OptionsWakeSleep_RBM_CD;
+
     /****************************************
     Misc options
      ****************************************/
 
-    enum class Solver : unsigned int { SGD, NESTEROV, ADAM };
+    enum class Solver : unsigned int { SGD, ADAM };
     enum class MCType: unsigned int;
     
     /****************************************
@@ -60,6 +61,9 @@ namespace dblz {
         
         // Locking mode is on/off
         bool locking_mode = false;
+        
+        // Sliding factor
+        double sliding_factor = 0.01;
     };
     
     /****************************************
@@ -95,15 +99,14 @@ namespace dblz {
          Solve
          ********************/
         
-        // Check if options passed are valid
-        void check_options(int timepoint_start_SIP, int no_timesteps_SIP, int timepoint_start_WS, int no_timesteps_WS, int timepoint_start_A, int no_timesteps_A, double dt, int no_mean_field_updates, int no_gibbs_sampling_steps, OptionsSolveDynamic options, OptionsWakeSleep options_wake_sleep);
-        
         // One step
         // SIP = solve ixn params
         // WSA = wake/sleep/adjoint
-        void solve_one_step(int i_opt_step, int timepoint_start_SIP, int no_timesteps_SIP, int timepoint_start_WS, int no_timesteps_WS, int timepoint_start_A, int no_timesteps_A, double dt, int no_mean_field_updates, int no_gibbs_sampling_steps, FNameTrajColl &fname_traj_coll, OptionsSolveDynamic options, OptionsWakeSleep options_wake_sleep);
+        void solve_one_step_bm_pcd(int i_opt_step, int timepoint_start_SIP, int no_timesteps_SIP, int timepoint_start_WS, int no_timesteps_WS, int timepoint_start_A, int no_timesteps_A, double dt, int no_mean_field_updates, int no_gibbs_sampling_steps, FNameTrajColl &fname_traj_coll, OptionsSolveDynamic options, OptionsWakeSleep_BM_PCD options_wake_sleep);
+        void solve_one_step_bm_pcd_without_committ(int i_opt_step, int timepoint_start_SIP, int no_timesteps_SIP, int timepoint_start_WS, int no_timesteps_WS, int timepoint_start_A, int no_timesteps_A, double dt, int no_mean_field_updates, int no_gibbs_sampling_steps, FNameTrajColl &fname_traj_coll, OptionsSolveDynamic options, OptionsWakeSleep_BM_PCD options_wake_sleep);
         
-        void solve_one_step_without_committ(int i_opt_step, int timepoint_start_SIP, int no_timesteps_SIP, int timepoint_start_WS, int no_timesteps_WS, int timepoint_start_A, int no_timesteps_A, double dt, int no_mean_field_updates, int no_gibbs_sampling_steps, FNameTrajColl &fname_traj_coll, OptionsSolveDynamic options, OptionsWakeSleep options_wake_sleep);
+        void solve_one_step_rbm_cd(int i_opt_step, int timepoint_start_SIP, int no_timesteps_SIP, int timepoint_start_WS, int no_timesteps_WS, int timepoint_start_A, int no_timesteps_A, double dt, int no_cd_steps, FNameTrajColl &fname_traj_coll, OptionsSolveDynamic options, OptionsWakeSleep_RBM_CD options_wake_sleep);
+        void solve_one_step_rbm_cd_without_committ(int i_opt_step, int timepoint_start_SIP, int no_timesteps_SIP, int timepoint_start_WS, int no_timesteps_WS, int timepoint_start_A, int no_timesteps_A, double dt, int no_cd_steps, FNameTrajColl &fname_traj_coll, OptionsSolveDynamic options, OptionsWakeSleep_RBM_CD options_wake_sleep);
         
         void committ_step(int i_opt_step, OptionsSolveDynamic options);
     };

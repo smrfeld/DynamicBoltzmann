@@ -13,13 +13,14 @@ namespace dblz {
     class IxnParam;
     class Lattice;
     class FNameColl;
-    struct OptionsWakeSleep;
-    
+    struct OptionsWakeSleep_BM_PCD;
+    struct OptionsWakeSleep_RBM_CD;
+
     /****************************************
     Misc options
      ****************************************/
 
-    enum class Solver : unsigned int { SGD, NESTEROV, ADAM };
+    enum class Solver : unsigned int { SGD, ADAM };
     enum class MCType: unsigned int;
     
     /****************************************
@@ -50,6 +51,9 @@ namespace dblz {
         double adam_beta_1 = 0.9;
         double adam_beta_2 = 0.999;
         double adam_eps = 0.00000001;
+        
+        // Sliding factor
+        double sliding_factor = 0.01;
     };
     
     /****************************************
@@ -85,12 +89,9 @@ namespace dblz {
          Solve
          ********************/
         
-        // Check if options passed are valid
-        void check_options(int no_mean_field_updates, int no_gibbs_sampling_steps, OptionsSolveStatic options, OptionsWakeSleep options_wake_sleep);
-        
         // One step
-        void solve_one_step(int i_opt_step, int no_mean_field_updates, int no_gibbs_sampling_steps, FNameColl &fname_coll, OptionsSolveStatic options, OptionsWakeSleep options_wake_sleep);
+        void solve_one_step_bm_pcd(int i_opt_step, int no_mean_field_updates, int no_gibbs_sampling_steps, FNameColl &fname_coll, OptionsSolveStatic options, OptionsWakeSleep_BM_PCD options_wake_sleep);
 
-        void solve_one_step_cd(int i_opt_step, int no_cd_steps, FNameColl &fname_coll, OptionsSolveStatic options, OptionsWakeSleep options_wake_sleep);
+        void solve_one_step_rbm_cd(int i_opt_step, int no_cd_steps, FNameColl &fname_coll, OptionsSolveStatic options, OptionsWakeSleep_RBM_CD options_wake_sleep);
     };
 };

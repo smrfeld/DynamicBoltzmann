@@ -2070,6 +2070,11 @@ namespace dblz {
         
         // ASLEEP PHASE - PERSISTENT_CD
         
+        // Randomize (!!!)
+        for (auto i_chain=0; i_chain<_no_markov_chains[MCType::ASLEEP]; i_chain++) {
+            set_random_all_units(MCType::ASLEEP, i_chain, true);
+        };
+        
         // Run CD sampling
         
         // Sample vis, hidden

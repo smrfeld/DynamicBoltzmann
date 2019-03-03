@@ -473,24 +473,52 @@ namespace dblz {
         // Before timepoint_start_A: don't slide means!
         // At & afer timepoint_start_A: slide means!
         // Never slide at timepoint_start_SIP (initial condition)
-        bool slide_means;
-        for (auto timepoint=timepoint_start_WS_use; timepoint<=timepoint_start_WS_use+no_timesteps_WS_use; timepoint++) {
-            if (timepoint < timepoint_start_A_use) {
-                slide_means = false;
-            } else {
-                slide_means = true;
-            };
-            if (timepoint == timepoint_start_SIP) {
-                slide_means = false;
-            };
-            
-            if (_latt_traj->get_lattice_at_timepoint(timepoint)->get_lattice_mode() == LatticeMode::NORMAL) {
+        
+        if (_latt_traj->get_lattice_mode() == LatticeMode::NORMAL) {
+            // NORMAL
+            for (auto timepoint=timepoint_start_WS_use; timepoint<=timepoint_start_WS_use+no_timesteps_WS_use; timepoint++) {
                 _latt_traj->get_lattice_at_timepoint(timepoint)->reap_moments_and_slide_centers_normal();
-            } else if (_latt_traj->get_lattice_at_timepoint(timepoint)->get_lattice_mode() == LatticeMode::NORMAL_W_CENTERED_GRADIENT_PT) {
+            };
+        } else if (_latt_traj->get_lattice_mode() == LatticeMode::NORMAL_W_CENTERED_GRADIENT_PT) {
+            // NORMAL W CENTERED GRADIENT PT
+            bool slide_means;
+            for (auto timepoint=timepoint_start_WS_use; timepoint<=timepoint_start_WS_use+no_timesteps_WS_use; timepoint++) {
+                if (timepoint < timepoint_start_A_use) {
+                    slide_means = false;
+                } else {
+                    slide_means = true;
+                };
+                if (timepoint == timepoint_start_SIP) {
+                    slide_means = false;
+                };
                 _latt_traj->get_lattice_at_timepoint(timepoint)->reap_moments_and_slide_centers_normal_w_centered_gradient_pt(slide_means,options.sliding_factor);
-            } else if (_latt_traj->get_lattice_at_timepoint(timepoint)->get_lattice_mode() == LatticeMode::NORMAL_W_CENTERED_GRADIENT_VEC) {
+            };
+        } else if (_latt_traj->get_lattice_mode() == LatticeMode::NORMAL_W_CENTERED_GRADIENT_VEC) {
+            // NORMAL W CENTERED GRADIENT VEC
+            bool slide_means;
+            for (auto timepoint=timepoint_start_WS_use; timepoint<=timepoint_start_WS_use+no_timesteps_WS_use; timepoint++) {
+                if (timepoint < timepoint_start_A_use) {
+                    slide_means = false;
+                } else {
+                    slide_means = true;
+                };
+                if (timepoint == timepoint_start_SIP) {
+                    slide_means = false;
+                };
                 _latt_traj->get_lattice_at_timepoint(timepoint)->reap_moments_and_slide_centers_normal_w_centered_gradient_vec(slide_means,options.sliding_factor);
-            } else if (_latt_traj->get_lattice_at_timepoint(timepoint)->get_lattice_mode() == LatticeMode::CENTERED_PT) {
+            };
+        } else if (_latt_traj->get_lattice_mode() == LatticeMode::CENTERED_PT) {
+            // CENTERED PT
+            bool slide_means;
+            for (auto timepoint=timepoint_start_WS_use; timepoint<=timepoint_start_WS_use+no_timesteps_WS_use; timepoint++) {
+                if (timepoint < timepoint_start_A_use) {
+                    slide_means = false;
+                } else {
+                    slide_means = true;
+                };
+                if (timepoint == timepoint_start_SIP) {
+                    slide_means = false;
+                };
                 _latt_traj->get_lattice_at_timepoint(timepoint)->reap_moments_and_slide_centers_centered_pt(slide_means,options.sliding_factor);
             };
         };

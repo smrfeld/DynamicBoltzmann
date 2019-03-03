@@ -75,6 +75,7 @@ namespace dblz {
         int get_box_length() const;
         int get_no_units_in_layer(int layer) const;
         int get_no_layers() const;
+        LatticeMode get_lattice_mode() const;
         
         // Get all ixns
         const std::vector<ITptr>& get_all_ixn_param_trajs() const;

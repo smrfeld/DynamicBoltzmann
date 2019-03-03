@@ -169,6 +169,10 @@ namespace dblz {
         return _lattices.begin()->second->get_no_layers();
     };
     
+    LatticeMode LatticeTraj::get_lattice_mode() const {
+        return _lattices.begin()->second->get_lattice_mode();
+    };
+    
     // Get all ixns
     const std::vector<ITptr>& LatticeTraj::get_all_ixn_param_trajs() const {
         return _ixn_param_trajs;

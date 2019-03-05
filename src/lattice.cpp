@@ -2054,7 +2054,7 @@ namespace dblz {
         
         // Activate hidden layer; use probs!
         activate_layer_calculate_from_below(MCType::AWAKE, 1);
-        activate_layer_convert_to_probs(MCType::AWAKE, 1, false);
+        activate_layer_convert_to_probs(MCType::AWAKE, 1, true);
         activate_layer_committ(MCType::AWAKE, 1);
 
         clock_t t2 = clock();
@@ -2085,7 +2085,7 @@ namespace dblz {
         activate_layer_committ(MCType::ASLEEP, 0);
         
         activate_layer_calculate_from_below(MCType::ASLEEP, 1);
-        activate_layer_convert_to_probs(MCType::ASLEEP, 1, false);
+        activate_layer_convert_to_probs(MCType::ASLEEP, 1, true);
         activate_layer_committ(MCType::ASLEEP, 1);
         
         clock_t t3 = clock();

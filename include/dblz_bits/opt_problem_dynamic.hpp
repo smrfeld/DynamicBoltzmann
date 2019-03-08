@@ -99,6 +99,9 @@ namespace dblz {
          Solve
          ********************/
         
+        // Solve helpers
+        void solve_ixn_param_trajs(double dt, int timepoint_start, int no_timesteps, int no_steps_per_step) const;
+        
         // One step
         // SIP = solve ixn params
         // WSA = wake/sleep/adjoint

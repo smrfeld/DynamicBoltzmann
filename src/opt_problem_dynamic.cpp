@@ -71,37 +71,53 @@ namespace dblz {
     };
     
     /********************
-     Init structures
-     ********************/
-
-    /*
-    void OptProblemDynamic::set_no_markov_chains(MCType chain, int no_markov_chains) {
-        
-        // Store
-        _no_markov_chains[chain] = no_markov_chains;
-     
-        // Lattice
-        _latt_traj->set_no_markov_chains(chain, no_markov_chains);
-    };
-    void OptProblemDynamic::set_no_timesteps_ixn_params(int no_timesteps_ixn_params) {
-        _no_timesteps_ixn_params = no_timesteps_ixn_params;
-        _no_timepoints_ixn_params = _no_timesteps_ixn_params + 1;
-        for (auto ixn_param_traj: _latt_traj->get_all_ixn_param_trajs()) {
-            ixn_param_traj->set_no_timesteps(_no_timesteps_ixn_params);
-        };
-    };
-    void OptProblemDynamic::set_no_timesteps_lattice(int timepoint_start_lattice, int no_timesteps_lattice) {
-        _timepoint_start_lattice = timepoint_start_lattice;
-        _no_timesteps_lattice = no_timesteps_lattice;
-        _no_timepoints_lattice = _no_timesteps_lattice + 1;
-        
-        _latt_traj->set_no_timesteps(_timepoint_start_lattice, _no_timesteps_lattice);
-    };
-    */
-    
-    /********************
      Solve
      ********************/
+    
+    // Solve helpers
+    void OptProblemDynamic::solve_ixn_param_trajs(double dt, int timepoint_start, int no_timesteps, int no_steps_per_step) const {
+        
+        // Solve over all time
+        std::map<ITptr,std::vector<double>> vals;
+        for (auto timepoint=timepoint_start; timepoint<timepoint_start+no_timesteps; timepoint++) {
+            // Get initial vals at this timepoint
+            for (auto ixn_param_traj: _latt_traj->get_all_ixn_param_trajs()) {
+                vals[ixn_param_traj] = std::vector<double>(no_steps_per_step+1);
+                vals[ixn_param_traj][0] = ixn_param_traj->get_ixn_param_at_timepoint(timepoint)->get_val();
+            };
+            
+            // Calculate diff eqs to a new step
+            for (auto i=0; i<no_steps_per_step; i++) {
+                for (auto ixn_param_traj: _latt_traj->get_all_ixn_param_trajs()) {
+                    if (!ixn_param_traj->get_is_val_fixed()) {
+                        // std::cout << ixn_param_traj->get_name() << " " << timepoint << " " << i << " " << ixn_param_traj->get_diff_eq_rhs()->get_val_from_map(vals, i) << std::endl;
+                        
+                        vals[ixn_param_traj][i+1] = vals.at(ixn_param_traj).at(i) + (dt / no_steps_per_step) * ixn_param_traj->get_diff_eq_rhs()->get_val_from_map(vals, i);
+                    } else {
+                        vals[ixn_param_traj][i+1] = vals.at(ixn_param_traj).at(i);
+                    };
+                };
+            };
+            
+            // Write final vals
+            for (auto ixn_param_traj: _latt_traj->get_all_ixn_param_trajs()) {
+                if (!ixn_param_traj->get_is_val_fixed()) {
+                    ixn_param_traj->get_ixn_param_at_timepoint(timepoint+1)->set_val(vals.at(ixn_param_traj).at(no_steps_per_step));
+                };
+            };
+        };
+        
+        /*
+         for (auto timepoint=timepoint_start_SIP; timepoint<timepoint_start_SIP+no_timesteps_SIP; timepoint++) {
+         for (auto ixn_param_traj: _latt_traj->get_all_ixn_param_trajs()) {
+         if (!ixn_param_traj->get_is_val_fixed_to_init_cond() && !ixn_param_traj->get_are_vals_fixed()) {
+         ixn_param_traj->solve_diff_eq_at_timepoint_to_plus_one(timepoint,dt);
+         };
+         };
+         };
+         */
+    };
+
     
     // One step
     void OptProblemDynamic::solve_one_step_bm_pcd(int i_opt_step, int timepoint_start_SIP, int no_timesteps_SIP, int timepoint_start_WS, int no_timesteps_WS, int timepoint_start_A, int no_timesteps_A, double dt, int no_mean_field_updates, int no_gibbs_sampling_steps, FNameTrajColl &fname_traj_coll, OptionsSolveDynamic options, OptionsWakeSleep_BM_PCD options_wake_sleep) {
@@ -120,43 +136,7 @@ namespace dblz {
         
         clock_t t0 = clock();
         
-        // Solve over all time
-        std::map<ITptr,std::vector<double>> vals;
-        for (auto timepoint=timepoint_start_SIP; timepoint<timepoint_start_SIP+no_timesteps_SIP; timepoint++) {
-            // Get initial vals at this timepoint
-            for (auto ixn_param_traj: _latt_traj->get_all_ixn_param_trajs()) {
-                vals[ixn_param_traj] = std::vector<double>(options.no_steps_per_step_IP+1);
-                vals[ixn_param_traj][0] = ixn_param_traj->get_ixn_param_at_timepoint(timepoint)->get_val();
-            };
-            
-            // Calculate diff eqs to a new step
-            for (auto i=0; i<options.no_steps_per_step_IP; i++) {
-                for (auto ixn_param_traj: _latt_traj->get_all_ixn_param_trajs()) {
-                    if (!ixn_param_traj->get_is_val_fixed()) {
-                        vals[ixn_param_traj][i+1] = vals.at(ixn_param_traj).at(i) + (dt / options.no_steps_per_step_IP) * ixn_param_traj->get_diff_eq_rhs()->get_val_from_map(vals, i);
-                    } else {
-                        vals[ixn_param_traj][i+1] = vals.at(ixn_param_traj).at(i);
-                    };
-                };
-            };
-            
-            // Write final vals
-            for (auto ixn_param_traj: _latt_traj->get_all_ixn_param_trajs()) {
-                if (!ixn_param_traj->get_is_val_fixed()) {
-                    ixn_param_traj->get_ixn_param_at_timepoint(timepoint+1)->set_val(vals.at(ixn_param_traj).at(options.no_steps_per_step_IP));
-                };
-            };
-        };
-        
-        /*
-         for (auto timepoint=timepoint_start_SIP; timepoint<timepoint_start_SIP+no_timesteps_SIP; timepoint++) {
-         for (auto ixn_param_traj: _latt_traj->get_all_ixn_param_trajs()) {
-         if (!ixn_param_traj->get_is_val_fixed_to_init_cond() && !ixn_param_traj->get_are_vals_fixed()) {
-         ixn_param_traj->solve_diff_eq_at_timepoint_to_plus_one(timepoint,dt);
-         };
-         };
-         };
-         */
+        solve_ixn_param_trajs(dt, timepoint_start_SIP, no_timesteps_SIP, options.no_steps_per_step_IP);
         
         /*****
          Adjust adjoint range
@@ -356,44 +336,8 @@ namespace dblz {
         
         clock_t t0 = clock();
         
-        // Solve over all time
-        std::map<ITptr,std::vector<double>> vals;
-        for (auto timepoint=timepoint_start_SIP; timepoint<timepoint_start_SIP+no_timesteps_SIP; timepoint++) {
-            // Get initial vals at this timepoint
-            for (auto ixn_param_traj: _latt_traj->get_all_ixn_param_trajs()) {
-                vals[ixn_param_traj] = std::vector<double>(options.no_steps_per_step_IP+1);
-                vals[ixn_param_traj][0] = ixn_param_traj->get_ixn_param_at_timepoint(timepoint)->get_val();
-            };
-            
-            // Calculate diff eqs to a new step
-            for (auto i=0; i<options.no_steps_per_step_IP; i++) {
-                for (auto ixn_param_traj: _latt_traj->get_all_ixn_param_trajs()) {
-                    if (!ixn_param_traj->get_is_val_fixed()) {
-                        vals[ixn_param_traj][i+1] = vals.at(ixn_param_traj).at(i) + (dt / options.no_steps_per_step_IP) * ixn_param_traj->get_diff_eq_rhs()->get_val_from_map(vals, i);
-                    } else {
-                        vals[ixn_param_traj][i+1] = vals.at(ixn_param_traj).at(i);
-                    };
-                };
-            };
-            
-            // Write final vals
-            for (auto ixn_param_traj: _latt_traj->get_all_ixn_param_trajs()) {
-                if (!ixn_param_traj->get_is_val_fixed()) {
-                    ixn_param_traj->get_ixn_param_at_timepoint(timepoint+1)->set_val(vals.at(ixn_param_traj).at(options.no_steps_per_step_IP));
-                };
-            };
-        };
-        
-        /*
-         for (auto timepoint=timepoint_start_SIP; timepoint<timepoint_start_SIP+no_timesteps_SIP; timepoint++) {
-         for (auto ixn_param_traj: _latt_traj->get_all_ixn_param_trajs()) {
-         if (!ixn_param_traj->get_is_val_fixed_to_init_cond() && !ixn_param_traj->get_are_vals_fixed()) {
-         ixn_param_traj->solve_diff_eq_at_timepoint_to_plus_one(timepoint,dt);
-         };
-         };
-         };
-         */
-        
+        solve_ixn_param_trajs(dt, timepoint_start_SIP, no_timesteps_SIP, options.no_steps_per_step_IP);
+
         /*****
          Adjust adjoint range
          *****/

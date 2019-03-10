@@ -2045,8 +2045,9 @@ namespace dblz {
         for (int i_chain=0; i_chain<_no_markov_chains[MCType::AWAKE]; i_chain++)
         {
             read_layer_from_file(MCType::AWAKE, i_chain, 0, fnames[i_chain].name, fnames[i_chain].binary);
-            read_layer_from_file(MCType::ASLEEP, i_chain, 0, fnames[i_chain].name, fnames[i_chain].binary);
+            // read_layer_from_file(MCType::ASLEEP, i_chain, 0, fnames[i_chain].name, fnames[i_chain].binary);
         };
+        _mc_chains[MCType::ASLEEP] = _mc_chains.at(MCType::AWAKE);
         
         clock_t t1 = clock();
         

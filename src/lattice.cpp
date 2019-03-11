@@ -2090,12 +2090,12 @@ namespace dblz {
         activate_layer_committ(MCType::ASLEEP, 1);
         
         clock_t t3 = clock();
-        
-        double dt1 = (t1-t0)  / (double) CLOCKS_PER_SEC;
-        double dt2 = (t2-t1)  / (double) CLOCKS_PER_SEC;
-        double dt3 = (t3-t2)  / (double) CLOCKS_PER_SEC;
-        double dt_tot = dt1 + dt2 + dt3;
+
         if (options.verbose_timing) {
+            double dt1 = (t1-t0)  / (double) CLOCKS_PER_SEC;
+            double dt2 = (t2-t1)  / (double) CLOCKS_PER_SEC;
+            double dt3 = (t3-t2)  / (double) CLOCKS_PER_SEC;
+            double dt_tot = dt1 + dt2 + dt3;
             std::cout << "[time " << dt_tot << "] [read " << dt1/dt_tot << "] [awake " << dt2/dt_tot << "] [asleep " << dt3/dt_tot << "]" << std::endl;
         };
     };

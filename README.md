@@ -14,6 +14,10 @@ mkdir build
 cd build
 cmake ..
 make
+```
+Two libraries will be made: `dblz` (for learning dynamics) and `bmla` (for learning initial conditions).
+
+```
 make install
 ```
 The default install locations are `/usr/local/include` and `/usr/local/lib`.
@@ -39,7 +43,7 @@ g++ -std=c++14 -O3 -lbmla myprogram.cpp -o myprogram.o
 
 The namespace is `dblz` ("DynamicBoltzmann").
 
-## Technical notes (POSSIBLY OUTDATED!)
+## Technical notes
 
 ### Binary vs probabilistic units
 
@@ -64,7 +68,3 @@ Instead, we simply use **binary units everywhere**, i.e.:
 3. Use binary units for other rounds of sampling both hidden and visible units, and to evaluate the asleep phase moments.
 
 This avoids the `infinity` problem.
-
-# BMLA - To learn initial conditions
-
-To learn initial conditions, see the `bmla` folder [here](bmla).

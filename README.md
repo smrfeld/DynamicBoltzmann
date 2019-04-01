@@ -1,12 +1,14 @@
 # Dynamic Boltzmann Machine for Lattice Chemical Kinetics
 
-## Dependencies
+## Installation
+
+### Dependencies
 
 `armadillo` library.
 
 `q3c1` library for the Q3 C1 finite elements. Get it from [here](https://github.com/smrfeld/Q3-C1-Finite-Elements). 
 
-## Installation
+### Building
 
 Use `cmake`:
 ```
@@ -28,9 +30,11 @@ export DYLD_LIBRARY_PATH=$DYLD_LIBRARY_PATH:/absolute/path/to/lib
 ```
 In this case, you will also need to specify using `-L` the location of the library at linking time (`-L` is needed for finding the library at linking time; `DYLD_LIBRARY_PATH` is at runtime).
 
-## Usage
+### Including
 
 To access the headers, simply use: `include <dblz>` or `include <bmla>. 
+
+### Linking
 
 Link your program using:
 ```
@@ -39,9 +43,17 @@ g++ -std=c++14 -O3 -lbmla myprogram.cpp -o myprogram.o
 ```
 (this assumes you have install `-lq3c1`).
 
-## Namespace
+### Namespace
 
 The namespace is `dblz` ("DynamicBoltzmann").
+
+## Usage
+
+More documentation TBD!
+
+### Simulations
+
+Simulations can be generated using the `lattgillespie` library located [here](https://github.com/smrfeld/LatticeGillespieCpp).
 
 ## Technical notes
 

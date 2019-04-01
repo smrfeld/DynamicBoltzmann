@@ -55,6 +55,24 @@ More documentation TBD!
 
 Simulations can be generated using the `lattgillespie` library located [here](https://github.com/smrfeld/LatticeGillespieCpp).
 
+### Creating directory structure
+
+To create the directory structure, use the included Python script `create_data_dirs.py`.
+
+This takes 1 argument: the path of the directory (relative to local directory where you run `create_data_dirs.py`) that you want to create and create the substructure in.
+
+For example, running:
+```
+python create_data_dirs.py data
+```
+creates in the working directory the following directories:
+```
+data
+data/moments
+data/ixn_params
+data/diff_eq_rhs
+```
+
 ## Technical notes
 
 ### Binary vs probabilistic units

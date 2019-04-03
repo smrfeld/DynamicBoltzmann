@@ -12,9 +12,11 @@ namespace dblz {
     // Forwards
     class IxnParamTraj;
     class LatticeTraj;
+    class LatticeTraj1DFullyVisible;
     class FNameTrajColl;
     struct OptionsWakeSleep_BM_PCD;
     struct OptionsWakeSleep_RBM_CD;
+    struct OptionsWakeSleep_1DFV_CD;
 
     /****************************************
     Misc options
@@ -76,7 +78,8 @@ namespace dblz {
         
         // Lattice
         std::shared_ptr<LatticeTraj> _latt_traj;
-        
+        std::shared_ptr<LatticeTraj1DFullyVisible> _latt_traj_1dfv;
+
         // Constructor helpers
         void _clean_up();
         void _move(OptProblemDynamic &other);
@@ -89,6 +92,7 @@ namespace dblz {
          ********************/
         
         OptProblemDynamic(std::shared_ptr<LatticeTraj> latt_traj);
+        OptProblemDynamic(std::shared_ptr<LatticeTraj1DFullyVisible> latt_traj_1dfv);
         OptProblemDynamic(const OptProblemDynamic& other);
         OptProblemDynamic(OptProblemDynamic&& other);
         OptProblemDynamic& operator=(const OptProblemDynamic &other);
@@ -100,8 +104,8 @@ namespace dblz {
          ********************/
         
         // Solve helpers
-        void solve_ixn_param_trajs(double dt, int timepoint_start, int no_timesteps, int no_steps_per_step) const;
-        
+        void solve_ixn_param_trajs(const std::vector<std::shared_ptr<IxnParamTraj>> &ixn_param_trajs, double dt, int timepoint_start, int no_timesteps, int no_steps_per_step) const;
+
         // One step
         // SIP = solve ixn params
         // WSA = wake/sleep/adjoint
@@ -111,7 +115,10 @@ namespace dblz {
         void solve_one_step_rbm_cd(int i_opt_step, int timepoint_start_SIP, int no_timesteps_SIP, int timepoint_start_WS, int no_timesteps_WS, int timepoint_start_A, int no_timesteps_A, double dt, int no_cd_steps, FNameTrajColl &fname_traj_coll, OptionsSolveDynamic options, OptionsWakeSleep_RBM_CD options_wake_sleep);
         void solve_one_step_rbm_cd_without_committ(int i_opt_step, int timepoint_start_SIP, int no_timesteps_SIP, int timepoint_start_WS, int no_timesteps_WS, int timepoint_start_A, int no_timesteps_A, double dt, int no_cd_steps, FNameTrajColl &fname_traj_coll, OptionsSolveDynamic options, OptionsWakeSleep_RBM_CD options_wake_sleep);
         
-        void committ_step(int i_opt_step, OptionsSolveDynamic options);
+        void solve_one_step_1d_fully_visible(int i_opt_step, int timepoint_start_SIP, int no_timesteps_SIP, int timepoint_start_WS, int no_timesteps_WS, int timepoint_start_A, int no_timesteps_A, double dt, int no_cd_steps, FNameTrajColl &fname_traj_coll, OptionsSolveDynamic options, OptionsWakeSleep_1DFV_CD options_wake_sleep);
+        void solve_one_step_1d_fully_visible_without_committ(int i_opt_step, int timepoint_start_SIP, int no_timesteps_SIP, int timepoint_start_WS, int no_timesteps_WS, int timepoint_start_A, int no_timesteps_A, double dt, int no_cd_steps, FNameTrajColl &fname_traj_coll, OptionsSolveDynamic options, OptionsWakeSleep_1DFV_CD options_wake_sleep);
+
+        void committ_step(const std::vector<std::shared_ptr<IxnParamTraj>> &ixn_params, int i_opt_step, OptionsSolveDynamic options);
     };
     
 };

@@ -20,6 +20,7 @@ add_library(bmla SHARED
 	src/fname.cpp
 	src/general.cpp
 	src/ixn_param.cpp
+	src/lattice_1d_fully_visible.cpp
 	src/lattice.cpp
 	src/moment.cpp
 	src/opt_problem_static.cpp
@@ -27,6 +28,7 @@ add_library(bmla SHARED
 	include/dblz_bits/fname.hpp
 	include/dblz_bits/general.hpp
 	include/dblz_bits/ixn_param.hpp
+	include/dblz_bits/lattice_1d_fully_visible.hpp
 	include/dblz_bits/lattice.hpp
 	include/dblz_bits/moment.hpp
 	include/dblz_bits/opt_problem_static.hpp
@@ -41,6 +43,8 @@ add_library(dblz SHARED
 	src/general.cpp
 	src/ixn_param.cpp
 	src/ixn_param_traj.cpp
+	src/lattice_1d_fully_visible.cpp
+	src/lattice_traj_1d_fully_visible.cpp
 	src/lattice.cpp
 	src/lattice_traj.cpp
 	src/moment.cpp
@@ -52,6 +56,8 @@ add_library(dblz SHARED
 	include/dblz_bits/general.hpp
 	include/dblz_bits/ixn_param.hpp
 	include/dblz_bits/ixn_param_traj.hpp
+	include/dblz_bits/lattice_1d_fully_visible.hpp
+	include/dblz_bits/lattice_traj_1d_fully_visible.hpp
 	include/dblz_bits/lattice.hpp
 	include/dblz_bits/lattice_traj.hpp
 	include/dblz_bits/moment.hpp

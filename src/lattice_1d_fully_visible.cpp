@@ -864,7 +864,7 @@ namespace dblz {
         // Run CD sampling
         
         // Sample vis, hidden repeadedly
-        for (int i_sampling_step=0; i_sampling_step<no_cd_steps-1; i_sampling_step++)
+        for (int i_sampling_step=0; i_sampling_step<no_cd_steps; i_sampling_step++)
         {
             gibbs_sampling_step();
         };

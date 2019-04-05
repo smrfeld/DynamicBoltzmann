@@ -785,7 +785,7 @@ namespace dblz {
                         for (auto x=0; x<_box_length-2; x++) {
                             if (!moment->get_is_awake_moment_fixed()) {
                                 for (auto i_chain=0; i_chain<_no_markov_chains.at(MCType::AWAKE); i_chain++) {
-                                    moment->increment_moment(MCType::AWAKE, _mc_chains.at(MCType::AWAKE).at(i_chain).at(sp1).at(x) * _mc_chains.at(MCType::AWAKE).at(i_chain).at(sp2).at(x+1) * _mc_chains.at(MCType::AWAKE).at(i_chain).at(sp2).at(x+2) / _no_markov_chains.at(MCType::AWAKE));
+                                    moment->increment_moment(MCType::AWAKE, _mc_chains.at(MCType::AWAKE).at(i_chain).at(sp1).at(x) * _mc_chains.at(MCType::AWAKE).at(i_chain).at(sp2).at(x+1) * _mc_chains.at(MCType::AWAKE).at(i_chain).at(sp3).at(x+2) / _no_markov_chains.at(MCType::AWAKE));
                                     // Note: the other order is automatically covered?
                                 };
                             };

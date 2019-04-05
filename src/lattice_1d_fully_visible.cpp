@@ -752,13 +752,13 @@ namespace dblz {
                     for (auto x=0; x<_box_length-1; x++) {
                         if (!moment->get_is_awake_moment_fixed()) {
                             for (auto i_chain=0; i_chain<_no_markov_chains.at(MCType::AWAKE); i_chain++) {
-                                moment->increment_moment(MCType::AWAKE, _mc_chains.at(MCType::AWAKE).at(i_chain).at(sp1).at(x) * _mc_chains.at(MCType::AWAKE).at(i_chain).at(sp2).at(x+1));
+                                moment->increment_moment(MCType::AWAKE, _mc_chains.at(MCType::AWAKE).at(i_chain).at(sp1).at(x) * _mc_chains.at(MCType::AWAKE).at(i_chain).at(sp2).at(x+1) / _no_markov_chains.at(MCType::AWAKE));
                                 // Note: the other order is automatically covered?
                             };
                         };
                         
                         for (auto i_chain=0; i_chain<_no_markov_chains.at(MCType::ASLEEP); i_chain++) {
-                            moment->increment_moment(MCType::ASLEEP, _mc_chains.at(MCType::ASLEEP).at(i_chain).at(sp1).at(x) * _mc_chains.at(MCType::ASLEEP).at(i_chain).at(sp2).at(x+1));
+                            moment->increment_moment(MCType::ASLEEP, _mc_chains.at(MCType::ASLEEP).at(i_chain).at(sp1).at(x) * _mc_chains.at(MCType::ASLEEP).at(i_chain).at(sp2).at(x+1) / _no_markov_chains.at(MCType::ASLEEP));
                             // Note: the other order is automatically covered?
                         };
                     };
@@ -785,13 +785,13 @@ namespace dblz {
                         for (auto x=0; x<_box_length-2; x++) {
                             if (!moment->get_is_awake_moment_fixed()) {
                                 for (auto i_chain=0; i_chain<_no_markov_chains.at(MCType::AWAKE); i_chain++) {
-                                    moment->increment_moment(MCType::AWAKE, _mc_chains.at(MCType::AWAKE).at(i_chain).at(sp1).at(x) * _mc_chains.at(MCType::AWAKE).at(i_chain).at(sp2).at(x+1));
+                                    moment->increment_moment(MCType::AWAKE, _mc_chains.at(MCType::AWAKE).at(i_chain).at(sp1).at(x) * _mc_chains.at(MCType::AWAKE).at(i_chain).at(sp2).at(x+1) * _mc_chains.at(MCType::AWAKE).at(i_chain).at(sp2).at(x+2) / _no_markov_chains.at(MCType::AWAKE));
                                     // Note: the other order is automatically covered?
                                 };
                             };
                             
                             for (auto i_chain=0; i_chain<_no_markov_chains.at(MCType::ASLEEP); i_chain++) {
-                                moment->increment_moment(MCType::ASLEEP, _mc_chains.at(MCType::ASLEEP).at(i_chain).at(sp1).at(x) * _mc_chains.at(MCType::ASLEEP).at(i_chain).at(sp2).at(x+1) * _mc_chains.at(MCType::ASLEEP).at(i_chain).at(sp3).at(x+2));
+                                moment->increment_moment(MCType::ASLEEP, _mc_chains.at(MCType::ASLEEP).at(i_chain).at(sp1).at(x) * _mc_chains.at(MCType::ASLEEP).at(i_chain).at(sp2).at(x+1) * _mc_chains.at(MCType::ASLEEP).at(i_chain).at(sp3).at(x+2) / _no_markov_chains.at(MCType::ASLEEP));
                                 // Note: the other order is automatically covered?
                             };
                         };
@@ -814,12 +814,12 @@ namespace dblz {
             if (!moment->get_is_awake_moment_fixed()) {
                 for (auto i_chain=0; i_chain<_no_markov_chains.at(MCType::AWAKE); i_chain++) {
                     
-                    moment->increment_moment(MCType::AWAKE, arma::accu(_mc_chains.at(MCType::AWAKE).at(i_chain).at(sp1)));
+                    moment->increment_moment(MCType::AWAKE, arma::accu(_mc_chains.at(MCType::AWAKE).at(i_chain).at(sp1)) / _no_markov_chains.at(MCType::AWAKE));
                 };
             };
             
             for (auto i_chain=0; i_chain<_no_markov_chains.at(MCType::ASLEEP); i_chain++) {
-                moment->increment_moment(MCType::ASLEEP, arma::accu(_mc_chains.at(MCType::ASLEEP).at(i_chain).at(sp1)));
+                moment->increment_moment(MCType::ASLEEP, arma::accu(_mc_chains.at(MCType::ASLEEP).at(i_chain).at(sp1)) / _no_markov_chains.at(MCType::ASLEEP));
             };
         };
     };

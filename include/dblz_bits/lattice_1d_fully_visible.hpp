@@ -222,5 +222,14 @@ namespace dblz {
         // ***************
         
         void wake_sleep_loop_cd(int i_opt_step, int no_cd_steps, std::vector<FName> &fnames, OptionsWakeSleep_1DFV_CD options);
+        
+        // ***************
+        // MARK: - Counts
+        // ***************
+        
+        double get_count(MCType chain, int i_chain, Sptr sp) const;
+        double get_count(MCType chain, int i_chain, Sptr sp1, Sptr sp2) const;
+        double get_count(MCType chain, int i_chain, Sptr sp1, Sptr sp2, Sptr sp3) const;
+        double get_count(MCType chain, int i_chain, Sptr sp1, Sptr sp2, Sptr sp3, Sptr sp4) const;
     };
 };

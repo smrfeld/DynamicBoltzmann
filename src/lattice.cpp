@@ -2062,6 +2062,10 @@ namespace dblz {
         
         // ASLEEP PHASE - PERSISTENT_CD
     
+        for (auto i_chain=0; i_chain<_no_markov_chains.at(MCType::ASLEEP); i_chain++) {
+            set_random_all_units_in_layer(MCType::ASLEEP, i_chain, 0, true);
+        };
+        
         // Run CD sampling
     
         // Activate the hiddens with binary
@@ -2099,4 +2103,69 @@ namespace dblz {
             std::cout << "[time " << dt_tot << "] [read " << dt1/dt_tot << "] [awake " << dt2/dt_tot << "] [asleep " << dt3/dt_tot << "]" << std::endl;
         };
     };
+    
+    // ***************
+    // MARK: - Counts
+    // ***************
+    
+    double Lattice::get_count_1d(MCType chain, int i_chain, Sptr sp) const {
+        if (_no_dims != 1) {
+            std::cerr << ">>> Lattice::get_count_1d <<< Error: only for 1D lattices" << std::endl;
+            exit(EXIT_FAILURE);
+        };
+        
+        return arma::accu(_mc_chains.at(chain).at(i_chain).at(0).at(sp));
+    };
+    double Lattice::get_count_1d(MCType chain, int i_chain, Sptr sp1, Sptr sp2) const {
+        if (_no_dims != 1) {
+            std::cerr << ">>> Lattice::get_count_1d <<< Error: only for 1D lattices" << std::endl;
+            exit(EXIT_FAILURE);
+        };
+        
+        double count=0.;
+        for (auto x=0; x<_box_length-1; x++) {
+            count += _mc_chains.at(chain).at(i_chain).at(0).at(sp1).at(x) * _mc_chains.at(chain).at(i_chain).at(0).at(sp2).at(x+1);
+        };
+        if (sp1 != sp2) {
+            for (auto x=0; x<_box_length-1; x++) {
+                count += _mc_chains.at(chain).at(i_chain).at(0).at(sp2).at(x) * _mc_chains.at(chain).at(i_chain).at(0).at(sp1).at(x+1);
+            };
+        };
+        return count;
+    };
+    double Lattice::get_count_1d(MCType chain, int i_chain, Sptr sp1, Sptr sp2, Sptr sp3) const {
+        if (_no_dims != 1) {
+            std::cerr << ">>> Lattice::get_count_1d <<< Error: only for 1D lattices" << std::endl;
+            exit(EXIT_FAILURE);
+        };
+
+        double count=0.;
+        for (auto x=0; x<_box_length-2; x++) {
+            count += _mc_chains.at(chain).at(i_chain).at(0).at(sp1).at(x) * _mc_chains.at(chain).at(i_chain).at(0).at(sp2).at(x+1) * _mc_chains.at(chain).at(i_chain).at(0).at(sp3).at(x+2);
+        };
+        if (!((sp1 == sp2) && (sp2 == sp3))) {
+            for (auto x=0; x<_box_length-2; x++) {
+                count += _mc_chains.at(chain).at(i_chain).at(0).at(sp3).at(x) * _mc_chains.at(chain).at(i_chain).at(0).at(sp2).at(x+1) * _mc_chains.at(chain).at(i_chain).at(0).at(sp1).at(x+2);
+            };
+        };
+        return count;
+    };
+    double Lattice::get_count_1d(MCType chain, int i_chain, Sptr sp1, Sptr sp2, Sptr sp3, Sptr sp4) const {
+        if (_no_dims != 1) {
+            std::cerr << ">>> Lattice::get_count_1d <<< Error: only for 1D lattices" << std::endl;
+            exit(EXIT_FAILURE);
+        };
+
+        double count=0.;
+        for (auto x=0; x<_box_length-3; x++) {
+            count += _mc_chains.at(chain).at(i_chain).at(0).at(sp1).at(x) * _mc_chains.at(chain).at(i_chain).at(0).at(sp2).at(x+1) * _mc_chains.at(chain).at(i_chain).at(0).at(sp3).at(x+2) * _mc_chains.at(chain).at(i_chain).at(0).at(sp4).at(x+3);
+        };
+        if (!((sp1 == sp2) && (sp2 == sp3) && (sp3 == sp4))) {
+            for (auto x=0; x<_box_length-3; x++) {
+                count += _mc_chains.at(chain).at(i_chain).at(0).at(sp4).at(x) * _mc_chains.at(chain).at(i_chain).at(0).at(sp3).at(x+1) * _mc_chains.at(chain).at(i_chain).at(0).at(sp2).at(x+2) * _mc_chains.at(chain).at(i_chain).at(0).at(sp1).at(x+3);
+            };
+        };
+        return count;
+    };
+
 };

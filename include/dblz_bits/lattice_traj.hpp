@@ -115,5 +115,5 @@ namespace dblz {
         void add_conn(int layer1, int x1, int layer2, int x2);
         void add_conn(int layer1, int x1, int y1, int layer2, int x2, int y2);
         void add_conn(int layer1, int x1, int y1, int z1, int layer2, int x2, int y2, int z2);
-	};
+    };
 };

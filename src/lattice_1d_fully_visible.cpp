@@ -878,4 +878,48 @@ namespace dblz {
             std::cout << "[time " << dt_tot << "] [read " << dt1/dt_tot << "] [gibbs " << dt2/dt_tot << "]" << std::endl;
         };
     };
+    
+    // ***************
+    // MARK: - Counts
+    // ***************
+    
+    double Lattice1DFullyVisible::get_count(MCType chain, int i_chain, Sptr sp) const {
+        return arma::accu(_mc_chains.at(chain).at(i_chain).at(sp));
+    };
+    double Lattice1DFullyVisible::get_count(MCType chain, int i_chain, Sptr sp1, Sptr sp2) const {
+        double count=0.;
+        for (auto x=0; x<_box_length-1; x++) {
+            count += _mc_chains.at(chain).at(i_chain).at(sp1).at(x) * _mc_chains.at(chain).at(i_chain).at(sp2).at(x+1);
+        };
+        if (sp1 != sp2) {
+            for (auto x=0; x<_box_length-1; x++) {
+                count += _mc_chains.at(chain).at(i_chain).at(sp2).at(x) * _mc_chains.at(chain).at(i_chain).at(sp1).at(x+1);
+            };
+        };
+        return count;
+    };
+    double Lattice1DFullyVisible::get_count(MCType chain, int i_chain, Sptr sp1, Sptr sp2, Sptr sp3) const {
+        double count=0.;
+        for (auto x=0; x<_box_length-2; x++) {
+            count += _mc_chains.at(chain).at(i_chain).at(sp1).at(x) * _mc_chains.at(chain).at(i_chain).at(sp2).at(x+1) * _mc_chains.at(chain).at(i_chain).at(sp3).at(x+2);
+        };
+        if (!((sp1 == sp2) && (sp2 == sp3))) {
+            for (auto x=0; x<_box_length-2; x++) {
+                count += _mc_chains.at(chain).at(i_chain).at(sp3).at(x) * _mc_chains.at(chain).at(i_chain).at(sp2).at(x+1) * _mc_chains.at(chain).at(i_chain).at(sp1).at(x+2);
+            };
+        };
+        return count;
+    };
+    double Lattice1DFullyVisible::get_count(MCType chain, int i_chain, Sptr sp1, Sptr sp2, Sptr sp3, Sptr sp4) const {
+        double count=0.;
+        for (auto x=0; x<_box_length-3; x++) {
+            count += _mc_chains.at(chain).at(i_chain).at(sp1).at(x) * _mc_chains.at(chain).at(i_chain).at(sp2).at(x+1) * _mc_chains.at(chain).at(i_chain).at(sp3).at(x+2) * _mc_chains.at(chain).at(i_chain).at(sp4).at(x+3);
+        };
+        if (!((sp1 == sp2) && (sp2 == sp3) && (sp3 == sp4))) {
+            for (auto x=0; x<_box_length-3; x++) {
+                count += _mc_chains.at(chain).at(i_chain).at(sp4).at(x) * _mc_chains.at(chain).at(i_chain).at(sp3).at(x+1) * _mc_chains.at(chain).at(i_chain).at(sp2).at(x+2) * _mc_chains.at(chain).at(i_chain).at(sp1).at(x+3);
+            };
+        };
+        return count;
+    };
 };

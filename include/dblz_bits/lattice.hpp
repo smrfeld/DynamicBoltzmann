@@ -358,5 +358,14 @@ namespace dblz {
         
         void wake_sleep_loop_bm_pcd(int i_opt_step, int no_mean_field_updates, int no_gibbs_sampling_steps, std::vector<FName> &fnames, OptionsWakeSleep_BM_PCD options);
         void wake_sleep_loop_rbm_cd(int i_opt_step, int no_cd_steps, std::vector<FName> &fnames, OptionsWakeSleep_RBM_CD options);
+        
+        // ***************
+        // MARK: - Counts
+        // ***************
+        
+        double get_count_1d(MCType chain, int i_chain, Sptr sp) const;
+        double get_count_1d(MCType chain, int i_chain, Sptr sp1, Sptr sp2) const;
+        double get_count_1d(MCType chain, int i_chain, Sptr sp1, Sptr sp2, Sptr sp3) const;
+        double get_count_1d(MCType chain, int i_chain, Sptr sp1, Sptr sp2, Sptr sp3, Sptr sp4) const;
     };
 };

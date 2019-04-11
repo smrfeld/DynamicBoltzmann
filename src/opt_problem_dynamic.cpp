@@ -274,20 +274,10 @@ namespace dblz {
         };
         
         if (options.l2_reg) {
-            if (options.l2_reg_center_traj) {
-                for (auto timepoint=timepoint_start_A_use + no_timesteps_A_use; timepoint>timepoint_start_A_use; timepoint--) {
-                    for (auto ixn_param_traj: _latt_traj->get_all_ixn_param_trajs()) {
-                        if (!ixn_param_traj->get_is_val_fixed()) {
-                            ixn_param_traj->get_adjoint()->solve_diff_eq_at_timepoint_to_minus_one_l2(timepoint,dt,options.l2_lambda.at(ixn_param_traj),options.l2_center_traj.at(ixn_param_traj).at(timepoint));
-                        };
-                    };
-                };
-            } else {
-                for (auto timepoint=timepoint_start_A_use + no_timesteps_A_use; timepoint>timepoint_start_A_use; timepoint--) {
-                    for (auto ixn_param_traj: _latt_traj->get_all_ixn_param_trajs()) {
-                        if (!ixn_param_traj->get_is_val_fixed()) {
-                            ixn_param_traj->get_adjoint()->solve_diff_eq_at_timepoint_to_minus_one_l2(timepoint,dt,options.l2_lambda.at(ixn_param_traj),options.l2_center.at(ixn_param_traj));
-                        };
+            for (auto timepoint=timepoint_start_A_use + no_timesteps_A_use; timepoint>timepoint_start_A_use; timepoint--) {
+                for (auto ixn_param_traj: _latt_traj->get_all_ixn_param_trajs()) {
+                    if (!ixn_param_traj->get_is_val_fixed()) {
+                        ixn_param_traj->get_adjoint()->solve_diff_eq_at_timepoint_to_minus_one_l2(timepoint,dt,options.l2_lambda.at(ixn_param_traj),options.l2_center.at(ixn_param_traj));
                     };
                 };
             };
@@ -504,20 +494,18 @@ namespace dblz {
         };
         
         if (options.l2_reg) {
-            if (options.l2_reg_center_traj) {
-                for (auto timepoint=timepoint_start_A_use + no_timesteps_A_use; timepoint>timepoint_start_A_use; timepoint--) {
-                    for (auto ixn_param_traj: _latt_traj->get_all_ixn_param_trajs()) {
-                        if (!ixn_param_traj->get_is_val_fixed()) {
-                            ixn_param_traj->get_adjoint()->solve_diff_eq_at_timepoint_to_minus_one_l2(timepoint,dt,options.l2_lambda.at(ixn_param_traj),options.l2_center_traj.at(ixn_param_traj).at(timepoint));
-                        };
+            for (auto timepoint=timepoint_start_A_use + no_timesteps_A_use; timepoint>timepoint_start_A_use; timepoint--) {
+                for (auto ixn_param_traj: _latt_traj->get_all_ixn_param_trajs()) {
+                    if (!ixn_param_traj->get_is_val_fixed()) {
+                        ixn_param_traj->get_adjoint()->solve_diff_eq_at_timepoint_to_minus_one_l2(timepoint,dt,options.l2_lambda.at(ixn_param_traj),options.l2_center.at(ixn_param_traj));
                     };
                 };
-            } else {
-                for (auto timepoint=timepoint_start_A_use + no_timesteps_A_use; timepoint>timepoint_start_A_use; timepoint--) {
-                    for (auto ixn_param_traj: _latt_traj->get_all_ixn_param_trajs()) {
-                        if (!ixn_param_traj->get_is_val_fixed()) {
-                            ixn_param_traj->get_adjoint()->solve_diff_eq_at_timepoint_to_minus_one_l2(timepoint,dt,options.l2_lambda.at(ixn_param_traj),options.l2_center.at(ixn_param_traj));
-                        };
+            };
+        } else if (options.l2_reg_traj) {
+            for (auto timepoint=timepoint_start_A_use + no_timesteps_A_use; timepoint>timepoint_start_A_use; timepoint--) {
+                for (auto ixn_param_traj: _latt_traj->get_all_ixn_param_trajs()) {
+                    if (!ixn_param_traj->get_is_val_fixed()) {
+                        ixn_param_traj->get_adjoint()->solve_diff_eq_at_timepoint_to_minus_one_l2(timepoint,dt,options.l2_lambda_traj.at(ixn_param_traj).at(timepoint),options.l2_center_traj.at(ixn_param_traj).at(timepoint));
                     };
                 };
             };
@@ -689,20 +677,10 @@ namespace dblz {
         };
         
         if (options.l2_reg) {
-            if (options.l2_reg_center_traj) {
-                for (auto timepoint=timepoint_start_A_use + no_timesteps_A_use; timepoint>timepoint_start_A_use; timepoint--) {
-                    for (auto ixn_param_traj: _latt_traj_1dfv->get_all_ixn_param_trajs()) {
-                        if (!ixn_param_traj->get_is_val_fixed()) {
-                            ixn_param_traj->get_adjoint()->solve_diff_eq_at_timepoint_to_minus_one_l2(timepoint,dt,options.l2_lambda.at(ixn_param_traj),options.l2_center_traj.at(ixn_param_traj).at(timepoint));
-                        };
-                    };
-                };
-            } else {
-                for (auto timepoint=timepoint_start_A_use + no_timesteps_A_use; timepoint>timepoint_start_A_use; timepoint--) {
-                    for (auto ixn_param_traj: _latt_traj_1dfv->get_all_ixn_param_trajs()) {
-                        if (!ixn_param_traj->get_is_val_fixed()) {
-                            ixn_param_traj->get_adjoint()->solve_diff_eq_at_timepoint_to_minus_one_l2(timepoint,dt,options.l2_lambda.at(ixn_param_traj),options.l2_center.at(ixn_param_traj));
-                        };
+            for (auto timepoint=timepoint_start_A_use + no_timesteps_A_use; timepoint>timepoint_start_A_use; timepoint--) {
+                for (auto ixn_param_traj: _latt_traj_1dfv->get_all_ixn_param_trajs()) {
+                    if (!ixn_param_traj->get_is_val_fixed()) {
+                        ixn_param_traj->get_adjoint()->solve_diff_eq_at_timepoint_to_minus_one_l2(timepoint,dt,options.l2_lambda.at(ixn_param_traj),options.l2_center.at(ixn_param_traj));
                     };
                 };
             };

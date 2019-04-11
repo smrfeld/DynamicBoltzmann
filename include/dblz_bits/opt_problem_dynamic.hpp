@@ -43,8 +43,9 @@ namespace dblz {
         std::map<std::shared_ptr<IxnParamTraj>,double> l2_lambda;
         std::map<std::shared_ptr<IxnParamTraj>,double> l2_center;
         
-        // Pointwise l2_reg
-        bool l2_reg_center_traj = false;
+        // L2 traj
+        bool l2_reg_traj = false;
+        std::map<std::shared_ptr<IxnParamTraj>,std::map<int,double>> l2_lambda_traj;
         std::map<std::shared_ptr<IxnParamTraj>,std::map<int,double>> l2_center_traj;
 
         // Options for the solvers

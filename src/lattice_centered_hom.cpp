@@ -47,6 +47,9 @@ namespace dblz {
         
         // Visible layer
         add_layer(0, _box_length, species_visible);
+        
+        // Init
+        _conn_mult = nullptr;
     };
 	LatticeCenteredHom::LatticeCenteredHom(const LatticeCenteredHom& other) {
 		_copy(other);
@@ -73,7 +76,10 @@ namespace dblz {
 	};
 
 	void LatticeCenteredHom::_clean_up() {
-        // Nothing...
+        if (_conn_mult) {
+            delete _conn_mult;
+            _conn_mult = nullptr;
+        };
 	};
 	void LatticeCenteredHom::_copy(const LatticeCenteredHom& other) {
 		_no_dims = other._no_dims;
@@ -101,6 +107,11 @@ namespace dblz {
         _o2_mults = other._o2_mults;
         _bias_mults = other._bias_mults;
         
+        if (other._conn_mult) {
+            _conn_mult = new int(*other._conn_mult);
+        } else {
+            _conn_mult = nullptr;
+        };
         _center_means = other._center_means;
         _center_batch_means = other._center_batch_means;
         
@@ -135,6 +146,7 @@ namespace dblz {
         _o2_mults = other._o2_mults;
         _bias_mults = other._bias_mults;
 
+        _conn_mult = other._conn_mult;
         _center_means = other._center_means;
         _center_batch_means = other._center_batch_means;
     
@@ -169,6 +181,7 @@ namespace dblz {
         other._o2_mults.clear();
         other._bias_mults.clear();
 
+        other._conn_mult = nullptr;
         other._center_means.clear();
         other._center_batch_means.clear();
         
@@ -487,10 +500,10 @@ namespace dblz {
     // ***************
 
     void LatticeCenteredHom::set_conn_multiplicity(int mult) {
-        _conn_mult = mult;
-    };
-    double LatticeCenteredHom::get_conn_multiplicity() const {
-        return _conn_mult;
+        if (_conn_mult) {
+            delete _conn_mult;
+        };
+        _conn_mult = new int(mult);
     };
     
     void LatticeCenteredHom::add_conn(int layer1, int x1, int layer2, int x2) {
@@ -1079,31 +1092,34 @@ namespace dblz {
     // MARK: - Reap moments
     // ***************
     
-    void LatticeCenteredHom::reap_moments_and_slide_centers(bool slide_means, double sliding_factor) {
+    void LatticeCenteredHom::reap_moments_and_slide_centers(double sliding_factor) {
         
-        // If centering mode: calculate the centers from the awake moment, and then slide
-        if (slide_means) {
-            int no_units;
-            for (auto layer=0; layer<_no_layers; layer++) {
-                no_units = get_no_units_in_layer(layer);
+        if (!_conn_mult) {
+            std::cerr << ">>> Error: LatticeCenteredHom::reap_moments_and_slide_centers <<< connection multiplicity must be specified!" << std::endl;
+            exit(EXIT_FAILURE);
+        };
+        
+        // Calculate the centers from the awake moment, and then slide
+        int no_units;
+        for (auto layer=0; layer<_no_layers; layer++) {
+            no_units = get_no_units_in_layer(layer);
+            
+            // Determine means
+            for (auto sp: _species_possible_vec.at(layer)) {
+                // Reset
+                _center_batch_means[layer][sp] = 0.0;
                 
-                // Determine means
-                for (auto sp: _species_possible_vec.at(layer)) {
-                    // Reset
-                    _center_batch_means[layer][sp] = 0.0;
-                    
-                    // Get batch mean from all chains
-                    for (auto i_chain=0; i_chain<_no_markov_chains.at(MCType::AWAKE); i_chain++) {
-                        _center_batch_means[layer][sp] += arma::accu(_mc_chains.at(MCType::AWAKE).at(i_chain).at(layer).at(sp)) / no_units;
-                    };
-                    _center_batch_means[layer][sp] /= _no_markov_chains.at(MCType::AWAKE);
+                // Get batch mean from all chains
+                for (auto i_chain=0; i_chain<_no_markov_chains.at(MCType::AWAKE); i_chain++) {
+                    _center_batch_means[layer][sp] += arma::accu(_mc_chains.at(MCType::AWAKE).at(i_chain).at(layer).at(sp)) / no_units;
                 };
-                
+                _center_batch_means[layer][sp] /= _no_markov_chains.at(MCType::AWAKE);
+            };
+            
+            // Slide
+            for (auto sp: _species_possible_vec.at(layer)) {
                 // Slide
-                for (auto sp: _species_possible_vec.at(layer)) {
-                    // Slide
-                    _center_means[layer][sp] = (1.0 - sliding_factor) * _center_means.at(layer).at(sp) + sliding_factor * _center_batch_means.at(layer).at(sp);
-                };
+                _center_means[layer][sp] = (1.0 - sliding_factor) * _center_means.at(layer).at(sp) + sliding_factor * _center_batch_means.at(layer).at(sp);
             };
         };
         
@@ -1214,7 +1230,7 @@ namespace dblz {
                         };
                         ixn = it2->second;
                         
-                        offset -= 8.0 * ixn->get_moment()->get_moment_diff_awake_minus_asleep() * _center_means.at(layer-1).at(sp_below);
+                        offset += (*_conn_mult) * ixn->get_val() * _center_means.at(layer-1).at(sp_below);
                     };
                 };
 
@@ -1236,12 +1252,12 @@ namespace dblz {
                         ixn = it2->second;
                         
                         // Calculate offset
-                        offset -= 8.0 * ixn->get_moment()->get_moment_diff_awake_minus_asleep() * _center_means.at(layer+1).at(sp_above);
+                        offset += (*_conn_mult) * ixn->get_val() * _center_means.at(layer+1).at(sp_above);
                     };
                 };
                 
                 // Adjust bias in this layer
-                _bias_dict.at(layer).at(sp)->get_moment()->set_moment_diff_awake_minus_asleep_offset(offset);
+                _bias_dict.at(layer).at(sp)->get_moment()->set_moment_offset(offset);
             };
         };
 
@@ -1322,11 +1338,6 @@ namespace dblz {
         auto it = std::find(_all_ixns.begin(),_all_ixns.end(),ixn);
         if (it == _all_ixns.end()) {
             _all_ixns.push_back(ixn);
-        } else {
-            /*
-            std::cerr << ">>> LatticeCenteredHom::_add_to_all_ixns_vec <<< reusing ixns currently not supported because it is not treated correctly in the reap function!" << std::endl;
-            exit(EXIT_FAILURE);
-             */
         };
     };
     
@@ -1334,7 +1345,7 @@ namespace dblz {
     // MARK: - Wake/sleep loop
     // ***************
     
-    void LatticeCenteredHom::wake_sleep_loop_bm_pcd(int i_opt_step, int no_mean_field_updates, int no_gibbs_sampling_steps, std::vector<FName> &fnames, OptionsWakeSleep_BM_PCD options) {
+    void LatticeCenteredHom::wake_sleep_loop_bm_pcd(int i_opt_step, int no_mean_field_updates, int no_gibbs_sampling_steps, std::vector<FName> &fnames, OptionsWakeSleep_BM_PCD_CH options) {
         
         // AWAKE PHASE
         
@@ -1433,7 +1444,7 @@ namespace dblz {
         };
     };
     
-    void LatticeCenteredHom::wake_sleep_loop_rbm_cd(int i_opt_step, int no_cd_steps, std::vector<FName> &fnames, OptionsWakeSleep_RBM_CD options) {
+    void LatticeCenteredHom::wake_sleep_loop_rbm_cd(int i_opt_step, int no_cd_steps, std::vector<FName> &fnames, OptionsWakeSleep_RBM_CD_CH options) {
         
         // AWAKE PHASE
         

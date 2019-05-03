@@ -119,11 +119,11 @@ namespace dblz {
         void set_moment(MCType type, double val);
         void reset_moment(MCType type);
         
-        // Get moment difference
-        double get_moment_diff_awake_minus_asleep() const;
-        
         // Augment moment difference by some value
-        void set_moment_diff_awake_minus_asleep_offset(double val);
+        void set_moment_offset(double val);
+
+        // Get moment difference
+        double get_moment_diff_awake_minus_asleep_plus_offset() const;
         
 		/********************
 		Write

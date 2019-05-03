@@ -203,10 +203,10 @@ namespace dblz {
 	********************/
 
 	void IxnParam::update_calculate_and_store_l2(double l2_lambda, double l2_center) {
-		_update = _moment->get_moment_diff_awake_minus_asleep() - 2.0 * l2_lambda * (_val - l2_center);
+		_update = _moment->get_moment_diff_awake_minus_asleep_plus_offset() - 2.0 * l2_lambda * (_val - l2_center);
 	};
     void IxnParam::update_calculate_and_store() {
-        _update = _moment->get_moment_diff_awake_minus_asleep();
+        _update = _moment->get_moment_diff_awake_minus_asleep_plus_offset();
     };
     
     void IxnParam::update_committ_stored_sgd() {

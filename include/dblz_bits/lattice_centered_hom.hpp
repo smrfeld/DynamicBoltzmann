@@ -17,10 +17,10 @@ namespace dblz {
     struct FName;
     
     /****************************************
-     OptProblemStatic Options
+     Sampling Options
      ****************************************/
     
-    struct OptionsWakeSleep_BM_PCD {
+    struct OptionsWakeSleep_BM_PCD_CH {
         
         // Verbosity
         bool verbose_timing = true;
@@ -46,7 +46,7 @@ namespace dblz {
         bool gibbs_sample_awake_phase_hidden_binary = true;
     };
     
-    struct OptionsWakeSleep_RBM_CD {
+    struct OptionsWakeSleep_RBM_CD_CH {
       
         // Verbosity
         bool verbose_timing = true;
@@ -136,7 +136,7 @@ namespace dblz {
         // ***************
         
         // Connection multiplictiy
-        int _conn_mult;
+        int *_conn_mult;
         
         // As above, but pointwise
         std::map<int, std::map<Sptr, double>> _center_means;
@@ -245,7 +245,6 @@ namespace dblz {
         // ***************
 
         void set_conn_multiplicity(int mult);
-        double get_conn_multiplicity() const;
         
         void add_conn(int layer1, int x1, int layer2, int x2);
         void add_conn(int layer1, int x1, int y1, int layer2, int x2, int y2);
@@ -317,7 +316,7 @@ namespace dblz {
         // MARK: - Reap moments, both awake and asleep
         // ***************
         
-        void reap_moments_and_slide_centers(bool slide_means, double sliding_factor);
+        void reap_moments_and_slide_centers(double sliding_factor);
 
         // ***************
         // MARK: - Write out centers
@@ -337,8 +336,8 @@ namespace dblz {
         // MARK: - Wake/sleep
         // ***************
         
-        void wake_sleep_loop_bm_pcd(int i_opt_step, int no_mean_field_updates, int no_gibbs_sampling_steps, std::vector<FName> &fnames, OptionsWakeSleep_BM_PCD options);
-        void wake_sleep_loop_rbm_cd(int i_opt_step, int no_cd_steps, std::vector<FName> &fnames, OptionsWakeSleep_RBM_CD options);
+        void wake_sleep_loop_bm_pcd(int i_opt_step, int no_mean_field_updates, int no_gibbs_sampling_steps, std::vector<FName> &fnames, OptionsWakeSleep_BM_PCD_CH options);
+        void wake_sleep_loop_rbm_cd(int i_opt_step, int no_cd_steps, std::vector<FName> &fnames, OptionsWakeSleep_RBM_CD_CH options);
         
         // ***************
         // MARK: - Counts

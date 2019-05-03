@@ -17,7 +17,7 @@ namespace dblz {
     struct FName;
     
     /****************************************
-     OptProblemStatic Options
+     Sampling Options
      ****************************************/
     
     struct OptionsWakeSleep_BM_PCD {

@@ -13,10 +13,12 @@ namespace dblz {
     class IxnParam;
     class Lattice;
     class Lattice1DFullyVisible;
+    class LatticeCenteredHom;
     class FNameColl;
     struct OptionsWakeSleep_BM_PCD;
     struct OptionsWakeSleep_RBM_CD;
     struct OptionsWakeSleep_1DFV_CD;
+    struct OptionsWakeSleep_RBM_CD_CH;
 
     /****************************************
     Misc options
@@ -69,7 +71,8 @@ namespace dblz {
         // Lattice
         std::shared_ptr<Lattice> _latt;
         std::shared_ptr<Lattice1DFullyVisible> _latt1dfv;
-        
+        std::shared_ptr<LatticeCenteredHom> _lattch;
+
         // Constructor helpers
         void _clean_up();
         void _move(OptProblemStatic &other);
@@ -83,6 +86,7 @@ namespace dblz {
         
         OptProblemStatic(std::shared_ptr<Lattice> latt);
         OptProblemStatic(std::shared_ptr<Lattice1DFullyVisible> latt1dfv);
+        OptProblemStatic(std::shared_ptr<LatticeCenteredHom> lattch);
         OptProblemStatic(const OptProblemStatic& other);
         OptProblemStatic(OptProblemStatic&& other);
         OptProblemStatic& operator=(const OptProblemStatic &other);
@@ -99,5 +103,7 @@ namespace dblz {
         void solve_one_step_rbm_cd(int i_opt_step, int no_cd_steps, FNameColl &fname_coll, OptionsSolveStatic options, OptionsWakeSleep_RBM_CD options_wake_sleep);
         
         void solve_one_step_1d_fully_visible(int i_opt_step, int no_cd_steps, FNameColl &fname_coll, OptionsSolveStatic options, OptionsWakeSleep_1DFV_CD options_wake_sleep);
+
+        void solve_one_step_rbm_cd_centered_hom(int i_opt_step, int no_cd_steps, FNameColl &fname_coll, OptionsSolveStatic options, OptionsWakeSleep_RBM_CD_CH options_wake_sleep);
     };
 };

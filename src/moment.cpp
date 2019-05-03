@@ -327,14 +327,14 @@ namespace dblz {
         _val_averaged[type] = 0.0;
     };
 
-    // Get moment difference
-    double Moment::get_moment_diff_awake_minus_asleep() const {
-        return _val_averaged.at(MCType::AWAKE) - _val_averaged.at(MCType::ASLEEP) + _val_diff_offset;
-    };
-    
     // Augment moment difference by some value
-    void Moment::set_moment_diff_awake_minus_asleep_offset(double val) {
+    void Moment::set_moment_offset(double val) {
         _val_diff_offset = val;
+    };
+
+    // Get moment difference
+    double Moment::get_moment_diff_awake_minus_asleep_plus_offset() const {
+        return _val_averaged.at(MCType::AWAKE) - _val_averaged.at(MCType::ASLEEP) + _val_diff_offset;
     };
     
 	/********************

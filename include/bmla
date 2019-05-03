@@ -1,8 +1,10 @@
 #ifndef BMLA_H
 #define BMLA_H
 
+#include "dblz_bits/fwds/fwds_center.hpp"
 #include "dblz_bits/fwds/fwds_ixn_param.hpp"
 #include "dblz_bits/fwds/fwds_species.hpp"
+#include "dblz_bits/center.hpp"
 #include "dblz_bits/fname.hpp"
 #include "dblz_bits/general.hpp"
 #include "dblz_bits/ixn_param.hpp"

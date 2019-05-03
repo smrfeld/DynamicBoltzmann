@@ -6,6 +6,7 @@
 #include "../include/dblz_bits/moment.hpp"
 #include "../include/dblz_bits/ixn_param.hpp"
 #include "../include/dblz_bits/fname.hpp"
+#include "../include/dblz_bits/center.hpp"
 
 #include <iostream>
 #include <fstream>
@@ -30,7 +31,7 @@ namespace dblz {
 	Constructor
 	********************/
 
-    LatticeCenteredHom::LatticeCenteredHom(int no_dims, int box_length, std::vector<Sptr> species_visible) {
+    LatticeCenteredHom::LatticeCenteredHom(int no_dims, int box_length, std::vector<Sptr> species_visible, std::vector<Cptr> centers) {
         
         if (no_dims != 1 && no_dims != 2 && no_dims != 3) {
             std::cerr << "ERROR: only dimensions 1,2,3 are supported for LatticeCenteredHom." << std::endl;
@@ -46,7 +47,7 @@ namespace dblz {
         set_no_markov_chains(MCType::ASLEEP, 1);
         
         // Visible layer
-        add_layer(0, _box_length, species_visible);
+        add_layer(0, _box_length, species_visible, centers);
         
         // Init
         _conn_mult = nullptr;
@@ -112,8 +113,7 @@ namespace dblz {
         } else {
             _conn_mult = nullptr;
         };
-        _center_means = other._center_means;
-        _center_batch_means = other._center_batch_means;
+        _centers = other._centers;
         
         _pst_prop = other._pst_prop;
         _pst_r = other._pst_r;
@@ -147,8 +147,7 @@ namespace dblz {
         _bias_mults = other._bias_mults;
 
         _conn_mult = other._conn_mult;
-        _center_means = other._center_means;
-        _center_batch_means = other._center_batch_means;
+        _centers = other._centers;
     
         _pst_prop = other._pst_prop;
         _pst_r = other._pst_r;
@@ -182,8 +181,7 @@ namespace dblz {
         other._bias_mults.clear();
 
         other._conn_mult = nullptr;
-        other._center_means.clear();
-        other._center_batch_means.clear();
+        other._centers.clear();
         
         other._pst_prop.clear();
         other._pst_r.clear();
@@ -316,7 +314,7 @@ namespace dblz {
      Add a layer
      ********************/
     
-    void LatticeCenteredHom::add_layer(int layer, int box_length, std::vector<Sptr> species) {
+    void LatticeCenteredHom::add_layer(int layer, int box_length, std::vector<Sptr> species, std::vector<Cptr> centers) {
         
         if (layer != _no_layers) {
             std::cerr << ">>> LatticeCenteredHom::add_layer <<< error: next layer must be: " << _no_layers << " not: " << layer << std::endl;
@@ -383,10 +381,9 @@ namespace dblz {
             // std::cout << "Made adjacency matrix: " << layer-1 << " " << no_units << " " << size_below << std::endl;
         };
 
-        // Centered?
-        for (auto sp: _species_possible_vec.at(layer)) {
-            _center_means[layer][sp] = 0.5;
-            _center_batch_means[layer][sp] = 0.5;
+        // Center
+        for (auto center: centers) {
+            _centers[center->get_layer()][center->get_species()] = center;
         };
         
         // Persistent data structures
@@ -1107,19 +1104,17 @@ namespace dblz {
             // Determine means
             for (auto sp: _species_possible_vec.at(layer)) {
                 // Reset
-                _center_batch_means[layer][sp] = 0.0;
+                _centers.at(layer).at(sp)->reset_val_new();
                 
                 // Get batch mean from all chains
                 for (auto i_chain=0; i_chain<_no_markov_chains.at(MCType::AWAKE); i_chain++) {
-                    _center_batch_means[layer][sp] += arma::accu(_mc_chains.at(MCType::AWAKE).at(i_chain).at(layer).at(sp)) / no_units;
+                    _centers.at(layer).at(sp)->increment_val_new(arma::accu(_mc_chains.at(MCType::AWAKE).at(i_chain).at(layer).at(sp)) / no_units / _no_markov_chains.at(MCType::AWAKE));
                 };
-                _center_batch_means[layer][sp] /= _no_markov_chains.at(MCType::AWAKE);
             };
             
             // Slide
             for (auto sp: _species_possible_vec.at(layer)) {
-                // Slide
-                _center_means[layer][sp] = (1.0 - sliding_factor) * _center_means.at(layer).at(sp) + sliding_factor * _center_batch_means.at(layer).at(sp);
+                _centers.at(layer).at(sp)->slide(sliding_factor);
             };
         };
         
@@ -1153,7 +1148,7 @@ namespace dblz {
                                 mit = _adj.at(layer1).at(layer2).begin();
                                 mit_end = _adj.at(layer1).at(layer2).end();
                                 for(; mit != mit_end; ++mit) {
-                                    moment->increment_moment(MCType::AWAKE, ( _mc_chains.at(MCType::AWAKE).at(i_chain).at(layer2).at(sp2)(mit.row()) - _center_means.at(layer2).at(sp2) ) * ( _mc_chains.at(MCType::AWAKE).at(i_chain).at(layer1).at(sp1)(mit.col()) - _center_means.at(layer1).at(sp1) ) / _no_markov_chains.at(MCType::AWAKE) );
+                                    moment->increment_moment(MCType::AWAKE, ( _mc_chains.at(MCType::AWAKE).at(i_chain).at(layer2).at(sp2)(mit.row()) - _centers.at(layer2).at(sp2)->get_val() ) * ( _mc_chains.at(MCType::AWAKE).at(i_chain).at(layer1).at(sp1)(mit.col()) - _centers.at(layer1).at(sp1)->get_val() ) / _no_markov_chains.at(MCType::AWAKE) );
                                 };
                             };
                         };
@@ -1164,7 +1159,7 @@ namespace dblz {
                             mit = _adj.at(layer1).at(layer2).begin();
                             mit_end = _adj.at(layer1).at(layer2).end();
                             for(; mit != mit_end; ++mit) {
-                                moment->increment_moment(MCType::ASLEEP, ( _mc_chains.at(MCType::ASLEEP).at(i_chain).at(layer2).at(sp2)(mit.row()) - _center_means.at(layer2).at(sp2) ) * ( _mc_chains.at(MCType::ASLEEP).at(i_chain).at(layer1).at(sp1)(mit.col()) - _center_means.at(layer1).at(sp1) ) / _no_markov_chains.at(MCType::ASLEEP) );
+                                moment->increment_moment(MCType::ASLEEP, ( _mc_chains.at(MCType::ASLEEP).at(i_chain).at(layer2).at(sp2)(mit.row()) - _centers.at(layer2).at(sp2)->get_val() ) * ( _mc_chains.at(MCType::ASLEEP).at(i_chain).at(layer1).at(sp1)(mit.col()) - _centers.at(layer1).at(sp1)->get_val() ) / _no_markov_chains.at(MCType::ASLEEP) );
                             };
                         };
                     };
@@ -1230,7 +1225,7 @@ namespace dblz {
                         };
                         ixn = it2->second;
                         
-                        offset += (*_conn_mult) * ixn->get_val() * _center_means.at(layer-1).at(sp_below);
+                        offset += (*_conn_mult) * ixn->get_val() * _centers.at(layer-1).at(sp_below)->get_val();
                     };
                 };
 
@@ -1252,7 +1247,7 @@ namespace dblz {
                         ixn = it2->second;
                         
                         // Calculate offset
-                        offset += (*_conn_mult) * ixn->get_val() * _center_means.at(layer+1).at(sp_above);
+                        offset += (*_conn_mult) * ixn->get_val() * _centers.at(layer+1).at(sp_above)->get_val();
                     };
                 };
                 
@@ -1289,8 +1284,8 @@ namespace dblz {
             if (sp != "") {
                 layer = atoi(layer_str.c_str());
                 species = _species_possible_map.at(layer).at(sp);
-                _center_means[layer][species] = atof(center.c_str());
-                // std::cout << "LatticeCenteredHom::read_center_pt_from_file: Set layer: " << layer << " species: " << species->get_name() << " to center: " << _center_means.at(layer).at(species) << std::endl;
+                _centers.at(layer).at(species)->set_val(atof(center.c_str()));
+                // std::cout << "LatticeCenteredHom::read_center_pt_from_file: Set layer: " << layer << " species: " << species->get_name() << " to center: " << _centers.at(layer).at(species) << std::endl;
             };
             sp=""; center=""; layer_str="";
         };
@@ -1308,7 +1303,7 @@ namespace dblz {
         };
 
         for (auto layer=0; layer<_no_layers; layer++) {
-            for (auto pr: _center_means.at(layer)) {
+            for (auto pr: _centers.at(layer)) {
                 f << layer << " " << pr.first->get_name() << " " << pr.second << "\n";
             };
         };
@@ -1321,11 +1316,8 @@ namespace dblz {
     // MARK: - Set centers
     // ***************
     
-    double LatticeCenteredHom::get_center_pt_for_species_in_layer(int layer, Sptr species) const {
-        return _center_means.at(layer).at(species);
-    };
-    void LatticeCenteredHom::set_center_pt_for_species_in_layer(int layer, Sptr species, double center) {
-        _center_means[layer][species] = center;
+    std::shared_ptr<Center> LatticeCenteredHom::get_center_for_species_in_layer(int layer, Sptr species) const {
+        return _centers.at(layer).at(species);
     };
 
     // ***************

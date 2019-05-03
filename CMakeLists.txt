@@ -17,6 +17,7 @@ file (GLOB HEADER_FILES "include/dblz_bits/*.hpp")
 file (GLOB HEADER_FILES_FWDS "include/dblz_bits/fwds/*.hpp")
 
 add_library(bmla SHARED 
+	src/center.cpp
 	src/fname.cpp
 	src/general.cpp
 	src/ixn_param.cpp
@@ -26,6 +27,7 @@ add_library(bmla SHARED
 	src/moment.cpp
 	src/opt_problem_static.cpp
 	src/species.cpp
+	include/dblz_bits/center.hpp
 	include/dblz_bits/fname.hpp
 	include/dblz_bits/general.hpp
 	include/dblz_bits/ixn_param.hpp
@@ -40,6 +42,7 @@ add_library(bmla SHARED
 
 add_library(dblz SHARED 
 	src/adjoint.cpp
+	src/center.cpp
 	src/center_traj.cpp
 	src/diff_eq_rhs.cpp
 	src/fname_traj.cpp
@@ -55,6 +58,7 @@ add_library(dblz SHARED
 	src/opt_problem_dynamic.cpp
 	src/species.cpp
 	include/dblz_bits/adjoint.hpp
+	include/dblz_bits/center.hpp
 	include/dblz_bits/center_traj.hpp
 	include/dblz_bits/diff_eq_rhs.hpp
 	include/dblz_bits/fname_traj.hpp

@@ -79,22 +79,17 @@ namespace dblz {
      Domain1DCenter
      ****************************************/
     
+    class CenterTraj;
+    
     class Domain1DCenter : public Domain1D {
         
     private:
         
-        // Name
-        std::string _name;
-        
-        // Layer and species of the center
-        int _layer;
-        Sptr _species;
+        // Center
+        std::shared_ptr<CenterTraj> _center;
         
         // Multiplier
         double _multiplier;
-        
-        // Stored value of the center
-        std::map<int,double> _centers;
         
         // Internal copy func/clean up
         void _clean_up();
@@ -107,7 +102,7 @@ namespace dblz {
          Constructor
          ********************/
         
-        Domain1DCenter(std::string name, int layer, Sptr species, double multiplier, double delta, double zero);
+        Domain1DCenter(std::shared_ptr<CenterTraj> center, double multiplier, double delta, double zero);
         Domain1DCenter(const Domain1DCenter& other);
         Domain1DCenter& operator=(const Domain1DCenter& other);
         Domain1DCenter(Domain1DCenter&& other);
@@ -118,11 +113,8 @@ namespace dblz {
          Getters
          ********************/
         
-        std::string get_name() const;
-        Sptr get_species() const;
-        int get_layer() const;
+        std::shared_ptr<CenterTraj> get_center() const;
         
-        void set_val_at_timepoint(int timepoint, double val);
         double get_val_at_timepoint(int timepoint) const;
     };
 

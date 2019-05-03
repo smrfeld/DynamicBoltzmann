@@ -5,6 +5,7 @@
 #include "../include/dblz_bits/ixn_param_traj.hpp"
 #include "../include/dblz_bits/ixn_param.hpp"
 #include "../include/dblz_bits/adjoint.hpp"
+#include "../include/dblz_bits/center_traj.hpp"
 
 #include <iostream>
 #include "math.h"
@@ -85,10 +86,8 @@ namespace dblz {
     // MARK: - Domain1DCenter
     // ***************
     
-    Domain1DCenter::Domain1DCenter(std::string name, int layer, Sptr species, double multiplier, double delta, double zero) : Domain1D(delta,zero) {
-        _name = name;
-        _layer = layer;
-        _species = species;
+    Domain1DCenter::Domain1DCenter(std::shared_ptr<CenterTraj> center, double multiplier, double delta, double zero) : Domain1D(delta,zero) {
+        _center = center;
         _multiplier = multiplier;
     };
     Domain1DCenter::Domain1DCenter(const Domain1DCenter& other) : Domain1D(other) {
@@ -120,44 +119,25 @@ namespace dblz {
     };
     void Domain1DCenter::_copy(const Domain1DCenter& other)
     {
-        _name = other._name;
-        _layer = other._layer;
-        _species = other._species;
+        _center = other._center;
         _multiplier = other._multiplier;
-        _centers = other._centers;
     };
     void Domain1DCenter::_move(Domain1DCenter& other)
     {
-        _name = other._name;
-        _layer = other._layer;
-        _species = other._species;
+        _center = std::move(other._center);
         _multiplier = other._multiplier;
-        _centers = other._centers;
         
-        other._name = "";
-        other._layer = 0;
-        other._species = nullptr;
         other._multiplier = 0.0;
-        other._centers.clear();
     };
     void Domain1DCenter::_clean_up() {
     };
     
-    std::string Domain1DCenter::get_name() const {
-        return _name;
-    };
-    Sptr Domain1DCenter::get_species() const {
-        return _species;
-    };
-    int Domain1DCenter::get_layer() const {
-        return _layer;
+    std::shared_ptr<CenterTraj> Domain1DCenter::get_center() const {
+        return _center;
     };
     
-    void Domain1DCenter::set_val_at_timepoint(int timepoint, double val) {
-        _centers[timepoint] = val;
-    };
     double Domain1DCenter::get_val_at_timepoint(int timepoint) const {
-        return _centers.at(timepoint);
+        return _center->get_val_at_timepoint(timepoint);
     };
 
 

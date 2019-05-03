@@ -4,6 +4,7 @@
 
 #include "fwds/fwds_species.hpp"
 #include "fwds/fwds_ixn_param.hpp"
+#include "fwds/fwds_center.hpp"
 
 #include <armadillo>
 
@@ -139,8 +140,7 @@ namespace dblz {
         int *_conn_mult;
         
         // As above, but pointwise
-        std::map<int, std::map<Sptr, double>> _center_means;
-        std::map<int, std::map<Sptr, double>> _center_batch_means;
+        std::map<int, std::map<Sptr, Cptr>> _centers;
         
         // ***************
         // MARK: - Private methods
@@ -189,7 +189,7 @@ namespace dblz {
         // MARK: Constructor
         // ***************
         
-        LatticeCenteredHom(int no_dims, int box_length, std::vector<Sptr> species_visible);
+        LatticeCenteredHom(int no_dims, int box_length, std::vector<Sptr> species_visible, std::vector<Cptr> centers);
         LatticeCenteredHom(const LatticeCenteredHom& other);
 		LatticeCenteredHom(LatticeCenteredHom&& other);
 		LatticeCenteredHom& operator=(const LatticeCenteredHom& other);
@@ -216,7 +216,7 @@ namespace dblz {
         // MARK: Add a layer
         // ***************
         
-        void add_layer(int layer, int box_length, std::vector<Sptr> species);
+        void add_layer(int layer, int box_length, std::vector<Sptr> species, std::vector<Cptr> centers);
 
         // ***************
         // MARK: Biases/ixn params
@@ -329,8 +329,7 @@ namespace dblz {
         // MARK: - Set centers
         // ***************
         
-        double get_center_pt_for_species_in_layer(int layer, Sptr species) const;
-        void set_center_pt_for_species_in_layer(int layer, Sptr species, double center);
+        Cptr get_center_for_species_in_layer(int layer, Sptr species) const;
 
         // ***************
         // MARK: - Wake/sleep

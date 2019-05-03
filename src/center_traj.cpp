@@ -2,6 +2,7 @@
 
 // Other headers
 #include "../include/dblz_bits/general.hpp"
+#include "../include/dblz_bits/species.hpp"
 
 #include <iostream>
 #include <fstream>
@@ -97,6 +98,10 @@ namespace dblz {
     // ***************
     // MARK: - Getters/setters
     // ***************
+    
+    std::string CenterTraj::get_name() const {
+        return _species->get_name() + "_layer_" + pad_str(_layer, 2);
+    };
     
     void CenterTraj::set_val_at_timepoint(int timepoint, double val) {
         _vals[timepoint] = val;

@@ -1,10 +1,13 @@
 #ifndef DBLZ_H
 #define DBLZ_H
 
+#include "dblz_bits/fwds/fwds_center.hpp"
+#include "dblz_bits/fwds/fwds_center_traj.hpp"
 #include "dblz_bits/fwds/fwds_ixn_param.hpp"
 #include "dblz_bits/fwds/fwds_ixn_param_traj.hpp"
 #include "dblz_bits/fwds/fwds_species.hpp"
 #include "dblz_bits/adjoint.hpp"
+#include "dblz_bits/center.hpp"
 #include "dblz_bits/center_traj.hpp"
 #include "dblz_bits/diff_eq_rhs.hpp"
 #include "dblz_bits/fname_traj.hpp"

@@ -17,7 +17,6 @@ namespace dblz {
     class Lattice1DFullyVisible;
     
     enum class MCType: unsigned int;
-    enum class LatticeMode: unsigned int;
     
     /****************************************
      LatticeTraj1DFullyVisible

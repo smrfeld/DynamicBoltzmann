@@ -10,13 +10,13 @@
 
 namespace dblz {	
 
-	/****************************************
-	Adjoint
-	****************************************/
-
+    // ***************
+    // MARK: - Abstract base for the adjoint class
+    // ***************
+    
 	class Adjoint {
 
-	private:
+	protected:
 
 		// Name
 		std::string _name;
@@ -47,7 +47,7 @@ namespace dblz {
 		Adjoint& operator=(const Adjoint& other);
 		Adjoint(Adjoint&& other);
 		Adjoint& operator=(Adjoint&& other);
-		~Adjoint();
+		virtual ~Adjoint();
 
         // ***************
         // MARK: - Timesteps
@@ -88,8 +88,8 @@ namespace dblz {
         // MARK: - Solve diff eq
         // ***************
 
-		void solve_diff_eq_at_timepoint_to_minus_one(int timepoint, double dt);
-        void solve_diff_eq_at_timepoint_to_minus_one_l2(int timepoint, double dt, double l2_lambda, double l2_center);
+		virtual void solve_diff_eq_at_timepoint_to_minus_one(int timepoint, double dt) = 0;
+        virtual void solve_diff_eq_at_timepoint_to_minus_one_l2(int timepoint, double dt, double l2_lambda, double l2_center) = 0;
 
         // ***************
         // MARK: - Write to file

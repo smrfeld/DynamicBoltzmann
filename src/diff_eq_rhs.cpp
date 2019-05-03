@@ -71,9 +71,6 @@ namespace dblz {
 	void Domain1DParam::_clean_up() {
 	};
 
-	std::string Domain1DParam::get_name() const {
-		return _ixn_param_traj->get_name();
-	};
 	ITptr Domain1DParam::get_ixn_param_traj() const {
 		return _ixn_param_traj;
 	};
@@ -86,7 +83,7 @@ namespace dblz {
     // MARK: - Domain1DCenter
     // ***************
     
-    Domain1DCenter::Domain1DCenter(std::shared_ptr<CenterTraj> center, double multiplier, double delta, double zero) : Domain1D(delta,zero) {
+    Domain1DCenter::Domain1DCenter(CTptr center, double multiplier, double delta, double zero) : Domain1D(delta,zero) {
         _center = center;
         _multiplier = multiplier;
     };
@@ -132,12 +129,12 @@ namespace dblz {
     void Domain1DCenter::_clean_up() {
     };
     
-    std::shared_ptr<CenterTraj> Domain1DCenter::get_center() const {
+    CTptr Domain1DCenter::get_center() const {
         return _center;
     };
     
     double Domain1DCenter::get_val_at_timepoint(int timepoint) const {
-        return _center->get_val_at_timepoint(timepoint);
+        return _multiplier * _center->get_val_at_timepoint(timepoint);
     };
 
 

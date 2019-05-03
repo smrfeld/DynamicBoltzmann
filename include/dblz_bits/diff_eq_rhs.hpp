@@ -4,6 +4,7 @@
 
 #include "fwds/fwds_ixn_param_traj.hpp"
 #include "fwds/fwds_species.hpp"
+#include "fwds/fwds_center_traj.hpp"
 
 #include <q3c1> // guard is built-in
 
@@ -69,7 +70,6 @@ namespace dblz {
 		Getters
 		********************/
 
-		std::string get_name() const;
 		ITptr get_ixn_param_traj() const;
         
         double get_val_at_timepoint(int timepoint) const;
@@ -79,14 +79,12 @@ namespace dblz {
      Domain1DCenter
      ****************************************/
     
-    class CenterTraj;
-    
     class Domain1DCenter : public Domain1D {
         
     private:
         
         // Center
-        std::shared_ptr<CenterTraj> _center;
+        CTptr _center;
         
         // Multiplier
         double _multiplier;
@@ -102,7 +100,7 @@ namespace dblz {
          Constructor
          ********************/
         
-        Domain1DCenter(std::shared_ptr<CenterTraj> center, double multiplier, double delta, double zero);
+        Domain1DCenter(CTptr center, double multiplier, double delta, double zero);
         Domain1DCenter(const Domain1DCenter& other);
         Domain1DCenter& operator=(const Domain1DCenter& other);
         Domain1DCenter(Domain1DCenter&& other);
@@ -113,7 +111,7 @@ namespace dblz {
          Getters
          ********************/
         
-        std::shared_ptr<CenterTraj> get_center() const;
+        CTptr get_center() const;
         
         double get_val_at_timepoint(int timepoint) const;
     };

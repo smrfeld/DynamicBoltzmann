@@ -7,6 +7,8 @@
 #include "dblz_bits/fwds/fwds_ixn_param_traj.hpp"
 #include "dblz_bits/fwds/fwds_species.hpp"
 #include "dblz_bits/adjoint.hpp"
+#include "dblz_bits/adjoint_params.hpp"
+#include "dblz_bits/adjoint_obs.hpp"
 #include "dblz_bits/center.hpp"
 #include "dblz_bits/center_traj.hpp"
 #include "dblz_bits/diff_eq_rhs.hpp"

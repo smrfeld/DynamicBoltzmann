@@ -24,7 +24,9 @@ namespace dblz {
     // MARK: - Constructor
     // ***************
 
-    AdjointObs::AdjointObs(std::string name, ITptr ixn_param_traj) : Adjoint(name, ixn_param_traj) {};
+    AdjointObs::AdjointObs(std::string name, ITptr ixn_param_traj, std::shared_ptr<AdjointObsCommonTerm> common_term) : Adjoint(name, ixn_param_traj) {
+        _common_term = common_term;
+    };
     AdjointObs::AdjointObs(const AdjointObs& other) : Adjoint(other) {
 		_copy(other);
 	};
@@ -52,8 +54,14 @@ namespace dblz {
 		_clean_up();
 	};
 	void AdjointObs::_clean_up() {};
-	void AdjointObs::_copy(const AdjointObs& other) {};
-	void AdjointObs::_move(AdjointObs& other) {};
+	void AdjointObs::_copy(const AdjointObs& other) {
+        _common_term = other._common_term;
+    };
+	void AdjointObs::_move(AdjointObs& other) {
+        _common_term = other._common_term;
+        
+        other._common_term = nullptr;
+    };
 
     // ***************
     // MARK: - Diff eq

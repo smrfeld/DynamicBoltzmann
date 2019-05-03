@@ -17,42 +17,6 @@
 namespace dblz {	
 
     // ***************
-    // MARK: - Adjoint class when observables used for diff eq RHS
-    // ***************
-    
-    class AdjointObs : public Adjoint {
-
-	private:
-
-		// Internal copy func/clean up
-		void _clean_up();
-		void _copy(const AdjointObs& other);
-		void _move(AdjointObs &other);
-
-	public:
-
-        // ***************
-        // MARK: - Constructor
-        // ***************
-
-		AdjointObs(std::string name, ITptr ixn_param_traj);
-		AdjointObs(const AdjointObs& other);
-		AdjointObs& operator=(const AdjointObs& other);
-		AdjointObs(AdjointObs&& other);
-		AdjointObs& operator=(AdjointObs&& other);
-		~AdjointObs();
-
-        // ***************
-        // MARK: - Solve diff eq
-        // ***************
-
-        void solve_diff_eq_at_timepoint_to_minus_one(int timepoint, double dt);
-        void solve_diff_eq_at_timepoint_to_minus_one_l2(int timepoint, double dt, double l2_lambda, double l2_center);
-	};
-
-    
-    
-    // ***************
     // MARK: - Common term
     // ***************
     
@@ -77,7 +41,7 @@ namespace dblz {
         void _clean_up();
         void _copy(const AdjointObsCommonTerm& other);
         void _move(AdjointObsCommonTerm &other);
-
+        
     public:
         
         // ***************
@@ -97,7 +61,7 @@ namespace dblz {
         
         int get_no_timesteps() const;
         void set_no_timesteps(int no_timesteps);
-
+        
         // ***************
         // MARK: - Vals
         // ***************
@@ -106,5 +70,40 @@ namespace dblz {
         double get_val_at_timepoint(int timepoint) const;
         
     };
+    
+    // ***************
+    // MARK: - Adjoint class when observables used for diff eq RHS
+    // ***************
+    
+    class AdjointObs : public Adjoint {
 
+	private:
+        
+        std::shared_ptr<AdjointObsCommonTerm> _common_term;
+
+		// Internal copy func/clean up
+		void _clean_up();
+		void _copy(const AdjointObs& other);
+		void _move(AdjointObs &other);
+
+	public:
+
+        // ***************
+        // MARK: - Constructor
+        // ***************
+
+        AdjointObs(std::string name, ITptr ixn_param_traj, std::shared_ptr<AdjointObsCommonTerm> common_term);
+		AdjointObs(const AdjointObs& other);
+		AdjointObs& operator=(const AdjointObs& other);
+		AdjointObs(AdjointObs&& other);
+		AdjointObs& operator=(AdjointObs&& other);
+		~AdjointObs();
+
+        // ***************
+        // MARK: - Solve diff eq
+        // ***************
+
+        void solve_diff_eq_at_timepoint_to_minus_one(int timepoint, double dt);
+        void solve_diff_eq_at_timepoint_to_minus_one_l2(int timepoint, double dt, double l2_lambda, double l2_center);
+	};
 };

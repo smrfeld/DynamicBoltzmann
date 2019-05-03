@@ -85,30 +85,6 @@ namespace dblz {
 		void set_is_awake_moment_fixed(bool flag, double val);
 		bool get_is_awake_moment_fixed() const;
 
-        // ***************
-        // MARK: - Set W matrix / bias vec
-        // ***************
-        
-        // Weight matrix is always lower layer to higher layer
-        void set_weight_matrix_dims(int dim_upper_layer, int dim_lower_layer);
-        void set_weight_matrix(MCType type, arma::sp_mat matrix);
-        void reset_weight_matrix(MCType type);
-        void increment_weight_matrix(MCType type, arma::sp_mat increment);
-        void set_moment_to_weight_matrix_sum(MCType type);
-        arma::sp_mat* get_weight_matrix_ptr(MCType type) const;
-
-        void calculate_weight_matrix_awake_minus_asleep();
-        const arma::sp_mat& get_weight_matrix_awake_minus_asleep() const;
-        
-        void set_bias_vec_dims(int dims);
-        void reset_bias_vec(MCType type);
-        void increment_bias_vec(MCType type, arma::vec increment);
-        void set_moment_to_bias_vec_sum(MCType type);
-        const arma::vec& get_bias_vec(MCType type) const;
-
-        void calculate_bias_vec_awake_minus_asleep();
-        const arma::vec& get_bias_vec_awake_minus_asleep() const;
-
 		/********************
 		Get/set moment
 		********************/

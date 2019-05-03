@@ -3,6 +3,7 @@
 #include <map>
 
 #include "fwds/fwds_ixn_param_traj.hpp"
+#include "fwds/fwds_species.hpp"
 
 #include <q3c1> // guard is built-in
 
@@ -12,11 +13,35 @@
 
 namespace dblz {
 
+    /****************************************
+     Domain1D - a abstract base
+     ****************************************/
+    
+    class Domain1D : public q3c1::Dimension1D {
+        
+    public:
+        
+        /********************
+         Constructor
+         ********************/
+        
+        // Inherit!
+        Domain1D(double delta, double zero);
+        virtual ~Domain1D();
+        
+        /********************
+         Getters
+         ********************/
+        
+        virtual double get_val_at_timepoint(int timepoint) const = 0;
+    };
+
+    
 	/****************************************
-	Domain1D
+	Domain1DParam
 	****************************************/
 
-	class Domain1D : public q3c1::Dimension1D {
+	class Domain1DParam : public Domain1D {
 
 	private:
 
@@ -24,8 +49,8 @@ namespace dblz {
 
 		// Internal copy func/clean up
 		void _clean_up();
-		void _move(Domain1D& other);
-		void _copy(const Domain1D& other);
+		void _move(Domain1DParam& other);
+		void _copy(const Domain1DParam& other);
 
 	public:
 
@@ -33,12 +58,12 @@ namespace dblz {
 		Constructor
 		********************/
 
-		Domain1D(ITptr ixn_param_traj, double delta, double zero);
-		Domain1D(const Domain1D& other);
-		Domain1D& operator=(const Domain1D& other);
-		Domain1D(Domain1D&& other);
-		Domain1D& operator=(Domain1D&& other);
-		~Domain1D();
+		Domain1DParam(ITptr ixn_param_traj, double delta, double zero);
+		Domain1DParam(const Domain1DParam& other);
+		Domain1DParam& operator=(const Domain1DParam& other);
+		Domain1DParam(Domain1DParam&& other);
+		Domain1DParam& operator=(Domain1DParam&& other);
+		~Domain1DParam();
 
 		/********************
 		Getters
@@ -46,8 +71,60 @@ namespace dblz {
 
 		std::string get_name() const;
 		ITptr get_ixn_param_traj() const;
+        
+        double get_val_at_timepoint(int timepoint) const;
 	};
 
+    /****************************************
+     Domain1DCenter
+     ****************************************/
+    
+    class Domain1DCenter : public Domain1D {
+        
+    private:
+        
+        // Name
+        std::string _name;
+        
+        // Layer and species of the center
+        int _layer;
+        Sptr _species;
+        
+        // Multiplier
+        double _multiplier;
+        
+        // Stored value of the center
+        std::map<int,double> _centers;
+        
+        // Internal copy func/clean up
+        void _clean_up();
+        void _move(Domain1DCenter& other);
+        void _copy(const Domain1DCenter& other);
+        
+    public:
+        
+        /********************
+         Constructor
+         ********************/
+        
+        Domain1DCenter(std::string name, int layer, Sptr species, double multiplier, double delta, double zero);
+        Domain1DCenter(const Domain1DCenter& other);
+        Domain1DCenter& operator=(const Domain1DCenter& other);
+        Domain1DCenter(Domain1DCenter&& other);
+        Domain1DCenter& operator=(Domain1DCenter&& other);
+        ~Domain1DCenter();
+        
+        /********************
+         Getters
+         ********************/
+        
+        std::string get_name() const;
+        Sptr get_species() const;
+        int get_layer() const;
+        
+        void set_val_at_timepoint(int timepoint, double val);
+        double get_val_at_timepoint(int timepoint) const;
+    };
 
 
 
@@ -103,6 +180,8 @@ namespace dblz {
         
 		// Domain - the domain in dcu::Grid does not store the ixn funcs
 		std::vector<Domain1D*> _domain;
+        std::vector<Domain1DParam*> _domain_param; // extra storage but wever
+        std::vector<Domain1DCenter*> _domain_center; // extra storage but wever
 
 		// Parent ixn param
 		ITptr _parent_ixn_param_traj;
@@ -125,6 +204,7 @@ namespace dblz {
         double *_mag_max_update;
         
 		// Internal copy/clean up function
+        void _shared_constructor(std::string name, ITptr parent_ixn_param_traj, std::vector<Domain1D*> domain, double lr);
 		void _copy(const DiffEqRHS& other);
 		void _move(DiffEqRHS& other);
 		void _clean_up();
@@ -136,8 +216,9 @@ namespace dblz {
 		********************/
 
 		// Note: ownership of domain is NOT transferred
-		DiffEqRHS(std::string name, ITptr parent_ixn_param_traj, std::vector<Domain1D*> domain, double lr);
-		DiffEqRHS(const DiffEqRHS& other);
+        DiffEqRHS(std::string name, ITptr parent_ixn_param_traj, std::vector<Domain1DParam*> domain, double lr);
+        DiffEqRHS(std::string name, ITptr parent_ixn_param_traj, std::vector<Domain1DCenter*> domain, double lr);
+        DiffEqRHS(const DiffEqRHS& other);
 		DiffEqRHS(DiffEqRHS&& other);
 		DiffEqRHS& operator=(const DiffEqRHS& other);
 		DiffEqRHS& operator=(DiffEqRHS &&other);
@@ -171,6 +252,8 @@ namespace dblz {
 		ITptr get_parent_ixn_param_traj() const;
 
 		const std::vector<Domain1D*>& get_domain() const;
+        const std::vector<Domain1DParam*>& get_domain_param() const;
+        const std::vector<Domain1DCenter*>& get_domain_center() const;
 
         // Get cell at timepoint
         q3c1::Cell* get_cell_at_timepoint(int timepoint) const;

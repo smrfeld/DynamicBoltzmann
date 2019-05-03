@@ -17,20 +17,27 @@
 
 namespace dblz {
 
-	/****************************************
-	Domain1D
-	****************************************/
+    // ***************
+    // MARK: - Domain1D
+    // ***************
+    
+    Domain1D::Domain1D(double delta, double zero) : q3c1::Dimension1D(delta,zero) {};
+    Domain1D::~Domain1D() {};
+    
+    // ***************
+    // MARK: - Domain1DParam
+    // ***************
 
-	Domain1D::Domain1D(ITptr ixn_param_traj, double delta, double zero) : Dimension1D(delta,zero) {
+	Domain1DParam::Domain1DParam(ITptr ixn_param_traj, double delta, double zero) : Domain1D(delta,zero) {
 		_ixn_param_traj = ixn_param_traj;
 	};
-	Domain1D::Domain1D(const Domain1D& other) : Dimension1D(other) {
+	Domain1DParam::Domain1DParam(const Domain1DParam& other) : Domain1D(other) {
 		_copy(other);
 	};
-	Domain1D::Domain1D(Domain1D&& other) : Dimension1D(std::move(other)) {
+	Domain1DParam::Domain1DParam(Domain1DParam&& other) : Domain1D(std::move(other)) {
 		_move(other);
 	};
-	Domain1D& Domain1D::operator=(const Domain1D& other) {
+	Domain1DParam& Domain1DParam::operator=(const Domain1DParam& other) {
 		if (this != &other)
 		{
 			_clean_up();
@@ -39,7 +46,7 @@ namespace dblz {
 		};
 		return *this;
 	};
-	Domain1D& Domain1D::operator=(Domain1D&& other) {
+	Domain1DParam& Domain1DParam::operator=(Domain1DParam&& other) {
 		if (this != &other)
 		{
 			_clean_up();
@@ -48,32 +55,110 @@ namespace dblz {
 		};
 		return *this;
 	};
-	Domain1D::~Domain1D() {
+	Domain1DParam::~Domain1DParam() {
 		_clean_up();
 	};
-	void Domain1D::_copy(const Domain1D& other)
+	void Domain1DParam::_copy(const Domain1DParam& other)
 	{
 		_ixn_param_traj = other._ixn_param_traj;
 	};
-	void Domain1D::_move(Domain1D& other)
+	void Domain1DParam::_move(Domain1DParam& other)
 	{
         _ixn_param_traj = other._ixn_param_traj;
         other._ixn_param_traj = nullptr;
 	};
-	void Domain1D::_clean_up() {
+	void Domain1DParam::_clean_up() {
 	};
 
-	/********************
-	Getters
-	********************/
-
-	std::string Domain1D::get_name() const {
+	std::string Domain1DParam::get_name() const {
 		return _ixn_param_traj->get_name();
 	};
-	ITptr Domain1D::get_ixn_param_traj() const {
+	ITptr Domain1DParam::get_ixn_param_traj() const {
 		return _ixn_param_traj;
 	};
 
+    double Domain1DParam::get_val_at_timepoint(int timepoint) const {
+        return _ixn_param_traj->get_ixn_param_at_timepoint(timepoint)->get_val();
+    };
+
+    // ***************
+    // MARK: - Domain1DCenter
+    // ***************
+    
+    Domain1DCenter::Domain1DCenter(std::string name, int layer, Sptr species, double multiplier, double delta, double zero) : Domain1D(delta,zero) {
+        _name = name;
+        _layer = layer;
+        _species = species;
+        _multiplier = multiplier;
+    };
+    Domain1DCenter::Domain1DCenter(const Domain1DCenter& other) : Domain1D(other) {
+        _copy(other);
+    };
+    Domain1DCenter::Domain1DCenter(Domain1DCenter&& other) : Domain1D(std::move(other)) {
+        _move(other);
+    };
+    Domain1DCenter& Domain1DCenter::operator=(const Domain1DCenter& other) {
+        if (this != &other)
+        {
+            _clean_up();
+            Dimension1D::operator=(other);
+            _copy(other);
+        };
+        return *this;
+    };
+    Domain1DCenter& Domain1DCenter::operator=(Domain1DCenter&& other) {
+        if (this != &other)
+        {
+            _clean_up();
+            Dimension1D::operator=(std::move(other));
+            _move(other);
+        };
+        return *this;
+    };
+    Domain1DCenter::~Domain1DCenter() {
+        _clean_up();
+    };
+    void Domain1DCenter::_copy(const Domain1DCenter& other)
+    {
+        _name = other._name;
+        _layer = other._layer;
+        _species = other._species;
+        _multiplier = other._multiplier;
+        _centers = other._centers;
+    };
+    void Domain1DCenter::_move(Domain1DCenter& other)
+    {
+        _name = other._name;
+        _layer = other._layer;
+        _species = other._species;
+        _multiplier = other._multiplier;
+        _centers = other._centers;
+        
+        other._name = "";
+        other._layer = 0;
+        other._species = nullptr;
+        other._multiplier = 0.0;
+        other._centers.clear();
+    };
+    void Domain1DCenter::_clean_up() {
+    };
+    
+    std::string Domain1DCenter::get_name() const {
+        return _name;
+    };
+    Sptr Domain1DCenter::get_species() const {
+        return _species;
+    };
+    int Domain1DCenter::get_layer() const {
+        return _layer;
+    };
+    
+    void Domain1DCenter::set_val_at_timepoint(int timepoint, double val) {
+        _centers[timepoint] = val;
+    };
+    double Domain1DCenter::get_val_at_timepoint(int timepoint) const {
+        return _centers.at(timepoint);
+    };
 
 
 
@@ -125,7 +210,23 @@ namespace dblz {
 	Constructor
 	********************/
 
-	DiffEqRHS::DiffEqRHS(std::string name, ITptr parent_ixn_param_traj, std::vector<Domain1D*> domain, double lr) : q3c1::Grid(std::vector<q3c1::Dimension1D*>(domain.begin(),domain.end())) {
+    DiffEqRHS::DiffEqRHS(std::string name, ITptr parent_ixn_param_traj, std::vector<Domain1DParam*> domain, double lr) : q3c1::Grid(std::vector<q3c1::Dimension1D*>(domain.begin(),domain.end())) {
+        _domain_param = domain;
+        std::vector<Domain1D*> domain_base;
+        for (auto dom: domain) {
+            domain_base.push_back(dom);
+        };
+        _shared_constructor(name, parent_ixn_param_traj, domain_base, lr);
+    };
+    DiffEqRHS::DiffEqRHS(std::string name, ITptr parent_ixn_param_traj, std::vector<Domain1DCenter*> domain, double lr) : q3c1::Grid(std::vector<q3c1::Dimension1D*>(domain.begin(),domain.end())) {
+        _domain_center = domain;
+        std::vector<Domain1D*> domain_base;
+        for (auto dom: domain) {
+            domain_base.push_back(dom);
+        };
+        _shared_constructor(name, parent_ixn_param_traj, domain_base, lr);
+    };
+	void DiffEqRHS::_shared_constructor(std::string name, ITptr parent_ixn_param_traj, std::vector<Domain1D*> domain, double lr) {
 		_name = name;
 		_domain = domain;
 		_no_dims = _domain.size();
@@ -219,6 +320,8 @@ namespace dblz {
         _no_coeffs = other._no_coeffs;
         _coeff_order = other._coeff_order;
 		_domain = other._domain;
+        _domain_param = other._domain_param;
+        _domain_center = other._domain_center;
 		_parent_ixn_param_traj = other._parent_ixn_param_traj;
 		_updates = other._updates;
         _abscissas = other._abscissas;
@@ -257,6 +360,8 @@ namespace dblz {
         _no_coeffs = other._no_coeffs;
         _coeff_order = other._coeff_order;
 		_domain = other._domain;
+        _domain_param = other._domain_param;
+        _domain_center = other._domain_center;
 		_parent_ixn_param_traj = other._parent_ixn_param_traj;
 		_updates = other._updates;
         _abscissas = other._abscissas;
@@ -276,6 +381,8 @@ namespace dblz {
         other._no_coeffs = 0;
         other._coeff_order.clear();
 		other._domain.clear();
+        other._domain_param.clear();
+        other._domain_center.clear();
 		other._parent_ixn_param_traj = nullptr;
 		other._updates.clear();
         other._abscissas.clear();
@@ -291,7 +398,9 @@ namespace dblz {
 	};
 
 	void DiffEqRHS::_clean_up() {
+        
 		// Note: Domain is not owned => do not delete
+        
 		if (_nesterov_y_s) {
 			delete _nesterov_y_s;
 		};
@@ -370,15 +479,21 @@ namespace dblz {
 	const std::vector<Domain1D*>& DiffEqRHS::get_domain() const {
 		return _domain;
 	};
+    const std::vector<Domain1DParam*>& DiffEqRHS::get_domain_param() const {
+        return _domain_param;
+    };
+    const std::vector<Domain1DCenter*>& DiffEqRHS::get_domain_center() const {
+        return _domain_center;
+    };
 
     void DiffEqRHS::_form_abscissas(int timepoint) const {
 		for (auto dim=0; dim<_no_dims; dim++) {
-            _abscissas[dim] = _domain[dim]->get_ixn_param_traj()->get_ixn_param_at_timepoint(timepoint)->get_val();
+            _abscissas[dim] = _domain[dim]->get_val_at_timepoint(timepoint);
 		};
 	};
     void DiffEqRHS::_form_abscissas(const std::map<ITptr,std::vector<double>>& vals, int idx) const {
         for (auto dim=0; dim<_no_dims; dim++) {
-            _abscissas[dim] = vals.at(_domain[dim]->get_ixn_param_traj()).at(idx);
+            _abscissas[dim] = vals.at(_domain_param[dim]->get_ixn_param_traj()).at(idx);
         };
     };
 

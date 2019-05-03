@@ -40,6 +40,7 @@ add_library(bmla SHARED
 
 add_library(dblz SHARED 
 	src/adjoint.cpp
+	src/center_traj.cpp
 	src/diff_eq_rhs.cpp
 	src/fname_traj.cpp
 	src/general.cpp
@@ -54,6 +55,7 @@ add_library(dblz SHARED
 	src/opt_problem_dynamic.cpp
 	src/species.cpp
 	include/dblz_bits/adjoint.hpp
+	include/dblz_bits/center_traj.hpp
 	include/dblz_bits/diff_eq_rhs.hpp
 	include/dblz_bits/fname_traj.hpp
 	include/dblz_bits/general.hpp

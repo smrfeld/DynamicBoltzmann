@@ -30,7 +30,7 @@ namespace dblz {
 	Constructor
 	********************/
 
-    LatticeCenteredHom::LatticeCenteredHom(int no_dims, int box_length, std::vector<Sptr> species_visible, LatticeCenteredHomMode mode) {
+    LatticeCenteredHom::LatticeCenteredHom(int no_dims, int box_length, std::vector<Sptr> species_visible) {
         
         if (no_dims != 1 && no_dims != 2 && no_dims != 3) {
             std::cerr << "ERROR: only dimensions 1,2,3 are supported for LatticeCenteredHom." << std::endl;
@@ -40,7 +40,6 @@ namespace dblz {
         _no_dims = no_dims;
         _box_length = box_length;
         _no_layers = 0;
-        _mode = mode;
         
         // Set no chains
         set_no_markov_chains(MCType::AWAKE, 1);
@@ -102,13 +101,8 @@ namespace dblz {
         _o2_mults = other._o2_mults;
         _bias_mults = other._bias_mults;
         
-        _mode = other._mode;
-        
-        _c_means = other._c_means;
-        _c_batch_means = other._c_batch_means;
-        
-        _cpt_means = other._cpt_means;
-        _cpt_batch_means = other._cpt_batch_means;
+        _center_means = other._center_means;
+        _center_batch_means = other._center_batch_means;
         
         _pst_prop = other._pst_prop;
         _pst_r = other._pst_r;
@@ -141,13 +135,8 @@ namespace dblz {
         _o2_mults = other._o2_mults;
         _bias_mults = other._bias_mults;
 
-        _mode = other._mode;
-        
-        _c_means = other._c_means;
-        _c_batch_means = other._c_batch_means;
-        
-        _cpt_means = other._cpt_means;
-        _cpt_batch_means = other._cpt_batch_means;
+        _center_means = other._center_means;
+        _center_batch_means = other._center_batch_means;
     
         _pst_prop = other._pst_prop;
         _pst_r = other._pst_r;
@@ -179,12 +168,9 @@ namespace dblz {
         other._o2_ixn_dict.clear();
         other._o2_mults.clear();
         other._bias_mults.clear();
-        
-        other._c_means.clear();
-        other._c_batch_means.clear();
-        
-        other._cpt_means.clear();
-        other._cpt_batch_means.clear();
+
+        other._center_means.clear();
+        other._center_batch_means.clear();
         
         other._pst_prop.clear();
         other._pst_r.clear();
@@ -279,10 +265,6 @@ namespace dblz {
         return _no_layers;
     };
     
-    LatticeCenteredHomMode LatticeCenteredHom::get_LatticeCenteredHom_mode() const {
-        return _mode;
-    };
-
     /********************
      Markov chains
      ********************/
@@ -389,21 +371,9 @@ namespace dblz {
         };
 
         // Centered?
-        if (_mode == LatticeCenteredHomMode::NORMAL_W_CENTERED_GRADIENT_VEC) {
-            int no_units = get_no_units_in_layer(layer);
-            for (auto sp: _species_possible_vec.at(layer)) {
-                _c_means[layer][sp] = arma::vec(no_units,arma::fill::ones);
-                _c_batch_means[layer][sp] = arma::vec(no_units,arma::fill::ones);
-                
-                // Init to 0.5
-                _c_means[layer][sp] *= 0.5;
-                _c_batch_means[layer][sp] *= 0.5;
-            };
-        } else if (_mode == LatticeCenteredHomMode::NORMAL_W_CENTERED_GRADIENT_PT || _mode == LatticeCenteredHomMode::CENTERED_PT) {
-            for (auto sp: _species_possible_vec.at(layer)) {
-                _cpt_means[layer][sp] = 0.5;
-                _cpt_batch_means[layer][sp] = 0.5;
-            };
+        for (auto sp: _species_possible_vec.at(layer)) {
+            _center_means[layer][sp] = 0.5;
+            _center_batch_means[layer][sp] = 0.5;
         };
         
         // Persistent data structures
@@ -422,11 +392,6 @@ namespace dblz {
         _bias_dict[layer][sp] = bias;
         
         _add_to_all_ixns_vec(bias);
-        
-        if (_mode == LatticeCenteredHomMode::NORMAL_W_CENTERED_GRADIENT_VEC) {
-            int no_units = get_no_units_in_layer(layer);
-            bias->get_moment()->set_bias_vec_dims(no_units);
-        };
     };
 
     // Ixns
@@ -442,13 +407,6 @@ namespace dblz {
 
         // Add to all
         _add_to_all_ixns_vec(ixn);
-        
-        // Set moment matrix dims if we are in centered mode
-        if (_mode == LatticeCenteredHomMode::NORMAL_W_CENTERED_GRADIENT_VEC) {
-            int no_below = get_no_units_in_layer(std::min(layer1,layer2));
-            int no_above = get_no_units_in_layer(std::max(layer1,layer2));
-            ixn->get_moment()->set_weight_matrix_dims(no_above,no_below);
-        };
     };
     
     // Set multiplier
@@ -524,10 +482,17 @@ namespace dblz {
         return _all_ixns;
     };
     
-	/********************
-	Helpers to setup all sites - Visible-Visible ixns
-	********************/
+    // ***************
+    // MARK: - Connectivity
+    // ***************
 
+    void LatticeCenteredHom::set_conn_multiplicity(int mult) {
+        _conn_mult = mult;
+    };
+    double LatticeCenteredHom::get_conn_multiplicity() const {
+        return _conn_mult;
+    };
+    
     void LatticeCenteredHom::add_conn(int layer1, int x1, int layer2, int x2) {
         int idx1 = _look_up_unit(layer1, x1);
         int idx2 = _look_up_unit(layer2, x2);
@@ -865,122 +830,55 @@ namespace dblz {
     
     // Calculate activation given layer above or below
     void LatticeCenteredHom::activate_layer_calculate_from_below(MCType chain, int layer) {
-        
-        if (_mode == LatticeCenteredHomMode::NORMAL || _mode == LatticeCenteredHomMode::NORMAL_W_CENTERED_GRADIENT_PT || _mode == LatticeCenteredHomMode::NORMAL_W_CENTERED_GRADIENT_VEC) {
-            
-            for (auto i_chain=0; i_chain<_no_markov_chains.at(chain); i_chain++) {
-                for (auto sp: _species_possible_vec.at(layer)) {
-                    
-                    // bias term
-                    _mc_chains_act[chain][i_chain][layer][sp].fill(get_bias_in_layer(layer, sp));
-                    
-                    // ixns
-                    for (auto &given_sp: _species_possible_vec.at(layer-1)) {
-                        
-                        // Activate from below
-                        _mc_chains_act[chain][i_chain][layer][sp] += get_ixn_between_layers(layer-1, given_sp, layer, sp) * ( _adj.at(layer-1).at(layer) * _mc_chains.at(chain).at(i_chain).at(layer-1).at(given_sp) );
-                    };
-                };
-            };
-
-        } else if (_mode == LatticeCenteredHomMode::CENTERED_PT) {
-            
-            for (auto i_chain=0; i_chain<_no_markov_chains.at(chain); i_chain++) {
+        for (auto i_chain=0; i_chain<_no_markov_chains.at(chain); i_chain++) {
+            for (auto sp: _species_possible_vec.at(layer)) {
                 
-                for (auto sp: _species_possible_vec.at(layer)) {
+                // bias term
+                _mc_chains_act[chain][i_chain][layer][sp].fill(get_bias_in_layer(layer, sp));
+                
+                // ixns
+                for (auto &given_sp: _species_possible_vec.at(layer-1)) {
                     
-                    // bias term
-                    _mc_chains_act[chain][i_chain][layer][sp].fill(get_bias_in_layer(layer, sp));
-                    
-                    // ixns
-                    for (auto &given_sp: _species_possible_vec.at(layer-1)) {
-                        
-                        // Activate from below
-                        _mc_chains_act[chain][i_chain][layer][sp] += get_ixn_between_layers(layer-1, given_sp, layer, sp) * ( _adj.at(layer-1).at(layer) * ( _mc_chains.at(chain).at(i_chain).at(layer-1).at(given_sp) - _cpt_means.at(layer-1).at(given_sp) ) );
-                    };
+                    // Activate from below
+                    _mc_chains_act[chain][i_chain][layer][sp] += get_ixn_between_layers(layer-1, given_sp, layer, sp) * ( _adj.at(layer-1).at(layer) * _mc_chains.at(chain).at(i_chain).at(layer-1).at(given_sp) );
                 };
             };
         };
     };
 
     void LatticeCenteredHom::activate_layer_calculate_from_above(MCType chain, int layer) {
-        
-        if (_mode == LatticeCenteredHomMode::NORMAL || _mode == LatticeCenteredHomMode::NORMAL_W_CENTERED_GRADIENT_PT || _mode == LatticeCenteredHomMode::NORMAL_W_CENTERED_GRADIENT_VEC) {
-
-            for (auto i_chain=0; i_chain<_no_markov_chains.at(chain); i_chain++) {
-                for (auto sp: _species_possible_vec.at(layer)) {
-                    
-                    // bias term
-                    _mc_chains_act[chain][i_chain][layer][sp].fill(get_bias_in_layer(layer, sp));
-                    
-                    // ixns
-                    for (auto given_sp: _species_possible_vec.at(layer+1)) {
-                        
-                        // Activate from above
-                        _mc_chains_act[chain][i_chain][layer][sp] += get_ixn_between_layers(layer+1, given_sp, layer, sp) * ( _adj.at(layer+1).at(layer) * _mc_chains.at(chain).at(i_chain).at(layer+1).at(given_sp) );
-                    };
-                };
-            };
-
-        } else if (_mode == LatticeCenteredHomMode::CENTERED_PT) {
-            
-            for (auto i_chain=0; i_chain<_no_markov_chains.at(chain); i_chain++) {
+        for (auto i_chain=0; i_chain<_no_markov_chains.at(chain); i_chain++) {
+            for (auto sp: _species_possible_vec.at(layer)) {
                 
-                for (auto sp: _species_possible_vec.at(layer)) {
+                // bias term
+                _mc_chains_act[chain][i_chain][layer][sp].fill(get_bias_in_layer(layer, sp));
+                
+                // ixns
+                for (auto given_sp: _species_possible_vec.at(layer+1)) {
                     
-                    // bias term
-                    _mc_chains_act[chain][i_chain][layer][sp].fill(get_bias_in_layer(layer, sp));
-                    
-                    // ixns
-                    for (auto given_sp: _species_possible_vec.at(layer+1)) {
-                        
-                        // Activate from above
-                        _mc_chains_act[chain][i_chain][layer][sp] += get_ixn_between_layers(layer+1, given_sp, layer, sp) * ( _adj.at(layer+1).at(layer) * ( _mc_chains.at(chain).at(i_chain).at(layer+1).at(given_sp) - _cpt_means.at(layer+1).at(given_sp) ) );
-                    };
+                    // Activate from above
+                    _mc_chains_act[chain][i_chain][layer][sp] += get_ixn_between_layers(layer+1, given_sp, layer, sp) * ( _adj.at(layer+1).at(layer) * _mc_chains.at(chain).at(i_chain).at(layer+1).at(given_sp) );
                 };
             };
         };
     };
 
     void LatticeCenteredHom::activate_layer_calculate_from_both(MCType chain, int layer) {
-    
-        if (_mode == LatticeCenteredHomMode::NORMAL || _mode == LatticeCenteredHomMode::NORMAL_W_CENTERED_GRADIENT_PT || _mode == LatticeCenteredHomMode::NORMAL_W_CENTERED_GRADIENT_VEC) {
-            
-            for (auto i_chain=0; i_chain<_no_markov_chains.at(chain); i_chain++) {
-                for (auto sp: _species_possible_vec.at(layer)) {
-                    
-                    // bias term
-                    _mc_chains_act[chain][i_chain][layer][sp].fill(get_bias_in_layer(layer, sp));
-                    
-                    // Activate from above
-                    for (auto given_sp: _species_possible_vec.at(layer+1)) {
-                        _mc_chains_act[chain][i_chain][layer][sp] += get_ixn_between_layers(layer+1, given_sp, layer, sp) * ( _adj.at(layer+1).at(layer) * _mc_chains.at(chain).at(i_chain).at(layer+1).at(given_sp) );
-                    };
-                    
-                    // Activate from below
-                    for (auto given_sp: _species_possible_vec.at(layer-1)) {
-                        _mc_chains_act[chain][i_chain][layer][sp] += get_ixn_between_layers(layer-1, given_sp, layer, sp) * ( _adj.at(layer-1).at(layer) * _mc_chains.at(chain).at(i_chain).at(layer-1).at(given_sp) );
-                    };
+        
+        for (auto i_chain=0; i_chain<_no_markov_chains.at(chain); i_chain++) {
+            for (auto sp: _species_possible_vec.at(layer)) {
+                
+                // bias term
+                _mc_chains_act[chain][i_chain][layer][sp].fill(get_bias_in_layer(layer, sp));
+                
+                // Activate from above
+                for (auto given_sp: _species_possible_vec.at(layer+1)) {
+                    _mc_chains_act[chain][i_chain][layer][sp] += get_ixn_between_layers(layer+1, given_sp, layer, sp) * ( _adj.at(layer+1).at(layer) * _mc_chains.at(chain).at(i_chain).at(layer+1).at(given_sp) );
                 };
-            };
-
-        } else if (_mode == LatticeCenteredHomMode::CENTERED_PT) {
-            
-            for (auto i_chain=0; i_chain<_no_markov_chains.at(chain); i_chain++) {
-                for (auto sp: _species_possible_vec.at(layer)) {
-                    
-                    // bias term
-                    _mc_chains_act[chain][i_chain][layer][sp].fill(get_bias_in_layer(layer, sp));
-                    
-                    // Activate from above
-                    for (auto given_sp: _species_possible_vec.at(layer+1)) {
-                        _mc_chains_act[chain][i_chain][layer][sp] += get_ixn_between_layers(layer+1, given_sp, layer, sp) * ( _adj.at(layer+1).at(layer) * ( _mc_chains.at(chain).at(i_chain).at(layer+1).at(given_sp) - _cpt_means.at(layer+1).at(given_sp) ) );
-                    };
-                    
-                    // Activate from below
-                    for (auto given_sp: _species_possible_vec.at(layer-1)) {
-                        _mc_chains_act[chain][i_chain][layer][sp] += get_ixn_between_layers(layer-1, given_sp, layer, sp) * ( _adj.at(layer-1).at(layer) * ( _mc_chains.at(chain).at(i_chain).at(layer-1).at(given_sp) - _cpt_means.at(layer-1).at(given_sp) ) );
-                    };
+                
+                // Activate from below
+                for (auto given_sp: _species_possible_vec.at(layer-1)) {
+                    _mc_chains_act[chain][i_chain][layer][sp] += get_ixn_between_layers(layer-1, given_sp, layer, sp) * ( _adj.at(layer-1).at(layer) * _mc_chains.at(chain).at(i_chain).at(layer-1).at(given_sp) );
                 };
             };
         };
@@ -1181,265 +1079,7 @@ namespace dblz {
     // MARK: - Reap moments
     // ***************
     
-    void LatticeCenteredHom::reap_moments_and_slide_centers_normal() {
-        
-        // Reap ixns
-        int layer1, layer2;
-        Sptr sp1, sp2;
-        arma::sp_mat::iterator mit, mit_end;
-        std::shared_ptr<Moment> moment;
-        for (auto &o2_ixn_layer_1: _o2_ixn_dict) {
-            layer1 = o2_ixn_layer_1.first;
-            for (auto &sp_pr_1: o2_ixn_layer_1.second) {
-                sp1 = sp_pr_1.first;
-                for (auto &o2_ixn_layer_2: sp_pr_1.second) {
-                    layer2 = o2_ixn_layer_2.first;
-                    // Be careful not to double count
-                    if (layer1 >= layer2) {
-                        // skip
-                        continue;
-                    };
-                    // Now layer1 < layer2 guaranteed
-                    
-                    for (auto &sp_pr_2: o2_ixn_layer_2.second) {
-                        
-                        sp2 = sp_pr_2.first;
-                        moment = sp_pr_2.second->get_moment();
-                        
-                        // Reset moments
-                        if (!moment->get_is_awake_moment_fixed()) {
-                            moment->reset_moment(MCType::AWAKE);
-                        };
-                        moment->reset_moment(MCType::ASLEEP);
-
-                        // Iterate over adj matrix
-                        mit = _adj.at(layer1).at(layer2).begin();
-                        mit_end = _adj.at(layer1).at(layer2).end();
-                        for(; mit != mit_end; ++mit) {
-                            
-                            // Iterate over awake chains
-                            if (!moment->get_is_awake_moment_fixed()) {
-                                for (auto i_chain=0; i_chain<_no_markov_chains.at(MCType::AWAKE); i_chain++) {
-                                    moment->increment_moment(MCType::AWAKE, _mc_chains.at(MCType::AWAKE).at(i_chain).at(layer2).at(sp2)(mit.row()) * _mc_chains.at(MCType::AWAKE).at(i_chain).at(layer1).at(sp1)(mit.col()) / _no_markov_chains.at(MCType::AWAKE) );
-                                };
-                            };
-                        
-                            // Iterate over asleep chains
-                            for (auto i_chain=0; i_chain<_no_markov_chains.at(MCType::ASLEEP); i_chain++) {
-                                moment->increment_moment(MCType::ASLEEP, _mc_chains.at(MCType::ASLEEP).at(i_chain).at(layer2).at(sp2)(mit.row()) * _mc_chains.at(MCType::ASLEEP).at(i_chain).at(layer1).at(sp1)(mit.col()) / _no_markov_chains.at(MCType::ASLEEP) );
-                            };
-                        };
-                    };
-                };
-            };
-        };
-        
-        // Reap biases
-        // All biases
-        int layer;
-        Sptr sp;
-        for (auto &bias_layer: _bias_dict) {
-            layer = bias_layer.first;
-            for (auto &sp_pr: bias_layer.second) {
-                sp = sp_pr.first;
-                moment = sp_pr.second->get_moment();
-                
-                // Awake phase
-                
-                if (!moment->get_is_awake_moment_fixed()) {
-                    moment->reset_moment(MCType::AWAKE);
-                    for (auto i_chain=0; i_chain<_no_markov_chains.at(MCType::AWAKE); i_chain++) {
-                        moment->increment_moment(MCType::AWAKE, arma::accu(_mc_chains.at(MCType::AWAKE).at(i_chain).at(layer).at(sp)) / _no_markov_chains.at(MCType::AWAKE));
-                    };
-                };
-                
-                // Asleep phase
-                
-                moment->reset_moment(MCType::ASLEEP);
-                for (auto i_chain=0; i_chain<_no_markov_chains.at(MCType::ASLEEP); i_chain++) {
-                    moment->increment_moment(MCType::ASLEEP, arma::accu(_mc_chains.at(MCType::ASLEEP).at(i_chain).at(layer).at(sp)) / _no_markov_chains.at(MCType::ASLEEP));
-                };
-            };
-        };
-    };
-    
-    void LatticeCenteredHom::reap_moments_and_slide_centers_normal_w_centered_gradient_vec(bool slide_means, double sliding_factor) {
-        
-        // If centering mode: calculate the centers from the awake moment, and then slide
-        if (slide_means) {
-            for (auto layer=0; layer<_no_layers; layer++) {
-                // Determine means
-                for (auto sp: _species_possible_vec.at(layer)) {
-                    // Reset
-                    _c_batch_means[layer][sp].fill(arma::fill::zeros);
-                    
-                    // Get batch mean from all chains
-                    for (auto i_chain=0; i_chain<_no_markov_chains.at(MCType::AWAKE); i_chain++) {
-                        _c_batch_means[layer][sp] += _mc_chains.at(MCType::AWAKE).at(i_chain).at(layer).at(sp);
-                    };
-                    _c_batch_means[layer][sp] /= _no_markov_chains.at(MCType::AWAKE);
-                };
-                
-                // Slide
-                for (auto sp: _species_possible_vec.at(layer)) {
-                    // Slide
-                    _c_means[layer][sp] = (1.0 - sliding_factor) * _c_means.at(layer).at(sp) + sliding_factor * _c_batch_means.at(layer).at(sp);
-                };
-            };
-        };
-        
-        // Reap ixns
-        int layer1, layer2;
-        Sptr sp1, sp2;
-        arma::sp_mat::iterator mit, mit_end;
-        std::shared_ptr<Moment> moment;
-        arma::sp_mat* wm = nullptr;
-        for (auto &o2_ixn_layer_1: _o2_ixn_dict) {
-            layer1 = o2_ixn_layer_1.first;
-            for (auto &sp_pr_1: o2_ixn_layer_1.second) {
-                sp1 = sp_pr_1.first;
-                for (auto &o2_ixn_layer_2: sp_pr_1.second) {
-                    layer2 = o2_ixn_layer_2.first;
-                    // Be careful not to double count
-                    if (layer1 >= layer2) {
-                        // skip
-                        continue;
-                    };
-                    // Now layer1 < layer2 guaranteed
-                    
-                    for (auto &sp_pr_2: o2_ixn_layer_2.second) {
-                        
-                        sp2 = sp_pr_2.first;
-                        moment = sp_pr_2.second->get_moment();
-                    
-                        // Awake
-                        if (!moment->get_is_awake_moment_fixed()) {
-                            wm = moment->get_weight_matrix_ptr(MCType::AWAKE);
-                            moment->reset_weight_matrix(MCType::AWAKE);
-                            for (auto i_chain=0; i_chain<_no_markov_chains.at(MCType::AWAKE); i_chain++) {
-                                mit = _adj.at(layer1).at(layer2).begin();
-                                mit_end = _adj.at(layer1).at(layer2).end();
-                                for(; mit != mit_end; ++mit) {
-                                    (*wm)(mit.row(),mit.col()) += ( _mc_chains.at(MCType::AWAKE).at(i_chain).at(layer2).at(sp2)(mit.row()) - _c_means.at(layer2).at(sp2)(mit.row()) ) * ( _mc_chains.at(MCType::AWAKE).at(i_chain).at(layer1).at(sp1)(mit.col()) - _c_means.at(layer1).at(sp1)(mit.col()) ) / _no_markov_chains.at(MCType::AWAKE);
-                                };
-                                // moment->increment_weight_matrix(MCType::AWAKE, _adj.at(layer1).at(layer2) % ( (_mc_chains.at(MCType::AWAKE).at(i_chain).at(layer2).at(sp2) - _c_means.at(layer2).at(sp2)) * (_mc_chains.at(MCType::AWAKE).at(i_chain).at(layer1).at(sp1).t() - _c_means.at(layer1).at(sp1).t()) ) / _no_markov_chains.at(MCType::AWAKE));
-                            };
-                            moment->set_moment_to_weight_matrix_sum(MCType::AWAKE);
-                        };
-                        
-                        // Asleep
-                        wm = moment->get_weight_matrix_ptr(MCType::AWAKE);
-                        moment->reset_weight_matrix(MCType::ASLEEP);
-                        for (auto i_chain=0; i_chain<_no_markov_chains.at(MCType::ASLEEP); i_chain++) {
-                            mit = _adj.at(layer1).at(layer2).begin();
-                            mit_end = _adj.at(layer1).at(layer2).end();
-                            for(; mit != mit_end; ++mit) {
-                                (*wm)(mit.row(),mit.col()) += ( _mc_chains.at(MCType::ASLEEP).at(i_chain).at(layer2).at(sp2)(mit.row()) - _c_means.at(layer2).at(sp2)(mit.row()) ) * ( _mc_chains.at(MCType::ASLEEP).at(i_chain).at(layer1).at(sp1)(mit.col()) - _c_means.at(layer1).at(sp1)(mit.col()) ) / _no_markov_chains.at(MCType::ASLEEP);
-                            };
-                            // moment->increment_weight_matrix(MCType::ASLEEP, _adj.at(layer1).at(layer2) % ( (_mc_chains.at(MCType::ASLEEP).at(i_chain).at(layer2).at(sp2) - _c_means.at(layer2).at(sp2)) * (_mc_chains.at(MCType::ASLEEP).at(i_chain).at(layer1).at(sp1).t() - _c_means.at(layer1).at(sp1).t()) ) / _no_markov_chains.at(MCType::ASLEEP));
-                        };
-                        moment->set_moment_to_weight_matrix_sum(MCType::ASLEEP);
-                        
-                        // Calculate diff
-                        moment->calculate_weight_matrix_awake_minus_asleep();
-                    };
-                };
-            };
-        };
-
-        // Reap biases
-        // All biases
-        int layer;
-        Sptr sp;
-        for (auto &bias_layer: _bias_dict) {
-            layer = bias_layer.first;
-            for (auto &sp_pr: bias_layer.second) {
-                sp = sp_pr.first;
-                moment = sp_pr.second->get_moment();
-                
-                // Awake phase
-                
-                if (!moment->get_is_awake_moment_fixed()) {
-                    moment->reset_moment(MCType::AWAKE);
-                    for (auto i_chain=0; i_chain<_no_markov_chains.at(MCType::AWAKE); i_chain++) {
-                        moment->increment_moment(MCType::AWAKE, arma::accu(_mc_chains.at(MCType::AWAKE).at(i_chain).at(layer).at(sp)) / _no_markov_chains.at(MCType::AWAKE));
-                    };
-                };
-                
-                // Asleep phase
-                
-                moment->reset_moment(MCType::ASLEEP);
-                for (auto i_chain=0; i_chain<_no_markov_chains.at(MCType::ASLEEP); i_chain++) {
-                    moment->increment_moment(MCType::ASLEEP, arma::accu(_mc_chains.at(MCType::ASLEEP).at(i_chain).at(layer).at(sp)) / _no_markov_chains.at(MCType::ASLEEP));
-                };
-            };
-        };
-        
-        // Offset bias for centering
-        double offset;
-        arma::vec mean;
-        Iptr ixn;
-        // Go through all layers
-        for (auto layer=0; layer<_no_layers; layer++) {
-            
-            // Go through all species in this layer
-            for (auto sp: _species_possible_vec.at(layer)) {
-                
-                // Reset offset
-                offset = 0.0;
-                
-                // Below
-                if (layer != 0) {
-                    
-                    // Go through all species in the layer below
-                    for (auto sp_below: _species_possible_vec.at(layer-1)) {
-                        
-                        // Check that such an ixn exists
-                        auto it1 = _o2_ixn_dict.at(layer-1).at(sp_below).find(layer);
-                        if (it1 == _o2_ixn_dict.at(layer-1).at(sp_below).end()) {
-                            continue;
-                        };
-                        auto it2 = it1->second.find(sp);
-                        if (it2 == it1->second.end()) {
-                            continue;
-                        };
-                        ixn = it2->second;
-                        
-                        // Calculate offset
-                        offset -= arma::accu( ixn->get_moment()->get_weight_matrix_awake_minus_asleep() * _c_means.at(layer-1).at(sp_below) );
-                    };
-                };
-                
-                // Above
-                if (layer != _no_layers-1) {
-                    
-                    // Go through all species in the layer above
-                    for (auto sp_above: _species_possible_vec.at(layer+1)) {
-                        
-                        // Check that such an ixn exists
-                        auto it1 = _o2_ixn_dict.at(layer+1).at(sp_above).find(layer);
-                        if (it1 == _o2_ixn_dict.at(layer+1).at(sp_above).end()) {
-                            continue;
-                        };
-                        auto it2 = it1->second.find(sp);
-                        if (it2 == it1->second.end()) {
-                            continue;
-                        };
-                        ixn = it2->second;
-                        
-                        // Calculate offset
-                        offset -= arma::accu( ixn->get_moment()->get_weight_matrix_awake_minus_asleep().t() * _c_means.at(layer+1).at(sp_above) );
-                    };
-                };
-                
-                // Adjust bias in this layer
-                _bias_dict.at(layer).at(sp)->get_moment()->set_moment_diff_awake_minus_asleep_offset(offset);
-            };
-        };
-
-    };
-    
-    void LatticeCenteredHom::reap_moments_and_slide_centers_normal_w_centered_gradient_pt(bool slide_means, double sliding_factor) {
+    void LatticeCenteredHom::reap_moments_and_slide_centers(bool slide_means, double sliding_factor) {
         
         // If centering mode: calculate the centers from the awake moment, and then slide
         if (slide_means) {
@@ -1450,19 +1090,19 @@ namespace dblz {
                 // Determine means
                 for (auto sp: _species_possible_vec.at(layer)) {
                     // Reset
-                    _cpt_batch_means[layer][sp] = 0.0;
+                    _center_batch_means[layer][sp] = 0.0;
                     
                     // Get batch mean from all chains
                     for (auto i_chain=0; i_chain<_no_markov_chains.at(MCType::AWAKE); i_chain++) {
-                        _cpt_batch_means[layer][sp] += arma::accu(_mc_chains.at(MCType::AWAKE).at(i_chain).at(layer).at(sp)) / no_units;
+                        _center_batch_means[layer][sp] += arma::accu(_mc_chains.at(MCType::AWAKE).at(i_chain).at(layer).at(sp)) / no_units;
                     };
-                    _cpt_batch_means[layer][sp] /= _no_markov_chains.at(MCType::AWAKE);
+                    _center_batch_means[layer][sp] /= _no_markov_chains.at(MCType::AWAKE);
                 };
                 
                 // Slide
                 for (auto sp: _species_possible_vec.at(layer)) {
                     // Slide
-                    _cpt_means[layer][sp] = (1.0 - sliding_factor) * _cpt_means.at(layer).at(sp) + sliding_factor * _cpt_batch_means.at(layer).at(sp);
+                    _center_means[layer][sp] = (1.0 - sliding_factor) * _center_means.at(layer).at(sp) + sliding_factor * _center_batch_means.at(layer).at(sp);
                 };
             };
         };
@@ -1497,7 +1137,7 @@ namespace dblz {
                                 mit = _adj.at(layer1).at(layer2).begin();
                                 mit_end = _adj.at(layer1).at(layer2).end();
                                 for(; mit != mit_end; ++mit) {
-                                    moment->increment_moment(MCType::AWAKE, ( _mc_chains.at(MCType::AWAKE).at(i_chain).at(layer2).at(sp2)(mit.row()) - _cpt_means.at(layer2).at(sp2) ) * ( _mc_chains.at(MCType::AWAKE).at(i_chain).at(layer1).at(sp1)(mit.col()) - _cpt_means.at(layer1).at(sp1) ) / _no_markov_chains.at(MCType::AWAKE) );
+                                    moment->increment_moment(MCType::AWAKE, ( _mc_chains.at(MCType::AWAKE).at(i_chain).at(layer2).at(sp2)(mit.row()) - _center_means.at(layer2).at(sp2) ) * ( _mc_chains.at(MCType::AWAKE).at(i_chain).at(layer1).at(sp1)(mit.col()) - _center_means.at(layer1).at(sp1) ) / _no_markov_chains.at(MCType::AWAKE) );
                                 };
                             };
                         };
@@ -1508,7 +1148,7 @@ namespace dblz {
                             mit = _adj.at(layer1).at(layer2).begin();
                             mit_end = _adj.at(layer1).at(layer2).end();
                             for(; mit != mit_end; ++mit) {
-                                moment->increment_moment(MCType::ASLEEP, ( _mc_chains.at(MCType::ASLEEP).at(i_chain).at(layer2).at(sp2)(mit.row()) - _cpt_means.at(layer2).at(sp2) ) * ( _mc_chains.at(MCType::ASLEEP).at(i_chain).at(layer1).at(sp1)(mit.col()) - _cpt_means.at(layer1).at(sp1) ) / _no_markov_chains.at(MCType::ASLEEP) );
+                                moment->increment_moment(MCType::ASLEEP, ( _mc_chains.at(MCType::ASLEEP).at(i_chain).at(layer2).at(sp2)(mit.row()) - _center_means.at(layer2).at(sp2) ) * ( _mc_chains.at(MCType::ASLEEP).at(i_chain).at(layer1).at(sp1)(mit.col()) - _center_means.at(layer1).at(sp1) ) / _no_markov_chains.at(MCType::ASLEEP) );
                             };
                         };
                     };
@@ -1574,7 +1214,7 @@ namespace dblz {
                         };
                         ixn = it2->second;
                         
-                        offset -= 8.0 * ixn->get_moment()->get_moment_diff_awake_minus_asleep() * _cpt_means.at(layer-1).at(sp_below);
+                        offset -= 8.0 * ixn->get_moment()->get_moment_diff_awake_minus_asleep() * _center_means.at(layer-1).at(sp_below);
                     };
                 };
 
@@ -1596,7 +1236,7 @@ namespace dblz {
                         ixn = it2->second;
                         
                         // Calculate offset
-                        offset -= 8.0 * ixn->get_moment()->get_moment_diff_awake_minus_asleep() * _cpt_means.at(layer+1).at(sp_above);
+                        offset -= 8.0 * ixn->get_moment()->get_moment_diff_awake_minus_asleep() * _center_means.at(layer+1).at(sp_above);
                     };
                 };
                 
@@ -1605,242 +1245,11 @@ namespace dblz {
             };
         };
 
-    };
-    
-    void LatticeCenteredHom::reap_moments_and_slide_centers_centered_pt(bool slide_means, double sliding_factor) {
-
-        // If centered pt M mode: determine means, adjust bias, THEN slide!
-        if (slide_means) {
-            int no_units;
-            for (auto layer=0; layer<_no_layers; layer++) {
-                
-                no_units = get_no_units_in_layer(layer);
-                
-                // Determine means
-                for (auto sp: _species_possible_vec.at(layer)) {
-                    // Reset
-                    _cpt_batch_means[layer][sp] = 0.0;
-                    
-                    // Get batch mean from all chains
-                    for (auto i_chain=0; i_chain<_no_markov_chains.at(MCType::AWAKE); i_chain++) {
-                        _cpt_batch_means[layer][sp] += arma::accu(_mc_chains.at(MCType::AWAKE).at(i_chain).at(layer).at(sp)) / no_units;
-                    };
-                    _cpt_batch_means[layer][sp] /= _no_markov_chains.at(MCType::AWAKE);
-                };
-            };
-            double val;
-            for (auto layer=0; layer<_no_layers; layer++) {
-                for (auto sp: _species_possible_vec.at(layer)) {
-                    val = _bias_dict.at(layer).at(sp)->get_val();
-                    
-                    // Layer below
-                    for (auto sp_below: _species_possible_vec.at(layer-1)) {
-                        val += 8.0 * sliding_factor * _o2_ixn_dict.at(layer-1).at(sp_below).at(layer).at(sp)->get_val() * ( _cpt_batch_means.at(layer-1).at(sp_below) - _cpt_means.at(layer-1).at(sp_below) );
-                    };
-                
-                    // Layer above
-                    for (auto sp_above: _species_possible_vec.at(layer+1)) {
-                        val += 8.0 * sliding_factor * _o2_ixn_dict.at(layer+1).at(sp_above).at(layer).at(sp)->get_val() * ( _cpt_batch_means.at(layer+1).at(sp_above) - _cpt_means.at(layer+1).at(sp_above) );
-                    };
-                
-                    // Set val
-                    _bias_dict.at(layer).at(sp)->set_val(val);
-                };
-            };
-            for (auto layer=0; layer<_no_layers; layer++) {
-                for (auto sp: _species_possible_vec.at(layer)) {
-                    // Slide
-                    _cpt_means[layer][sp] = (1.0 - sliding_factor) * _cpt_means.at(layer).at(sp) + sliding_factor * _cpt_batch_means.at(layer).at(sp);
-                };
-            };
-        };
-        
-        // Reap ixns
-        int layer1, layer2;
-        Sptr sp1, sp2;
-        arma::sp_mat::iterator mit, mit_end;
-        std::shared_ptr<Moment> moment;
-        for (auto &o2_ixn_layer_1: _o2_ixn_dict) {
-            layer1 = o2_ixn_layer_1.first;
-            for (auto &sp_pr_1: o2_ixn_layer_1.second) {
-                sp1 = sp_pr_1.first;
-                for (auto &o2_ixn_layer_2: sp_pr_1.second) {
-                    layer2 = o2_ixn_layer_2.first;
-                    // Be careful not to double count
-                    if (layer1 >= layer2) {
-                        // skip
-                        continue;
-                    };
-                    // Now layer1 < layer2 guaranteed
-                    
-                    for (auto &sp_pr_2: o2_ixn_layer_2.second) {
-                        
-                        sp2 = sp_pr_2.first;
-                        moment = sp_pr_2.second->get_moment();
-                        
-                        // Awake
-                        if (!moment->get_is_awake_moment_fixed()) {
-                            moment->reset_moment(MCType::AWAKE);
-                            for (auto i_chain=0; i_chain<_no_markov_chains.at(MCType::AWAKE); i_chain++) {
-                                mit = _adj.at(layer1).at(layer2).begin();
-                                mit_end = _adj.at(layer1).at(layer2).end();
-                                for(; mit != mit_end; ++mit) {
-                                    moment->increment_moment(MCType::AWAKE, ( _mc_chains.at(MCType::AWAKE).at(i_chain).at(layer2).at(sp2)(mit.row()) - _cpt_means.at(layer2).at(sp2) ) * ( _mc_chains.at(MCType::AWAKE).at(i_chain).at(layer1).at(sp1)(mit.col()) - _cpt_means.at(layer1).at(sp1) ) / _no_markov_chains.at(MCType::AWAKE) );
-                                };
-                            };
-                        };
-                        
-                        // Asleep phase
-                        moment->reset_moment(MCType::ASLEEP);
-                        for (auto i_chain=0; i_chain<_no_markov_chains.at(MCType::ASLEEP); i_chain++) {
-                            mit = _adj.at(layer1).at(layer2).begin();
-                            mit_end = _adj.at(layer1).at(layer2).end();
-                            for(; mit != mit_end; ++mit) {
-                                moment->increment_moment(MCType::ASLEEP, ( _mc_chains.at(MCType::ASLEEP).at(i_chain).at(layer2).at(sp2)(mit.row()) - _cpt_means.at(layer2).at(sp2) ) * ( _mc_chains.at(MCType::ASLEEP).at(i_chain).at(layer1).at(sp1)(mit.col()) - _cpt_means.at(layer1).at(sp1) ) / _no_markov_chains.at(MCType::ASLEEP) );
-                            };
-                        };
-                    };
-                };
-            };
-        };
-        
-        // Reap biases
-        // All biases
-        int layer;
-        Sptr sp;
-        for (auto &bias_layer: _bias_dict) {
-            layer = bias_layer.first;
-            for (auto &sp_pr: bias_layer.second) {
-                sp = sp_pr.first;
-                moment = sp_pr.second->get_moment();
-                
-                // Awake phase
-                
-                if (!moment->get_is_awake_moment_fixed()) {
-                    moment->reset_moment(MCType::AWAKE);
-                    for (auto i_chain=0; i_chain<_no_markov_chains.at(MCType::AWAKE); i_chain++) {
-                        moment->increment_moment(MCType::AWAKE, arma::accu(_mc_chains.at(MCType::AWAKE).at(i_chain).at(layer).at(sp)) / _no_markov_chains.at(MCType::AWAKE));
-                    };
-                };
-                
-                // Asleep phase
-                
-                moment->reset_moment(MCType::ASLEEP);
-                for (auto i_chain=0; i_chain<_no_markov_chains.at(MCType::ASLEEP); i_chain++) {
-                    moment->increment_moment(MCType::ASLEEP, arma::accu(_mc_chains.at(MCType::ASLEEP).at(i_chain).at(layer).at(sp)) / _no_markov_chains.at(MCType::ASLEEP));
-                };
-            };
-        };
     };
     
     // ***************
     // MARK: - Write out centers
     // ***************
-    
-    void LatticeCenteredHom::read_centers_from_file(int layer, std::string fname) {
-        // Open
-        std::ifstream f;
-        f.open(fname);
-        if (!f.is_open()) { // make sure we found it
-            std::cerr << ">>> Error: LatticeCenteredHom::read_centers_from_file <<< could not find file: " << fname << std::endl;
-            exit(EXIT_FAILURE);
-        };
-        
-        std::map<std::string,std::map<int,double>> to_write;
-        
-        std::string x="",y="",z="";
-        std::string sp="";
-        std::string center="";
-        std::string line;
-        std::istringstream iss;
-        int s;
-        
-        int no_species = _species_possible_vec.at(layer).size();
-        
-        if (_no_dims == 1) {
-            while (getline(f,line)) {
-                if (line == "") { continue; };
-                iss = std::istringstream(line);
-                iss >> x;
-                s = _look_up_unit(layer,atoi(x.c_str()));
-                for (auto i=0; i<no_species; i++) {
-                    iss >> sp >> center;
-                    to_write[sp][s] = atof(center.c_str());;
-                    sp=""; center="";
-                };
-                x="";
-            };
-        } else if (_no_dims == 2) {
-            while (getline(f,line)) {
-                if (line == "") { continue; };
-                iss = std::istringstream(line);
-                iss >> x >> y;
-                s = _look_up_unit(layer,atoi(x.c_str()),atoi(y.c_str()));
-                for (auto i=0; i<no_species; i++) {
-                    iss >> sp >> center;
-                    to_write[sp][s] = atof(center.c_str());;
-                    sp=""; center="";
-                };
-                x=""; y="";
-            };
-        }else if (_no_dims == 3) {
-            while (getline(f,line)) {
-                if (line == "") { continue; };
-                iss = std::istringstream(line);
-                iss >> x >> y >> z;
-                s = _look_up_unit(layer,atoi(x.c_str()),atoi(y.c_str()),atoi(z.c_str()));
-                for (auto i=0; i<no_species; i++) {
-                    iss >> sp >> center;
-                    to_write[sp][s] = atof(center.c_str());;
-                    sp=""; center="";
-                };
-                x=""; y=""; z="";
-            };
-        };
-        
-        // Write
-        for (auto sp_pr: to_write) {
-            auto species = _species_possible_map[layer][sp_pr.first];
-            for (auto idx_pr: sp_pr.second) {
-                _c_means[layer][species](idx_pr.first) = idx_pr.second;
-            };
-        };
-        
-        // Close!!!
-        f.close();
-    };
-    
-    void LatticeCenteredHom::write_centers_to_file(int layer, std::string fname) const {
-        std::ofstream f;
-        f.open (fname);
-        if (!f.is_open()) { // make sure we found it
-            std::cerr << ">>> LatticeCenteredHom::write_centers_to_file <<< Error: could not open file: " << fname << " for writing" << std::endl;
-            exit(EXIT_FAILURE);
-        };
-        
-        // Go through all units
-        int no_units = get_no_units_in_layer(layer);
-
-        // Go through all units
-        std::vector<int> pos;
-        for (auto unit=0; unit<no_units; unit++) {
-            
-            // Go through species possible
-            pos = _look_up_pos(layer,unit);
-            for (auto const &x: pos) {
-                f << x << " ";
-            };
-            
-            // Write species and mean
-            for (auto sp: _species_possible_vec.at(layer)) {
-                f << sp->get_name() << " " << _c_means.at(layer).at(sp)(unit) << " ";
-            };
-            f << "\n";
-         };
-        
-        // Close!!!
-        f.close();
-    };
     
     void LatticeCenteredHom::read_center_pts_from_file(std::string fname) {
         // Open
@@ -1864,8 +1273,8 @@ namespace dblz {
             if (sp != "") {
                 layer = atoi(layer_str.c_str());
                 species = _species_possible_map.at(layer).at(sp);
-                _cpt_means[layer][species] = atof(center.c_str());
-                // std::cout << "LatticeCenteredHom::read_center_pt_from_file: Set layer: " << layer << " species: " << species->get_name() << " to center: " << _cpt_means.at(layer).at(species) << std::endl;
+                _center_means[layer][species] = atof(center.c_str());
+                // std::cout << "LatticeCenteredHom::read_center_pt_from_file: Set layer: " << layer << " species: " << species->get_name() << " to center: " << _center_means.at(layer).at(species) << std::endl;
             };
             sp=""; center=""; layer_str="";
         };
@@ -1883,7 +1292,7 @@ namespace dblz {
         };
 
         for (auto layer=0; layer<_no_layers; layer++) {
-            for (auto pr: _cpt_means.at(layer)) {
+            for (auto pr: _center_means.at(layer)) {
                 f << layer << " " << pr.first->get_name() << " " << pr.second << "\n";
             };
         };
@@ -1897,23 +1306,12 @@ namespace dblz {
     // ***************
     
     double LatticeCenteredHom::get_center_pt_for_species_in_layer(int layer, Sptr species) const {
-        return _cpt_means.at(layer).at(species);
+        return _center_means.at(layer).at(species);
     };
     void LatticeCenteredHom::set_center_pt_for_species_in_layer(int layer, Sptr species, double center) {
-        _cpt_means[layer][species] = center;
+        _center_means[layer][species] = center;
     };
 
-    arma::vec LatticeCenteredHom::get_center_vec_for_species_in_layer(int layer, Sptr species) const {
-        return _c_means.at(layer).at(species);
-    };
-    void LatticeCenteredHom::set_center_vec_for_species_in_layer(int layer, Sptr species, arma::vec center) {
-        _c_means[layer][species] = center;
-    };
-    void LatticeCenteredHom::set_center_vec_for_species_in_layer(int layer, Sptr species, double center) {
-        int no_units = get_no_units_in_layer(layer);
-        _c_means[layer][species] = center * arma::vec(no_units,arma::fill::ones);
-    };
-    
     // ***************
     // MARK: - Add ixn to all ixns vec
     // ***************

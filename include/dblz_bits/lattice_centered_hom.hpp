@@ -60,9 +60,6 @@ namespace dblz {
     typedef std::map<Sptr,arma::vec> layer_occ;
     typedef std::map<int, layer_occ> layers_map;
 
-    // First option
-    enum class LatticeCenteredHomMode: unsigned int { NORMAL, NORMAL_W_CENTERED_GRADIENT_VEC, NORMAL_W_CENTERED_GRADIENT_PT, CENTERED_PT };
-
     class LatticeCenteredHom
 	{
 	private:
@@ -135,23 +132,15 @@ namespace dblz {
         std::map<int, double> _bias_mults;
         
         // ***************
-        // MARK: Mode: normal vs centered vs batch normalized
-        // ***************
-        
-        // Mode
-        LatticeCenteredHomMode _mode;
-        
-        // ***************
         // MARK: - Centering
         // ***************
         
-        // Moving average means for each layer
-        std::map<int, std::map<Sptr, arma::vec>> _c_means;
-        std::map<int, std::map<Sptr, arma::vec>> _c_batch_means;
+        // Connection multiplictiy
+        int _conn_mult;
         
         // As above, but pointwise
-        std::map<int, std::map<Sptr, double>> _cpt_means;
-        std::map<int, std::map<Sptr, double>> _cpt_batch_means;
+        std::map<int, std::map<Sptr, double>> _center_means;
+        std::map<int, std::map<Sptr, double>> _center_batch_means;
         
         // ***************
         // MARK: - Private methods
@@ -200,7 +189,7 @@ namespace dblz {
         // MARK: Constructor
         // ***************
         
-        LatticeCenteredHom(int no_dims, int box_length, std::vector<Sptr> species_visible, LatticeCenteredHomMode mode);
+        LatticeCenteredHom(int no_dims, int box_length, std::vector<Sptr> species_visible);
         LatticeCenteredHom(const LatticeCenteredHom& other);
 		LatticeCenteredHom(LatticeCenteredHom&& other);
 		LatticeCenteredHom& operator=(const LatticeCenteredHom& other);
@@ -215,7 +204,6 @@ namespace dblz {
         int get_box_length() const;
         int get_no_units_in_layer(int layer) const;
         int get_no_layers() const;
-        LatticeCenteredHomMode get_LatticeCenteredHom_mode() const;
         
         // ***************
         // MARK: Markov chains
@@ -256,6 +244,9 @@ namespace dblz {
         // MARK: Add connections
         // ***************
 
+        void set_conn_multiplicity(int mult);
+        double get_conn_multiplicity() const;
+        
         void add_conn(int layer1, int x1, int layer2, int x2);
         void add_conn(int layer1, int x1, int y1, int layer2, int x2, int y2);
         void add_conn(int layer1, int x1, int y1, int z1, int layer2, int x2, int y2, int z2);
@@ -326,17 +317,11 @@ namespace dblz {
         // MARK: - Reap moments, both awake and asleep
         // ***************
         
-        void reap_moments_and_slide_centers_normal();
-        void reap_moments_and_slide_centers_normal_w_centered_gradient_vec(bool slide_means, double sliding_factor);
-        void reap_moments_and_slide_centers_normal_w_centered_gradient_pt(bool slide_means, double sliding_factor);
-        void reap_moments_and_slide_centers_centered_pt(bool slide_means, double sliding_factor);
+        void reap_moments_and_slide_centers(bool slide_means, double sliding_factor);
 
         // ***************
         // MARK: - Write out centers
         // ***************
-        
-        void read_centers_from_file(int layer, std::string fname);
-        void write_centers_to_file(int layer, std::string fname) const;
         
         void read_center_pts_from_file(std::string fname);
         void write_center_pts_to_file(std::string fname) const;
@@ -347,10 +332,6 @@ namespace dblz {
         
         double get_center_pt_for_species_in_layer(int layer, Sptr species) const;
         void set_center_pt_for_species_in_layer(int layer, Sptr species, double center);
-
-        arma::vec get_center_vec_for_species_in_layer(int layer, Sptr species) const;
-        void set_center_vec_for_species_in_layer(int layer, Sptr species, arma::vec center);
-        void set_center_vec_for_species_in_layer(int layer, Sptr species, double center);
 
         // ***************
         // MARK: - Wake/sleep

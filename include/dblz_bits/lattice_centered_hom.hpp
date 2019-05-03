@@ -54,13 +54,16 @@ namespace dblz {
     };
 
 	/****************************************
-	Lattice
+	LatticeCenteredHom
 	****************************************/
 
     typedef std::map<Sptr,arma::vec> layer_occ;
     typedef std::map<int, layer_occ> layers_map;
 
-    class Lattice
+    // First option
+    enum class LatticeCenteredHomMode: unsigned int { NORMAL, NORMAL_W_CENTERED_GRADIENT_VEC, NORMAL_W_CENTERED_GRADIENT_PT, CENTERED_PT };
+
+    class LatticeCenteredHom
 	{
 	private:
 
@@ -132,6 +135,25 @@ namespace dblz {
         std::map<int, double> _bias_mults;
         
         // ***************
+        // MARK: Mode: normal vs centered vs batch normalized
+        // ***************
+        
+        // Mode
+        LatticeCenteredHomMode _mode;
+        
+        // ***************
+        // MARK: - Centering
+        // ***************
+        
+        // Moving average means for each layer
+        std::map<int, std::map<Sptr, arma::vec>> _c_means;
+        std::map<int, std::map<Sptr, arma::vec>> _c_batch_means;
+        
+        // As above, but pointwise
+        std::map<int, std::map<Sptr, double>> _cpt_means;
+        std::map<int, std::map<Sptr, double>> _cpt_batch_means;
+        
+        // ***************
         // MARK: - Private methods
         // ***************
 
@@ -165,8 +187,8 @@ namespace dblz {
         // ***************
         
 		void _clean_up();
-		void _move(Lattice& other);
-		void _copy(const Lattice& other);
+		void _move(LatticeCenteredHom& other);
+		void _copy(const LatticeCenteredHom& other);
 
 	public:
 
@@ -178,12 +200,12 @@ namespace dblz {
         // MARK: Constructor
         // ***************
         
-        Lattice(int no_dims, int box_length, std::vector<Sptr> species_visible);
-        Lattice(const Lattice& other);
-		Lattice(Lattice&& other);
-		Lattice& operator=(const Lattice& other);
-		Lattice& operator=(Lattice&& other);
-		~Lattice();
+        LatticeCenteredHom(int no_dims, int box_length, std::vector<Sptr> species_visible, LatticeCenteredHomMode mode);
+        LatticeCenteredHom(const LatticeCenteredHom& other);
+		LatticeCenteredHom(LatticeCenteredHom&& other);
+		LatticeCenteredHom& operator=(const LatticeCenteredHom& other);
+		LatticeCenteredHom& operator=(LatticeCenteredHom&& other);
+		~LatticeCenteredHom();
 
         // ***************
         // MARK: Getters
@@ -193,6 +215,7 @@ namespace dblz {
         int get_box_length() const;
         int get_no_units_in_layer(int layer) const;
         int get_no_layers() const;
+        LatticeCenteredHomMode get_LatticeCenteredHom_mode() const;
         
         // ***************
         // MARK: Markov chains
@@ -241,7 +264,7 @@ namespace dblz {
         // MARK: Clear/Random/Binarize to all units
         // ***************
 
-		// Clear the lattice
+		// Clear the LatticeCenteredHom
         void set_empty_all_units(MCType chain, int i_chain);
         void set_empty_all_units_in_layer(MCType chain, int i_chain, int layer);
         void set_empty_all_hidden_units(MCType chain, int i_chain);
@@ -270,9 +293,9 @@ namespace dblz {
         // For all chains:
         
         // 1. Calculate activation given layer above or below or both
-        void activate_layer_calculate_from_below(MCType chain, int layer);
-        void activate_layer_calculate_from_above(MCType chain, int layer);
-        void activate_layer_calculate_from_both(MCType chain, int layer);
+        void activate_layer_calculate_from_below(MCType chain, int layer); // figures out which normal or centered
+        void activate_layer_calculate_from_above(MCType chain, int layer); // figures out which normal or centered
+        void activate_layer_calculate_from_both(MCType chain, int layer); // figures out which normal or centered
 
         // (2) Convert activations to probs
         void activate_layer_convert_to_probs(MCType chain, int layer, bool binary);
@@ -285,26 +308,50 @@ namespace dblz {
         // ***************
         
         // Variational inference ie mean field
-        void mean_field_hiddens_step();
+        void mean_field_hiddens_step(); // figures out which normal or centered
 
         // Gibbs sampling for awake phase
-        void gibbs_sampling_step_awake(bool binary_hidden);
-        void gibbs_sampling_step_parallel_awake(bool binary_hidden);
+        void gibbs_sampling_step_awake(bool binary_hidden); // figures out which normal or centered
+        void gibbs_sampling_step_parallel_awake(bool binary_hidden); // figures out which normal or centered
 
         // Gibbs sampling
-        void gibbs_sampling_step(bool binary_visible, bool binary_hidden);
-        void gibbs_sampling_step_parallel(bool binary_visible, bool binary_hidden);
+        void gibbs_sampling_step(bool binary_visible, bool binary_hidden); // figures out which normal or centered
+        void gibbs_sampling_step_parallel(bool binary_visible, bool binary_hidden); // figures out which normal or centered
 
         // Make a pass activating upwards
-        void activate_upward_pass(MCType chain, bool binary_hidden);
-        void activate_upward_pass_with_2x_weights_1x_bias(MCType chain, bool binary_hidden);
+        void activate_upward_pass(MCType chain, bool binary_hidden); // figures out which normal or centered
+        void activate_upward_pass_with_2x_weights_1x_bias(MCType chain, bool binary_hidden); // figures out which normal or centered
 
         // ***************
         // MARK: - Reap moments, both awake and asleep
         // ***************
         
-        void reap_moments();
+        void reap_moments_and_slide_centers_normal();
+        void reap_moments_and_slide_centers_normal_w_centered_gradient_vec(bool slide_means, double sliding_factor);
+        void reap_moments_and_slide_centers_normal_w_centered_gradient_pt(bool slide_means, double sliding_factor);
+        void reap_moments_and_slide_centers_centered_pt(bool slide_means, double sliding_factor);
+
+        // ***************
+        // MARK: - Write out centers
+        // ***************
         
+        void read_centers_from_file(int layer, std::string fname);
+        void write_centers_to_file(int layer, std::string fname) const;
+        
+        void read_center_pts_from_file(std::string fname);
+        void write_center_pts_to_file(std::string fname) const;
+        
+        // ***************
+        // MARK: - Set centers
+        // ***************
+        
+        double get_center_pt_for_species_in_layer(int layer, Sptr species) const;
+        void set_center_pt_for_species_in_layer(int layer, Sptr species, double center);
+
+        arma::vec get_center_vec_for_species_in_layer(int layer, Sptr species) const;
+        void set_center_vec_for_species_in_layer(int layer, Sptr species, arma::vec center);
+        void set_center_vec_for_species_in_layer(int layer, Sptr species, double center);
+
         // ***************
         // MARK: - Wake/sleep
         // ***************

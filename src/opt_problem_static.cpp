@@ -89,17 +89,8 @@ namespace dblz {
         _latt->wake_sleep_loop_bm_pcd(i_opt_step, no_mean_field_updates, no_gibbs_sampling_steps, fnames, options_wake_sleep);
         
         // Reap the moments
-        bool slide_means = true;
-        if (_latt->get_lattice_mode() == LatticeMode::NORMAL) {
-            _latt->reap_moments_and_slide_centers_normal();
-        } else if (_latt->get_lattice_mode() == LatticeMode::NORMAL_W_CENTERED_GRADIENT_PT) {
-            _latt->reap_moments_and_slide_centers_normal_w_centered_gradient_pt(slide_means,options.sliding_factor);
-        } else if (_latt->get_lattice_mode() == LatticeMode::NORMAL_W_CENTERED_GRADIENT_VEC) {
-            _latt->reap_moments_and_slide_centers_normal_w_centered_gradient_vec(slide_means,options.sliding_factor);
-        } else if (_latt->get_lattice_mode() == LatticeMode::CENTERED_PT) {
-            _latt->reap_moments_and_slide_centers_centered_pt(slide_means,options.sliding_factor);
-        };
-        
+        _latt->reap_moments();
+
         if (options.verbose_moment) {
             for (auto &ixn_param: _latt->get_all_ixn_params()) {
                 std::cout << ixn_param->get_name() << " " << std::flush;
@@ -176,17 +167,8 @@ namespace dblz {
         _latt->wake_sleep_loop_rbm_cd(i_opt_step, no_cd_steps, fnames, options_wake_sleep);
         
         // Reap the moments
-        bool slide_means = true;
-        if (_latt->get_lattice_mode() == LatticeMode::NORMAL) {
-            _latt->reap_moments_and_slide_centers_normal();
-        } else if (_latt->get_lattice_mode() == LatticeMode::NORMAL_W_CENTERED_GRADIENT_PT) {
-            _latt->reap_moments_and_slide_centers_normal_w_centered_gradient_pt(slide_means,options.sliding_factor);
-        } else if (_latt->get_lattice_mode() == LatticeMode::NORMAL_W_CENTERED_GRADIENT_VEC) {
-            _latt->reap_moments_and_slide_centers_normal_w_centered_gradient_vec(slide_means,options.sliding_factor);
-        } else if (_latt->get_lattice_mode() == LatticeMode::CENTERED_PT) {
-            _latt->reap_moments_and_slide_centers_centered_pt(slide_means,options.sliding_factor);
-        };
-        
+        _latt->reap_moments();
+
         if (options.verbose_moment) {
             for (auto &ixn_param: _latt->get_all_ixn_params()) {
                 std::cout << ixn_param->get_name() << " " << std::flush;

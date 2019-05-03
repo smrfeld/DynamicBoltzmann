@@ -32,9 +32,9 @@ namespace dblz {
 	Constructor
 	********************/
 
-    LatticeTraj::LatticeTraj(int no_dims, int box_length, std::vector<Sptr> species_visible, LatticeMode mode)
+    LatticeTraj::LatticeTraj(int no_dims, int box_length, std::vector<Sptr> species_visible)
 	{
-        _lattices[0] = std::make_shared<Lattice>(no_dims,box_length,species_visible,mode);
+        _lattices[0] = std::make_shared<Lattice>(no_dims,box_length,species_visible);
         
         // Set no timesteps/timepoints
         set_no_timesteps(0,0);
@@ -167,10 +167,6 @@ namespace dblz {
     
     int LatticeTraj::get_no_layers() const {
         return _lattices.begin()->second->get_no_layers();
-    };
-    
-    LatticeMode LatticeTraj::get_lattice_mode() const {
-        return _lattices.begin()->second->get_lattice_mode();
     };
     
     // Get all ixns

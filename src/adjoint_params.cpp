@@ -111,5 +111,5 @@ namespace dblz {
         
         // Step
         _vals[timepoint-1] -= dt * l2_term;
-    };    
+    };
 };

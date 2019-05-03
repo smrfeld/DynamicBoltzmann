@@ -1,6 +1,7 @@
 #include <string>
 #include <vector>
 #include "fwds/fwds_species.hpp"
+#include "fwds/fwds_center.hpp"
 
 /************************************
  * Namespace for dblz
@@ -20,7 +21,7 @@ namespace dblz {
         // Timepoints = timesteps + 1
         int _no_timepoints;
         int _no_timesteps;
-        std::vector<double> _vals;
+        std::vector<Cptr> _centers;
         
         // Layer/species
         int _layer;
@@ -57,7 +58,8 @@ namespace dblz {
         
         std::string get_name() const;
         
-        void set_val_at_timepoint(int timepoint, double val);
+        Cptr get_center_at_timepoint(int timepoint) const;
+        
         double get_val_at_timepoint(int timepoint) const;
         
         // Time derivative

@@ -195,7 +195,7 @@ namespace dblz {
 
 		// Difference in moments
         auto moment = _ixn_param_traj->get_ixn_param_at_timepoint(timepoint)->get_moment();
-        double moment_delta = -1.0 * moment->get_moment_diff_awake_minus_asleep();
+        double moment_delta = -1.0 * moment->get_moment_diff_awake_minus_asleep_plus_offset();
         
         // Step
         _vals[timepoint-1] = _vals[timepoint] - dt * (moment_delta - deriv);

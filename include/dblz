@@ -12,6 +12,7 @@
 #include "dblz_bits/ixn_param_traj.hpp"
 #include "dblz_bits/lattice_1d_fully_visible.hpp"
 #include "dblz_bits/lattice_traj_1d_fully_visible.hpp"
+#include "dblz_bits/lattice_centered_hom.hpp"
 #include "dblz_bits/lattice.hpp"
 #include "dblz_bits/lattice_traj.hpp"
 #include "dblz_bits/moment.hpp"

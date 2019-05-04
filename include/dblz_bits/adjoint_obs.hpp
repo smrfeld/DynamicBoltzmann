@@ -24,7 +24,8 @@ namespace dblz {
         
     private:
         
-        // Species and index in the diff eq
+        // Layer and species and index in the diff eq
+        int _layer;
         Sptr _species;
         int _idx_diff_eq;
         
@@ -48,12 +49,19 @@ namespace dblz {
         // MARK: - Constructor
         // ***************
         
-        AdjointObsCommonTerm(Sptr species, int idx_diff_eq, std::vector<ITptr> all_ixn_param_trajs);
+        AdjointObsCommonTerm(int layer, Sptr species, int idx_diff_eq, std::vector<ITptr> all_ixn_param_trajs);
         AdjointObsCommonTerm(const AdjointObsCommonTerm& other);
         AdjointObsCommonTerm& operator=(const AdjointObsCommonTerm& other);
         AdjointObsCommonTerm(AdjointObsCommonTerm&& other);
         AdjointObsCommonTerm& operator=(AdjointObsCommonTerm&& other);
         ~AdjointObsCommonTerm();
+        
+        // ***************
+        // MARK: - Getters
+        // ***************
+        
+        int get_layer() const;
+        Sptr get_species() const;
         
         // ***************
         // MARK: - Timesteps
@@ -75,7 +83,7 @@ namespace dblz {
     // MARK: - Adjoint moment term
     // ***************
     
-    class AdjointMomentTerm {
+    class AdjointMomentCovTerm {
         
     private:
         
@@ -89,12 +97,12 @@ namespace dblz {
         // Vals
         int _no_timesteps;
         int _no_timepoints;
-        std::vector<double> _vals;
+        std::vector<double> _vals_1, _vals_2, _vals_3;
         
         // Constructor helpers
         void _clean_up();
-        void _move(AdjointMomentTerm &other);
-        void _copy(const AdjointMomentTerm& other);
+        void _move(AdjointMomentCovTerm &other);
+        void _copy(const AdjointMomentCovTerm& other);
         
     public:
         
@@ -102,12 +110,12 @@ namespace dblz {
          Constructor
          ********************/
         
-        AdjointMomentTerm(ITptr ixn_param, int layer, Sptr species);
-        AdjointMomentTerm(const AdjointMomentTerm& other);
-        AdjointMomentTerm(AdjointMomentTerm&& other);
-        AdjointMomentTerm& operator=(const AdjointMomentTerm& other);
-        AdjointMomentTerm& operator=(AdjointMomentTerm&& other);
-        ~AdjointMomentTerm();
+        AdjointMomentCovTerm(ITptr ixn_param, int layer, Sptr species);
+        AdjointMomentCovTerm(const AdjointMomentCovTerm& other);
+        AdjointMomentCovTerm(AdjointMomentCovTerm&& other);
+        AdjointMomentCovTerm& operator=(const AdjointMomentCovTerm& other);
+        AdjointMomentCovTerm& operator=(AdjointMomentCovTerm&& other);
+        ~AdjointMomentCovTerm();
         
         /********************
          Name, type
@@ -128,12 +136,17 @@ namespace dblz {
          Get/set moment
          ********************/
         
-        // Get moment
-        double get_val_at_timepoint(int timepoint) const;
-        void increment_val_at_timepoint(int timepoint, double val);
-        void set_val_at_timepoint(int timepoint, double val);
-        void reset_val_at_timepoint(int timepoint);
-
+        double get_val_1_at_timepoint(int timepoint) const;
+        double get_val_2_at_timepoint(int timepoint) const;
+        double get_val_3_at_timepoint(int timepoint) const;
+        void increment_val_1_at_timepoint(int timepoint, double val);
+        void increment_val_2_at_timepoint(int timepoint, double val);
+        void increment_val_3_at_timepoint(int timepoint, double val);
+        void reset_val_1_at_timepoint(int timepoint);
+        void reset_val_2_at_timepoint(int timepoint);
+        void reset_val_3_at_timepoint(int timepoint);
+        
+        double get_val_diff_at_timepoint(int timepoint) const;
     };
     
     // ***************
@@ -144,8 +157,9 @@ namespace dblz {
 
 	private:
         
-        std::shared_ptr<AdjointObsCommonTerm> _common_term;
-
+        // The common terms for those species
+        std::vector< std::pair<std::shared_ptr<AdjointObsCommonTerm>,std::shared_ptr<AdjointMomentCovTerm>>> _terms;
+        
 		// Internal copy func/clean up
 		void _clean_up();
 		void _copy(const AdjointObs& other);
@@ -157,13 +171,19 @@ namespace dblz {
         // MARK: - Constructor
         // ***************
 
-        AdjointObs(std::string name, ITptr ixn_param_traj, std::shared_ptr<AdjointObsCommonTerm> common_term);
+        AdjointObs(std::string name, ITptr ixn_param_traj, std::vector<std::shared_ptr<AdjointObsCommonTerm>> common_terms);
 		AdjointObs(const AdjointObs& other);
 		AdjointObs& operator=(const AdjointObs& other);
 		AdjointObs(AdjointObs&& other);
 		AdjointObs& operator=(AdjointObs&& other);
 		~AdjointObs();
 
+        // ***************
+        // MARK: - Get cov terms
+        // ***************
+        
+        std::vector< std::pair<std::shared_ptr<AdjointObsCommonTerm>,std::shared_ptr<AdjointMomentCovTerm>>> get_terms() const;
+        
         // ***************
         // MARK: - Solve diff eq
         // ***************

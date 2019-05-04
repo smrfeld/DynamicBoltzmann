@@ -24,8 +24,10 @@ namespace dblz {
     // MARK: - Constructor
     // ***************
 
-    AdjointObs::AdjointObs(std::string name, ITptr ixn_param_traj, std::shared_ptr<AdjointObsCommonTerm> common_term) : Adjoint(name, ixn_param_traj) {
-        _common_term = common_term;
+    AdjointObs::AdjointObs(std::string name, ITptr ixn_param_traj, std::vector<std::shared_ptr<AdjointObsCommonTerm>> common_terms) : Adjoint(name, ixn_param_traj) {
+        for (auto term: common_terms) {
+            _terms.push_back(std::make_pair(term, std::make_shared<AdjointMomentCovTerm>(ixn_param_traj,term->get_layer(),term->get_species())));
+        };
     };
     AdjointObs::AdjointObs(const AdjointObs& other) : Adjoint(other) {
 		_copy(other);
@@ -55,12 +57,20 @@ namespace dblz {
 	};
 	void AdjointObs::_clean_up() {};
 	void AdjointObs::_copy(const AdjointObs& other) {
-        _common_term = other._common_term;
+        _terms = other._terms;
     };
 	void AdjointObs::_move(AdjointObs& other) {
-        _common_term = other._common_term;
+        _terms = other._terms;
         
-        other._common_term = nullptr;
+        other._terms.clear();
+    };
+
+    // ***************
+    // MARK: - Get cov terms
+    // ***************
+    
+    std::vector< std::pair<std::shared_ptr<AdjointObsCommonTerm>,std::shared_ptr<AdjointMomentCovTerm>>> AdjointObs::get_terms() const {
+        return _terms;
     };
 
     // ***************
@@ -129,7 +139,8 @@ namespace dblz {
     // MARK: - Constructor
     // ***************
     
-    AdjointObsCommonTerm::AdjointObsCommonTerm(Sptr species, int idx_diff_eq, std::vector<ITptr> all_ixn_param_trajs) {
+    AdjointObsCommonTerm::AdjointObsCommonTerm(int layer, Sptr species, int idx_diff_eq, std::vector<ITptr> all_ixn_param_trajs) {
+        _layer = layer;
         _species = species;
         _idx_diff_eq = idx_diff_eq;
         _all_ixn_param_trajs = all_ixn_param_trajs;
@@ -162,6 +173,7 @@ namespace dblz {
     };
     void AdjointObsCommonTerm::_clean_up() {};
     void AdjointObsCommonTerm::_copy(const AdjointObsCommonTerm& other) {
+        _layer = other._layer;
         _species = other._species;
         _idx_diff_eq = other._idx_diff_eq;
         _all_ixn_param_trajs = other._all_ixn_param_trajs;
@@ -170,6 +182,7 @@ namespace dblz {
         _vals = other._vals;
     };
     void AdjointObsCommonTerm::_move(AdjointObsCommonTerm& other) {
+        _layer = other._layer;
         _species = other._species;
         _idx_diff_eq = other._idx_diff_eq;
         _all_ixn_param_trajs = other._all_ixn_param_trajs;
@@ -177,6 +190,7 @@ namespace dblz {
         _no_timepoints = other._no_timepoints;
         _vals = other._vals;
 
+        other._layer = 0;
         other._species = nullptr;
         other._idx_diff_eq = 0;
         other._all_ixn_param_trajs.clear();
@@ -185,6 +199,17 @@ namespace dblz {
         other._vals.clear();
     };
     
+    // ***************
+    // MARK: - Getters
+    // ***************
+    
+    int AdjointObsCommonTerm::get_layer() const {
+        return _layer;
+    };
+    Sptr AdjointObsCommonTerm::get_species() const {
+        return _species;
+    };
+
     // ***************
     // MARK: - Timesteps
     // ***************
@@ -223,81 +248,87 @@ namespace dblz {
     };
     
     // ***************
-    // MARK: - AdjointMomentTerm
+    // MARK: - AdjointMomentCovTerm
     // ***************
   
     /********************
      Constructor
      ********************/
     
-    AdjointMomentTerm::AdjointMomentTerm(ITptr ixn_param, int layer, Sptr species) {
+    AdjointMomentCovTerm::AdjointMomentCovTerm(ITptr ixn_param, int layer, Sptr species) {
         _ixn_param = ixn_param;
         _layer = layer;
         _species = species;
         
         set_no_timesteps(0);
     };
-    AdjointMomentTerm::AdjointMomentTerm(const AdjointMomentTerm& other) {
+    AdjointMomentCovTerm::AdjointMomentCovTerm(const AdjointMomentCovTerm& other) {
         _copy(other);
     };
-    AdjointMomentTerm::AdjointMomentTerm(AdjointMomentTerm&& other) {
+    AdjointMomentCovTerm::AdjointMomentCovTerm(AdjointMomentCovTerm&& other) {
         _move(other);
     };
-    AdjointMomentTerm& AdjointMomentTerm::operator=(const AdjointMomentTerm& other) {
+    AdjointMomentCovTerm& AdjointMomentCovTerm::operator=(const AdjointMomentCovTerm& other) {
         if (this != &other) {
             _clean_up();
             _copy(other);
         };
         return *this;
     };
-    AdjointMomentTerm& AdjointMomentTerm::operator=(AdjointMomentTerm&& other) {
+    AdjointMomentCovTerm& AdjointMomentCovTerm::operator=(AdjointMomentCovTerm&& other) {
         if (this != &other) {
             _clean_up();
             _move(other);
         };
         return *this;
     };
-    AdjointMomentTerm::~AdjointMomentTerm() {
+    AdjointMomentCovTerm::~AdjointMomentCovTerm() {
         _clean_up();
     };
     
-    void AdjointMomentTerm::_clean_up() {
+    void AdjointMomentCovTerm::_clean_up() {
     };
-    void AdjointMomentTerm::_move(AdjointMomentTerm &other) {
+    void AdjointMomentCovTerm::_move(AdjointMomentCovTerm &other) {
         _ixn_param = other._ixn_param;
         _layer = other._layer;
         _species = other._species;
         _no_timesteps = other._no_timesteps;
         _no_timepoints = other._no_timepoints;
-        _vals = other._vals;
-        
+        _vals_1 = other._vals_1;
+        _vals_2 = other._vals_2;
+        _vals_3 = other._vals_3;
+
         other._ixn_param = nullptr;
         other._layer = 0;
         other._species = nullptr;
         other._no_timesteps = 0;
         other._no_timepoints = 0;
-        other._vals.clear();
+        other._vals_1.clear();
+        other._vals_2.clear();
+        other._vals_3.clear();
     };
-    void AdjointMomentTerm::_copy(const AdjointMomentTerm& other) {
+    void AdjointMomentCovTerm::_copy(const AdjointMomentCovTerm& other) {
         _ixn_param = other._ixn_param;
         _layer = other._layer;
         _species = other._species;
         _no_timesteps = other._no_timesteps;
         _no_timepoints = other._no_timepoints;
-        _vals = other._vals;
+        _vals_1 = other._vals_1;
+        _vals_2 = other._vals_2;
+        _vals_3 = other._vals_3;
     };
     
     /********************
      Name
      ********************/
     
-    ITptr AdjointMomentTerm::get_ixn_param_traj() const {
+    ITptr AdjointMomentCovTerm::get_ixn_param_traj() const {
         return _ixn_param;
     };
-    int AdjointMomentTerm::get_layer() const {
+    int AdjointMomentCovTerm::get_layer() const {
         return _layer;
     };
-    Sptr AdjointMomentTerm::get_species() const {
+    Sptr AdjointMomentCovTerm::get_species() const {
         return _species;
     };
     
@@ -305,18 +336,30 @@ namespace dblz {
      Timepoints
      ********************/
     
-    void AdjointMomentTerm::set_no_timesteps(int no_timesteps) {
+    void AdjointMomentCovTerm::set_no_timesteps(int no_timesteps) {
         _no_timesteps = no_timesteps;
         _no_timepoints = no_timesteps + 1;
         
-        while (_vals.size() < _no_timepoints) {
-            _vals.push_back(0.0);
+        while (_vals_1.size() < _no_timepoints) {
+            _vals_1.push_back(0.0);
         };
-        while (_vals.size() > _no_timepoints) {
-            _vals.pop_back();
+        while (_vals_1.size() > _no_timepoints) {
+            _vals_1.pop_back();
+        };
+        while (_vals_2.size() < _no_timepoints) {
+            _vals_2.push_back(0.0);
+        };
+        while (_vals_2.size() > _no_timepoints) {
+            _vals_2.pop_back();
+        };
+        while (_vals_3.size() < _no_timepoints) {
+            _vals_3.push_back(0.0);
+        };
+        while (_vals_3.size() > _no_timepoints) {
+            _vals_3.pop_back();
         };
     };
-    int AdjointMomentTerm::get_no_timesteps() const {
+    int AdjointMomentCovTerm::get_no_timesteps() const {
         return _no_timesteps;
     };
     
@@ -325,16 +368,31 @@ namespace dblz {
      ********************/
     
     // Get moment
-    double AdjointMomentTerm::get_val_at_timepoint(int timepoint) const {
-        return _vals.at(timepoint);
+    double AdjointMomentCovTerm::get_val_1_at_timepoint(int timepoint) const {
+        return _vals_1.at(timepoint);
     };
-    void AdjointMomentTerm::increment_val_at_timepoint(int timepoint, double val) {
-        _vals[timepoint] += val;
+    double AdjointMomentCovTerm::get_val_2_at_timepoint(int timepoint) const {
+        return _vals_2.at(timepoint);
     };
-    void AdjointMomentTerm::set_val_at_timepoint(int timepoint, double val) {
-        _vals[timepoint] = val;
+    double AdjointMomentCovTerm::get_val_3_at_timepoint(int timepoint) const {
+        return _vals_3.at(timepoint);
     };
-    void AdjointMomentTerm::reset_val_at_timepoint(int timepoint) {
-        _vals[timepoint] = 0.0;
+    void AdjointMomentCovTerm::increment_val_1_at_timepoint(int timepoint, double val) {
+        _vals_1[timepoint] += val;
+    };
+    void AdjointMomentCovTerm::increment_val_2_at_timepoint(int timepoint, double val) {
+        _vals_2[timepoint] += val;
+    };
+    void AdjointMomentCovTerm::increment_val_3_at_timepoint(int timepoint, double val) {
+        _vals_3[timepoint] += val;
+    };
+    void AdjointMomentCovTerm::reset_val_1_at_timepoint(int timepoint) {
+        _vals_1[timepoint] = 0.0;
+    };
+    void AdjointMomentCovTerm::reset_val_2_at_timepoint(int timepoint) {
+        _vals_2[timepoint] = 0.0;
+    };
+    void AdjointMomentCovTerm::reset_val_3_at_timepoint(int timepoint) {
+        _vals_3[timepoint] = 0.0;
     };
 };

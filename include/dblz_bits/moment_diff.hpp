@@ -32,14 +32,6 @@ namespace dblz {
 		// Averaged values
         std::map<MCType, double> _val_averaged;
         
-        // Average mat
-        // Only for W or X
-        std::map<MCType,arma::sp_mat*> _weight_matrix;
-        arma::sp_mat* _weight_matrix_awake_minus_asleep;
-        // Only for biases
-        std::map<MCType,arma::vec*> _bias_vec;
-        arma::vec* _bias_vec_awake_minus_asleep;
-
         // Offset to the difference
         double _val_diff_offset;
 	
@@ -106,7 +98,5 @@ namespace dblz {
 		********************/
 
 		void write_to_file(std::string fname, bool append=false) const;
-        
-        void write_weight_matrix_to_file(std::string fname) const;
-	};
+    };
 };

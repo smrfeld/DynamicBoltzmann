@@ -36,14 +36,6 @@ namespace dblz {
         // Vals
         _val_averaged[MCType::AWAKE] = 0.0;
         _val_averaged[MCType::ASLEEP] = 0.0;
-
-        // Matrix of vals
-        _weight_matrix[MCType::AWAKE] = nullptr;
-        _weight_matrix[MCType::ASLEEP] = nullptr;
-        _weight_matrix_awake_minus_asleep = nullptr;
-        _bias_vec[MCType::AWAKE] = nullptr;
-        _bias_vec[MCType::ASLEEP] = nullptr;
-        _bias_vec_awake_minus_asleep = nullptr;
     };
 	MomentDiff::MomentDiff(const MomentDiff& other) {
 		_copy(other);
@@ -70,31 +62,6 @@ namespace dblz {
 	};
 
 	void MomentDiff::_clean_up() {
-        if (_weight_matrix[MCType::AWAKE]) {
-            delete _weight_matrix[MCType::AWAKE];
-        };
-        _weight_matrix[MCType::AWAKE] = nullptr;
-        if (_weight_matrix[MCType::ASLEEP]) {
-            delete _weight_matrix[MCType::ASLEEP];
-        };
-        _weight_matrix[MCType::ASLEEP] = nullptr;
-        if (_weight_matrix_awake_minus_asleep) {
-            delete _weight_matrix_awake_minus_asleep;
-        };
-        _weight_matrix_awake_minus_asleep = nullptr;
-        
-        if (_bias_vec[MCType::AWAKE]) {
-            delete _bias_vec[MCType::AWAKE];
-        };
-        _bias_vec[MCType::AWAKE] = nullptr;
-        if (_bias_vec[MCType::ASLEEP]) {
-            delete _bias_vec[MCType::ASLEEP];
-        };
-        _bias_vec[MCType::ASLEEP] = nullptr;
-        if (_bias_vec_awake_minus_asleep) {
-            delete _bias_vec_awake_minus_asleep;
-        };
-        _bias_vec_awake_minus_asleep = nullptr;
     };
 	void MomentDiff::_move(MomentDiff &other) {
 		_name = other._name;
@@ -102,10 +69,6 @@ namespace dblz {
 
 		// averaged
 		_val_averaged = other._val_averaged;
-        _weight_matrix = other._weight_matrix;
-        _weight_matrix_awake_minus_asleep = other._weight_matrix_awake_minus_asleep;
-        _bias_vec = other._bias_vec;
-        _bias_vec_awake_minus_asleep = other._bias_vec_awake_minus_asleep;
         
         _val_diff_offset = other._val_diff_offset;
         
@@ -116,14 +79,6 @@ namespace dblz {
 
 		other._val_averaged[MCType::AWAKE] = 0.0;
         other._val_averaged[MCType::ASLEEP] = 0.0;
-
-        other._weight_matrix[MCType::AWAKE] = nullptr;
-        other._weight_matrix[MCType::ASLEEP] = nullptr;
-        other._weight_matrix_awake_minus_asleep = nullptr;
-        
-        other._bias_vec[MCType::AWAKE] = nullptr;
-        other._bias_vec[MCType::ASLEEP] = nullptr;
-        other._bias_vec_awake_minus_asleep = nullptr;
         
         other._val_diff_offset = 0.0;
         
@@ -140,38 +95,6 @@ namespace dblz {
 
 		// averaged
 		_val_averaged = other._val_averaged;
-        
-        if (other._weight_matrix.at(MCType::AWAKE)) {
-            _weight_matrix[MCType::AWAKE] = new arma::sp_mat(*other._weight_matrix.at(MCType::AWAKE));
-        } else {
-            _weight_matrix[MCType::AWAKE] = nullptr;
-        };
-        if (other._weight_matrix.at(MCType::ASLEEP)) {
-            _weight_matrix[MCType::ASLEEP] = new arma::sp_mat(*other._weight_matrix.at(MCType::ASLEEP));
-        } else {
-            _weight_matrix[MCType::ASLEEP] = nullptr;
-        };
-        if (other._weight_matrix_awake_minus_asleep) {
-            _weight_matrix_awake_minus_asleep = new arma::sp_mat(*other._weight_matrix_awake_minus_asleep);
-        } else {
-            _weight_matrix_awake_minus_asleep = nullptr;
-        };
-
-        if (other._bias_vec.at(MCType::AWAKE)) {
-            _bias_vec[MCType::AWAKE] = new arma::vec(*other._bias_vec.at(MCType::AWAKE));
-        } else {
-            _bias_vec[MCType::AWAKE] = nullptr;
-        };
-        if (other._bias_vec.at(MCType::ASLEEP)) {
-            _bias_vec[MCType::ASLEEP] = new arma::vec(*other._bias_vec.at(MCType::ASLEEP));
-        } else {
-            _bias_vec[MCType::ASLEEP] = nullptr;
-        };
-        if (other._bias_vec_awake_minus_asleep) {
-            _bias_vec_awake_minus_asleep = new arma::vec(*other._bias_vec_awake_minus_asleep);
-        } else {
-            _bias_vec_awake_minus_asleep = nullptr;
-        };
         
         _val_diff_offset = other._val_diff_offset;
 
@@ -268,30 +191,6 @@ namespace dblz {
 
 		// Close
 		f.close();
-	};
-
-    void MomentDiff::write_weight_matrix_to_file(std::string fname) const {
-        std::ofstream f;
-        
-        // Open
-        f.open(fname);
-        
-        // Make sure we found it
-        if (!f.is_open()) {
-            std::cerr << ">>> Error: MomentDiff::write_weight_matrix_to_file <<< could not write to file: " << fname << std::endl;
-            exit(EXIT_FAILURE);
-        };
-        
-        for (auto i=0; i<_weight_matrix.at(MCType::AWAKE)->n_rows; i++) {
-            for (auto j=0; j<_weight_matrix.at(MCType::AWAKE)->n_cols; j++) {
-                if ((*_weight_matrix_awake_minus_asleep)(i,j) != 0) {
-                    f << i << " " << j << " " << (*_weight_matrix_awake_minus_asleep)(i,j) << "\n";
-                };
-            };
-        };
-        
-        // Close
-        f.close();
     };
 };
 

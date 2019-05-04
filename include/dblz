@@ -22,7 +22,6 @@
 #include "dblz_bits/lattice.hpp"
 #include "dblz_bits/lattice_traj.hpp"
 #include "dblz_bits/moment_diff.hpp"
-#include "dblz_bits/observable_traj.hpp"
 #include "dblz_bits/opt_problem_dynamic.hpp"
 #include "dblz_bits/species.hpp"
 

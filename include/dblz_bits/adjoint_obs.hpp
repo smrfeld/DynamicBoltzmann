@@ -72,6 +72,71 @@ namespace dblz {
     };
     
     // ***************
+    // MARK: - Adjoint moment term
+    // ***************
+    
+    class AdjointMomentTerm {
+        
+    private:
+        
+        // Ixn param traj - this is part of the sum
+        ITptr _ixn_param;
+        
+        // The other part of the sum from the domain on the RHS of the diff eq
+        int _layer;
+        Sptr _species;
+        
+        // Vals
+        int _no_timesteps;
+        int _no_timepoints;
+        std::vector<double> _vals;
+        
+        // Constructor helpers
+        void _clean_up();
+        void _move(AdjointMomentTerm &other);
+        void _copy(const AdjointMomentTerm& other);
+        
+    public:
+        
+        /********************
+         Constructor
+         ********************/
+        
+        AdjointMomentTerm(ITptr ixn_param, int layer, Sptr species);
+        AdjointMomentTerm(const AdjointMomentTerm& other);
+        AdjointMomentTerm(AdjointMomentTerm&& other);
+        AdjointMomentTerm& operator=(const AdjointMomentTerm& other);
+        AdjointMomentTerm& operator=(AdjointMomentTerm&& other);
+        ~AdjointMomentTerm();
+        
+        /********************
+         Name, type
+         ********************/
+        
+        ITptr get_ixn_param_traj() const;
+        int get_layer() const;
+        Sptr get_species() const;
+        
+        /********************
+         Timepoints
+         ********************/
+        
+        void set_no_timesteps(int no_timesteps);
+        int get_no_timesteps() const;
+        
+        /********************
+         Get/set moment
+         ********************/
+        
+        // Get moment
+        double get_val_at_timepoint(int timepoint) const;
+        void increment_val_at_timepoint(int timepoint, double val);
+        void set_val_at_timepoint(int timepoint, double val);
+        void reset_val_at_timepoint(int timepoint);
+
+    };
+    
+    // ***************
     // MARK: - Adjoint class when observables used for diff eq RHS
     // ***************
     

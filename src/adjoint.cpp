@@ -5,7 +5,7 @@
 #include "../include/dblz_bits/ixn_param.hpp"
 #include "../include/dblz_bits/general.hpp"
 #include "../include/dblz_bits/diff_eq_rhs.hpp"
-#include "../include/dblz_bits/moment.hpp"
+#include "../include/dblz_bits/moment_diff.hpp"
 
 #include <iostream>
 #include <fstream>

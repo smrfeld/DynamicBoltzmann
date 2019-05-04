@@ -5,7 +5,7 @@
 #include "../include/dblz_bits/lattice_1d_fully_visible.hpp"
 #include "../include/dblz_bits/lattice_centered_hom.hpp"
 #include "../include/dblz_bits/lattice.hpp"
-#include "../include/dblz_bits/moment.hpp"
+#include "../include/dblz_bits/moment_diff.hpp"
 #include "../include/dblz_bits/fname.hpp"
 #include "../include/dblz_bits/general.hpp"
 

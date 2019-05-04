@@ -3,7 +3,7 @@
 // Other headers
 #include "../include/dblz_bits/general.hpp"
 #include "../include/dblz_bits/species.hpp"
-#include "../include/dblz_bits/moment.hpp"
+#include "../include/dblz_bits/moment_diff.hpp"
 #include "../include/dblz_bits/ixn_param.hpp"
 #include "../include/dblz_bits/fname.hpp"
 #include "../include/dblz_bits/center.hpp"

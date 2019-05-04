@@ -76,6 +76,46 @@ namespace dblz {
 	};
 
     /****************************************
+     Domain1DObs
+     ****************************************/
+    
+    class Domain1DObs : public Domain1D {
+        
+    private:
+        
+        // For now, only "sum of single species" moment is allowed
+        Sptr _species;
+        
+        
+        
+        // Internal copy func/clean up
+        void _clean_up();
+        void _move(Domain1DObs& other);
+        void _copy(const Domain1DObs& other);
+        
+    public:
+        
+        /********************
+         Constructor
+         ********************/
+        
+        Domain1DObs(Sptr species, double delta, double zero);
+        Domain1DObs(const Domain1DObs& other);
+        Domain1DObs& operator=(const Domain1DObs& other);
+        Domain1DObs(Domain1DObs&& other);
+        Domain1DObs& operator=(Domain1DObs&& other);
+        ~Domain1DObs();
+        
+        /********************
+         Getters
+         ********************/
+        
+        Sptr get_species() const;
+        
+        double get_val_at_timepoint(int timepoint) const;
+    };
+
+    /****************************************
      Domain1DCenter
      ****************************************/
     

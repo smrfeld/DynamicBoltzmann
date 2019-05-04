@@ -24,7 +24,7 @@ add_library(bmla SHARED
 	src/lattice_1d_fully_visible.cpp
 	src/lattice_centered_hom.cpp
 	src/lattice.cpp
-	src/moment.cpp
+	src/moment_diff.cpp
 	src/opt_problem_static.cpp
 	src/species.cpp
 	include/dblz_bits/center.hpp
@@ -34,7 +34,7 @@ add_library(bmla SHARED
 	include/dblz_bits/lattice_1d_fully_visible.hpp
 	include/dblz_bits/lattice_centered_hom.hpp
 	include/dblz_bits/lattice.hpp
-	include/dblz_bits/moment.hpp
+	include/dblz_bits/moment_diff.hpp
 	include/dblz_bits/opt_problem_static.hpp
 	include/dblz_bits/species.hpp
 	${HEADER_FILES_FWDS}
@@ -56,7 +56,8 @@ add_library(dblz SHARED
 	src/lattice_centered_hom.cpp
 	src/lattice.cpp
 	src/lattice_traj.cpp
-	src/moment.cpp
+	src/moment_diff.cpp
+	src/observable.cpp
 	src/opt_problem_dynamic.cpp
 	src/species.cpp
 	include/dblz_bits/adjoint.hpp
@@ -74,7 +75,8 @@ add_library(dblz SHARED
 	include/dblz_bits/lattice.hpp
 	include/dblz_bits/lattice_centered_hom.hpp
 	include/dblz_bits/lattice_traj.hpp
-	include/dblz_bits/moment.hpp
+	include/dblz_bits/moment_diff.hpp
+	include/dblz_bits/observable.hpp
 	include/dblz_bits/opt_problem_dynamic.hpp
 	include/dblz_bits/species.hpp
 	${HEADER_FILES_FWDS}

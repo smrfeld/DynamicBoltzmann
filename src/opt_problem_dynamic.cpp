@@ -7,7 +7,7 @@
 #include "../include/dblz_bits/lattice_traj_1d_fully_visible.hpp"
 #include "../include/dblz_bits/lattice.hpp"
 #include "../include/dblz_bits/lattice_traj.hpp"
-#include "../include/dblz_bits/moment.hpp"
+#include "../include/dblz_bits/moment_diff.hpp"
 #include "../include/dblz_bits/fname_traj.hpp"
 #include "../include/dblz_bits/general.hpp"
 #include "../include/dblz_bits/adjoint.hpp"

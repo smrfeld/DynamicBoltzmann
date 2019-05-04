@@ -303,8 +303,17 @@ namespace dblz {
         // MARK: - Reap moments, both awake and asleep
         // ***************
         
-        void reap_moments();
+        void reap_moments() const;
         
+        // ***************
+        // MARK: - Reap adjoint obs cov term moments
+        // ***************
+        
+        // vi * hj or vi * vi or hj * hj
+        std::vector<double> reap_adjoint_obs_cov_term_biases(int layer1, Sptr species1, int layer2, Sptr species2) const;
+        // (connected vi * hj) * hk
+        std::vector<double> reap_adjoint_obs_cov_term_weights(int layer_vis, Sptr species_vis, int layer_hidden, Sptr species_hidden, int layer, Sptr species) const;
+
         // ***************
         // MARK: - Wake/sleep
         // ***************

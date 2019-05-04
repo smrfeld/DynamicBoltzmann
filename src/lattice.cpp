@@ -1059,12 +1059,12 @@ namespace dblz {
     // MARK: - Reap moments
     // ***************
     
-    void Lattice::reap_moments() {
+    void Lattice::reap_moments() const {
         
         // Reap ixns
         int layer1, layer2;
         Sptr sp1, sp2;
-        arma::sp_mat::iterator mit, mit_end;
+        arma::sp_mat::const_iterator mit, mit_end;
         std::shared_ptr<MomentDiff> moment;
         for (auto &o2_ixn_layer_1: _o2_ixn_dict) {
             layer1 = o2_ixn_layer_1.first;
@@ -1141,6 +1141,60 @@ namespace dblz {
         };
     };
     
+    // ***************
+    // MARK: - Reap adjoint obs cov term moments
+    // ***************
+    
+    std::vector<double> Lattice::reap_adjoint_obs_cov_term_biases(int layer1, Sptr species1, int layer2, Sptr species2) const {
+        
+        std::vector<double> vals({0.0,0.0,0.0});
+        double tmp_1, tmp_2;
+        for (auto i_chain=0; i_chain<_no_markov_chains.at(MCType::ASLEEP); i_chain++) {
+            tmp_1 = arma::accu(_mc_chains.at(MCType::ASLEEP).at(i_chain).at(layer1).at(species1));
+            tmp_2 = arma::accu(_mc_chains.at(MCType::ASLEEP).at(i_chain).at(layer2).at(species2));
+            vals[0] += tmp_1 * tmp_2;
+            vals[1] += tmp_1;
+            vals[2] += tmp_2;
+        };
+        vals[0] /= _no_markov_chains.at(MCType::ASLEEP);
+        vals[1] /= _no_markov_chains.at(MCType::ASLEEP);
+        vals[2] /= _no_markov_chains.at(MCType::ASLEEP);
+        
+        return vals;
+    };
+ 
+    std::vector<double> Lattice::reap_adjoint_obs_cov_term_weights(int layer_vis, Sptr species_vis, int layer_hidden, Sptr species_hidden, int layer, Sptr species) const {
+        
+        if (layer_hidden != layer_vis +1) {
+            std::cerr << ">>> Error: Lattice::reap_adjoint_obs_cov_term_weights <<< layer_hidden != layer_vis +1 " << std::endl;
+            exit(EXIT_FAILURE);
+        };
+        
+        std::vector<double> vals({0.0,0.0,0.0});
+        double tmp_1,tmp_2;
+        arma::sp_mat::const_iterator mit, mit_end;
+        for (auto i_chain=0; i_chain<_no_markov_chains.at(MCType::ASLEEP); i_chain++) {
+            // Iterate over adj matrix
+            tmp_1 = 0.0;
+            mit = _adj.at(layer_vis).at(layer_hidden).begin();
+            mit_end = _adj.at(layer_vis).at(layer_hidden).end();
+            for(; mit != mit_end; ++mit) {
+                tmp_1 += _mc_chains.at(MCType::ASLEEP).at(i_chain).at(layer_hidden).at(species_hidden)(mit.row()) * _mc_chains.at(MCType::ASLEEP).at(i_chain).at(layer_vis).at(species_vis)(mit.col());
+            };
+            
+            tmp_2 = arma::accu(_mc_chains.at(MCType::ASLEEP).at(i_chain).at(layer).at(species));
+
+            vals[0] += tmp_1 * tmp_2;
+            vals[1] += tmp_1;
+            vals[2] += tmp_2;
+        };
+        vals[0] /= _no_markov_chains.at(MCType::ASLEEP);
+        vals[1] /= _no_markov_chains.at(MCType::ASLEEP);
+        vals[2] /= _no_markov_chains.at(MCType::ASLEEP);
+
+        return vals;
+    };
+
     // ***************
     // MARK: - Add ixn to all ixns vec
     // ***************

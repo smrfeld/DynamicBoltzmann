@@ -4,7 +4,8 @@
 #include "../include/dblz_bits/general.hpp"
 #include "../include/dblz_bits/species.hpp"
 #include "../include/dblz_bits/diff_eq_rhs.hpp"
-#include "../include/dblz_bits/adjoint.hpp"
+#include "../include/dblz_bits/adjoint_obs.hpp"
+#include "../include/dblz_bits/adjoint_params.hpp"
 #include "../include/dblz_bits/ixn_param.hpp"
 #include "../include/dblz_bits/moment_diff.hpp"
 
@@ -34,6 +35,8 @@ namespace dblz {
         
         // Adjoint
         _adjoint = nullptr;
+        _adjoint_obs = nullptr;
+        _adjoint_params = nullptr;
 
         // Diff eq
         _diff_eq = nullptr;
@@ -72,7 +75,9 @@ namespace dblz {
     };
 	void IxnParamTraj::_copy(const IxnParamTraj& other) {
         _adjoint = other._adjoint;
-        
+        _adjoint_obs = other._adjoint_obs;
+        _adjoint_params = other._adjoint_params;
+
         _diff_eq = other._diff_eq;
         
         _diff_eq_dependencies = other._diff_eq_dependencies;
@@ -88,6 +93,8 @@ namespace dblz {
     };
 	void IxnParamTraj::_move(IxnParamTraj& other) {
         _adjoint = other._adjoint;
+        _adjoint_obs = other._adjoint_obs;
+        _adjoint_params = other._adjoint_params;
         
         _diff_eq = other._diff_eq;
         
@@ -104,6 +111,8 @@ namespace dblz {
 
 		// Reset the other
         other._adjoint = nullptr;
+        other._adjoint_obs = nullptr;
+        other._adjoint_params = nullptr;
         other._diff_eq = nullptr;
         other._diff_eq_dependencies.clear();
         other._ixn_params.clear();
@@ -264,12 +273,25 @@ namespace dblz {
     // MARK: - Adjoint
     // ***************
     
-	void IxnParamTraj::set_adjoint(std::shared_ptr<Adjoint> adjoint) {
-		_adjoint = adjoint;
+	void IxnParamTraj::set_adjoint(std::shared_ptr<AdjointObs> adjoint_obs) {
+		_adjoint_obs = adjoint_obs;
+        _adjoint = _adjoint_obs;
+        _adjoint_params = nullptr;
 	};
+    void IxnParamTraj::set_adjoint(std::shared_ptr<AdjointParams> adjoint_params) {
+        _adjoint_obs = nullptr;
+        _adjoint = adjoint_params;
+        _adjoint_params = adjoint_params;
+    };
 	std::shared_ptr<Adjoint> IxnParamTraj::get_adjoint() const {
 		return _adjoint;
 	};
+    std::shared_ptr<AdjointObs> IxnParamTraj::get_adjoint_obs() const {
+        return _adjoint_obs;
+    };
+    std::shared_ptr<AdjointParams> IxnParamTraj::get_adjoint_params() const {
+        return _adjoint_params;
+    };
 
     // ***************
     // MARK: - Write to file

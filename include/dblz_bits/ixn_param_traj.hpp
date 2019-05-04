@@ -13,6 +13,8 @@ namespace dblz {
 	// Forwards
 	class DiffEqRHS;
 	class Adjoint;
+    class AdjointObs;
+    class AdjointParams;
     class MomentDiff;
     
 	/****************************************
@@ -28,6 +30,8 @@ namespace dblz {
         
         // Adjoint
         std::shared_ptr<Adjoint> _adjoint;
+        std::shared_ptr<AdjointObs> _adjoint_obs;
+        std::shared_ptr<AdjointParams> _adjoint_params;
 
         // Diff eq RHS
         std::shared_ptr<DiffEqRHS> _diff_eq;
@@ -130,8 +134,11 @@ namespace dblz {
         // MARK: - Adjoint
         // ***************
         
-		void set_adjoint(std::shared_ptr<Adjoint> adjoint);
-		std::shared_ptr<Adjoint> get_adjoint() const;
+		void set_adjoint(std::shared_ptr<AdjointObs> adjoint_obs);
+        void set_adjoint(std::shared_ptr<AdjointParams> adjoint_params);
+        std::shared_ptr<Adjoint> get_adjoint() const;
+        std::shared_ptr<AdjointObs> get_adjoint_obs() const;
+        std::shared_ptr<AdjointParams> get_adjoint_params() const;
 
         // ***************
         // MARK: - Write to file

@@ -735,13 +735,13 @@ namespace dblz {
         
         // O2 ixns
         Sptr sp1, sp2, sp3;
-        std::shared_ptr<Moment> moment;
+        std::shared_ptr<MomentDiff> moment;
         if (_conn_2) {
             for (auto &o2a: _o2_ixn_dict) {
                 sp1 = o2a.first;
                 for (auto &o2b: o2a.second) {
                     sp2 = o2b.first;
-                    moment = o2b.second->get_moment();
+                    moment = o2b.second->get_moment_diff();
                     
                     // Reset moments
                     if (!moment->get_is_awake_moment_fixed()) {
@@ -774,7 +774,7 @@ namespace dblz {
                     sp2 = o3b.first;
                     for (auto &o3c: o3b.second) {
                         sp3 = o3c.first;
-                        moment = o3c.second->get_moment();
+                        moment = o3c.second->get_moment_diff();
                         
                         // Reset moments
                         if (!moment->get_is_awake_moment_fixed()) {
@@ -804,7 +804,7 @@ namespace dblz {
         // Reap biases
         for (auto &bsp: _bias_dict) {
             sp1 = bsp.first;
-            moment = bsp.second->get_moment();
+            moment = bsp.second->get_moment_diff();
             
             if (!moment->get_is_awake_moment_fixed()) {
                 moment->reset_moment(MCType::AWAKE);

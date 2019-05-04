@@ -13,7 +13,7 @@ namespace dblz {
 	// Forwards
 	class DiffEqRHS;
 	class Adjoint;
-    class Moment;
+    class MomentDiff;
     
 	/****************************************
 	Interaction parameter

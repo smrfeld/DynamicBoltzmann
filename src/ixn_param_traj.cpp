@@ -129,7 +129,7 @@ namespace dblz {
     
     void IxnParamTraj::print_moment_traj(int timepoint_start, int no_timesteps) const {
         for (auto timepoint=timepoint_start; timepoint<=timepoint_start+no_timesteps; timepoint++) {
-            std::cout << _ixn_params.at(timepoint)->get_moment()->get_moment_comparison_str();
+            std::cout << _ixn_params.at(timepoint)->get_moment_diff()->get_moment_comparison_str();
             if (timepoint != timepoint_start+no_timesteps) {
                 std::cout << " ";
             };
@@ -139,7 +139,7 @@ namespace dblz {
     
     void IxnParamTraj::print_moment_diff_traj(int timepoint_start, int no_timesteps) const {
         for (auto timepoint=timepoint_start; timepoint<=timepoint_start+no_timesteps; timepoint++) {
-            std::cout << _diff_eq->get_lr() * ( _ixn_params.at(timepoint)->get_moment()->get_moment(MCType::AWAKE) - _ixn_params.at(timepoint)->get_moment()->get_moment(MCType::ASLEEP) );
+            std::cout << _diff_eq->get_lr() * ( _ixn_params.at(timepoint)->get_moment_diff()->get_moment(MCType::AWAKE) - _ixn_params.at(timepoint)->get_moment_diff()->get_moment(MCType::ASLEEP) );
             if (timepoint != timepoint_start+no_timesteps) {
                 std::cout << " ";
             };
@@ -315,15 +315,15 @@ namespace dblz {
         };
         
         // Go through all time
-        std::shared_ptr<Moment> moment;
+        std::shared_ptr<MomentDiff> moment;
         if (with_timepoints) {
             for (auto timepoint=timepoint_start; timepoint<=timepoint_start+no_timesteps; timepoint++) {
-                moment = _ixn_params.at(timepoint)->get_moment();
+                moment = _ixn_params.at(timepoint)->get_moment_diff();
                 f << timepoint << " " << moment->get_moment(MCType::AWAKE) << " " << moment->get_moment(MCType::ASLEEP) << "\n";
             };
         } else {
             for (auto timepoint=timepoint_start; timepoint<=timepoint_start+no_timesteps; timepoint++) {
-                moment = _ixn_params.at(timepoint)->get_moment();
+                moment = _ixn_params.at(timepoint)->get_moment_diff();
                 f << moment->get_moment(MCType::AWAKE) << " " << moment->get_moment(MCType::ASLEEP) << "\n";
             };
         };

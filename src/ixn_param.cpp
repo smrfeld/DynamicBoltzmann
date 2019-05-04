@@ -43,7 +43,7 @@ namespace dblz {
 		_adam_m = nullptr;
 
 		// Moment
-		_moment = std::make_unique<Moment>(name, type);
+		_moment = std::make_unique<MomentDiff>(name, type);
 
 		_is_val_fixed = false;
 	};
@@ -117,7 +117,7 @@ namespace dblz {
             _adam_v = nullptr;
         };
 
-        _moment = std::make_shared<Moment>(*other._moment);
+        _moment = std::make_shared<MomentDiff>(*other._moment);
 
 		_is_val_fixed = other._is_val_fixed;
 	};
@@ -194,7 +194,7 @@ namespace dblz {
 	Moment
 	********************/
 
-	std::shared_ptr<Moment> IxnParam::get_moment() const {
+	std::shared_ptr<MomentDiff> IxnParam::get_moment_diff() const {
 		return _moment;
 	};
 

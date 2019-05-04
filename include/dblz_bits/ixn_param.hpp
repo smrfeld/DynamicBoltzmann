@@ -11,7 +11,7 @@
 namespace dblz {
 
 	// Forwards
-	class Moment;
+	class MomentDiff;
 
 	/****************************************
 	Interaction parameter
@@ -41,7 +41,7 @@ namespace dblz {
         bool _is_val_fixed;
         
         // Moment
-        std::shared_ptr<Moment> _moment;
+        std::shared_ptr<MomentDiff> _moment;
         
         // Copy, clean up
         void _clean_up();
@@ -91,10 +91,10 @@ namespace dblz {
 		bool get_is_val_fixed() const;
 
 		/********************
-		Moment
+		MomentDiff
 		********************/
 
-		std::shared_ptr<Moment> get_moment() const;
+		std::shared_ptr<MomentDiff> get_moment_diff() const;
 
 		/********************
 		Update

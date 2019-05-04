@@ -1122,7 +1122,7 @@ namespace dblz {
         int layer1, layer2;
         Sptr sp1, sp2;
         arma::sp_mat::iterator mit, mit_end;
-        std::shared_ptr<Moment> moment;
+        std::shared_ptr<MomentDiff> moment;
         for (auto &o2_ixn_layer_1: _o2_ixn_dict) {
             layer1 = o2_ixn_layer_1.first;
             for (auto &sp_pr_1: o2_ixn_layer_1.second) {
@@ -1139,7 +1139,7 @@ namespace dblz {
                     for (auto &sp_pr_2: o2_ixn_layer_2.second) {
                         
                         sp2 = sp_pr_2.first;
-                        moment = sp_pr_2.second->get_moment();
+                        moment = sp_pr_2.second->get_moment_diff();
                         
                         // Awake
                         if (!moment->get_is_awake_moment_fixed()) {
@@ -1175,7 +1175,7 @@ namespace dblz {
             layer = bias_layer.first;
             for (auto &sp_pr: bias_layer.second) {
                 sp = sp_pr.first;
-                moment = sp_pr.second->get_moment();
+                moment = sp_pr.second->get_moment_diff();
                 
                 // Awake phase
                 
@@ -1252,7 +1252,7 @@ namespace dblz {
                 };
                 
                 // Adjust bias in this layer
-                _bias_dict.at(layer).at(sp)->get_moment()->set_moment_offset(offset);
+                _bias_dict.at(layer).at(sp)->get_moment_diff()->set_moment_offset(offset);
             };
         };
 

@@ -108,7 +108,7 @@ namespace dblz {
         if (options.verbose_moment) {
             for (auto &ixn_param: _latt->get_all_ixn_params()) {
                 std::cout << ixn_param->get_name() << " " << std::flush;
-                ixn_param->get_moment()->print_moment_comparison();
+                ixn_param->get_moment_diff()->print_moment_comparison();
             };
         };
         
@@ -190,7 +190,7 @@ namespace dblz {
         if (options.verbose_moment) {
             for (auto &ixn_param: _latt->get_all_ixn_params()) {
                 std::cout << ixn_param->get_name() << " " << std::flush;
-                ixn_param->get_moment()->print_moment_comparison();
+                ixn_param->get_moment_diff()->print_moment_comparison();
             };
         };
         
@@ -272,7 +272,7 @@ namespace dblz {
         if (options.verbose_moment) {
             for (auto &ixn_param: _latt1dfv->get_all_ixn_params()) {
                 std::cout << ixn_param->get_name() << " " << std::flush;
-                ixn_param->get_moment()->print_moment_comparison();
+                ixn_param->get_moment_diff()->print_moment_comparison();
             };
         };
         
@@ -354,7 +354,7 @@ namespace dblz {
         if (options.verbose_moment) {
             for (auto &ixn_param: _lattch->get_all_ixn_params()) {
                 std::cout << ixn_param->get_name() << " " << std::flush;
-                ixn_param->get_moment()->print_moment_comparison();
+                ixn_param->get_moment_diff()->print_moment_comparison();
             };
         };
         

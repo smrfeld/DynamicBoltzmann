@@ -16,10 +16,10 @@ namespace dblz {
     enum class MCType: unsigned int { AWAKE, ASLEEP };
 
 	/****************************************
-	Moment
+	MomentDiff
 	****************************************/
 	
-	class Moment {
+	class MomentDiff {
 
 	private:
 
@@ -48,8 +48,8 @@ namespace dblz {
 
 		// Constructor helpers
 		void _clean_up();
-		void _move(Moment &other);
-		void _copy(const Moment& other);
+		void _move(MomentDiff &other);
+		void _copy(const MomentDiff& other);
 
 	public:
 
@@ -57,12 +57,12 @@ namespace dblz {
 		Constructor
 		********************/
 
-		Moment(std::string name, IxnParamType type);
-		Moment(const Moment& other);
-		Moment(Moment&& other);
-		Moment& operator=(const Moment& other);
-		Moment& operator=(Moment&& other);
-		~Moment();
+		MomentDiff(std::string name, IxnParamType type);
+		MomentDiff(const MomentDiff& other);
+		MomentDiff(MomentDiff&& other);
+		MomentDiff& operator=(const MomentDiff& other);
+		MomentDiff& operator=(MomentDiff&& other);
+		~MomentDiff();
 
 		/********************
 		Verbose

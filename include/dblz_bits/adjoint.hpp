@@ -54,7 +54,7 @@ namespace dblz {
         // ***************
         
 		int get_no_timesteps() const;
-		void set_no_timesteps(int no_timesteps);
+        void set_no_timesteps(int no_timesteps);
 
         // ***************
         // MARK: - End condition

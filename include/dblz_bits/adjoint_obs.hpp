@@ -177,7 +177,7 @@ namespace dblz {
 		AdjointObs(AdjointObs&& other);
 		AdjointObs& operator=(AdjointObs&& other);
 		~AdjointObs();
-
+        
         // ***************
         // MARK: - Get cov terms
         // ***************

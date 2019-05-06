@@ -208,6 +208,21 @@ namespace dblz {
         if (_adjoint) {
             _adjoint->set_no_timesteps(no_timesteps);
         };
+        
+        // Set for domain of diff eq rhs if needed
+        if (_diff_eq) {
+            for (auto domain_obs: _diff_eq->get_domain_obs()) {
+                domain_obs->set_no_timesteps(no_timesteps);
+            };
+        };
+        
+        // Set for common/covariance terms in adjoint obs
+        if (_adjoint_obs) {
+            for (auto term_pr: _adjoint_obs->get_terms()) {
+                term_pr.first->set_no_timesteps(no_timesteps);
+                term_pr.second->set_no_timesteps(no_timesteps);
+            };
+        };
     };
     
     // ***************

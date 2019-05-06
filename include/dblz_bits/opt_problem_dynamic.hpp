@@ -105,8 +105,10 @@ namespace dblz {
         // ***************
         
         // Solve t to t+delta t
+        void solve_ixn_param_trajs_step(const std::vector<std::shared_ptr<IxnParamTraj>> &ixn_param_trajs, double dt, int timepoint) const;
         void solve_ixn_param_trajs_step(const std::vector<std::shared_ptr<IxnParamTraj>> &ixn_param_trajs, double dt, int timepoint, int no_steps_per_step) const;
         // Solve many points
+        void solve_ixn_param_trajs(const std::vector<std::shared_ptr<IxnParamTraj>> &ixn_param_trajs, double dt, int timepoint_start, int no_timesteps) const;
         void solve_ixn_param_trajs(const std::vector<std::shared_ptr<IxnParamTraj>> &ixn_param_trajs, double dt, int timepoint_start, int no_timesteps, int no_steps_per_step) const;
 
         // ***************

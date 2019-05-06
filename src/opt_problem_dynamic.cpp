@@ -85,6 +85,14 @@ namespace dblz {
     // MARK: - Solve ixn params
     // ***************
     
+    void OptProblemDynamic::solve_ixn_param_trajs_step(const std::vector<std::shared_ptr<IxnParamTraj>> &ixn_param_trajs, double dt, int timepoint) const {
+        
+        for (auto ixn_param_traj: ixn_param_trajs) {
+            if (!ixn_param_traj->get_is_val_fixed()) {
+                ixn_param_traj->solve_diff_eq_at_timepoint_to_plus_one(timepoint, dt);
+            };
+        };
+    };
     void OptProblemDynamic::solve_ixn_param_trajs_step(const std::vector<std::shared_ptr<IxnParamTraj>> &ixn_param_trajs, double dt, int timepoint, int no_steps_per_step) const {
         
         // Solve over all time
@@ -116,6 +124,12 @@ namespace dblz {
         };
     };
 
+    void OptProblemDynamic::solve_ixn_param_trajs(const std::vector<std::shared_ptr<IxnParamTraj>> &ixn_param_trajs, double dt, int timepoint_start, int no_timesteps) const {
+        
+        for (auto timepoint=timepoint_start; timepoint<timepoint_start+no_timesteps; timepoint++) {
+            solve_ixn_param_trajs_step(ixn_param_trajs, dt, timepoint);
+        };
+    };
     void OptProblemDynamic::solve_ixn_param_trajs(const std::vector<std::shared_ptr<IxnParamTraj>> &ixn_param_trajs, double dt, int timepoint_start, int no_timesteps, int no_steps_per_step) const {
         
         for (auto timepoint=timepoint_start; timepoint<timepoint_start+no_timesteps; timepoint++) {
@@ -568,8 +582,6 @@ namespace dblz {
                 };
             };
         };
-
-        
         
         /*****
         Go through all timepoints
@@ -588,7 +600,7 @@ namespace dblz {
              Solve diff eq for F
              *****/
             
-            solve_ixn_param_trajs_step(_latt_traj->get_all_ixn_param_trajs(), dt, timepoint, options.no_steps_per_step_IP);
+            solve_ixn_param_trajs_step(_latt_traj->get_all_ixn_param_trajs(), dt, timepoint);
             
             /*****
              Wake/asleep loop
@@ -620,6 +632,14 @@ namespace dblz {
                     domain_val = latt->reap_moment(MCType::ASLEEP, domain_obs->get_layer(), domain_obs->get_species());
                     domain_obs->set_val_at_timepoint(timepoint, domain_val);
                 };
+            };
+        };
+        
+        // Print moment traj
+        if (options.verbose) {
+            for (auto ixn_param_traj: _latt_traj->get_all_ixn_param_trajs()) {
+                std::cout << ixn_param_traj->get_name() << " moments [" << timepoint_start_WS << "," << timepoint_start_WS+no_timesteps_WS << "]" << std::endl;
+                ixn_param_traj->print_moment_diff_traj(timepoint_start_WS, no_timesteps_WS);
             };
         };
         

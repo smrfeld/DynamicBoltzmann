@@ -215,7 +215,7 @@ namespace dblz {
         // MARK: - Reap moments, both awake and asleep
         // ***************
         
-        void reap_moments();
+        void reap_ixn_moment_diffs();
 
         // ***************
         // MARK: - Wake/sleep

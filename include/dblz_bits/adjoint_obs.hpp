@@ -91,8 +91,8 @@ namespace dblz {
         ITptr _ixn_param;
         
         // The other part of the sum from the domain on the RHS of the diff eq
-        int _layer;
-        Sptr _species;
+        int _layer_domain;
+        Sptr _species_domain;
         
         // Vals
         int _no_timesteps;
@@ -110,7 +110,7 @@ namespace dblz {
          Constructor
          ********************/
         
-        AdjointMomentCovTerm(ITptr ixn_param, int layer, Sptr species);
+        AdjointMomentCovTerm(ITptr ixn_param, int layer_domain, Sptr species_domain);
         AdjointMomentCovTerm(const AdjointMomentCovTerm& other);
         AdjointMomentCovTerm(AdjointMomentCovTerm&& other);
         AdjointMomentCovTerm& operator=(const AdjointMomentCovTerm& other);
@@ -122,8 +122,8 @@ namespace dblz {
          ********************/
         
         ITptr get_ixn_param_traj() const;
-        int get_layer() const;
-        Sptr get_species() const;
+        int get_layer_domain() const;
+        Sptr get_species_domain() const;
         
         /********************
          Timepoints
@@ -139,9 +139,9 @@ namespace dblz {
         double get_val_1_at_timepoint(int timepoint) const;
         double get_val_2_at_timepoint(int timepoint) const;
         double get_val_3_at_timepoint(int timepoint) const;
-        void increment_val_1_at_timepoint(int timepoint, double val);
-        void increment_val_2_at_timepoint(int timepoint, double val);
-        void increment_val_3_at_timepoint(int timepoint, double val);
+        void set_val_1_at_timepoint(int timepoint, double val);
+        void set_val_2_at_timepoint(int timepoint, double val);
+        void set_val_3_at_timepoint(int timepoint, double val);
         void reset_val_1_at_timepoint(int timepoint);
         void reset_val_2_at_timepoint(int timepoint);
         void reset_val_3_at_timepoint(int timepoint);

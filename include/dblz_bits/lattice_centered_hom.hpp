@@ -316,7 +316,7 @@ namespace dblz {
         // MARK: - Reap moments, both awake and asleep
         // ***************
         
-        void reap_moments_and_slide_centers(double sliding_factor);
+        void reap_ixn_moment_diffs_and_slide_centers(double sliding_factor);
 
         // ***************
         // MARK: - Write out centers

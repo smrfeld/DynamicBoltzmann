@@ -84,9 +84,13 @@ namespace dblz {
     private:
         
         // For now, only "sum of single species" moment is allowed
+        int _layer;
         Sptr _species;
         
-        
+        // Values
+        int _no_timesteps;
+        int _no_timepoints;
+        std::vector<double> _vals;
         
         // Internal copy func/clean up
         void _clean_up();
@@ -99,7 +103,7 @@ namespace dblz {
          Constructor
          ********************/
         
-        Domain1DObs(Sptr species, double delta, double zero);
+        Domain1DObs(int layer, Sptr species, double delta, double zero);
         Domain1DObs(const Domain1DObs& other);
         Domain1DObs& operator=(const Domain1DObs& other);
         Domain1DObs(Domain1DObs&& other);
@@ -107,11 +111,20 @@ namespace dblz {
         ~Domain1DObs();
         
         /********************
+         Timesteps
+         ********************/
+        
+        void set_no_timesteps(int no_timesteps);
+        int get_no_timesteps() const;
+        
+        /********************
          Getters
          ********************/
         
+        int get_layer() const;
         Sptr get_species() const;
         
+        void set_val_at_timepoint(int timepoint, double val);
         double get_val_at_timepoint(int timepoint) const;
     };
 
@@ -212,6 +225,7 @@ namespace dblz {
 		std::vector<Domain1D*> _domain;
         std::vector<Domain1DParam*> _domain_param; // extra storage but wever
         std::vector<Domain1DCenter*> _domain_center; // extra storage but wever
+        std::vector<Domain1DObs*> _domain_obs; // extra storage but wever
 
 		// Parent ixn param
 		ITptr _parent_ixn_param_traj;
@@ -248,6 +262,7 @@ namespace dblz {
 		// Note: ownership of domain is NOT transferred
         DiffEqRHS(std::string name, ITptr parent_ixn_param_traj, std::vector<Domain1DParam*> domain, double lr);
         DiffEqRHS(std::string name, ITptr parent_ixn_param_traj, std::vector<Domain1DCenter*> domain, double lr);
+        DiffEqRHS(std::string name, ITptr parent_ixn_param_traj, std::vector<Domain1DObs*> domain, double lr);
         DiffEqRHS(const DiffEqRHS& other);
 		DiffEqRHS(DiffEqRHS&& other);
 		DiffEqRHS& operator=(const DiffEqRHS& other);
@@ -284,6 +299,7 @@ namespace dblz {
 		const std::vector<Domain1D*>& get_domain() const;
         const std::vector<Domain1DParam*>& get_domain_param() const;
         const std::vector<Domain1DCenter*>& get_domain_center() const;
+        const std::vector<Domain1DObs*>& get_domain_obs() const;
 
         // Get cell at timepoint
         q3c1::Cell* get_cell_at_timepoint(int timepoint) const;

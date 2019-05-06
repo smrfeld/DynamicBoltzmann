@@ -1059,7 +1059,177 @@ namespace dblz {
     // MARK: - Reap moments
     // ***************
     
-    void Lattice::reap_moments() const {
+    double Lattice::reap_moment_sample(MCType type, int i_chain, int layer, Sptr species) const {
+        return arma::accu(_mc_chains.at(type).at(i_chain).at(layer).at(species));
+    };
+    double Lattice::reap_moment_sample(MCType type, int i_chain, int layer_lower, Sptr species_lower, int layer_upper, Sptr species_upper) const {
+        if (layer_upper != layer_lower + 1) {
+            std::cerr << ">>> Error: Lattice::reap_moment_sample <<< layer_upper != layer_lower + 1" << std::endl;
+            exit(EXIT_FAILURE);
+        };
+        
+        double val = 0.0;
+        arma::sp_mat::const_iterator mit, mit_end;
+        // Iterate over adj matrix
+        mit = _adj.at(layer_lower).at(layer_upper).begin();
+        mit_end = _adj.at(layer_lower).at(layer_upper).end();
+        for(; mit != mit_end; ++mit) {
+            val += _mc_chains.at(type).at(i_chain).at(layer_upper).at(species_upper)(mit.row()) * _mc_chains.at(type).at(i_chain).at(layer_lower).at(species_lower)(mit.col());
+        };
+        return val;
+    };
+    double Lattice::reap_moment(MCType type, int layer, Sptr species) const {
+        double val = 0.0;
+        for (auto i_chain=0; i_chain<_no_markov_chains.at(type); i_chain++) {
+            val += reap_moment_sample(type,i_chain,layer,species);
+        };
+        val /= _no_markov_chains.at(type);
+        return val;
+    };
+    double Lattice::reap_moment(MCType type, int layer_lower, Sptr species_lower, int layer_upper, Sptr species_upper) const {
+        double val = 0.0;
+        for (auto i_chain=0; i_chain<_no_markov_chains.at(type); i_chain++) {
+            val += reap_moment_sample(type,i_chain,layer_lower,species_lower,layer_upper,species_upper);
+        };
+        val /= _no_markov_chains.at(type);
+        return val;
+    };
+
+    // Query moments for particular ixns
+    double Lattice::reap_moment_sample(MCType type, int i_chain, Iptr ixn) const {
+        // Get type of ixn
+        double val = 0.0;
+        if (ixn->get_type() == IxnParamType::W || ixn->get_type() == IxnParamType::X) {
+            
+            // Weight
+            
+            int layer1, layer2;
+            Sptr sp1, sp2;
+            arma::sp_mat::const_iterator mit, mit_end;
+            std::shared_ptr<MomentDiff> moment;
+            for (auto &o2_ixn_layer_1: _o2_ixn_dict) {
+                layer1 = o2_ixn_layer_1.first;
+                for (auto &sp_pr_1: o2_ixn_layer_1.second) {
+                    sp1 = sp_pr_1.first;
+                    for (auto &o2_ixn_layer_2: sp_pr_1.second) {
+                        layer2 = o2_ixn_layer_2.first;
+                        // Be careful not to double count
+                        if (layer1 >= layer2) {
+                            // skip
+                            continue;
+                        };
+                        // Now layer1 < layer2 guaranteed
+                        
+                        for (auto &sp_pr_2: o2_ixn_layer_2.second) {
+                            sp2 = sp_pr_2.first;
+                            
+                            // Check the ixn
+                            if (sp_pr_2.second == ixn) {
+                                val += reap_moment_sample(type, i_chain, layer1, sp1, layer2, sp2);
+                            };
+                        };
+                    };
+                };
+            };
+            
+        } else {
+            
+            // Bias
+            
+            int layer;
+            Sptr sp;
+            for (auto &bias_layer: _bias_dict) {
+                layer = bias_layer.first;
+                for (auto &sp_pr: bias_layer.second) {
+                    sp = sp_pr.first;
+                    
+                    // Check the ixn
+                    if (sp_pr.second == ixn) {
+                        val += reap_moment_sample(type, i_chain, layer, sp);
+                    };
+                };
+            };
+        };
+        
+        return val;
+    };
+    double Lattice::reap_moment(MCType type, Iptr ixn) const {
+        double val = 0.0;
+        for (auto i_chain=0; i_chain<_no_markov_chains.at(type); i_chain++) {
+            val += reap_moment_sample(type,i_chain,ixn);
+        };
+        val /= _no_markov_chains.at(type);
+        return val;
+    };
+
+    // Moments for the adjoint terms
+    double Lattice::reap_moment_adjoint_obs_cov_cross_term_sample(int i_chain, Iptr ixn, int layer_domain, Sptr species_domain) const {
+        // Get type of ixn
+        double val = 0.0;
+        if (ixn->get_type() == IxnParamType::W || ixn->get_type() == IxnParamType::X) {
+            
+            // Weight
+            
+            int layer1, layer2;
+            Sptr sp1, sp2;
+            arma::sp_mat::const_iterator mit, mit_end;
+            std::shared_ptr<MomentDiff> moment;
+            for (auto &o2_ixn_layer_1: _o2_ixn_dict) {
+                layer1 = o2_ixn_layer_1.first;
+                for (auto &sp_pr_1: o2_ixn_layer_1.second) {
+                    sp1 = sp_pr_1.first;
+                    for (auto &o2_ixn_layer_2: sp_pr_1.second) {
+                        layer2 = o2_ixn_layer_2.first;
+                        // Be careful not to double count
+                        if (layer1 >= layer2) {
+                            // skip
+                            continue;
+                        };
+                        // Now layer1 < layer2 guaranteed
+                        
+                        for (auto &sp_pr_2: o2_ixn_layer_2.second) {
+                            sp2 = sp_pr_2.first;
+                            
+                            // Check the ixn
+                            if (sp_pr_2.second == ixn) {
+                                val += reap_moment_sample(MCType::ASLEEP, i_chain, layer1, sp1, layer2, sp2) * reap_moment_sample(MCType::ASLEEP, i_chain, layer_domain, species_domain);
+                            };
+                        };
+                    };
+                };
+            };
+            
+        } else {
+            
+            // Bias
+            
+            int layer;
+            Sptr sp;
+            for (auto &bias_layer: _bias_dict) {
+                layer = bias_layer.first;
+                for (auto &sp_pr: bias_layer.second) {
+                    sp = sp_pr.first;
+                    
+                    // Check the ixn
+                    if (sp_pr.second == ixn) {
+                        val += reap_moment_sample(MCType::ASLEEP, i_chain, layer, sp) * reap_moment_sample(MCType::ASLEEP, i_chain, layer_domain, species_domain);
+                    };
+                };
+            };
+        };
+        
+        return val;
+    };
+    double Lattice::reap_moment_adjoint_obs_cov_cross_term(Iptr ixn, int layer_domain, Sptr species_domain) const {
+        double val = 0.0;
+        for (auto i_chain=0; i_chain<_no_markov_chains.at(MCType::ASLEEP); i_chain++) {
+            val += reap_moment_adjoint_obs_cov_cross_term_sample(i_chain,ixn,layer_domain,species_domain);
+        };
+        val /= _no_markov_chains.at(MCType::ASLEEP);
+        return val;
+    };
+    
+    void Lattice::reap_ixn_moment_diffs() const {
         
         // Reap ixns
         int layer1, layer2;
@@ -1084,29 +1254,11 @@ namespace dblz {
                         sp2 = sp_pr_2.first;
                         moment = sp_pr_2.second->get_moment_diff();
                         
-                        // Reset moments
+                        // Get moments
                         if (!moment->get_is_awake_moment_fixed()) {
-                            moment->reset_moment(MCType::AWAKE);
+                            moment->set_moment(MCType::AWAKE, reap_moment(MCType::AWAKE, layer1, sp1, layer2, sp2));
                         };
-                        moment->reset_moment(MCType::ASLEEP);
-
-                        // Iterate over adj matrix
-                        mit = _adj.at(layer1).at(layer2).begin();
-                        mit_end = _adj.at(layer1).at(layer2).end();
-                        for(; mit != mit_end; ++mit) {
-                            
-                            // Iterate over awake chains
-                            if (!moment->get_is_awake_moment_fixed()) {
-                                for (auto i_chain=0; i_chain<_no_markov_chains.at(MCType::AWAKE); i_chain++) {
-                                    moment->increment_moment(MCType::AWAKE, _mc_chains.at(MCType::AWAKE).at(i_chain).at(layer2).at(sp2)(mit.row()) * _mc_chains.at(MCType::AWAKE).at(i_chain).at(layer1).at(sp1)(mit.col()) / _no_markov_chains.at(MCType::AWAKE) );
-                                };
-                            };
-                        
-                            // Iterate over asleep chains
-                            for (auto i_chain=0; i_chain<_no_markov_chains.at(MCType::ASLEEP); i_chain++) {
-                                moment->increment_moment(MCType::ASLEEP, _mc_chains.at(MCType::ASLEEP).at(i_chain).at(layer2).at(sp2)(mit.row()) * _mc_chains.at(MCType::ASLEEP).at(i_chain).at(layer1).at(sp1)(mit.col()) / _no_markov_chains.at(MCType::ASLEEP) );
-                            };
-                        };
+                        moment->set_moment(MCType::ASLEEP, reap_moment(MCType::ASLEEP, layer1, sp1, layer2, sp2));
                     };
                 };
             };
@@ -1122,21 +1274,11 @@ namespace dblz {
                 sp = sp_pr.first;
                 moment = sp_pr.second->get_moment_diff();
                 
-                // Awake phase
-                
+                // Get moments
                 if (!moment->get_is_awake_moment_fixed()) {
-                    moment->reset_moment(MCType::AWAKE);
-                    for (auto i_chain=0; i_chain<_no_markov_chains.at(MCType::AWAKE); i_chain++) {
-                        moment->increment_moment(MCType::AWAKE, arma::accu(_mc_chains.at(MCType::AWAKE).at(i_chain).at(layer).at(sp)) / _no_markov_chains.at(MCType::AWAKE));
-                    };
+                    moment->set_moment(MCType::AWAKE, reap_moment(MCType::AWAKE, layer, sp));
                 };
-                
-                // Asleep phase
-                
-                moment->reset_moment(MCType::ASLEEP);
-                for (auto i_chain=0; i_chain<_no_markov_chains.at(MCType::ASLEEP); i_chain++) {
-                    moment->increment_moment(MCType::ASLEEP, arma::accu(_mc_chains.at(MCType::ASLEEP).at(i_chain).at(layer).at(sp)) / _no_markov_chains.at(MCType::ASLEEP));
-                };
+                moment->set_moment(MCType::ASLEEP, reap_moment(MCType::ASLEEP, layer, sp));
             };
         };
     };
@@ -1145,6 +1287,7 @@ namespace dblz {
     // MARK: - Reap adjoint obs cov term moments
     // ***************
     
+    /*
     std::vector<double> Lattice::reap_adjoint_obs_cov_term_biases(int layer1, Sptr species1, int layer2, Sptr species2) const {
         
         std::vector<double> vals({0.0,0.0,0.0});
@@ -1162,7 +1305,8 @@ namespace dblz {
         
         return vals;
     };
- 
+     */
+    /*
     std::vector<double> Lattice::reap_adjoint_obs_cov_term_weights(int layer_vis, Sptr species_vis, int layer_hidden, Sptr species_hidden, int layer, Sptr species) const {
         
         if (layer_hidden != layer_vis +1) {
@@ -1194,6 +1338,7 @@ namespace dblz {
 
         return vals;
     };
+     */
 
     // ***************
     // MARK: - Add ixn to all ixns vec

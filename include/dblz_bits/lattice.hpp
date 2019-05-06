@@ -303,17 +303,33 @@ namespace dblz {
         // MARK: - Reap moments, both awake and asleep
         // ***************
         
-        void reap_moments() const;
+        void reap_ixn_moment_diffs() const;
+        
+        // Manually query moments
+        double reap_moment_sample(MCType type, int i_chain, int layer, Sptr species) const;
+        double reap_moment_sample(MCType type, int i_chain, int layer_lower, Sptr species_lower, int layer_upper, Sptr species_upper) const;
+        double reap_moment(MCType type, int layer, Sptr species) const;
+        double reap_moment(MCType type, int layer_lower, Sptr species_lower, int layer_upper, Sptr species_upper) const;
+        
+        // Query moments for particular ixns
+        double reap_moment_sample(MCType type, int i_chain, Iptr ixn) const;
+        double reap_moment(MCType type, Iptr ixn) const;
+
+        // Moments for the adjoint terms
+        double reap_moment_adjoint_obs_cov_cross_term_sample(int i_chain, Iptr ixn, int layer_domain, Sptr species_domain) const;
+        double reap_moment_adjoint_obs_cov_cross_term(Iptr ixn, int layer_domain, Sptr species_domain) const;
         
         // ***************
         // MARK: - Reap adjoint obs cov term moments
         // ***************
         
         // vi * hj or vi * vi or hj * hj
+        /*
         std::vector<double> reap_adjoint_obs_cov_term_biases(int layer1, Sptr species1, int layer2, Sptr species2) const;
         // (connected vi * hj) * hk
         std::vector<double> reap_adjoint_obs_cov_term_weights(int layer_vis, Sptr species_vis, int layer_hidden, Sptr species_hidden, int layer, Sptr species) const;
-
+         */
+        
         // ***************
         // MARK: - Wake/sleep
         // ***************

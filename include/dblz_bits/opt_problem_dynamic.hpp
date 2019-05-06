@@ -88,10 +88,10 @@ namespace dblz {
         
     public:
         
-        /********************
-         Constructor
-         ********************/
-        
+        // ***************
+        // MARK: - Constructor
+        // ***************
+      
         OptProblemDynamic(std::shared_ptr<LatticeTraj> latt_traj);
         OptProblemDynamic(std::shared_ptr<LatticeTraj1DFullyVisible> latt_traj_1dfv);
         OptProblemDynamic(const OptProblemDynamic& other);
@@ -100,29 +100,58 @@ namespace dblz {
         OptProblemDynamic& operator=(OptProblemDynamic &&other);
         ~OptProblemDynamic();
 
-        /********************
-         Solve
-         ********************/
+        // ***************
+        // MARK: - Solve ixn params
+        // ***************
         
-        // Solve helpers
+        // Solve t to t+delta t
+        void solve_ixn_param_trajs_step(const std::vector<std::shared_ptr<IxnParamTraj>> &ixn_param_trajs, double dt, int timepoint, int no_steps_per_step) const;
+        // Solve many points
         void solve_ixn_param_trajs(const std::vector<std::shared_ptr<IxnParamTraj>> &ixn_param_trajs, double dt, int timepoint_start, int no_timesteps, int no_steps_per_step) const;
 
+        // ***************
+        // MARK: - Committ step
+        // ***************
+        
+        void committ_step(const std::vector<std::shared_ptr<IxnParamTraj>> &ixn_params, int i_opt_step, OptionsSolveDynamic options);
+
+        // ***************
+        // MARK: - BM PCD params
+        // ***************
+        
         // One step
         // SIP = solve ixn params
         // WSA = wake/sleep/adjoint
-        void solve_one_step_bm_pcd(int i_opt_step, int timepoint_start_SIP, int no_timesteps_SIP, int timepoint_start_WS, int no_timesteps_WS, int timepoint_start_A, int no_timesteps_A, double dt, int no_mean_field_updates, int no_gibbs_sampling_steps, FNameTrajColl &fname_traj_coll, OptionsSolveDynamic options, OptionsWakeSleep_BM_PCD options_wake_sleep);
-        void solve_one_step_bm_pcd_without_committ(int i_opt_step, int timepoint_start_SIP, int no_timesteps_SIP, int timepoint_start_WS, int no_timesteps_WS, int timepoint_start_A, int no_timesteps_A, double dt, int no_mean_field_updates, int no_gibbs_sampling_steps, FNameTrajColl &fname_traj_coll, OptionsSolveDynamic options, OptionsWakeSleep_BM_PCD options_wake_sleep);
+        void solve_one_step_bm_pcd_params(int i_opt_step, int timepoint_start_SIP, int no_timesteps_SIP, int timepoint_start_WS, int no_timesteps_WS, int timepoint_start_A, int no_timesteps_A, double dt, int no_mean_field_updates, int no_gibbs_sampling_steps, FNameTrajColl &fname_traj_coll, OptionsSolveDynamic options, OptionsWakeSleep_BM_PCD options_wake_sleep);
+        void solve_one_step_bm_pcd_params_without_committ(int i_opt_step, int timepoint_start_SIP, int no_timesteps_SIP, int timepoint_start_WS, int no_timesteps_WS, int timepoint_start_A, int no_timesteps_A, double dt, int no_mean_field_updates, int no_gibbs_sampling_steps, FNameTrajColl &fname_traj_coll, OptionsSolveDynamic options, OptionsWakeSleep_BM_PCD options_wake_sleep);
         
-        void solve_one_step_rbm_cd(int i_opt_step, int timepoint_start_SIP, int no_timesteps_SIP, int timepoint_start_WS, int no_timesteps_WS, int timepoint_start_A, int no_timesteps_A, double dt, int no_cd_steps, FNameTrajColl &fname_traj_coll, OptionsSolveDynamic options, OptionsWakeSleep_RBM_CD options_wake_sleep);
-        void solve_one_step_rbm_cd_without_committ(int i_opt_step, int timepoint_start_SIP, int no_timesteps_SIP, int timepoint_start_WS, int no_timesteps_WS, int timepoint_start_A, int no_timesteps_A, double dt, int no_cd_steps, FNameTrajColl &fname_traj_coll, OptionsSolveDynamic options, OptionsWakeSleep_RBM_CD options_wake_sleep);
+        // ***************
+        // MARK: - RBM CD params
+        // ***************
+        
+        void solve_one_step_rbm_cd_params(int i_opt_step, int timepoint_start_SIP, int no_timesteps_SIP, int timepoint_start_WS, int no_timesteps_WS, int timepoint_start_A, int no_timesteps_A, double dt, int no_cd_steps, FNameTrajColl &fname_traj_coll, OptionsSolveDynamic options, OptionsWakeSleep_RBM_CD options_wake_sleep);
+        void solve_one_step_rbm_cd_params_without_committ(int i_opt_step, int timepoint_start_SIP, int no_timesteps_SIP, int timepoint_start_WS, int no_timesteps_WS, int timepoint_start_A, int no_timesteps_A, double dt, int no_cd_steps, FNameTrajColl &fname_traj_coll, OptionsSolveDynamic options, OptionsWakeSleep_RBM_CD options_wake_sleep);
+        
+        // ***************
+        // MARK: - RBM CD obs
+        // ***************
+        
+        void solve_one_step_rbm_cd_obs(int i_opt_step, int timepoint_start_SIP, int no_timesteps_SIP, int timepoint_start_WS, int no_timesteps_WS, int timepoint_start_A, int no_timesteps_A, double dt, int no_cd_steps, FNameTrajColl &fname_traj_coll, OptionsSolveDynamic options, OptionsWakeSleep_RBM_CD options_wake_sleep);
+        void solve_one_step_rbm_cd_obs_without_committ(int i_opt_step, int timepoint_start_SIP, int no_timesteps_SIP, int timepoint_start_WS, int no_timesteps_WS, int timepoint_start_A, int no_timesteps_A, double dt, int no_cd_steps, FNameTrajColl &fname_traj_coll, OptionsSolveDynamic options, OptionsWakeSleep_RBM_CD options_wake_sleep);
+        
+        // ***************
+        // MARK: - 1D fully visible lattice
+        // ***************
         
         void solve_one_step_1d_fully_visible(int i_opt_step, int timepoint_start_SIP, int no_timesteps_SIP, int timepoint_start_WS, int no_timesteps_WS, int timepoint_start_A, int no_timesteps_A, double dt, int no_cd_steps, FNameTrajColl &fname_traj_coll, OptionsSolveDynamic options, OptionsWakeSleep_1DFV_CD options_wake_sleep);
         void solve_one_step_1d_fully_visible_without_committ(int i_opt_step, int timepoint_start_SIP, int no_timesteps_SIP, int timepoint_start_WS, int no_timesteps_WS, int timepoint_start_A, int no_timesteps_A, double dt, int no_cd_steps, FNameTrajColl &fname_traj_coll, OptionsSolveDynamic options, OptionsWakeSleep_1DFV_CD options_wake_sleep);
-
+        
+        // ***************
+        // MARK: - RBM CD Centered Hom
+        // ***************
+        
         void solve_one_step_rbm_cd_centered_hom(int i_opt_step, int timepoint_start_SIP, int no_timesteps_SIP, int timepoint_start_WS, int no_timesteps_WS, int timepoint_start_A, int no_timesteps_A, double dt, int no_cd_steps, FNameTrajColl &fname_traj_coll, OptionsSolveDynamic options, OptionsWakeSleep_RBM_CD options_wake_sleep);
         void solve_one_step_rbm_cd_centered_hom_without_committ(int i_opt_step, int timepoint_start_SIP, int no_timesteps_SIP, int timepoint_start_WS, int no_timesteps_WS, int timepoint_start_A, int no_timesteps_A, double dt, int no_cd_steps, FNameTrajColl &fname_traj_coll, OptionsSolveDynamic options, OptionsWakeSleep_RBM_CD options_wake_sleep);
-        
-        void committ_step(const std::vector<std::shared_ptr<IxnParamTraj>> &ixn_params, int i_opt_step, OptionsSolveDynamic options);
     };
     
 };

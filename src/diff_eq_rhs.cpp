@@ -80,6 +80,96 @@ namespace dblz {
     };
 
     // ***************
+    // MARK: - Domain1DObs
+    // ***************
+    
+    Domain1DObs::Domain1DObs(int layer, Sptr species, double delta, double zero) : Domain1D(delta,zero) {
+        _layer = layer;
+        _species = species;
+        
+        set_no_timesteps(0);
+    };
+    Domain1DObs::Domain1DObs(const Domain1DObs& other) : Domain1D(other) {
+        _copy(other);
+    };
+    Domain1DObs::Domain1DObs(Domain1DObs&& other) : Domain1D(std::move(other)) {
+        _move(other);
+    };
+    Domain1DObs& Domain1DObs::operator=(const Domain1DObs& other) {
+        if (this != &other)
+        {
+            _clean_up();
+            Dimension1D::operator=(other);
+            _copy(other);
+        };
+        return *this;
+    };
+    Domain1DObs& Domain1DObs::operator=(Domain1DObs&& other) {
+        if (this != &other)
+        {
+            _clean_up();
+            Dimension1D::operator=(std::move(other));
+            _move(other);
+        };
+        return *this;
+    };
+    Domain1DObs::~Domain1DObs() {
+        _clean_up();
+    };
+    void Domain1DObs::_copy(const Domain1DObs& other)
+    {
+        _layer = other._layer;
+        _species = other._species;
+        _no_timesteps = other._no_timesteps;
+        _no_timepoints = other._no_timepoints;
+        _vals = other._vals;
+    };
+    void Domain1DObs::_move(Domain1DObs& other)
+    {
+        _layer = other._layer;
+        _species = other._species;
+        _no_timesteps = other._no_timesteps;
+        _no_timepoints = other._no_timepoints;
+        _vals = other._vals;
+        
+        other._layer = 0;
+        other._species = nullptr;
+        other._no_timepoints = 0;
+        other._no_timesteps = 0;
+        other._vals.clear();
+    };
+    void Domain1DObs::_clean_up() {
+    };
+    
+    void Domain1DObs::set_no_timesteps(int no_timesteps) {
+        _no_timesteps = no_timesteps;
+        _no_timepoints = no_timesteps+1;
+        while (_vals.size() < _no_timepoints) {
+            _vals.push_back(0.0);
+        };
+        while (_vals.size() > _no_timepoints) {
+            _vals.pop_back();
+        };
+    };
+    int Domain1DObs::get_no_timesteps() const {
+        return _no_timesteps;
+    };
+    
+    int Domain1DObs::get_layer() const {
+        return _layer;
+    };
+    Sptr Domain1DObs::get_species() const {
+        return _species;
+    };
+    
+    void Domain1DObs::set_val_at_timepoint(int timepoint, double val) {
+        _vals[timepoint] = val;
+    };
+    double Domain1DObs::get_val_at_timepoint(int timepoint) const {
+        return _vals.at(timepoint);
+    };
+    
+    // ***************
     // MARK: - Domain1DCenter
     // ***************
     
@@ -203,6 +293,14 @@ namespace dblz {
         };
         _shared_constructor(name, parent_ixn_param_traj, domain_base, lr);
     };
+    DiffEqRHS::DiffEqRHS(std::string name, ITptr parent_ixn_param_traj, std::vector<Domain1DObs*> domain, double lr) : q3c1::Grid(std::vector<q3c1::Dimension1D*>(domain.begin(),domain.end())) {
+        _domain_obs = domain;
+        std::vector<Domain1D*> domain_base;
+        for (auto dom: domain) {
+            domain_base.push_back(dom);
+        };
+        _shared_constructor(name, parent_ixn_param_traj, domain_base, lr);
+    };
 	void DiffEqRHS::_shared_constructor(std::string name, ITptr parent_ixn_param_traj, std::vector<Domain1D*> domain, double lr) {
 		_name = name;
 		_domain = domain;
@@ -299,7 +397,8 @@ namespace dblz {
 		_domain = other._domain;
         _domain_param = other._domain_param;
         _domain_center = other._domain_center;
-		_parent_ixn_param_traj = other._parent_ixn_param_traj;
+        _domain_obs = other._domain_obs;
+        _parent_ixn_param_traj = other._parent_ixn_param_traj;
 		_updates = other._updates;
         _abscissas = other._abscissas;
         _lr = other._lr;
@@ -339,6 +438,7 @@ namespace dblz {
 		_domain = other._domain;
         _domain_param = other._domain_param;
         _domain_center = other._domain_center;
+        _domain_obs = other._domain_obs;
 		_parent_ixn_param_traj = other._parent_ixn_param_traj;
 		_updates = other._updates;
         _abscissas = other._abscissas;
@@ -360,6 +460,7 @@ namespace dblz {
 		other._domain.clear();
         other._domain_param.clear();
         other._domain_center.clear();
+        other._domain_obs.clear();
 		other._parent_ixn_param_traj = nullptr;
 		other._updates.clear();
         other._abscissas.clear();
@@ -461,6 +562,9 @@ namespace dblz {
     };
     const std::vector<Domain1DCenter*>& DiffEqRHS::get_domain_center() const {
         return _domain_center;
+    };
+    const std::vector<Domain1DObs*>& DiffEqRHS::get_domain_obs() const {
+        return _domain_obs;
     };
 
     void DiffEqRHS::_form_abscissas(int timepoint) const {

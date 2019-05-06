@@ -1089,10 +1089,10 @@ namespace dblz {
     // MARK: - Reap moments
     // ***************
     
-    void LatticeCenteredHom::reap_moments_and_slide_centers(double sliding_factor) {
+    void LatticeCenteredHom::reap_ixn_moment_diffs_and_slide_centers(double sliding_factor) {
         
         if (!_conn_mult) {
-            std::cerr << ">>> Error: LatticeCenteredHom::reap_moments_and_slide_centers <<< connection multiplicity must be specified!" << std::endl;
+            std::cerr << ">>> Error: LatticeCenteredHom::reap_ixn_moment_diffs_and_slide_centers <<< connection multiplicity must be specified!" << std::endl;
             exit(EXIT_FAILURE);
         };
         

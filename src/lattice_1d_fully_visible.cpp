@@ -731,7 +731,7 @@ namespace dblz {
     // MARK: - Reap moments
     // ***************
     
-    void Lattice1DFullyVisible::reap_moments() {
+    void Lattice1DFullyVisible::reap_ixn_moment_diffs() {
         
         // O2 ixns
         Sptr sp1, sp2, sp3;

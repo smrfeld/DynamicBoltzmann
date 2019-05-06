@@ -103,7 +103,7 @@ namespace dblz {
         _latt->wake_sleep_loop_bm_pcd(i_opt_step, no_mean_field_updates, no_gibbs_sampling_steps, fnames, options_wake_sleep);
         
         // Reap the moments
-        _latt->reap_moments();
+        _latt->reap_ixn_moment_diffs();
 
         if (options.verbose_moment) {
             for (auto &ixn_param: _latt->get_all_ixn_params()) {
@@ -185,7 +185,7 @@ namespace dblz {
         _latt->wake_sleep_loop_rbm_cd(i_opt_step, no_cd_steps, fnames, options_wake_sleep);
         
         // Reap the moments
-        _latt->reap_moments();
+        _latt->reap_ixn_moment_diffs();
 
         if (options.verbose_moment) {
             for (auto &ixn_param: _latt->get_all_ixn_params()) {
@@ -267,7 +267,7 @@ namespace dblz {
         _latt1dfv->wake_sleep_loop_cd(i_opt_step, no_cd_steps, fnames, options_wake_sleep);
         
         // Reap the moments
-        _latt1dfv->reap_moments();
+        _latt1dfv->reap_ixn_moment_diffs();
 
         if (options.verbose_moment) {
             for (auto &ixn_param: _latt1dfv->get_all_ixn_params()) {
@@ -349,7 +349,7 @@ namespace dblz {
         _lattch->wake_sleep_loop_rbm_cd(i_opt_step, no_cd_steps, fnames, options_wake_sleep);
         
         // Reap the moments
-        _lattch->reap_moments_and_slide_centers(options.sliding_factor);
+        _lattch->reap_ixn_moment_diffs_and_slide_centers(options.sliding_factor);
         
         if (options.verbose_moment) {
             for (auto &ixn_param: _lattch->get_all_ixn_params()) {

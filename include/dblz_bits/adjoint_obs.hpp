@@ -179,6 +179,12 @@ namespace dblz {
 		~AdjointObs();
         
         // ***************
+        // MARK: - Print diff eq
+        // ***************
+        
+        void print_validate_diff_eq() const;
+        
+        // ***************
         // MARK: - Get cov terms
         // ***************
         

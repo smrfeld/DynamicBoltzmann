@@ -83,11 +83,12 @@ namespace dblz {
     // MARK: - Domain1DObs
     // ***************
     
-    Domain1DObs::Domain1DObs(int layer, Sptr species, double delta, double zero) : Domain1D(delta,zero) {
+    Domain1DObs::Domain1DObs(int layer, Sptr species, double val_at_time_zero, double delta, double zero) : Domain1D(delta,zero) {
         _layer = layer;
         _species = species;
         
         set_no_timesteps(0);
+        _vals[0] = val_at_time_zero;
     };
     Domain1DObs::Domain1DObs(const Domain1DObs& other) : Domain1D(other) {
         _copy(other);
@@ -309,8 +310,8 @@ namespace dblz {
         _abscissas = std::vector<double>(_no_dims,0.0);
         _lr = lr;
         
-		if (_no_dims == 0 || _no_dims > 3) {
-			std::cerr << ">>> Error: DiffEqRHS::DiffEqRHS <<< Only dims 1,2,3 are supported" << std::endl;
+		if (_no_dims == 0 || _no_dims > 6) {
+			std::cerr << ">>> Error: DiffEqRHS::DiffEqRHS <<< Only dims 1,2,3,4,5,6 are supported" << std::endl;
 			exit(EXIT_FAILURE);
 		};
         
@@ -318,39 +319,63 @@ namespace dblz {
         _no_coeffs = pow(2,_no_dims);
         
         // Coefficient order
+        std::vector<q3c1::DimType> dim_types_possible({q3c1::DimType::VAL,q3c1::DimType::DERIV});
         if (_no_dims == 1) {
-            // Val
-            _coeff_order.push_back({q3c1::DimType::VAL});
-            // Deriv
-            _coeff_order.push_back({q3c1::DimType::DERIV});
+            for (auto const &dim0: dim_types_possible) {
+                _coeff_order.push_back({dim0});
+            };
         } else if (_no_dims == 2) {
-            // Val-val
-            _coeff_order.push_back({q3c1::DimType::VAL,q3c1::DimType::VAL});
-            // Val-Deriv
-            _coeff_order.push_back({q3c1::DimType::VAL,q3c1::DimType::DERIV});
-            // Deriv-Val
-            _coeff_order.push_back({q3c1::DimType::DERIV,q3c1::DimType::VAL});
-            // Deriv-Deriv
-            _coeff_order.push_back({q3c1::DimType::DERIV,q3c1::DimType::DERIV});
+            for (auto const &dim0: dim_types_possible) {
+                for (auto const &dim1: dim_types_possible) {
+                    _coeff_order.push_back({dim0,dim1});
+                };
+            };
         } else if (_no_dims == 3) {
-            // Val-val-val
-            _coeff_order.push_back({q3c1::DimType::VAL,q3c1::DimType::VAL,q3c1::DimType::VAL});
-            // Val-Val-Deriv
-            _coeff_order.push_back({q3c1::DimType::VAL,q3c1::DimType::VAL,q3c1::DimType::DERIV});
-            // Val-Deriv-Val
-            _coeff_order.push_back({q3c1::DimType::VAL,q3c1::DimType::DERIV,q3c1::DimType::VAL});
-            // Deriv-Val-Val
-            _coeff_order.push_back({q3c1::DimType::DERIV,q3c1::DimType::VAL,q3c1::DimType::VAL});
-            // Val-deriv-deriv
-            _coeff_order.push_back({q3c1::DimType::VAL,q3c1::DimType::DERIV,q3c1::DimType::DERIV});
-            // Deriv-Val-Deriv
-            _coeff_order.push_back({q3c1::DimType::DERIV,q3c1::DimType::VAL,q3c1::DimType::DERIV});
-            // Deriv-Deriv-Val
-            _coeff_order.push_back({q3c1::DimType::DERIV,q3c1::DimType::DERIV,q3c1::DimType::VAL});
-            // Deriv-Deriv-Deriv
-            _coeff_order.push_back({q3c1::DimType::DERIV,q3c1::DimType::DERIV,q3c1::DimType::DERIV});
+            for (auto const &dim0: dim_types_possible) {
+                for (auto const &dim1: dim_types_possible) {
+                    for (auto const &dim2: dim_types_possible) {
+                        _coeff_order.push_back({dim0,dim1,dim2});
+                    };
+                };
+            };
+        } else if (_no_dims == 4) {
+            for (auto const &dim0: dim_types_possible) {
+                for (auto const &dim1: dim_types_possible) {
+                    for (auto const &dim2: dim_types_possible) {
+                        for (auto const &dim3: dim_types_possible) {
+                            _coeff_order.push_back({dim0,dim1,dim2,dim3});
+                        };
+                    };
+                };
+            };
+        } else if (_no_dims == 5) {
+            for (auto const &dim0: dim_types_possible) {
+                for (auto const &dim1: dim_types_possible) {
+                    for (auto const &dim2: dim_types_possible) {
+                        for (auto const &dim3: dim_types_possible) {
+                            for (auto const &dim4: dim_types_possible) {
+                                _coeff_order.push_back({dim0,dim1,dim2,dim3,dim4});
+                            };
+                        };
+                    };
+                };
+            };
+        } else if (_no_dims == 6) {
+            for (auto const &dim0: dim_types_possible) {
+                for (auto const &dim1: dim_types_possible) {
+                    for (auto const &dim2: dim_types_possible) {
+                        for (auto const &dim3: dim_types_possible) {
+                            for (auto const &dim4: dim_types_possible) {
+                                for (auto const &dim5: dim_types_possible) {
+                                    _coeff_order.push_back({dim0,dim1,dim2,dim3,dim4,dim5});
+                                };
+                            };
+                        };
+                    };
+                };
+            };
         };
-        
+
         // Nullptr for adams/nesterovs
         _nesterov_y_s = nullptr;
         _nesterov_y_sp1 = nullptr;

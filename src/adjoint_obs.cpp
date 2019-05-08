@@ -6,6 +6,7 @@
 #include "../include/dblz_bits/general.hpp"
 #include "../include/dblz_bits/diff_eq_rhs.hpp"
 #include "../include/dblz_bits/moment_diff.hpp"
+#include "../include/dblz_bits/species.hpp"
 
 #include <iostream>
 #include <fstream>
@@ -65,6 +66,17 @@ namespace dblz {
         other._terms.clear();
     };
 
+    // ***************
+    // MARK: - Print diff eq
+    // ***************
+    
+    void AdjointObs::print_validate_diff_eq() const {
+        std::cout << "Adjoint to: " << get_ixn_param_traj()->get_name() << std::endl;
+        for (auto term: _terms) {
+            std::cout << "   (Common term: " << term.first->get_layer() << " " << term.first->get_species()->get_name() << ") * (Cov term: " << term.second->get_layer_domain() << " " << term.second->get_species_domain()->get_name() << ")" << std::endl;
+        };
+    };
+    
     // ***************
     // MARK: - Get cov terms
     // ***************
@@ -215,8 +227,11 @@ namespace dblz {
             auto adjoint = ixn->get_adjoint();
             auto diff_eq_rhs = ixn->get_diff_eq_rhs();
             
+            // std::cout << "ADJOINT OBS SOLVE DIFF EQS: timepoint: " << timepoint << " " << ixn->get_name() << " adjoint * deriv wrt " << _idx_diff_eq << std::endl;
+            
             _vals[timepoint] += ixn->get_adjoint()->get_val_at_timepoint(timepoint) * ixn->get_diff_eq_rhs()->get_deriv_wrt_nu_at_timepoint(timepoint, _idx_diff_eq);
         };
+        // std::cout << "ADJOINT OBS SOLVE DIFF EQS: timepoint: " << timepoint << " " << _vals.at(timepoint) << std::endl;
     };
     double AdjointObsCommonTerm::get_val_at_timepoint(int timepoint) const {
         return _vals.at(timepoint);

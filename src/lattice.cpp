@@ -1279,6 +1279,8 @@ namespace dblz {
                     moment->set_moment(MCType::AWAKE, reap_moment(MCType::AWAKE, layer, sp));
                 };
                 moment->set_moment(MCType::ASLEEP, reap_moment(MCType::ASLEEP, layer, sp));
+                
+                // std::cout << "REAP MOMENTS: " << sp_pr.second->get_name() << " " << moment->get_moment(MCType::AWAKE) << " " << moment->get_moment(MCType::ASLEEP) << std::endl;
             };
         };
     };

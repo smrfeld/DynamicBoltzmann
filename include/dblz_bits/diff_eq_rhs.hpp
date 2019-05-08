@@ -103,7 +103,7 @@ namespace dblz {
          Constructor
          ********************/
         
-        Domain1DObs(int layer, Sptr species, double delta, double zero);
+        Domain1DObs(int layer, Sptr species, double val_at_time_zero, double delta, double zero);
         Domain1DObs(const Domain1DObs& other);
         Domain1DObs& operator=(const Domain1DObs& other);
         Domain1DObs(Domain1DObs&& other);

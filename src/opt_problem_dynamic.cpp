@@ -12,6 +12,7 @@
 #include "../include/dblz_bits/general.hpp"
 #include "../include/dblz_bits/adjoint_obs.hpp"
 #include "../include/dblz_bits/diff_eq_rhs.hpp"
+#include "../include/dblz_bits/species.hpp"
 
 #include <random>
 #include <algorithm>
@@ -592,7 +593,7 @@ namespace dblz {
         std::shared_ptr<Lattice> latt;
         Iptr cov_ixn;
         double term_1, term_2, cross_term, domain_val;
-        for (auto timepoint=timepoint_start_SIP; timepoint<timepoint_start_SIP+no_timesteps_SIP; timepoint++) {
+        for (auto timepoint=timepoint_start_SIP; timepoint<=timepoint_start_SIP+no_timesteps_SIP; timepoint++) {
             
             latt = _latt_traj->get_lattice_at_timepoint(timepoint);
             
@@ -600,7 +601,9 @@ namespace dblz {
              Solve diff eq for F
              *****/
             
-            solve_ixn_param_trajs_step(_latt_traj->get_all_ixn_param_trajs(), dt, timepoint);
+            if (timepoint != timepoint_start_SIP+no_timesteps_SIP) { // except at the very end
+                solve_ixn_param_trajs_step(_latt_traj->get_all_ixn_param_trajs(), dt, timepoint);
+            };
             
             /*****
              Wake/asleep loop
@@ -625,23 +628,48 @@ namespace dblz {
                     cov_term->set_val_1_at_timepoint(timepoint, cross_term);
                     cov_term->set_val_2_at_timepoint(timepoint, term_1);
                     cov_term->set_val_3_at_timepoint(timepoint, term_2);
+                    
+                    // std::cout << "COV TERMS: timepoint: " << timepoint << " cov_term: " << cov_term->get_ixn_param_traj()->get_name() << " " << cov_term->get_layer_domain() << " " << cov_term->get_species_domain()->get_name() << ": " << cross_term << " - " << term_1 << " * " << term_2 << std::endl;
                 };
                 
                 // Get the new moments for the diff eq RHS
                 for (auto domain_obs: all_domains) {
                     domain_val = latt->reap_moment(MCType::ASLEEP, domain_obs->get_layer(), domain_obs->get_species());
                     domain_obs->set_val_at_timepoint(timepoint, domain_val);
+                    
+                    // std::cout << "DOMAIN: timepoint: " << timepoint << " domain: " << domain_obs->get_layer() << " " << domain_obs->get_species()->get_name() << ": " << domain_val << std::endl;
                 };
             };
         };
         
+        // Print both
+        if (options.verbose) {
+            for (auto ixn_param_traj: _latt_traj->get_all_ixn_param_trajs()) {
+                std::cout << ixn_param_traj->get_name() << " [" << timepoint_start_WS << "," << timepoint_start_WS+no_timesteps_WS << "]" << std::endl;
+                ixn_param_traj->print_val_traj(timepoint_start_WS, no_timesteps_WS);
+                ixn_param_traj->print_moment_diff_traj(timepoint_start_WS, no_timesteps_WS);
+            };
+        };
+
+        // Print ixn traj
+        /*
+        if (options.verbose) {
+            for (auto ixn_param_traj: _latt_traj->get_all_ixn_param_trajs()) {
+                std::cout << ixn_param_traj->get_name() << " ixns [" << timepoint_start_SIP << "," << timepoint_start_SIP+no_timesteps_SIP << "]" << std::endl;
+                ixn_param_traj->print_val_traj(timepoint_start_SIP, no_timesteps_SIP);
+            };
+        };
+        */
+        
         // Print moment traj
+        /*
         if (options.verbose) {
             for (auto ixn_param_traj: _latt_traj->get_all_ixn_param_trajs()) {
                 std::cout << ixn_param_traj->get_name() << " moments [" << timepoint_start_WS << "," << timepoint_start_WS+no_timesteps_WS << "]" << std::endl;
                 ixn_param_traj->print_moment_diff_traj(timepoint_start_WS, no_timesteps_WS);
             };
         };
+        */
         
         clock_t t1 = clock();
 
@@ -657,6 +685,7 @@ namespace dblz {
         for (auto timepoint=timepoint_start_A + no_timesteps_A; timepoint>timepoint_start_A; timepoint--) {
             // Evaluate the common terms
             for (auto common_term: all_common_terms) {
+                // std::cout << "timepoint: " << timepoint << " common term: " << common_term->get_layer() << " " << common_term->get_species()->get_name() << std::endl;
                 common_term->calculate_val_at_timepoint(timepoint);
             };
             

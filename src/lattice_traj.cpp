@@ -131,17 +131,20 @@ namespace dblz {
                 // Does not exist; need to create
                 _lattices[timepoint] = std::make_shared<Lattice>(*lptr);
                 
+                // Clear existing ixns
+                _lattices.at(timepoint)->clear_all_biases_and_ixns();
+                
                 // Set correct ixns
                 for (auto pr1: _bias_dict) {
                     for (auto pr2: pr1.second) {
-                        _lattices[timepoint]->set_bias_of_layer(pr1.first, pr2.first, pr2.second->get_ixn_param_at_timepoint(timepoint));
+                        _lattices.at(timepoint)->set_bias_of_layer(pr1.first, pr2.first, pr2.second->get_ixn_param_at_timepoint(timepoint));
                     };
                 };
                 for (auto pr1: _o2_ixn_dict) {
                     for (auto pr2: pr1.second) {
                         for (auto pr3: pr2.second) {
                             for (auto pr4: pr3.second) {
-                                _lattices[timepoint]->set_ixn_between_layers(pr1.first, pr2.first, pr3.first, pr4.first, pr4.second->get_ixn_param_at_timepoint(timepoint));
+                                _lattices.at(timepoint)->set_ixn_between_layers(pr1.first, pr2.first, pr3.first, pr4.first, pr4.second->get_ixn_param_at_timepoint(timepoint));
                             };
                         };
                     };

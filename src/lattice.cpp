@@ -394,6 +394,13 @@ namespace dblz {
         _add_to_all_ixns_vec(ixn);
     };
     
+    // Clear biases and ixns
+    void Lattice::clear_all_biases_and_ixns() {
+        _bias_dict.clear();
+        _o2_ixn_dict.clear();
+        _all_ixns.clear();
+    };
+    
     // Set multiplier
     void Lattice::set_multiplier_between_layers(int from_layer, int to_layer, double multiplier) {
         if (to_layer != from_layer+1 && to_layer != from_layer-1) {
@@ -1067,6 +1074,9 @@ namespace dblz {
     // ***************
     
     double Lattice::reap_moment_sample(MCType type, int i_chain, int layer, Sptr species) const {
+        if (species->get_name() == "X") {
+            std::cout << "REAP SAMPLE X i_chain: " << i_chain << " val: " << arma::accu(_mc_chains.at(type).at(i_chain).at(layer).at(species)) << std::endl;
+        };
         return arma::accu(_mc_chains.at(type).at(i_chain).at(layer).at(species));
     };
     double Lattice::reap_moment_sample(MCType type, int i_chain, int layer_lower, Sptr species_lower, int layer_upper, Sptr species_upper) const {
@@ -1246,6 +1256,10 @@ namespace dblz {
                 moment->reset_moment(MCType::AWAKE);
             };
             moment->reset_moment(MCType::ASLEEP);
+            
+            if (ixn->get_name() == "hX") {
+                std::cout << "RESET hX: " << ixn << " " << moment->get_moment(MCType::ASLEEP) << std::endl;
+            };
         };
         
         // Reap ixns
@@ -1275,6 +1289,10 @@ namespace dblz {
                             moment->increment_moment(MCType::AWAKE, reap_moment(MCType::AWAKE, layer1, sp1, layer2, sp2));
                         };
                         moment->increment_moment(MCType::ASLEEP, reap_moment(MCType::ASLEEP, layer1, sp1, layer2, sp2));
+                        
+                        if (sp_pr_2.second->get_name() == "hX") {
+                            std::cout << "INCREMENTED hX: " << sp_pr_2.second << " " << moment->get_moment(MCType::ASLEEP) << std::endl;
+                        };
                     };
                 };
             };
@@ -1295,6 +1313,10 @@ namespace dblz {
                     moment->increment_moment(MCType::AWAKE, reap_moment(MCType::AWAKE, layer, sp));
                 };
                 moment->increment_moment(MCType::ASLEEP, reap_moment(MCType::ASLEEP, layer, sp));
+                
+                if (sp_pr.second->get_name() == "hX") {
+                    std::cout << "INCREMENTED hX: " << sp_pr.second << " " << moment->get_moment(MCType::ASLEEP) << std::endl;
+                };
             };
         };
     };
@@ -1421,6 +1443,21 @@ namespace dblz {
     };
     
     void Lattice::wake_sleep_loop_rbm_cd(int i_opt_step, int no_cd_steps, std::vector<FName> &fnames, OptionsWakeSleep_RBM_CD options) {
+        
+        for (auto pr1: _bias_dict) {
+            for (auto pr2: pr1.second) {
+                std::cout << "     " << pr2.second->get_name() << " " << pr2.second->get_val() << std::endl;
+            };
+        };
+        for (auto pr1: _o2_ixn_dict) {
+            for (auto pr2: pr1.second) {
+                for (auto pr3: pr2.second) {
+                    for (auto pr4: pr3.second) {
+                        std::cout << "     " << pr4.second->get_name() << " " << pr4.second->get_val() << std::endl;
+                    };
+                };
+            };
+        };
         
         // AWAKE PHASE
         

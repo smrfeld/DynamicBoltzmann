@@ -400,6 +400,7 @@ namespace dblz {
         std::vector<std::vector<FName>> fname_coll = fname_traj_coll.get_random_subset_fnames(no_awake_chains, timepoint_start_WS_use, no_timesteps_WS_use);
         
         for (auto timepoint=timepoint_start_WS_use; timepoint<=timepoint_start_WS_use+no_timesteps_WS_use; timepoint++) {
+            std::cout << "SAMPLING AT TIME: " << timepoint << std::endl;
             latt_traj->get_lattice_at_timepoint(timepoint)->wake_sleep_loop_rbm_cd(i_opt_step, no_cd_steps, fname_coll.at(timepoint-timepoint_start_WS_use), options_wake_sleep);
         };
         
@@ -410,7 +411,6 @@ namespace dblz {
         // At & afer timepoint_start_A: slide means!
         // Never slide at timepoint_start_SIP (initial condition)
         
-        // NORMAL
         for (auto timepoint=timepoint_start_WS_use; timepoint<=timepoint_start_WS_use+no_timesteps_WS_use; timepoint++) {
             latt_traj->get_lattice_at_timepoint(timepoint)->reap_ixn_moment_diffs();
         };
@@ -420,10 +420,8 @@ namespace dblz {
             for (auto ixn_param_traj: latt_traj->get_all_ixn_param_trajs()) {
                 
                 // Print moment traj
-                if (ixn_param_traj->get_type() == IxnParamType::W || ixn_param_traj->get_type() == IxnParamType::X) {
-                    std::cout << ixn_param_traj->get_name() << " moments [" << timepoint_start_WS_use << "," << timepoint_start_WS_use+no_timesteps_WS_use << "]" << std::endl;
-                    ixn_param_traj->print_moment_diff_traj(timepoint_start_WS_use, no_timesteps_WS_use);
-                };
+                std::cout << ixn_param_traj->get_name() << " moments [" << timepoint_start_WS_use << "," << timepoint_start_WS_use+no_timesteps_WS_use << "]" << std::endl;
+                ixn_param_traj->print_moment_diff_traj(timepoint_start_WS_use, no_timesteps_WS_use);
             };
         };
         
@@ -604,10 +602,8 @@ namespace dblz {
             for (auto ixn_param_traj: latt_traj->get_all_ixn_param_trajs()) {
                 
                 // Print moment traj
-                if (ixn_param_traj->get_type() == IxnParamType::W || ixn_param_traj->get_type() == IxnParamType::X) {
-                    std::cout << ixn_param_traj->get_name() << " moments [" << timepoint_start_WS_use << "," << timepoint_start_WS_use+no_timesteps_WS_use << "]" << std::endl;
-                    ixn_param_traj->print_moment_diff_traj(timepoint_start_WS_use, no_timesteps_WS_use);
-                };
+                std::cout << ixn_param_traj->get_name() << " moments [" << timepoint_start_WS_use << "," << timepoint_start_WS_use+no_timesteps_WS_use << "]" << std::endl;
+                ixn_param_traj->print_moment_diff_traj(timepoint_start_WS_use, no_timesteps_WS_use);
             };
         };
         

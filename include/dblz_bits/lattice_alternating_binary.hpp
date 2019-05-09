@@ -20,7 +20,7 @@ namespace dblz {
      Sampling Options
      ****************************************/
     
-    struct OptionsWakeSleep_BM_PCD {
+    struct OptionsWakeSleep_BM_PCD_AB {
         
         // Verbosity
         bool verbose_timing = true;
@@ -46,7 +46,7 @@ namespace dblz {
         bool gibbs_sample_awake_phase_hidden_binary = true;
     };
     
-    struct OptionsWakeSleep_RBM_CD {
+    struct OptionsWakeSleep_RBM_CD_AB {
       
         // Verbosity
         bool verbose_timing = true;
@@ -54,13 +54,13 @@ namespace dblz {
     };
 
 	/****************************************
-	Lattice
+	LatticeAlternatingBinary
 	****************************************/
 
     typedef std::map<Sptr,arma::vec> layer_occ;
     typedef std::map<int, layer_occ> layers_map;
 
-    class Lattice
+    class LatticeAlternatingBinary
 	{
 	private:
 
@@ -165,8 +165,8 @@ namespace dblz {
         // ***************
         
 		void _clean_up();
-		void _move(Lattice& other);
-		void _copy(const Lattice& other);
+		void _move(LatticeAlternatingBinary& other);
+		void _copy(const LatticeAlternatingBinary& other);
 
 	public:
 
@@ -178,12 +178,12 @@ namespace dblz {
         // MARK: Constructor
         // ***************
         
-        Lattice(int no_dims, int box_length, std::vector<Sptr> species_visible);
-        Lattice(const Lattice& other);
-		Lattice(Lattice&& other);
-		Lattice& operator=(const Lattice& other);
-		Lattice& operator=(Lattice&& other);
-		~Lattice();
+        LatticeAlternatingBinary(int no_dims, int box_length, std::vector<Sptr> species_visible);
+        LatticeAlternatingBinary(const LatticeAlternatingBinary& other);
+		LatticeAlternatingBinary(LatticeAlternatingBinary&& other);
+		LatticeAlternatingBinary& operator=(const LatticeAlternatingBinary& other);
+		LatticeAlternatingBinary& operator=(LatticeAlternatingBinary&& other);
+		~LatticeAlternatingBinary();
 
         // ***************
         // MARK: Getters
@@ -320,11 +320,22 @@ namespace dblz {
         double reap_moment_adjoint_obs_cov_cross_term(Iptr ixn, int layer_domain, Sptr species_domain) const;
         
         // ***************
+        // MARK: - Reap adjoint obs cov term moments
+        // ***************
+        
+        // vi * hj or vi * vi or hj * hj
+        /*
+        std::vector<double> reap_adjoint_obs_cov_term_biases(int layer1, Sptr species1, int layer2, Sptr species2) const;
+        // (connected vi * hj) * hk
+        std::vector<double> reap_adjoint_obs_cov_term_weights(int layer_vis, Sptr species_vis, int layer_hidden, Sptr species_hidden, int layer, Sptr species) const;
+         */
+        
+        // ***************
         // MARK: - Wake/sleep
         // ***************
         
-        void wake_sleep_loop_bm_pcd(int i_opt_step, int no_mean_field_updates, int no_gibbs_sampling_steps, std::vector<FName> &fnames, OptionsWakeSleep_BM_PCD options);
-        void wake_sleep_loop_rbm_cd(int i_opt_step, int no_cd_steps, std::vector<FName> &fnames, OptionsWakeSleep_RBM_CD options);
+        void wake_sleep_loop_bm_pcd(int i_opt_step, int no_mean_field_updates, int no_gibbs_sampling_steps, std::vector<FName> &fnames, OptionsWakeSleep_BM_PCD_AB options);
+        void wake_sleep_loop_rbm_cd(int i_opt_step, int no_cd_steps, std::vector<FName> &fnames, OptionsWakeSleep_RBM_CD_AB options);
         
         // ***************
         // MARK: - Counts

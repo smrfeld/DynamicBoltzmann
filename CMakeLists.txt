@@ -24,6 +24,7 @@ add_library(bmla SHARED
 	src/lattice_1d_fully_visible.cpp
 	src/lattice_centered_hom.cpp
 	src/lattice.cpp
+	src/lattice_alternating_binary.cpp
 	src/moment_diff.cpp
 	src/opt_problem_static.cpp
 	src/species.cpp
@@ -34,6 +35,7 @@ add_library(bmla SHARED
 	include/dblz_bits/lattice_1d_fully_visible.hpp
 	include/dblz_bits/lattice_centered_hom.hpp
 	include/dblz_bits/lattice.hpp
+	include/dblz_bits/lattice_alternating_binary.hpp
 	include/dblz_bits/moment_diff.hpp
 	include/dblz_bits/opt_problem_static.hpp
 	include/dblz_bits/species.hpp
@@ -55,7 +57,9 @@ add_library(dblz SHARED
 	src/lattice_traj_1d_fully_visible.cpp
 	src/lattice_centered_hom.cpp
 	src/lattice.cpp
+	src/lattice_alternating_binary.cpp
 	src/lattice_traj.cpp
+	src/lattice_alternating_binary_traj.cpp
 	src/moment_diff.cpp
 	src/opt_problem_dynamic.cpp
 	src/species.cpp
@@ -72,8 +76,10 @@ add_library(dblz SHARED
 	include/dblz_bits/lattice_1d_fully_visible.hpp
 	include/dblz_bits/lattice_traj_1d_fully_visible.hpp
 	include/dblz_bits/lattice.hpp
+	include/dblz_bits/lattice_alternating_binary.hpp
 	include/dblz_bits/lattice_centered_hom.hpp
 	include/dblz_bits/lattice_traj.hpp
+	include/dblz_bits/lattice_alternating_binary_traj.hpp
 	include/dblz_bits/moment_diff.hpp
 	include/dblz_bits/opt_problem_dynamic.hpp
 	include/dblz_bits/species.hpp

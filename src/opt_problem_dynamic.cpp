@@ -400,7 +400,7 @@ namespace dblz {
         std::vector<std::vector<FName>> fname_coll = fname_traj_coll.get_random_subset_fnames(no_awake_chains, timepoint_start_WS_use, no_timesteps_WS_use);
         
         for (auto timepoint=timepoint_start_WS_use; timepoint<=timepoint_start_WS_use+no_timesteps_WS_use; timepoint++) {
-            std::cout << "SAMPLING AT TIME: " << timepoint << std::endl;
+            // std::cout << "SAMPLING AT TIME: " << timepoint << std::endl;
             latt_traj->get_lattice_at_timepoint(timepoint)->wake_sleep_loop_rbm_cd(i_opt_step, no_cd_steps, fname_coll.at(timepoint-timepoint_start_WS_use), options_wake_sleep);
         };
         

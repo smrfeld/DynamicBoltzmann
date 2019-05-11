@@ -5,10 +5,9 @@
 #include "../include/dblz_bits/ixn_param_traj.hpp"
 #include "../include/dblz_bits/lattice_1d_fully_visible.hpp"
 #include "../include/dblz_bits/lattice_traj_1d_fully_visible.hpp"
-#include "../include/dblz_bits/lattice.hpp"
 #include "../include/dblz_bits/lattice_alternating_binary.hpp"
 #include "../include/dblz_bits/lattice_traj.hpp"
-#include "../include/dblz_bits/lattice_alternating_binary_traj.hpp"
+#include "../include/dblz_bits/lattice_traj_alternating_binary.hpp"
 #include "../include/dblz_bits/moment_diff.hpp"
 #include "../include/dblz_bits/fname_traj.hpp"
 #include "../include/dblz_bits/general.hpp"
@@ -495,7 +494,7 @@ namespace dblz {
         };
     };
     
-    void OptProblemDynamic::solve_one_step_rbm_cd_params(std::shared_ptr<LatticeAlternatingBinaryTraj> latt_traj, int i_opt_step, int timepoint_start_SIP, int no_timesteps_SIP, int timepoint_start_WS, int no_timesteps_WS, int timepoint_start_A, int no_timesteps_A, double dt, int no_cd_steps, FNameTrajColl &fname_traj_coll, OptionsSolveDynamic options, OptionsWakeSleep_RBM_CD_AB options_wake_sleep) {
+    void OptProblemDynamic::solve_one_step_rbm_cd_params(std::shared_ptr<LatticeTrajAlternatingBinary> latt_traj, int i_opt_step, int timepoint_start_SIP, int no_timesteps_SIP, int timepoint_start_WS, int no_timesteps_WS, int timepoint_start_A, int no_timesteps_A, double dt, int no_cd_steps, FNameTrajColl &fname_traj_coll, OptionsSolveDynamic options, OptionsWakeSleep_RBM_CD options_wake_sleep) {
         
         solve_one_step_rbm_cd_params_without_committ(latt_traj,i_opt_step,timepoint_start_SIP,no_timesteps_SIP,timepoint_start_WS,no_timesteps_WS,timepoint_start_A,no_timesteps_A,dt,no_cd_steps,fname_traj_coll,options,options_wake_sleep);
         
@@ -503,7 +502,7 @@ namespace dblz {
     };
     
     
-    void OptProblemDynamic::solve_one_step_rbm_cd_params_without_committ(std::shared_ptr<LatticeAlternatingBinaryTraj> latt_traj, int i_opt_step, int timepoint_start_SIP, int no_timesteps_SIP, int timepoint_start_WS, int no_timesteps_WS, int timepoint_start_A, int no_timesteps_A, double dt, int no_cd_steps, FNameTrajColl &fname_traj_coll, OptionsSolveDynamic options, OptionsWakeSleep_RBM_CD_AB options_wake_sleep) {
+    void OptProblemDynamic::solve_one_step_rbm_cd_params_without_committ(std::shared_ptr<LatticeTrajAlternatingBinary> latt_traj, int i_opt_step, int timepoint_start_SIP, int no_timesteps_SIP, int timepoint_start_WS, int no_timesteps_WS, int timepoint_start_A, int no_timesteps_A, double dt, int no_cd_steps, FNameTrajColl &fname_traj_coll, OptionsSolveDynamic options, OptionsWakeSleep_RBM_CD options_wake_sleep) {
         
         if (latt_traj->get_no_markov_chains(MCType::AWAKE) != latt_traj->get_no_markov_chains(MCType::ASLEEP)) {
             std::cerr << ">>> OptProblemDynamic::solve_one_step_rbm_cd_params_without_committ <<< asleep chains must equal awake chains" << std::endl;

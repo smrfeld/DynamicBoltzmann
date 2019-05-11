@@ -30,33 +30,18 @@ namespace dblz {
 	Constructor
 	********************/
 
-    LatticeAlternatingBinary::LatticeAlternatingBinary(int no_dims, int box_length, std::vector<Sptr> species_visible) {
-        
-        if (no_dims != 1 && no_dims != 2 && no_dims != 3) {
-            std::cerr << "ERROR: only dimensions 1,2,3 are supported for LatticeAlternatingBinary." << std::endl;
-            exit(EXIT_FAILURE);
-        };
-        
-        _no_dims = no_dims;
-        _box_length = box_length;
-        _no_layers = 0;
-        
-        // Set no chains
-        set_no_markov_chains(MCType::AWAKE, 1);
-        set_no_markov_chains(MCType::ASLEEP, 1);
-        
-        // Visible layer
-        add_layer(0, _box_length, species_visible);
+    LatticeAlternatingBinary::LatticeAlternatingBinary(int no_dims, int box_length, std::vector<Sptr> species_visible) : Lattice(no_dims, box_length, species_visible) {
     };
-	LatticeAlternatingBinary::LatticeAlternatingBinary(const LatticeAlternatingBinary& other) {
+    LatticeAlternatingBinary::LatticeAlternatingBinary(const LatticeAlternatingBinary& other) : Lattice(other) {
 		_copy(other);
 	};
-	LatticeAlternatingBinary::LatticeAlternatingBinary(LatticeAlternatingBinary&& other) {
+    LatticeAlternatingBinary::LatticeAlternatingBinary(LatticeAlternatingBinary&& other) : Lattice(std::move(other)) {
 		_move(other);
 	};
 	LatticeAlternatingBinary& LatticeAlternatingBinary::operator=(const LatticeAlternatingBinary& other) {
 		if (this != &other) {
 			_clean_up();
+            Lattice::operator=(other);
 			_copy(other);
 		};
 		return *this;
@@ -64,6 +49,7 @@ namespace dblz {
 	LatticeAlternatingBinary& LatticeAlternatingBinary::operator=(LatticeAlternatingBinary&& other) {
 		if (this != &other) {
 			_clean_up();
+            Lattice::operator=(std::move(other));
 			_move(other);
 		};
 		return *this;
@@ -76,448 +62,15 @@ namespace dblz {
         // Nothing...
 	};
 	void LatticeAlternatingBinary::_copy(const LatticeAlternatingBinary& other) {
-		_no_dims = other._no_dims;
-		_box_length = other._box_length;
-        _no_markov_chains = other._no_markov_chains;
-        _no_layers = other._no_layers;
-        
-        _mc_chains = other._mc_chains;
-        _mc_chains_act = other._mc_chains_act;
-        _no_units_per_layer = other._no_units_per_layer;
-        
-        _lookup_1 = other._lookup_1;
-        _lookup_2 = other._lookup_2;
-        _lookup_3 = other._lookup_3;
-        _rlookup = other._rlookup;
-        
-        _species_possible_map = other._species_possible_map;
-        _species_possible_vec = other._species_possible_vec;
-        
-        _adj = other._adj;
-        
-        _all_ixns = other._all_ixns;
-        _bias_dict = other._bias_dict;
-        _o2_ixn_dict = other._o2_ixn_dict;
-        _o2_mults = other._o2_mults;
-        _bias_mults = other._bias_mults;
-        
-        _pst_prop = other._pst_prop;
-        _pst_r = other._pst_r;
-        _pst_sign_of_r = other._pst_sign_of_r;
-        _pst_sign_of_r_new = other._pst_sign_of_r_new;
     };
 	void LatticeAlternatingBinary::_move(LatticeAlternatingBinary& other) {
-        _no_dims = other._no_dims;
-        _box_length = other._box_length;
-        _no_markov_chains = other._no_markov_chains;
-        _no_layers = other._no_layers;
-
-        _mc_chains = other._mc_chains;
-        _mc_chains_act = other._mc_chains_act;
-        _no_units_per_layer = other._no_units_per_layer;
-        
-        _lookup_1 = other._lookup_1;
-        _lookup_2 = other._lookup_2;
-        _lookup_3 = other._lookup_3;
-        _rlookup = other._rlookup;
-        
-        _species_possible_map = other._species_possible_map;
-        _species_possible_vec = other._species_possible_vec;
-        
-        _adj = other._adj;
-        
-        _all_ixns = other._all_ixns;
-        _bias_dict = other._bias_dict;
-        _o2_ixn_dict = other._o2_ixn_dict;
-        _o2_mults = other._o2_mults;
-        _bias_mults = other._bias_mults;
-    
-        _pst_prop = other._pst_prop;
-        _pst_r = other._pst_r;
-        _pst_sign_of_r = other._pst_sign_of_r;
-        _pst_sign_of_r_new = other._pst_sign_of_r_new;
-        
-		// Reset other
-		other._no_dims = 0;
-		other._box_length = 0;
-        other._no_markov_chains.clear();
-        other._no_layers = 0;
-        
-        other._mc_chains.clear();
-        other._mc_chains_act.clear();
-        other._no_units_per_layer.clear();
-        
-		other._lookup_1.clear();
-		other._lookup_2.clear();
-		other._lookup_3.clear();
-        other._rlookup.clear();
-        
-        other._species_possible_map.clear();
-        other._species_possible_vec.clear();
-        
-        other._adj.clear();
-        
-        other._all_ixns.clear();
-        other._bias_dict.clear();
-        other._o2_ixn_dict.clear();
-        other._o2_mults.clear();
-        other._bias_mults.clear();
-        
-        other._pst_prop.clear();
-        other._pst_r.clear();
-        other._pst_sign_of_r.clear();
-        other._pst_sign_of_r_new.clear();
 	};
-    
-    /****************************************
-    PRIVATE METHODS
-     ****************************************/
-
-    // Lookup a site iterator from x,y,z
-    int LatticeAlternatingBinary::_look_up_unit(int layer, int x) const {
-        auto it = _lookup_1.find(layer);
-        if (it != _lookup_1.end()) {
-            auto it2 = it->second.find(x);
-            if (it2 != it->second.end()) {
-                return it2->second;
-            };
-        };
-        
-        std::cerr << ">>> LatticeAlternatingBinary::_look_up_unit <<< could not find layer: " << layer << " x: " << x << std::endl;
-        exit(EXIT_FAILURE);
-    };
-    int LatticeAlternatingBinary::_look_up_unit(int layer, int x, int y) const {
-        auto it = _lookup_2.find(layer);
-        if (it != _lookup_2.end()) {
-            auto it2 = it->second.find(x);
-            if (it2 != it->second.end()) {
-                auto it3 = it2->second.find(y);
-                if (it3 != it2->second.end()) {
-                    return it3->second;
-                };
-            };
-        };
-        
-        std::cerr << ">>> LatticeAlternatingBinary::_look_up_unit <<< could not find layer: " << layer << " x: " << x << " y: " << y << std::endl;
-        exit(EXIT_FAILURE);
-    };
-    int LatticeAlternatingBinary::_look_up_unit(int layer, int x, int y, int z) const {
-        auto it = _lookup_3.find(layer);
-        if (it != _lookup_3.end()) {
-            auto it2 = it->second.find(x);
-            if (it2 != it->second.end()) {
-                auto it3 = it2->second.find(y);
-                if (it3 != it2->second.end()) {
-                    auto it4 = it3->second.find(z);
-                    if (it4 != it3->second.end()) {
-                        return it4->second;
-                    };
-                };
-            };
-        };
-        
-        std::cerr << ">>> LatticeAlternatingBinary::_look_up_unit <<< could not find layer: " << layer << " x: " << x << " y: " << y << " z: " << z << std::endl;
-        exit(EXIT_FAILURE);
-    };
-    
-    std::vector<int> LatticeAlternatingBinary::_look_up_pos(int layer, int idx) const {
-        auto it = _rlookup.find(layer);
-        if (it != _rlookup.end()) {
-            auto it2 = it->second.find(idx);
-            if (it2 != it->second.end()) {
-                return it2->second;
-            };
-        };
-
-        return std::vector<int>();
-    };
-    
-    /****************************************
-    PUBLIC METHODS
-     ****************************************/
-
-    /********************
-     Getters
-     ********************/
-    
-    int LatticeAlternatingBinary::get_no_dims() const {
-        return _no_dims;
-    };
-    
-    int LatticeAlternatingBinary::get_box_length() const {
-        return _box_length;
-    };
-    
-    int LatticeAlternatingBinary::get_no_units_in_layer(int layer) const {
-        return _no_units_per_layer.at(layer);
-    };
-    
-    int LatticeAlternatingBinary::get_no_layers() const {
-        return _no_layers;
-    };
-    
-    /********************
-     Markov chains
-     ********************/
-    
-    int LatticeAlternatingBinary::get_no_markov_chains(MCType type) const {
-        return _no_markov_chains.at(type);
-    };
-
-    void LatticeAlternatingBinary::set_no_markov_chains(MCType type, int no_markov_chains) {
-        _no_markov_chains[type] = no_markov_chains;
-        
-        // Add chains
-        int no_units;
-        if (_mc_chains[type].size() < _no_markov_chains[type]) {
-            for (auto i_chain=_mc_chains[type].size(); i_chain < _no_markov_chains[type]; i_chain++) {
-                for (auto layer=0; layer<_no_layers; layer++) {
-                    no_units = get_no_units_in_layer(layer);
-                    for (auto sp: _species_possible_vec[layer]) {
-                        _mc_chains[type][i_chain][layer][sp] = arma::vec(no_units,arma::fill::randu);
-                        _mc_chains_act[type][i_chain][layer][sp] = arma::vec(no_units,arma::fill::randu);
-                    };
-                };
-            };
-        };
-        
-        // Remove chains
-        if (_mc_chains[type].size() > _no_markov_chains[type]) {
-            for (auto i_chain=_mc_chains[type].size(); i_chain > _no_markov_chains[type]; i_chain--) {
-                _mc_chains[type].erase(i_chain);
-                _mc_chains_act[type].erase(i_chain);
-            };
-        };
-    };
-
-    /********************
-     Add a layer
-     ********************/
-    
-    void LatticeAlternatingBinary::add_layer(int layer, int box_length, std::vector<Sptr> species) {
-        
-        if (layer != _no_layers) {
-            std::cerr << ">>> LatticeAlternatingBinary::add_layer <<< error: next layer must be: " << _no_layers << " not: " << layer << std::endl;
-            exit(EXIT_FAILURE);
-        };
-        
-        // Increment no layers
-        _no_layers += 1;
-        
-        // Add random
-        int no_units = pow(box_length,_no_dims);
-        for (auto &chain: _no_markov_chains) {
-            for (auto i_chain=0; i_chain<chain.second; i_chain++) {
-                for (auto sp: species) {
-                    _mc_chains[chain.first][i_chain][layer][sp] = arma::vec(no_units,arma::fill::randu);
-                    _mc_chains_act[chain.first][i_chain][layer][sp] = arma::vec(no_units,arma::fill::randu);
-                };
-            };
-        };
-        
-        // No units
-        _no_units_per_layer[layer] = no_units;
-        
-        // Lookups
-        int ctr=0;
-        if (_no_dims == 1) {
-            for (auto x=1; x<=box_length; x++) {
-                _lookup_1[layer][x] = ctr;
-                _rlookup[layer][ctr] = std::vector<int>({x});
-                ctr++;
-            };
-        } else if (_no_dims == 2) {
-            for (auto x=1; x<=box_length; x++) {
-                for (auto y=1; y<=box_length; y++) {
-                    _lookup_2[layer][x][y] = ctr;
-                    _rlookup[layer][ctr] = std::vector<int>({x,y});
-                    ctr++;
-                };
-            };
-        } else if (_no_dims == 3) {
-            for (auto x=1; x<=box_length; x++) {
-                for (auto y=1; y<=box_length; y++) {
-                    for (auto z=1; z<=box_length; z++) {
-                        // std::cout << "Setting idx in layer: " << layer << " pos: " << x << " " << y << " " << z << " to idx: " << ctr << std::endl;
-                        _lookup_3[layer][x][y][z] = ctr;
-                        _rlookup[layer][ctr] = std::vector<int>({x,y,z});
-                        ctr++;
-                    };
-                };
-            };
-        };
-        
-        // Add species possible
-        for (auto sp: species) {
-            _species_possible_map[layer][sp->get_name()] = sp;
-            _species_possible_vec[layer].push_back(sp);
-        };
-        
-        // Add adjacency matrix
-        if (layer != 0) {
-            int size_below = get_no_units_in_layer(layer-1);
-            _adj[layer-1][layer] = arma::sp_mat(no_units,size_below);
-            _adj[layer][layer-1] = _adj[layer-1][layer].t();
-            // std::cout << "Made adjacency matrix: " << layer-1 << " " << no_units << " " << size_below << std::endl;
-        };
-        
-        // Persistent data structures
-        _pst_prop[layer] = arma::vec(no_units);
-        _pst_r[layer] = arma::vec(no_units);
-        _pst_sign_of_r[layer] = arma::vec(no_units);
-        _pst_sign_of_r_new[layer] = arma::vec(no_units);
-    };
-    
-	/********************
-	Helpers to setup all sites - Biases
-	********************/
-
-    // Biases
-    void LatticeAlternatingBinary::set_bias_of_layer(int layer, Sptr sp, Iptr bias) {
-        _bias_dict[layer][sp] = bias;
-        
-        _add_to_all_ixns_vec(bias);
-    };
-
-    // Ixns
-    void LatticeAlternatingBinary::set_ixn_between_layers(int layer1, Sptr sp1, int layer2, Sptr sp2, Iptr ixn) {
-        if (layer2 != layer1+1 && layer2 != layer1-1) {
-            std::cerr << ">>> LatticeAlternatingBinary::add_ixn_between_layers <<< layer2 != layer1 +- 1; instead layer_2 = " << layer2 << " and layer1 = " << layer1 << std::endl;
-            exit(EXIT_FAILURE);
-        };
-        
-        // Add both ways
-        _o2_ixn_dict[layer1][sp1][layer2][sp2] = ixn;
-        _o2_ixn_dict[layer2][sp2][layer1][sp1] = ixn;
-
-        // Add to all
-        _add_to_all_ixns_vec(ixn);
-    };
-    
-    // Set multiplier
-    void LatticeAlternatingBinary::set_multiplier_between_layers(int from_layer, int to_layer, double multiplier) {
-        if (to_layer != from_layer+1 && to_layer != from_layer-1) {
-            std::cerr << ">>> LatticeAlternatingBinary::set_multiplier <<< to_layer != from_layer +- 1; instead layer_2 = " << to_layer << " and from_layer = " << from_layer << std::endl;
-            exit(EXIT_FAILURE);
-        };
-        
-        _o2_mults[from_layer][to_layer] = multiplier;
-    };
-    void LatticeAlternatingBinary::set_multiplier_for_bias_in_layer(int layer, double multiplier) {
-        _bias_mults[layer] = multiplier;
-    };
-    
-    // Get ixns
-    double LatticeAlternatingBinary::get_bias_in_layer(int layer, Sptr sp) const {
-        
-        // Multiplier
-        double mult = 1.0;
-        auto itm = _bias_mults.find(layer);
-        if (itm != _bias_mults.end()) {
-            mult = itm->second;
-        };
-        
-        auto it = _bias_dict.find(layer);
-        double val = 0.0;
-        if (it != _bias_dict.end()) {
-            auto it2 = it->second.find(sp);
-            if (it2 != it->second.end()) {
-                val = it2->second->get_val();
-            };
-        };
-        return mult * val;
-    };
-    double LatticeAlternatingBinary::get_ixn_between_layers(int from_layer, Sptr from_sp, int to_layer, Sptr to_sp) const {
-        if (to_layer != from_layer+1 && to_layer != from_layer-1) {
-            std::cerr << ">>> LatticeAlternatingBinary::add_ixn_between_layers <<< to_layer != from_layer +- 1; instead to_layer = " << to_layer << " and from_layer = " << from_layer << std::endl;
-            exit(EXIT_FAILURE);
-        };
-        
-        // Multiplier
-        double mult = 1.0;
-        auto itm = _o2_mults.find(from_layer);
-        if (itm != _o2_mults.end()) {
-            auto itm2 = itm->second.find(to_layer);
-            if (itm2 != itm->second.end()) {
-                mult = itm2->second;
-                // std::cout << "LatticeAlternatingBinary::get_ixn_between_layers: from_layer = " << from_layer << " to to_layer = " << to_layer << " mult = " << mult << std::endl;
-            };
-        };
-        
-        double val = 0.0;
-        auto it1 = _o2_ixn_dict.find(from_layer);
-        if (it1 != _o2_ixn_dict.end()) {
-            auto it2 = it1->second.find(from_sp);
-            if (it2 != it1->second.end()) {
-                auto it3 = it2->second.find(to_layer);
-                if (it3 != it2->second.end()) {
-                    auto it4 = it3->second.find(to_sp);
-                    if (it4 != it3->second.end()) {
-                        val = it4->second->get_val();
-                    };
-                };
-            };
-        };
-        
-        return mult * val;
-    };
-
-    // Get all ixns
-    const std::vector<Iptr>& LatticeAlternatingBinary::get_all_ixn_params() const {
-        return _all_ixns;
-    };
-    
-	/********************
-	Helpers to setup all sites - Visible-Visible ixns
-	********************/
-
-    void LatticeAlternatingBinary::add_conn(int layer1, int x1, int layer2, int x2) {
-        int idx1 = _look_up_unit(layer1, x1);
-        int idx2 = _look_up_unit(layer2, x2);
-        _adj[layer1][layer2](idx2,idx1) = 1.0;
-        _adj[layer2][layer1](idx1,idx2) = 1.0;
-    };
-    void LatticeAlternatingBinary::add_conn(int layer1, int x1, int y1, int layer2, int x2, int y2) {
-        int idx1 = _look_up_unit(layer1, x1, y1);
-        int idx2 = _look_up_unit(layer2, x2, y2);
-        _adj[layer1][layer2](idx2,idx1) = 1.0;
-        _adj[layer2][layer1](idx1,idx2) = 1.0;
-    };
-    void LatticeAlternatingBinary::add_conn(int layer1, int x1, int y1, int z1, int layer2, int x2, int y2, int z2) {
-        int idx1 = _look_up_unit(layer1, x1, y1, z1);
-        int idx2 = _look_up_unit(layer2, x2, y2, z2);
-        // std::cout << "Connecting: " << layer1 << " " << x1 << " " << y1 << " " << z1 << " : " << layer2 << " " << x2 << " " << y2 << " " << z2 << " : " << idx1 << " " << idx2 << std::endl;
-        _adj[layer1][layer2](idx2,idx1) = 1.0;
-        _adj[layer2][layer1](idx1,idx2) = 1.0;
-    };
     
 	/********************
 	Apply funcs to all units
 	********************/
 
-	// Clear the lattice
-	void LatticeAlternatingBinary::set_empty_all_units(MCType chain, int i_chain) {
-        for (auto layer=0; layer<_no_layers; layer++) {
-            set_empty_all_units_in_layer(chain, i_chain, layer);
-        };
-	};
-    void LatticeAlternatingBinary::set_empty_all_units_in_layer(MCType chain, int i_chain, int layer) {
-        for (auto sp: _species_possible_vec[layer]) {
-            _mc_chains[chain][i_chain][layer][sp].fill(0.0);
-        };
-    };
-    void LatticeAlternatingBinary::set_empty_all_hidden_units(MCType chain, int i_chain) {
-        for (auto layer=1; layer<_no_layers; layer++) {
-            set_empty_all_units_in_layer(chain, i_chain, layer);
-        };
-    };
-
     // Random
-    void LatticeAlternatingBinary::set_random_all_units(MCType chain, int i_chain, bool binary) {
-        for (auto layer=0; layer<_no_layers; layer++) {
-            set_random_all_units_in_layer(chain, i_chain, layer,binary);
-        };
-    };
     void LatticeAlternatingBinary::set_random_all_units_in_layer(MCType chain, int i_chain, int layer, bool binary) {
         // Random probs
         for (auto sp: _species_possible_vec.at(layer)) {
@@ -528,18 +81,8 @@ namespace dblz {
             binarize_all_units_in_layer(chain, i_chain, layer);
         };
     };
-    void LatticeAlternatingBinary::set_random_all_hidden_units(MCType chain, int i_chain, bool binary) {
-        for (auto layer=1; layer<_no_layers; layer++) {
-            set_random_all_units_in_layer(chain,i_chain,layer,binary);
-        };
-    };
 
     // Binarize
-    void LatticeAlternatingBinary::binarize_all_units(MCType chain, int i_chain) {
-        for (auto layer=0; layer<_no_layers; layer++) {
-            binarize_all_units_in_layer(chain,i_chain,layer);
-        };
-    };
     void LatticeAlternatingBinary::_binarize_all_units_in_layer(MCType chain, int i_chain, int layer, bool act) {
         
         if (layer % 2 == 0) {
@@ -630,11 +173,6 @@ namespace dblz {
     };
     void LatticeAlternatingBinary::binarize_all_units_in_layer(MCType chain, int i_chain, int layer) {
         _binarize_all_units_in_layer(chain,i_chain,layer,false);
-    };
-    void LatticeAlternatingBinary::binarize_all_hidden_units(MCType chain, int i_chain) {
-        for (auto layer=1; layer<_no_layers; layer++) {
-            binarize_all_units_in_layer(chain,i_chain,layer);
-        };
     };
 
 	/********************
@@ -737,7 +275,7 @@ namespace dblz {
         std::string prob="";
         double prob_val;
 
-        if (_no_dims == 1 && binary) {
+        if (get_no_dims() == 1 && binary) {
             while (getline(f,line)) {
                 if (line == "") { continue; };
                 iss = std::istringstream(line);
@@ -747,7 +285,7 @@ namespace dblz {
                 // Reset
                 sp=""; x="";
             };
-        } else if (_no_dims == 1 && !binary) {
+        } else if (get_no_dims() == 1 && !binary) {
             while (getline(f,line)) {
                 if (line == "") { continue; };
                 iss = std::istringstream(line);
@@ -763,7 +301,7 @@ namespace dblz {
                 // Reset
                 x="";
             };
-        } else if (_no_dims == 2 && binary) {
+        } else if (get_no_dims() == 2 && binary) {
             while (getline(f,line)) {
                 if (line == "") { continue; };
                 iss = std::istringstream(line);
@@ -773,7 +311,7 @@ namespace dblz {
                 // Reset
                 sp=""; x=""; y="";
             };
-        } else if (_no_dims == 2 && !binary) {
+        } else if (get_no_dims() == 2 && !binary) {
             while (getline(f,line)) {
                 if (line == "") { continue; };
                 iss = std::istringstream(line);
@@ -789,7 +327,7 @@ namespace dblz {
                 // Reset
                 x=""; y="";
             };
-        } else if (_no_dims == 3 && binary) {
+        } else if (get_no_dims() == 3 && binary) {
             while (getline(f,line)) {
                 if (line == "") { continue; };
                 iss = std::istringstream(line);
@@ -799,7 +337,7 @@ namespace dblz {
                 // Reset
                 sp=""; x=""; y=""; z="";
             };
-        } else if (_no_dims == 3 && !binary) {
+        } else if (get_no_dims() == 3 && !binary) {
             while (getline(f,line)) {
                 if (line == "") { continue; };
                 iss = std::istringstream(line);
@@ -852,63 +390,6 @@ namespace dblz {
     // MARK: - Activate layer steps
     // ***************
     
-    // Calculate activation given layer above or below
-    void LatticeAlternatingBinary::activate_layer_calculate_from_below(MCType chain, int layer) {
-        
-        for (auto i_chain=0; i_chain<_no_markov_chains.at(chain); i_chain++) {
-            for (auto sp: _species_possible_vec.at(layer)) {
-                
-                // bias term
-                _mc_chains_act[chain][i_chain][layer][sp].fill(get_bias_in_layer(layer, sp));
-                
-                // ixns
-                for (auto &given_sp: _species_possible_vec.at(layer-1)) {
-                    
-                    // Activate from below
-                    _mc_chains_act[chain][i_chain][layer][sp] += get_ixn_between_layers(layer-1, given_sp, layer, sp) * ( _adj.at(layer-1).at(layer) * _mc_chains.at(chain).at(i_chain).at(layer-1).at(given_sp) );
-                };
-            };
-        };
-    };
-
-    void LatticeAlternatingBinary::activate_layer_calculate_from_above(MCType chain, int layer) {
-    
-        for (auto i_chain=0; i_chain<_no_markov_chains.at(chain); i_chain++) {
-            for (auto sp: _species_possible_vec.at(layer)) {
-                
-                // bias term
-                _mc_chains_act[chain][i_chain][layer][sp].fill(get_bias_in_layer(layer, sp));
-                
-                // ixns
-                for (auto given_sp: _species_possible_vec.at(layer+1)) {
-                    
-                    // Activate from above
-                    _mc_chains_act[chain][i_chain][layer][sp] += get_ixn_between_layers(layer+1, given_sp, layer, sp) * ( _adj.at(layer+1).at(layer) * _mc_chains.at(chain).at(i_chain).at(layer+1).at(given_sp) );
-                };
-            };
-        };
-    };
-
-    void LatticeAlternatingBinary::activate_layer_calculate_from_both(MCType chain, int layer) {
-        
-        for (auto i_chain=0; i_chain<_no_markov_chains.at(chain); i_chain++) {
-            for (auto sp: _species_possible_vec.at(layer)) {
-                
-                // bias term
-                _mc_chains_act[chain][i_chain][layer][sp].fill(get_bias_in_layer(layer, sp));
-                
-                // Activate from above
-                for (auto given_sp: _species_possible_vec.at(layer+1)) {
-                    _mc_chains_act[chain][i_chain][layer][sp] += get_ixn_between_layers(layer+1, given_sp, layer, sp) * ( _adj.at(layer+1).at(layer) * _mc_chains.at(chain).at(i_chain).at(layer+1).at(given_sp) );
-                };
-                
-                // Activate from below
-                for (auto given_sp: _species_possible_vec.at(layer-1)) {
-                    _mc_chains_act[chain][i_chain][layer][sp] += get_ixn_between_layers(layer-1, given_sp, layer, sp) * ( _adj.at(layer-1).at(layer) * _mc_chains.at(chain).at(i_chain).at(layer-1).at(given_sp) );
-                };
-            };
-        };
-    };
 
     // (2) Convert activations to probs
     void LatticeAlternatingBinary::activate_layer_convert_to_probs(MCType chain, int layer, bool binary) {
@@ -918,7 +399,7 @@ namespace dblz {
             // Multinomial layer
             
             // All chains
-            for (auto i_chain=0; i_chain<_no_markov_chains.at(chain); i_chain++) {
+            for (auto i_chain=0; i_chain<get_no_markov_chains(chain); i_chain++) {
             
                 // Convert activations to propensities via exp
                 // Also calculate total propensity
@@ -942,7 +423,7 @@ namespace dblz {
             _pst_prop.at(layer).fill(arma::fill::ones);
             
             // All chains
-            for (auto i_chain=0; i_chain<_no_markov_chains.at(chain); i_chain++) {
+            for (auto i_chain=0; i_chain<get_no_markov_chains(chain); i_chain++) {
                 
                 // Convert activations to propensities via exp
                 for (auto sp: _species_possible_vec.at(layer)) {
@@ -958,711 +439,9 @@ namespace dblz {
             
         // Sample if binary
         if (binary) {
-            for (auto i_chain=0; i_chain<_no_markov_chains.at(chain); i_chain++) {
+            for (auto i_chain=0; i_chain<get_no_markov_chains(chain); i_chain++) {
                 _binarize_all_units_in_layer(chain,i_chain,layer,true);
             };
         };
     };
-    
-    // (3) Commit the new probabilities
-    void LatticeAlternatingBinary::activate_layer_committ(MCType chain, int layer) {
-        // All chains
-        for (auto i_chain=0; i_chain<_no_markov_chains.at(chain); i_chain++) {
-            for (auto sp: _species_possible_vec.at(layer)) {
-                _mc_chains[chain][i_chain][layer][sp] = _mc_chains_act[chain][i_chain][layer][sp];
-            };
-        };
-    };
-    
-    // ***************
-    // MARK: - Mean field / gibbs sampling
-    // ***************
-    
-    // Variational inference
-    void LatticeAlternatingBinary::mean_field_hiddens_step() {
-        
-        // Activate all layers
-        for (auto layer=1; layer<_no_layers-1; layer++) {
-            activate_layer_calculate_from_both(MCType::AWAKE, layer);
-            activate_layer_convert_to_probs(MCType::AWAKE, layer, false);
-            activate_layer_committ(MCType::AWAKE, layer);
-        };
-        // Last layer
-        activate_layer_calculate_from_below(MCType::AWAKE, _no_layers-1);
-        activate_layer_convert_to_probs(MCType::AWAKE, _no_layers-1, false);
-        activate_layer_committ(MCType::AWAKE, _no_layers-1);
-    };
-
-    // Sample
-    void LatticeAlternatingBinary::gibbs_sampling_step_awake(bool binary_hidden) {
-        
-        // Activate in two blocks: odds and evens!
-        
-        // First the odd layers
-        for (auto layer=1; layer<_no_layers; layer += 2) {
-            if (layer != _no_layers-1) {
-                activate_layer_calculate_from_both(MCType::AWAKE, layer);
-            } else {
-                activate_layer_calculate_from_below(MCType::AWAKE, layer);
-            };
-            activate_layer_convert_to_probs(MCType::AWAKE, layer, binary_hidden);
-            activate_layer_committ(MCType::AWAKE, layer);
-        };
-        
-        // Next the even layers
-        // Other layers
-        for (auto layer=2; layer<_no_layers; layer += 2) {
-            if (layer != _no_layers-1) {
-                activate_layer_calculate_from_both(MCType::AWAKE, layer);
-            } else {
-                activate_layer_calculate_from_below(MCType::AWAKE, layer);
-            };
-            activate_layer_convert_to_probs(MCType::AWAKE, layer, binary_hidden);
-            activate_layer_committ(MCType::AWAKE, layer);
-        };
-    };
-    
-    void LatticeAlternatingBinary::gibbs_sampling_step_parallel_awake(bool binary_hidden) {
-        
-        for (auto layer=1; layer<_no_layers-1; layer++) {
-            activate_layer_calculate_from_both(MCType::AWAKE, layer);
-        };
-        activate_layer_calculate_from_below(MCType::AWAKE, _no_layers-1);
-        
-        // Convert activations to probabilities and committ
-        for (auto layer=1; layer<_no_layers; layer++) {
-            activate_layer_convert_to_probs(MCType::AWAKE, layer, binary_hidden);
-            activate_layer_committ(MCType::AWAKE, layer);
-        };
-    };
-
-    // Sample
-    void LatticeAlternatingBinary::gibbs_sampling_step(bool binary_visible, bool binary_hidden) {
-        
-        // Activate in two blocks: odds and evens!
-        
-        // First the odd layers
-        for (auto layer=1; layer<_no_layers; layer += 2) {
-            if (layer != _no_layers-1) {
-                activate_layer_calculate_from_both(MCType::ASLEEP, layer);
-            } else {
-                activate_layer_calculate_from_below(MCType::ASLEEP, layer);
-            };
-            activate_layer_convert_to_probs(MCType::ASLEEP, layer, binary_hidden);
-            activate_layer_committ(MCType::ASLEEP, layer);
-        };
-        
-        // Next the even layers
-        // Zeroth layer
-        activate_layer_calculate_from_above(MCType::ASLEEP, 0);
-        activate_layer_convert_to_probs(MCType::ASLEEP, 0, binary_visible);
-        activate_layer_committ(MCType::ASLEEP, 0);
-        // Other layers
-        for (auto layer=2; layer<_no_layers; layer += 2) {
-            if (layer != _no_layers-1) {
-                activate_layer_calculate_from_both(MCType::ASLEEP, layer);
-            } else {
-                activate_layer_calculate_from_below(MCType::ASLEEP, layer);
-            };
-            activate_layer_convert_to_probs(MCType::ASLEEP, layer, binary_hidden);
-            activate_layer_committ(MCType::ASLEEP, layer);
-        };
-    };
-
-    void LatticeAlternatingBinary::gibbs_sampling_step_parallel(bool binary_visible, bool binary_hidden) {
-        
-        // Activate in parallel
-        
-        activate_layer_calculate_from_above(MCType::ASLEEP, 0);
-        for (auto layer=1; layer<_no_layers-1; layer++) {
-            activate_layer_calculate_from_both(MCType::ASLEEP, layer);
-        };
-        activate_layer_calculate_from_below(MCType::ASLEEP, _no_layers-1);
-        
-        // Convert activations to probabilities and committ
-        activate_layer_convert_to_probs(MCType::ASLEEP, 0, binary_visible);
-        activate_layer_committ(MCType::ASLEEP, 0);
-        for (auto layer=1; layer<_no_layers; layer++) {
-            activate_layer_convert_to_probs(MCType::ASLEEP, layer, binary_hidden);
-            activate_layer_committ(MCType::ASLEEP, layer);
-        };
-    };
-
-    // Make a pass activating upwards
-    void LatticeAlternatingBinary::activate_upward_pass(MCType chain, bool binary_hidden) {
-        
-        // All layers
-        for (auto layer=1; layer<_no_layers; layer++) {
-            activate_layer_calculate_from_below(chain, layer);
-            activate_layer_convert_to_probs(chain, layer, binary_hidden);
-            activate_layer_committ(chain, layer);
-        };
-    };
-
-    void LatticeAlternatingBinary::activate_upward_pass_with_2x_weights_1x_bias(MCType chain, bool binary_hidden) {
-        // Copy over the mults for safekeeping
-        std::map<int, std::map<int, double>> o2_mults = _o2_mults;
-        std::map<int, double> bias_mults = _bias_mults;
-        
-        // 2x
-        for (auto layer=0; layer<_no_layers-2; layer++) {
-            _o2_mults[layer][layer+1] = 2.0;
-        };
-        // 1x last layer
-        _o2_mults[_no_layers-2][_no_layers-1] = 1.0;
-
-        // 1x bias
-        for (auto layer=0; layer<_no_layers; layer++) {
-            _bias_mults[layer] = 1.0;
-        };
-        
-        // Activate upward pass
-        activate_upward_pass(chain, binary_hidden);
-        
-        // Copy back
-        _o2_mults = o2_mults;
-        _bias_mults = bias_mults;
-    };
-    
-    // ***************
-    // MARK: - Reap moments
-    // ***************
-    
-    double LatticeAlternatingBinary::reap_moment_sample(MCType type, int i_chain, int layer, Sptr species) const {
-        return arma::accu(_mc_chains.at(type).at(i_chain).at(layer).at(species));
-    };
-    double LatticeAlternatingBinary::reap_moment_sample(MCType type, int i_chain, int layer_lower, Sptr species_lower, int layer_upper, Sptr species_upper) const {
-        if (layer_upper != layer_lower + 1) {
-            std::cerr << ">>> Error: LatticeAlternatingBinary::reap_moment_sample <<< layer_upper != layer_lower + 1" << std::endl;
-            exit(EXIT_FAILURE);
-        };
-        
-        double val = 0.0;
-        arma::sp_mat::const_iterator mit, mit_end;
-        // Iterate over adj matrix
-        mit = _adj.at(layer_lower).at(layer_upper).begin();
-        mit_end = _adj.at(layer_lower).at(layer_upper).end();
-        for(; mit != mit_end; ++mit) {
-            val += _mc_chains.at(type).at(i_chain).at(layer_upper).at(species_upper)(mit.row()) * _mc_chains.at(type).at(i_chain).at(layer_lower).at(species_lower)(mit.col());
-        };
-        return val;
-    };
-    double LatticeAlternatingBinary::reap_moment(MCType type, int layer, Sptr species) const {
-        double val = 0.0;
-        for (auto i_chain=0; i_chain<_no_markov_chains.at(type); i_chain++) {
-            val += reap_moment_sample(type,i_chain,layer,species);
-        };
-        val /= _no_markov_chains.at(type);
-        return val;
-    };
-    double LatticeAlternatingBinary::reap_moment(MCType type, int layer_lower, Sptr species_lower, int layer_upper, Sptr species_upper) const {
-        double val = 0.0;
-        for (auto i_chain=0; i_chain<_no_markov_chains.at(type); i_chain++) {
-            val += reap_moment_sample(type,i_chain,layer_lower,species_lower,layer_upper,species_upper);
-        };
-        val /= _no_markov_chains.at(type);
-        return val;
-    };
-
-    // Query moments for particular ixns
-    double LatticeAlternatingBinary::reap_moment_sample(MCType type, int i_chain, Iptr ixn) const {
-        // Get type of ixn
-        double val = 0.0;
-        if (ixn->get_type() == IxnParamType::W || ixn->get_type() == IxnParamType::X) {
-            
-            // Weight
-            
-            int layer1, layer2;
-            Sptr sp1, sp2;
-            arma::sp_mat::const_iterator mit, mit_end;
-            std::shared_ptr<MomentDiff> moment;
-            for (auto &o2_ixn_layer_1: _o2_ixn_dict) {
-                layer1 = o2_ixn_layer_1.first;
-                for (auto &sp_pr_1: o2_ixn_layer_1.second) {
-                    sp1 = sp_pr_1.first;
-                    for (auto &o2_ixn_layer_2: sp_pr_1.second) {
-                        layer2 = o2_ixn_layer_2.first;
-                        // Be careful not to double count
-                        if (layer1 >= layer2) {
-                            // skip
-                            continue;
-                        };
-                        // Now layer1 < layer2 guaranteed
-                        
-                        for (auto &sp_pr_2: o2_ixn_layer_2.second) {
-                            sp2 = sp_pr_2.first;
-                            
-                            // Check the ixn
-                            if (sp_pr_2.second == ixn) {
-                                val += reap_moment_sample(type, i_chain, layer1, sp1, layer2, sp2);
-                            };
-                        };
-                    };
-                };
-            };
-            
-        } else {
-            
-            // Bias
-            
-            int layer;
-            Sptr sp;
-            for (auto &bias_layer: _bias_dict) {
-                layer = bias_layer.first;
-                for (auto &sp_pr: bias_layer.second) {
-                    sp = sp_pr.first;
-                    
-                    // Check the ixn
-                    if (sp_pr.second == ixn) {
-                        val += reap_moment_sample(type, i_chain, layer, sp);
-                    };
-                };
-            };
-        };
-        
-        return val;
-    };
-    double LatticeAlternatingBinary::reap_moment(MCType type, Iptr ixn) const {
-        double val = 0.0;
-        for (auto i_chain=0; i_chain<_no_markov_chains.at(type); i_chain++) {
-            val += reap_moment_sample(type,i_chain,ixn);
-        };
-        val /= _no_markov_chains.at(type);
-        return val;
-    };
-
-    // Moments for the adjoint terms
-    double LatticeAlternatingBinary::reap_moment_adjoint_obs_cov_cross_term_sample(int i_chain, Iptr ixn, int layer_domain, Sptr species_domain) const {
-        // Get type of ixn
-        double val = 0.0;
-        if (ixn->get_type() == IxnParamType::W || ixn->get_type() == IxnParamType::X) {
-            
-            // Weight
-            
-            int layer1, layer2;
-            Sptr sp1, sp2;
-            arma::sp_mat::const_iterator mit, mit_end;
-            std::shared_ptr<MomentDiff> moment;
-            for (auto &o2_ixn_layer_1: _o2_ixn_dict) {
-                layer1 = o2_ixn_layer_1.first;
-                for (auto &sp_pr_1: o2_ixn_layer_1.second) {
-                    sp1 = sp_pr_1.first;
-                    for (auto &o2_ixn_layer_2: sp_pr_1.second) {
-                        layer2 = o2_ixn_layer_2.first;
-                        // Be careful not to double count
-                        if (layer1 >= layer2) {
-                            // skip
-                            continue;
-                        };
-                        // Now layer1 < layer2 guaranteed
-                        
-                        for (auto &sp_pr_2: o2_ixn_layer_2.second) {
-                            sp2 = sp_pr_2.first;
-                            
-                            // Check the ixn
-                            if (sp_pr_2.second == ixn) {
-                                val += reap_moment_sample(MCType::ASLEEP, i_chain, layer1, sp1, layer2, sp2) * reap_moment_sample(MCType::ASLEEP, i_chain, layer_domain, species_domain);
-                            };
-                        };
-                    };
-                };
-            };
-            
-        } else {
-            
-            // Bias
-            
-            int layer;
-            Sptr sp;
-            for (auto &bias_layer: _bias_dict) {
-                layer = bias_layer.first;
-                for (auto &sp_pr: bias_layer.second) {
-                    sp = sp_pr.first;
-                    
-                    // Check the ixn
-                    if (sp_pr.second == ixn) {
-                        val += reap_moment_sample(MCType::ASLEEP, i_chain, layer, sp) * reap_moment_sample(MCType::ASLEEP, i_chain, layer_domain, species_domain);
-                    };
-                };
-            };
-        };
-        
-        return val;
-    };
-    double LatticeAlternatingBinary::reap_moment_adjoint_obs_cov_cross_term(Iptr ixn, int layer_domain, Sptr species_domain) const {
-        double val = 0.0;
-        for (auto i_chain=0; i_chain<_no_markov_chains.at(MCType::ASLEEP); i_chain++) {
-            val += reap_moment_adjoint_obs_cov_cross_term_sample(i_chain,ixn,layer_domain,species_domain);
-        };
-        val /= _no_markov_chains.at(MCType::ASLEEP);
-        return val;
-    };
-    
-    void LatticeAlternatingBinary::reap_ixn_moment_diffs() const {
-        
-        // Reap ixns
-        int layer1, layer2;
-        Sptr sp1, sp2;
-        arma::sp_mat::const_iterator mit, mit_end;
-        std::shared_ptr<MomentDiff> moment;
-        for (auto &o2_ixn_layer_1: _o2_ixn_dict) {
-            layer1 = o2_ixn_layer_1.first;
-            for (auto &sp_pr_1: o2_ixn_layer_1.second) {
-                sp1 = sp_pr_1.first;
-                for (auto &o2_ixn_layer_2: sp_pr_1.second) {
-                    layer2 = o2_ixn_layer_2.first;
-                    // Be careful not to double count
-                    if (layer1 >= layer2) {
-                        // skip
-                        continue;
-                    };
-                    // Now layer1 < layer2 guaranteed
-                    
-                    for (auto &sp_pr_2: o2_ixn_layer_2.second) {
-                        
-                        sp2 = sp_pr_2.first;
-                        moment = sp_pr_2.second->get_moment_diff();
-                        
-                        // Get moments
-                        if (!moment->get_is_awake_moment_fixed()) {
-                            moment->set_moment(MCType::AWAKE, reap_moment(MCType::AWAKE, layer1, sp1, layer2, sp2));
-                        };
-                        moment->set_moment(MCType::ASLEEP, reap_moment(MCType::ASLEEP, layer1, sp1, layer2, sp2));
-                    };
-                };
-            };
-        };
-        
-        // Reap biases
-        // All biases
-        int layer;
-        Sptr sp;
-        for (auto &bias_layer: _bias_dict) {
-            layer = bias_layer.first;
-            for (auto &sp_pr: bias_layer.second) {
-                sp = sp_pr.first;
-                moment = sp_pr.second->get_moment_diff();
-                
-                // Get moments
-                if (!moment->get_is_awake_moment_fixed()) {
-                    moment->set_moment(MCType::AWAKE, reap_moment(MCType::AWAKE, layer, sp));
-                };
-                moment->set_moment(MCType::ASLEEP, reap_moment(MCType::ASLEEP, layer, sp));
-                
-                // std::cout << "REAP MOMENTS: " << sp_pr.second->get_name() << " " << moment->get_moment(MCType::AWAKE) << " " << moment->get_moment(MCType::ASLEEP) << std::endl;
-            };
-        };
-    };
-    
-    // ***************
-    // MARK: - Reap adjoint obs cov term moments
-    // ***************
-    
-    /*
-    std::vector<double> LatticeAlternatingBinary::reap_adjoint_obs_cov_term_biases(int layer1, Sptr species1, int layer2, Sptr species2) const {
-        
-        std::vector<double> vals({0.0,0.0,0.0});
-        double tmp_1, tmp_2;
-        for (auto i_chain=0; i_chain<_no_markov_chains.at(MCType::ASLEEP); i_chain++) {
-            tmp_1 = arma::accu(_mc_chains.at(MCType::ASLEEP).at(i_chain).at(layer1).at(species1));
-            tmp_2 = arma::accu(_mc_chains.at(MCType::ASLEEP).at(i_chain).at(layer2).at(species2));
-            vals[0] += tmp_1 * tmp_2;
-            vals[1] += tmp_1;
-            vals[2] += tmp_2;
-        };
-        vals[0] /= _no_markov_chains.at(MCType::ASLEEP);
-        vals[1] /= _no_markov_chains.at(MCType::ASLEEP);
-        vals[2] /= _no_markov_chains.at(MCType::ASLEEP);
-        
-        return vals;
-    };
-     */
-    /*
-    std::vector<double> LatticeAlternatingBinary::reap_adjoint_obs_cov_term_weights(int layer_vis, Sptr species_vis, int layer_hidden, Sptr species_hidden, int layer, Sptr species) const {
-        
-        if (layer_hidden != layer_vis +1) {
-            std::cerr << ">>> Error: LatticeAlternatingBinary::reap_adjoint_obs_cov_term_weights <<< layer_hidden != layer_vis +1 " << std::endl;
-            exit(EXIT_FAILURE);
-        };
-        
-        std::vector<double> vals({0.0,0.0,0.0});
-        double tmp_1,tmp_2;
-        arma::sp_mat::const_iterator mit, mit_end;
-        for (auto i_chain=0; i_chain<_no_markov_chains.at(MCType::ASLEEP); i_chain++) {
-            // Iterate over adj matrix
-            tmp_1 = 0.0;
-            mit = _adj.at(layer_vis).at(layer_hidden).begin();
-            mit_end = _adj.at(layer_vis).at(layer_hidden).end();
-            for(; mit != mit_end; ++mit) {
-                tmp_1 += _mc_chains.at(MCType::ASLEEP).at(i_chain).at(layer_hidden).at(species_hidden)(mit.row()) * _mc_chains.at(MCType::ASLEEP).at(i_chain).at(layer_vis).at(species_vis)(mit.col());
-            };
-            
-            tmp_2 = arma::accu(_mc_chains.at(MCType::ASLEEP).at(i_chain).at(layer).at(species));
-
-            vals[0] += tmp_1 * tmp_2;
-            vals[1] += tmp_1;
-            vals[2] += tmp_2;
-        };
-        vals[0] /= _no_markov_chains.at(MCType::ASLEEP);
-        vals[1] /= _no_markov_chains.at(MCType::ASLEEP);
-        vals[2] /= _no_markov_chains.at(MCType::ASLEEP);
-
-        return vals;
-    };
-     */
-
-    // ***************
-    // MARK: - Add ixn to all ixns vec
-    // ***************
-    
-    // Add ixn to all ixns vec
-    void LatticeAlternatingBinary::_add_to_all_ixns_vec(Iptr ixn) {
-    
-        auto it = std::find(_all_ixns.begin(),_all_ixns.end(),ixn);
-        if (it == _all_ixns.end()) {
-            _all_ixns.push_back(ixn);
-        } else {
-            /*
-            std::cerr << ">>> LatticeAlternatingBinary::_add_to_all_ixns_vec <<< reusing ixns currently not supported because it is not treated correctly in the reap function!" << std::endl;
-            exit(EXIT_FAILURE);
-             */
-        };
-    };
-    
-    // ***************
-    // MARK: - Wake/sleep loop
-    // ***************
-    
-    void LatticeAlternatingBinary::wake_sleep_loop_bm_pcd(int i_opt_step, int no_mean_field_updates, int no_gibbs_sampling_steps, std::vector<FName> &fnames, OptionsWakeSleep_BM_PCD_AB options) {
-        
-        // AWAKE PHASE
-        
-        clock_t t0 = clock();
-        
-        // Read in the batch
-        for (int i_chain=0; i_chain<_no_markov_chains[MCType::AWAKE]; i_chain++)
-        {
-            read_layer_from_file(MCType::AWAKE, i_chain, 0, fnames[i_chain].name, fnames[i_chain].binary);
-        };
-        
-        clock_t t1 = clock();
-        
-        // Option (1): init MF with random hidden layers with prob units
-        /*
-         for (int i_chain=0; i_chain<_no_markov_chains[MCType::AWAKE]; i_chain++) {
-         _latt->set_random_all_hidden_units(MCType::AWAKE, i_chain, false);
-         };
-         */
-        // Option (2): upward pass with 2x weights (DBM) to activate probabilitsic units
-        // (faster to converge!!!)
-        activate_upward_pass_with_2x_weights_1x_bias(MCType::AWAKE, false);
-        
-        clock_t t2 = clock();
-        
-        // Variational inference
-        if (!options.gibbs_sample_awake_phase) {
-            
-            for (auto i=0; i<no_mean_field_updates; i++) {
-                mean_field_hiddens_step();
-            };
-            // gibbs_sampling_step_awake(true);
-            
-        } else {
-            
-            for (auto i=0; i<no_mean_field_updates; i++) {
-                gibbs_sampling_step_awake(options.gibbs_sample_awake_phase_hidden_binary);
-            };
-        };
-        
-        clock_t t3 = clock();
-        
-        // Write out the lattices
-        if (options.write_after_awake) {
-            for (auto i_chain=0; i_chain<_no_markov_chains[MCType::AWAKE]; i_chain++) {
-                for (auto layer=0; layer<_no_layers; layer++) {
-                    bool write_binary = true;
-                    if (layer != 0) {
-                        write_binary = false;
-                    };
-                    write_layer_to_file(MCType::AWAKE, i_chain, layer, options.write_after_awake_dir+"/"+pad_str(i_chain,2)+"_"+pad_str(layer,2)+".txt", write_binary);
-                };
-            };
-        };
-        
-        // ASLEEP PHASE - PERSISTENT_CD
-        
-        // Run CD sampling
-        
-        // Sample vis, hidden
-        for (int i_sampling_step=0; i_sampling_step<no_gibbs_sampling_steps-1; i_sampling_step++)
-        {
-            gibbs_sampling_step(options.is_asleep_visible_binary, options.is_asleep_hidden_binary);
-        };
-        // Final step
-        if (options.is_asleep_visible_binary_final && options.is_asleep_hidden_binary_final) {
-            // All binary
-            gibbs_sampling_step(options.is_asleep_visible_binary_final, options.is_asleep_hidden_binary_final);
-        } else {
-            // Parallel for non-binary options
-            gibbs_sampling_step_parallel(options.is_asleep_visible_binary_final, options.is_asleep_hidden_binary_final);
-        };
-        
-        clock_t t4 = clock();
-        
-        // Write out the lattices
-        if (options.write_after_asleep) {
-            for (auto i_chain=0; i_chain<_no_markov_chains[MCType::ASLEEP]; i_chain++) {
-                for (auto layer=0; layer<_no_layers; layer++) {
-                    bool write_binary = true;
-                    if (layer != 0) {
-                        write_binary = false;
-                    };
-                    write_layer_to_file(MCType::ASLEEP, i_chain, layer, options.write_after_asleep_dir+"/"+pad_str(i_chain,2)+"_"+pad_str(layer,2)+".txt", write_binary);
-                };
-            };
-        };
-        
-        double dt1 = (t1-t0)  / (double) CLOCKS_PER_SEC;
-        double dt2 = (t2-t1)  / (double) CLOCKS_PER_SEC;
-        double dt3 = (t3-t2)  / (double) CLOCKS_PER_SEC;
-        double dt4 = (t4-t3)  / (double) CLOCKS_PER_SEC;
-        double dt_tot = dt1 + dt2 + dt3 + dt4;
-        if (options.verbose_timing) {
-            std::cout << "[time " << dt_tot << "] [read " << dt1/dt_tot << "] [up " << dt2/dt_tot << "] [mf " << dt3/dt_tot << "] [gibbs " << dt4/dt_tot << "]" << std::endl;
-        };
-    };
-    
-    void LatticeAlternatingBinary::wake_sleep_loop_rbm_cd(int i_opt_step, int no_cd_steps, std::vector<FName> &fnames, OptionsWakeSleep_RBM_CD_AB options) {
-        
-        // AWAKE PHASE
-        
-        clock_t t0 = clock();
-        
-        // Read in the batch
-        for (int i_chain=0; i_chain<_no_markov_chains[MCType::AWAKE]; i_chain++)
-        {
-            read_layer_from_file(MCType::AWAKE, i_chain, 0, fnames[i_chain].name, fnames[i_chain].binary);
-            // read_layer_from_file(MCType::ASLEEP, i_chain, 0, fnames[i_chain].name, fnames[i_chain].binary);
-        };
-        _mc_chains[MCType::ASLEEP] = _mc_chains.at(MCType::AWAKE);
-        
-        clock_t t1 = clock();
-        
-        // AWAKE PHASE
-        
-        // Activate hidden layer; use probs!
-        activate_layer_calculate_from_below(MCType::AWAKE, 1);
-        activate_layer_convert_to_probs(MCType::AWAKE, 1, false);
-        activate_layer_committ(MCType::AWAKE, 1);
-
-        clock_t t2 = clock();
-        
-        // ASLEEP PHASE - PERSISTENT_CD
-    
-        for (auto i_chain=0; i_chain<_no_markov_chains.at(MCType::ASLEEP); i_chain++) {
-            set_random_all_units_in_layer(MCType::ASLEEP, i_chain, 0, true);
-        };
-        
-        // Run CD sampling
-    
-        // Activate the hiddens with binary
-        activate_layer_calculate_from_below(MCType::ASLEEP, 1);
-        activate_layer_convert_to_probs(MCType::ASLEEP, 1, true);
-        activate_layer_committ(MCType::ASLEEP, 1);
-        
-        // Sample vis, hidden repeadedly
-        for (int i_sampling_step=0; i_sampling_step<no_cd_steps-1; i_sampling_step++)
-        {
-            activate_layer_calculate_from_above(MCType::ASLEEP, 0);
-            activate_layer_convert_to_probs(MCType::ASLEEP, 0, true);
-            activate_layer_committ(MCType::ASLEEP, 0);
-
-            activate_layer_calculate_from_below(MCType::ASLEEP, 1);
-            activate_layer_convert_to_probs(MCType::ASLEEP, 1, true);
-            activate_layer_committ(MCType::ASLEEP, 1);
-        };
-        // Final step: use probs for hidden layer
-        activate_layer_calculate_from_above(MCType::ASLEEP, 0);
-        activate_layer_convert_to_probs(MCType::ASLEEP, 0, true);
-        activate_layer_committ(MCType::ASLEEP, 0);
-        
-        activate_layer_calculate_from_below(MCType::ASLEEP, 1);
-        activate_layer_convert_to_probs(MCType::ASLEEP, 1, false);
-        activate_layer_committ(MCType::ASLEEP, 1);
-        
-        clock_t t3 = clock();
-
-        if (options.verbose_timing) {
-            double dt1 = (t1-t0)  / (double) CLOCKS_PER_SEC;
-            double dt2 = (t2-t1)  / (double) CLOCKS_PER_SEC;
-            double dt3 = (t3-t2)  / (double) CLOCKS_PER_SEC;
-            double dt_tot = dt1 + dt2 + dt3;
-            std::cout << "[time " << dt_tot << "] [read " << dt1/dt_tot << "] [awake " << dt2/dt_tot << "] [asleep " << dt3/dt_tot << "]" << std::endl;
-        };
-    };
-    
-    // ***************
-    // MARK: - Counts
-    // ***************
-    
-    double LatticeAlternatingBinary::get_count_1d(MCType chain, int i_chain, Sptr sp) const {
-        if (_no_dims != 1) {
-            std::cerr << ">>> LatticeAlternatingBinary::get_count_1d <<< Error: only for 1D lattices" << std::endl;
-            exit(EXIT_FAILURE);
-        };
-        
-        return arma::accu(_mc_chains.at(chain).at(i_chain).at(0).at(sp));
-    };
-    double LatticeAlternatingBinary::get_count_1d(MCType chain, int i_chain, Sptr sp1, Sptr sp2) const {
-        if (_no_dims != 1) {
-            std::cerr << ">>> LatticeAlternatingBinary::get_count_1d <<< Error: only for 1D lattices" << std::endl;
-            exit(EXIT_FAILURE);
-        };
-        
-        double count=0.;
-        for (auto x=0; x<_box_length-1; x++) {
-            count += _mc_chains.at(chain).at(i_chain).at(0).at(sp1).at(x) * _mc_chains.at(chain).at(i_chain).at(0).at(sp2).at(x+1);
-        };
-        if (sp1 != sp2) {
-            for (auto x=0; x<_box_length-1; x++) {
-                count += _mc_chains.at(chain).at(i_chain).at(0).at(sp2).at(x) * _mc_chains.at(chain).at(i_chain).at(0).at(sp1).at(x+1);
-            };
-        };
-        return count;
-    };
-    double LatticeAlternatingBinary::get_count_1d(MCType chain, int i_chain, Sptr sp1, Sptr sp2, Sptr sp3) const {
-        if (_no_dims != 1) {
-            std::cerr << ">>> LatticeAlternatingBinary::get_count_1d <<< Error: only for 1D lattices" << std::endl;
-            exit(EXIT_FAILURE);
-        };
-
-        double count=0.;
-        for (auto x=0; x<_box_length-2; x++) {
-            count += _mc_chains.at(chain).at(i_chain).at(0).at(sp1).at(x) * _mc_chains.at(chain).at(i_chain).at(0).at(sp2).at(x+1) * _mc_chains.at(chain).at(i_chain).at(0).at(sp3).at(x+2);
-        };
-        if (!((sp1 == sp2) && (sp2 == sp3))) {
-            for (auto x=0; x<_box_length-2; x++) {
-                count += _mc_chains.at(chain).at(i_chain).at(0).at(sp3).at(x) * _mc_chains.at(chain).at(i_chain).at(0).at(sp2).at(x+1) * _mc_chains.at(chain).at(i_chain).at(0).at(sp1).at(x+2);
-            };
-        };
-        return count;
-    };
-    double LatticeAlternatingBinary::get_count_1d(MCType chain, int i_chain, Sptr sp1, Sptr sp2, Sptr sp3, Sptr sp4) const {
-        if (_no_dims != 1) {
-            std::cerr << ">>> LatticeAlternatingBinary::get_count_1d <<< Error: only for 1D lattices" << std::endl;
-            exit(EXIT_FAILURE);
-        };
-
-        double count=0.;
-        for (auto x=0; x<_box_length-3; x++) {
-            count += _mc_chains.at(chain).at(i_chain).at(0).at(sp1).at(x) * _mc_chains.at(chain).at(i_chain).at(0).at(sp2).at(x+1) * _mc_chains.at(chain).at(i_chain).at(0).at(sp3).at(x+2) * _mc_chains.at(chain).at(i_chain).at(0).at(sp4).at(x+3);
-        };
-        if (!((sp1 == sp2) && (sp2 == sp3) && (sp3 == sp4))) {
-            for (auto x=0; x<_box_length-3; x++) {
-                count += _mc_chains.at(chain).at(i_chain).at(0).at(sp4).at(x) * _mc_chains.at(chain).at(i_chain).at(0).at(sp3).at(x+1) * _mc_chains.at(chain).at(i_chain).at(0).at(sp2).at(x+2) * _mc_chains.at(chain).at(i_chain).at(0).at(sp1).at(x+3);
-            };
-        };
-        return count;
-    };
-
 };

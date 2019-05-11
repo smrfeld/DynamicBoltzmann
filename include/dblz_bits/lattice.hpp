@@ -62,20 +62,11 @@ namespace dblz {
 
     class Lattice
 	{
-	private:
-
-        // ***************
-        // MARK: - Private data
-        // ***************
+    protected:
         
-		// Dimensionality
-		int _no_dims;
-
-		// Size
-		int _box_length;
-
-        // No markov chains for both awake and asleep
-        std::map<MCType,int> _no_markov_chains;
+        // ***************
+        // MARK: - Misc
+        // ***************
 
         // No layers
         int _no_layers;
@@ -89,15 +80,15 @@ namespace dblz {
         // -> State vector
         std::map<MCType,std::map<int,layers_map>> _mc_chains;
         std::map<MCType,std::map<int,layers_map>> _mc_chains_act;
-        
+
         // No units per layer
         std::map<int,int> _no_units_per_layer;
         
-		// Layer lookup
-		// Layer -> (x,y,z) -> idx
-		std::map<int, std::map<int, int>> _lookup_1;
-		std::map<int, std::map<int, std::map<int, int>>> _lookup_2;
-		std::map<int, std::map<int, std::map<int, std::map<int, int>>>> _lookup_3;
+        // Layer lookup
+        // Layer -> (x,y,z) -> idx
+        std::map<int, std::map<int, int>> _lookup_1;
+        std::map<int, std::map<int, std::map<int, int>>> _lookup_2;
+        std::map<int, std::map<int, std::map<int, std::map<int, int>>>> _lookup_3;
         // Reverse
         // Layer -> idx -> (x,y,z)
         std::map<int, std::map<int, std::vector<int>>> _rlookup;
@@ -106,7 +97,7 @@ namespace dblz {
         // layer->species name->species
         std::map<int,std::map<std::string,Sptr>> _species_possible_map;
         std::map<int,std::vector<Sptr>> _species_possible_vec;
-
+        
         // ***************
         // MARK: Adjacency matrix
         // ***************
@@ -115,8 +106,17 @@ namespace dblz {
         // Layer 1 -> layer 2 -> matrix
         // corresponds to:
         // layer 2 . matrix . layer 1
-        // i.e. "layer 1 TO layer 2" 
+        // i.e. "layer 1 TO layer 2"
         std::map<int,std::map<int,arma::sp_mat>> _adj;
+
+        // ***************
+        // MARK: - Persistent data structures
+        // ***************
+        
+        std::map<int,arma::vec> _pst_prop;
+        std::map<int,arma::vec> _pst_r;
+        std::map<int,arma::vec> _pst_sign_of_r;
+        std::map<int,arma::vec> _pst_sign_of_r_new;
         
         // ***************
         // MARK: Ixn params
@@ -126,6 +126,31 @@ namespace dblz {
         std::vector<Iptr> _all_ixns;
         std::map<int, std::map<Sptr,Iptr>> _bias_dict;
         std::map<int, std::map<Sptr, std::map<int, std::map<Sptr,Iptr>>>> _o2_ixn_dict;
+
+        // ***************
+        // MARK: Look up sites
+        // ***************
+        
+        // Lookup a site iterator from x,y,z
+        int _look_up_unit(int layer, int x) const;
+        int _look_up_unit(int layer, int x, int y) const;
+        int _look_up_unit(int layer, int x, int y, int z) const;
+        std::vector<int> _look_up_pos(int layer, int idx) const;
+
+	private:
+
+        // ***************
+        // MARK: - Misc
+        // ***************
+        
+		// Dimensionality
+		int _no_dims;
+
+		// Size
+		int _box_length;
+
+        // No markov chains for both awake and asleep
+        std::map<MCType,int> _no_markov_chains;
         
         // Multipliers between layers for ixns - NOT bidirectional
         std::map<int, std::map<int, double>> _o2_mults;
@@ -140,25 +165,6 @@ namespace dblz {
 
         // Add ixn to all ixns vec
         void _add_to_all_ixns_vec(Iptr ixn);
-        
-        // ***************
-        // MARK: - Persistent data structures
-        // ***************
-        
-        std::map<int,arma::vec> _pst_prop;
-        std::map<int,arma::vec> _pst_r;
-        std::map<int,arma::vec> _pst_sign_of_r;
-        std::map<int,arma::vec> _pst_sign_of_r_new;
-
-        // ***************
-        // MARK: Look up sites
-        // ***************
-        
-		// Lookup a site iterator from x,y,z
-		int _look_up_unit(int layer, int x) const;
-		int _look_up_unit(int layer, int x, int y) const;
-		int _look_up_unit(int layer, int x, int y, int z) const;
-        std::vector<int> _look_up_pos(int layer, int idx) const;
         
         // ***************
         // MARK: - Constructor helpers
@@ -183,7 +189,7 @@ namespace dblz {
 		Lattice(Lattice&& other);
 		Lattice& operator=(const Lattice& other);
 		Lattice& operator=(Lattice&& other);
-		~Lattice();
+		virtual ~Lattice();
 
         // ***************
         // MARK: Getters
@@ -205,7 +211,7 @@ namespace dblz {
         // MARK: Add a layer
         // ***************
         
-        void add_layer(int layer, int box_length, std::vector<Sptr> species);
+        virtual void add_layer(int layer, int box_length, std::vector<Sptr> species);
 
         // ***************
         // MARK: Biases/ixn params
@@ -246,7 +252,7 @@ namespace dblz {
 
 		// Clear the lattice
         void set_empty_all_units(MCType chain, int i_chain);
-        void set_empty_all_units_in_layer(MCType chain, int i_chain, int layer);
+        virtual void set_empty_all_units_in_layer(MCType chain, int i_chain, int layer);
         void set_empty_all_hidden_units(MCType chain, int i_chain);
 
 		// Random
@@ -256,15 +262,15 @@ namespace dblz {
 
 		// Binarize
         void binarize_all_units(MCType chain, int i_chain);
-        void binarize_all_units_in_layer(MCType chain, int i_chain, int layer);
+        virtual void binarize_all_units_in_layer(MCType chain, int i_chain, int layer);
         void binarize_all_hidden_units(MCType chain, int i_chain);
 
         // ***************
         // MARK: Write/read
         // ***************
         
-		void write_layer_to_file(MCType chain, int i_chain, int layer, std::string fname, bool binary) const;
-		void read_layer_from_file(MCType chain, int i_chain, int layer, std::string fname, bool binary);
+		virtual void write_layer_to_file(MCType chain, int i_chain, int layer, std::string fname, bool binary) const;
+		virtual void read_layer_from_file(MCType chain, int i_chain, int layer, std::string fname, bool binary);
         
         // ***************
         // MARK: Activate layer steps
@@ -278,7 +284,7 @@ namespace dblz {
         void activate_layer_calculate_from_both(MCType chain, int layer);
 
         // (2) Convert activations to probs
-        void activate_layer_convert_to_probs(MCType chain, int layer, bool binary);
+        virtual void activate_layer_convert_to_probs(MCType chain, int layer, bool binary);
 
         // (3) Commit the new probabilities
         void activate_layer_committ(MCType chain, int layer);

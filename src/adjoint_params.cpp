@@ -60,6 +60,7 @@ namespace dblz {
     // ***************
     
 	void AdjointParams::solve_diff_eq_at_timepoint_to_minus_one(int timepoint, double dt) {
+        /*
 		if (timepoint >= _no_timepoints) {
 			std::cerr << ">>> Error: AdjointParams::solve_diff_eq_at_timepoint_to_minus_one <<< " << timepoint << " is out of bounds: " << _no_timepoints << std::endl;
 			exit(EXIT_FAILURE);
@@ -68,6 +69,7 @@ namespace dblz {
 			std::cerr << ">>> Error: AdjointParams::solve_diff_eq_at_timepoint_to_minus_one <<< " << timepoint << " is beyond the zero endpoint: " << _timepoint_zero_end_cond << std::endl;
 			exit(EXIT_FAILURE);		
 		};
+         */
 
 		// Deriv val
 		double deriv_term=0.0;
@@ -80,12 +82,15 @@ namespace dblz {
 			deriv = dep_pair.first->get_deriv_wrt_nu_at_timepoint(timepoint,dep_pair.second);
 
 			// AdjointParams
+            /*
 			auto adjoint = dep_pair.first->get_parent_ixn_param_traj()->get_adjoint();
 			if (!adjoint) {
 				std::cerr << ">>> Error: AdjointParams::solve_diff_eq_at_timepoint_to_minus_one <<< No AdjointParams for ixn param: " << dep_pair.first->get_parent_ixn_param_traj()->get_name() << std::endl;
 				exit(EXIT_FAILURE);	
 			};
 			adjoint_val = adjoint->get_val_at_timepoint(timepoint);
+             */
+            adjoint_val = dep_pair.first->get_parent_ixn_param_traj()->get_adjoint()->get_val_at_timepoint(timepoint);
 
 			// Add
 			deriv_term += deriv * adjoint_val;
@@ -93,8 +98,7 @@ namespace dblz {
 		};
 
 		// Difference in moments
-        auto moment = _ixn_param_traj->get_ixn_param_at_timepoint(timepoint)->get_moment_diff();
-        double moment_delta = -1.0 * moment->get_moment_diff_awake_minus_asleep_plus_offset();
+        double moment_delta = -1.0 * _ixn_param_traj->get_ixn_param_at_timepoint(timepoint)->get_moment_diff()->get_moment_diff_awake_minus_asleep_plus_offset();
         
         // Step
         _vals[timepoint-1] = _vals[timepoint] - dt * (moment_delta - deriv);

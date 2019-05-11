@@ -79,31 +79,33 @@ namespace dblz {
     };
     void OptProblemDynamic::solve_ixn_param_trajs_step(const std::vector<std::shared_ptr<IxnParamTraj>> &ixn_param_trajs, double dt, int timepoint, int no_steps_per_step) const {
         
-        // Solve over all time
-        std::map<ITptr,std::vector<double>> vals;
         // Get initial vals at this timepoint
         for (auto ixn_param_traj: ixn_param_trajs) {
-            vals[ixn_param_traj] = std::vector<double>(no_steps_per_step+1);
-            vals[ixn_param_traj][0] = ixn_param_traj->get_ixn_param_at_timepoint(timepoint)->get_val();
+            ixn_param_traj->set_substep_val_current(ixn_param_traj->get_ixn_param_at_timepoint(timepoint)->get_val());
         };
         
         // Calculate diff eqs to a new step
         for (auto i=0; i<no_steps_per_step; i++) {
+            
+            // New substep vals
             for (auto ixn_param_traj: ixn_param_trajs) {
                 if (!ixn_param_traj->get_is_val_fixed()) {
                     // std::cout << ixn_param_traj->get_name() << " " << timepoint << " " << i << " " << ixn_param_traj->get_diff_eq_rhs()->get_val_from_map(vals, i) << std::endl;
-                    
-                    vals[ixn_param_traj][i+1] = vals.at(ixn_param_traj).at(i) + (dt / no_steps_per_step) * ixn_param_traj->get_diff_eq_rhs()->get_val_from_map(vals, i);
-                } else {
-                    vals[ixn_param_traj][i+1] = vals.at(ixn_param_traj).at(i);
+                    ixn_param_traj->set_substep_val_new(ixn_param_traj->get_substep_val() + (dt / no_steps_per_step) * ixn_param_traj->get_diff_eq_rhs()->get_substep_val());
+                };
+            };
+            
+            // Committ
+            for (auto ixn_param_traj: ixn_param_trajs) {
+                if (!ixn_param_traj->get_is_val_fixed()) {
+                    ixn_param_traj->move_to_new_substep_val();
                 };
             };
         };
         
         // Write final vals
         for (auto ixn_param_traj: ixn_param_trajs) {
-            if (!ixn_param_traj->get_is_val_fixed()) {
-                ixn_param_traj->get_ixn_param_at_timepoint(timepoint+1)->set_val(vals.at(ixn_param_traj).at(no_steps_per_step));
+            if (!ixn_param_traj->get_is_val_fixed()) {                ixn_param_traj->get_ixn_param_at_timepoint(timepoint+1)->set_val(ixn_param_traj->get_substep_val());
             };
         };
     };
@@ -431,6 +433,12 @@ namespace dblz {
         
         clock_t t3 = clock();
         
+        // For efficiency: compute all abscissa values
+        bool form_abscissas = false;
+        for (auto ixn_param_traj: latt_traj->get_all_ixn_param_trajs()) {
+            ixn_param_traj->get_diff_eq_rhs()->form_abscissas(timepoint_start_A_use, timepoint_start_A_use + no_timesteps_A_use);
+        };
+        
         // Set zero endpoint
         for (auto ixn_param_traj: latt_traj->get_all_ixn_param_trajs()) {
             ixn_param_traj->get_adjoint()->set_timepoint_zero_end_cond(timepoint_start_A_use + no_timesteps_A_use);
@@ -456,7 +464,7 @@ namespace dblz {
             for (auto timepoint=timepoint_start_A_use + no_timesteps_A_use; timepoint>timepoint_start_A_use; timepoint--) {
                 for (auto ixn_param_traj: latt_traj->get_all_ixn_param_trajs()) {
                     if (!ixn_param_traj->get_is_val_fixed()) {
-                        ixn_param_traj->get_adjoint()->solve_diff_eq_at_timepoint_to_minus_one(timepoint,dt);
+                        ixn_param_traj->get_adjoint()->solve_diff_eq_at_timepoint_to_minus_one(timepoint,dt,form_abscissas);
                     };
                 };
             };

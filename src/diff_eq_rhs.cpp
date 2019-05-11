@@ -426,6 +426,7 @@ namespace dblz {
         _parent_ixn_param_traj = other._parent_ixn_param_traj;
 		_updates = other._updates;
         _abscissas = other._abscissas;
+        _abscissas_map = other._abscissas_map;
         _lr = other._lr;
         
         if (other._nesterov_y_s) {
@@ -467,6 +468,7 @@ namespace dblz {
 		_parent_ixn_param_traj = other._parent_ixn_param_traj;
 		_updates = other._updates;
         _abscissas = other._abscissas;
+        _abscissas_map = other._abscissas_map;
         _lr = other._lr;
 
 		_nesterov_y_s = other._nesterov_y_s;
@@ -489,6 +491,7 @@ namespace dblz {
 		other._parent_ixn_param_traj = nullptr;
 		other._updates.clear();
         other._abscissas.clear();
+        other._abscissas_map.clear();
         other._lr = 0.0;
         
         other._nesterov_y_s = nullptr;
@@ -594,12 +597,12 @@ namespace dblz {
 
     void DiffEqRHS::_form_abscissas(int timepoint) const {
 		for (auto dim=0; dim<_no_dims; dim++) {
-            _abscissas[dim] = _domain[dim]->get_val_at_timepoint(timepoint);
+            _abscissas[dim] = _domain.at(dim)->get_val_at_timepoint(timepoint);
 		};
 	};
-    void DiffEqRHS::_form_abscissas(const std::map<ITptr,std::vector<double>>& vals, int idx) const {
+    void DiffEqRHS::_form_abscissas_substep() const {
         for (auto dim=0; dim<_no_dims; dim++) {
-            _abscissas[dim] = vals.at(_domain_param[dim]->get_ixn_param_traj()).at(idx);
+            _abscissas[dim] = _domain_param.at(dim)->get_ixn_param_traj()->get_substep_val();
         };
     };
 
@@ -608,23 +611,46 @@ namespace dblz {
         return get_cell(_abscissas).first;
     };
     
-	double DiffEqRHS::get_val_at_timepoint(int timepoint) const {
-        _form_abscissas(timepoint);
-        return Grid::get_val(_abscissas);
+	double DiffEqRHS::get_val_at_timepoint(int timepoint, bool form_abscissas) const {
+        if (form_abscissas) {
+            _form_abscissas(timepoint);
+            return Grid::get_val(_abscissas);
+        } else {
+            return Grid::get_val(_abscissas_map.at(timepoint));
+        };
 	};
-    double DiffEqRHS::get_val_from_map(const std::map<ITptr,std::vector<double>>& vals, int idx) const {
-        _form_abscissas(vals, idx);
+    double DiffEqRHS::get_substep_val() const {
+        _form_abscissas_substep();
         return Grid::get_val(_abscissas);
     };
     
-	double DiffEqRHS::get_deriv_wrt_u_at_timepoint(int timepoint, q3c1::IdxSet global_vertex_idxs, std::vector<q3c1::DimType> dim_types) const {
-        _form_abscissas(timepoint);
-		return Grid::get_deriv_wrt_coeff(_abscissas, global_vertex_idxs, dim_types);
+	double DiffEqRHS::get_deriv_wrt_u_at_timepoint(int timepoint, q3c1::IdxSet global_vertex_idxs, std::vector<q3c1::DimType> dim_types, bool form_abscissas) const {
+        if (form_abscissas) {
+            _form_abscissas(timepoint);
+            return Grid::get_deriv_wrt_coeff(_abscissas, global_vertex_idxs, dim_types);
+        } else {
+            return Grid::get_deriv_wrt_coeff(_abscissas_map.at(timepoint), global_vertex_idxs, dim_types);
+        };
 	};
-	double DiffEqRHS::get_deriv_wrt_nu_at_timepoint(int timepoint, int deriv_dim) const {
-        _form_abscissas(timepoint);
-		return Grid::get_deriv_wrt_abscissa(_abscissas, deriv_dim);
+	double DiffEqRHS::get_deriv_wrt_nu_at_timepoint(int timepoint, int deriv_dim, bool form_abscissas) const {
+        if (form_abscissas) {
+            _form_abscissas(timepoint);
+            return Grid::get_deriv_wrt_abscissa(_abscissas, deriv_dim);
+        } else {
+            return Grid::get_deriv_wrt_abscissa(_abscissas_map.at(timepoint), deriv_dim);
+        };
 	};
+
+    // Precompute abscissas
+    // Endpoints inclusive
+    void DiffEqRHS::form_abscissas(int timepoint_start, int timepoint_end) const {
+        for (auto timepoint=timepoint_start; timepoint<=timepoint_end; timepoint++) {
+            _abscissas_map[timepoint] = std::vector<double>(_no_dims,0.0);
+            for (auto dim=0; dim<_no_dims; dim++) {
+                _abscissas_map[timepoint][dim] = _domain.at(dim)->get_val_at_timepoint(timepoint);
+            };
+        };
+    };
 
     // ***************
     // MARK: - Fix vertices at some timepoint

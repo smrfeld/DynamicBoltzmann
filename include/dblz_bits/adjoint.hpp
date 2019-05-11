@@ -88,8 +88,8 @@ namespace dblz {
         // MARK: - Solve diff eq
         // ***************
 
-		virtual void solve_diff_eq_at_timepoint_to_minus_one(int timepoint, double dt) = 0;
-        virtual void solve_diff_eq_at_timepoint_to_minus_one_l2(int timepoint, double dt, double l2_lambda, double l2_center) = 0;
+		virtual void solve_diff_eq_at_timepoint_to_minus_one(int timepoint, double dt, bool form_abscissas=true) = 0;
+        virtual void solve_diff_eq_at_timepoint_to_minus_one_l2(int timepoint, double dt, double l2_lambda, double l2_center, bool form_abscissas=true) = 0;
 
         // ***************
         // MARK: - Write to file

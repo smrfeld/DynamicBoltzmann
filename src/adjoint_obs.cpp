@@ -89,7 +89,7 @@ namespace dblz {
     // MARK: - Diff eq
     // ***************
     
-	void AdjointObs::solve_diff_eq_at_timepoint_to_minus_one(int timepoint, double dt) {
+	void AdjointObs::solve_diff_eq_at_timepoint_to_minus_one(int timepoint, double dt, bool form_abscissas) {
 		if (timepoint >= _no_timepoints) {
 			std::cerr << ">>> Error: AdjointObs::solve_diff_eq_at_timepoint_to_minus_one <<< " << timepoint << " is out of bounds: " << _no_timepoints << std::endl;
 			exit(EXIT_FAILURE);
@@ -113,7 +113,7 @@ namespace dblz {
         _vals[timepoint-1] = _vals[timepoint] - dt * (moment_delta - deriv_term);
 	};
     
-    void AdjointObs::solve_diff_eq_at_timepoint_to_minus_one_l2(int timepoint, double dt, double l2_lambda, double l2_center) {
+    void AdjointObs::solve_diff_eq_at_timepoint_to_minus_one_l2(int timepoint, double dt, double l2_lambda, double l2_center, bool form_abscissas) {
         std::cerr << ">>> AdjointObs::solve_diff_eq_at_timepoint_to_minus_one_l2 <<< L2 mode not supported" << std::endl;
         exit(EXIT_FAILURE);
     };

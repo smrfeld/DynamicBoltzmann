@@ -240,9 +240,10 @@ namespace dblz {
         std::map<q3c1::Vertex*,std::vector<double>> *_adam_m, *_adam_v;
 
 		// Internal
+        mutable std::map<int,std::vector<double>> _abscissas_map;
         mutable std::vector<double> _abscissas;
         void _form_abscissas(int timepoint) const;
-        void _form_abscissas(const std::map<ITptr,std::vector<double>>& vals, int idx) const;
+        void _form_abscissas_substep() const;
 
         // Maximum magnitude for update to coeffs
         double *_mag_max_update;
@@ -305,15 +306,19 @@ namespace dblz {
         q3c1::Cell* get_cell_at_timepoint(int timepoint) const;
         
         // Get val
-		double get_val_at_timepoint(int timepoint) const;
-        double get_val_from_map(const std::map<ITptr,std::vector<double>>& vals, int idx) const;
-        
+		double get_val_at_timepoint(int timepoint, bool form_abscissas=true) const;
+        double get_substep_val() const;
+
 		// Deriv wrt specific coefficient of some basis
-		double get_deriv_wrt_u_at_timepoint(int timepoint, q3c1::IdxSet global_vertex_idxs, std::vector<q3c1::DimType> dim_types) const;
+		double get_deriv_wrt_u_at_timepoint(int timepoint, q3c1::IdxSet global_vertex_idxs, std::vector<q3c1::DimType> dim_types, bool form_abscissas=true) const;
 
 		// Spatial deriv
-		double get_deriv_wrt_nu_at_timepoint(int timepoint, int deriv_dim) const;
+		double get_deriv_wrt_nu_at_timepoint(int timepoint, int deriv_dim, bool form_abscissas=true) const;
 
+        // Precompute abscissas
+        // Endpoints inclusive
+        void form_abscissas(int timepoint_start, int timepoint_end) const;
+        
         // ***************
         // MARK: - Fix vertices at some timepoint
         // ***************

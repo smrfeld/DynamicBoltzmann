@@ -43,6 +43,10 @@ namespace dblz {
         // Ixn params
         std::vector<std::shared_ptr<IxnParam>> _ixn_params;
         
+        // Intermediate substep vals
+        double _substep_val_current;
+        double _substep_val_new;
+        
         // Init cond
         double _init_cond;
         
@@ -79,6 +83,15 @@ namespace dblz {
         void print_moment_traj(int timepoint_start, int no_timesteps) const;
         void print_moment_diff_traj(int timepoint_start, int no_timesteps) const;
 
+        // ***************
+        // MARK: - Substep vals
+        // ***************
+        
+        double get_substep_val() const;
+        void set_substep_val_new(double val);
+        void set_substep_val_current(double val);
+        void move_to_new_substep_val();
+        
         // ***************
         // MARK: - Diff eq rhs that this ixn param appears in
         // ***************

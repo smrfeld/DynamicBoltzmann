@@ -59,7 +59,7 @@ namespace dblz {
     // MARK: - Diff eq
     // ***************
     
-	void AdjointParams::solve_diff_eq_at_timepoint_to_minus_one(int timepoint, double dt) {
+	void AdjointParams::solve_diff_eq_at_timepoint_to_minus_one(int timepoint, double dt, bool form_abscissas) {
         /*
 		if (timepoint >= _no_timepoints) {
 			std::cerr << ">>> Error: AdjointParams::solve_diff_eq_at_timepoint_to_minus_one <<< " << timepoint << " is out of bounds: " << _no_timepoints << std::endl;
@@ -79,7 +79,7 @@ namespace dblz {
         for (auto const dep_pair: _ixn_param_traj->get_diff_eq_dependencies()) {
 
 			// Derivative
-			deriv = dep_pair.first->get_deriv_wrt_nu_at_timepoint(timepoint,dep_pair.second);
+			deriv = dep_pair.first->get_deriv_wrt_nu_at_timepoint(timepoint,dep_pair.second, form_abscissas);
 
 			// AdjointParams
             /*
@@ -104,10 +104,10 @@ namespace dblz {
         _vals[timepoint-1] = _vals[timepoint] - dt * (moment_delta - deriv);
 	};
     
-    void AdjointParams::solve_diff_eq_at_timepoint_to_minus_one_l2(int timepoint, double dt, double l2_lambda, double l2_center) {
+    void AdjointParams::solve_diff_eq_at_timepoint_to_minus_one_l2(int timepoint, double dt, double l2_lambda, double l2_center, bool form_abscissas) {
 
         // Solve
-        solve_diff_eq_at_timepoint_to_minus_one(timepoint, dt);
+        solve_diff_eq_at_timepoint_to_minus_one(timepoint, dt, form_abscissas);
         
         // L2 reg
         double ixn_param_val = _ixn_param_traj->get_ixn_param_at_timepoint(timepoint)->get_val();

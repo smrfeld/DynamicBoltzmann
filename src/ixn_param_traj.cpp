@@ -84,6 +84,9 @@ namespace dblz {
         
         _ixn_params = other._ixn_params;
         
+        _substep_val_current = other._substep_val_current;
+        _substep_val_new = other._substep_val_new;
+        
         _init_cond = other._init_cond;
         
         _no_timesteps = other._no_timesteps;
@@ -102,6 +105,9 @@ namespace dblz {
         
         _ixn_params = other._ixn_params;
         
+        _substep_val_current = other._substep_val_current;
+        _substep_val_new = other._substep_val_new;
+
         _init_cond = other._init_cond;
         
         _no_timesteps = other._no_timesteps;
@@ -116,6 +122,8 @@ namespace dblz {
         other._diff_eq = nullptr;
         other._diff_eq_dependencies.clear();
         other._ixn_params.clear();
+        other._substep_val_current = 0.0;
+        other._substep_val_new = 0.0;
         other._init_cond = 0.0;
         other._no_timesteps = 0;
         other._no_timepoints = 1;
@@ -163,6 +171,23 @@ namespace dblz {
             };
         };
         std::cout << std::endl;
+    };
+    
+    // ***************
+    // MARK: - Substep vals
+    // ***************
+    
+    double IxnParamTraj::get_substep_val() const {
+        return _substep_val_current;
+    };
+    void IxnParamTraj::set_substep_val_new(double val) {
+        _substep_val_new = val;
+    };
+    void IxnParamTraj::set_substep_val_current(double val) {
+        _substep_val_current = val;
+    };
+    void IxnParamTraj::move_to_new_substep_val() {
+        _substep_val_current = _substep_val_new;
     };
     
     // ***************

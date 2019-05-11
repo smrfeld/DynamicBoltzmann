@@ -24,16 +24,18 @@ namespace dblz {
 
 	class LatticeTraj
 	{
-	private:
+    protected:
         
         // Lattices
         std::map<int,std::shared_ptr<Lattice>> _lattices;
-        
+
         // All ixn param trajs
         std::vector<ITptr> _ixn_param_trajs;
         std::map<int, std::map<Sptr,ITptr>> _bias_dict;
         std::map<int, std::map<Sptr, std::map<int, std::map<Sptr,ITptr>>>> _o2_ixn_dict;
 
+    private:
+        
         // Add ixn param traj (Unique!)
         void _add_ixn_param_traj(ITptr ixn_param_traj);
         
@@ -56,7 +58,7 @@ namespace dblz {
 		LatticeTraj(LatticeTraj&& other);
 		LatticeTraj& operator=(const LatticeTraj& other);
 		LatticeTraj& operator=(LatticeTraj&& other);
-		~LatticeTraj();
+		virtual ~LatticeTraj();
         
         // ***************
         // MARK: - No timesteps
@@ -64,7 +66,7 @@ namespace dblz {
         
         // Set no timesteps
         // Idx 0 is timepoint_start_ixn_params in the ixn_params
-        void set_no_timesteps(int timepoint_start, int no_timesteps);
+        virtual void set_no_timesteps(int timepoint_start, int no_timesteps);
         
         // ***************
         // MARK: - Getters

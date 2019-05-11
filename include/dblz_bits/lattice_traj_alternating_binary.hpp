@@ -7,6 +7,11 @@
 
 #include <armadillo>
 
+#ifndef LATTICE_TRAJ_H
+#define LATTICE_TRAJ_H
+#include "lattice_traj.hpp"
+#endif
+
 /************************************
 * Namespace for bmla
 ************************************/
@@ -22,20 +27,12 @@ namespace dblz {
 	LatticeTrajAlternatingBinary
 	****************************************/
 
-	class LatticeTrajAlternatingBinary
+    class LatticeTrajAlternatingBinary : public LatticeTraj
 	{
 	private:
         
         // Lattices
-        std::map<int,std::shared_ptr<LatticeAlternatingBinary>> _lattices;
-        
-        // All ixn param trajs
-        std::vector<ITptr> _ixn_param_trajs;
-        std::map<int, std::map<Sptr,ITptr>> _bias_dict;
-        std::map<int, std::map<Sptr, std::map<int, std::map<Sptr,ITptr>>>> _o2_ixn_dict;
-
-        // Add ixn param traj (Unique!)
-        void _add_ixn_param_traj(ITptr ixn_param_traj);
+        std::map<int,std::shared_ptr<LatticeAlternatingBinary>> _lattices_alternating_binary;
         
         // ***************
         // MARK: - Constructor helpers
@@ -67,51 +64,9 @@ namespace dblz {
         void set_no_timesteps(int timepoint_start, int no_timesteps);
         
         // ***************
-        // MARK: - Getters
-        // ***************
-
-        int get_no_dims() const;
-        int get_box_length() const;
-        int get_no_units_in_layer(int layer) const;
-        int get_no_layers() const;
-        
-        // Get all ixns
-        const std::vector<ITptr>& get_all_ixn_param_trajs() const;
-        
-        // ***************
-        // MARK: - Markov chains
-        // ***************
-
-        int get_no_markov_chains(MCType type) const;
-        void set_no_markov_chains(MCType type, int no_markov_chains);
-        
-        // ***************
         // MARK: - Get lattice
         // ***************
         
-        std::shared_ptr<LatticeAlternatingBinary> get_lattice_at_timepoint(int timepoint) const;
-        
-        // ***************
-        // MARK: - Setup all timepoints
-        // ***************
-        
-        // Add layer
-        void add_layer(int layer, int box_length, std::vector<Sptr> species);
-
-		// Biases
-        void set_bias_of_layer(int layer, Sptr sp, ITptr bias);
-
-		// Ixns between layers
-        // Always bidirectional
-        void set_ixn_between_layers(int layer1, Sptr sp1, int layer2, Sptr sp2, ITptr ixn);
-
-        // Set multiplier
-        void set_multiplier_between_layers(int from_layer, int to_layer, double multiplier);
-        void set_multiplier_for_bias_in_layer(int layer, double multiplier);
-        
-        // Add connections
-        void add_conn(int layer1, int x1, int layer2, int x2);
-        void add_conn(int layer1, int x1, int y1, int layer2, int x2, int y2);
-        void add_conn(int layer1, int x1, int y1, int z1, int layer2, int x2, int y2, int z2);
+        std::shared_ptr<LatticeAlternatingBinary> get_lattice_alternating_binary_at_timepoint(int timepoint) const;
     };
 };

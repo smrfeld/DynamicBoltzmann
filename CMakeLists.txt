@@ -60,6 +60,7 @@ add_library(dblz SHARED
 	src/lattice_alternating_binary.cpp
 	src/lattice_traj.cpp
 	src/lattice_traj_alternating_binary.cpp
+	src/lattice_traj_centered_hom.cpp
 	src/moment_diff.cpp
 	src/opt_problem_dynamic.cpp
 	src/species.cpp
@@ -80,6 +81,7 @@ add_library(dblz SHARED
 	include/dblz_bits/lattice_centered_hom.hpp
 	include/dblz_bits/lattice_traj.hpp
 	include/dblz_bits/lattice_traj_alternating_binary.hpp
+	include/dblz_bits/lattice_traj_centered_hom.hpp
 	include/dblz_bits/moment_diff.hpp
 	include/dblz_bits/opt_problem_dynamic.hpp
 	include/dblz_bits/species.hpp

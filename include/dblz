@@ -20,6 +20,7 @@
 #include "dblz_bits/lattice_centered_hom.hpp"
 #include "dblz_bits/lattice_alternating_binary.hpp"
 #include "dblz_bits/lattice_traj_alternating_binary.hpp"
+#include "dblz_bits/lattice_traj_centered_hom.hpp"
 #include "dblz_bits/moment_diff.hpp"
 #include "dblz_bits/opt_problem_dynamic.hpp"
 #include "dblz_bits/species.hpp"

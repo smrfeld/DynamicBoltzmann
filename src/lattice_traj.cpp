@@ -32,12 +32,14 @@ namespace dblz {
 	Constructor
 	********************/
 
-    LatticeTraj::LatticeTraj(int no_dims, int box_length, std::vector<Sptr> species_visible)
+    LatticeTraj::LatticeTraj(int no_dims, int box_length, std::vector<Sptr> species_visible, bool create_lattice_at_zero)
 	{
-        _lattices[0] = std::make_shared<Lattice>(no_dims,box_length,species_visible);
+        if (create_lattice_at_zero) {
+            _lattices[0] = std::make_shared<Lattice>(no_dims,box_length,species_visible);
         
-        // Set no timesteps/timepoints
-        set_no_timesteps(0,0);
+            // Set no timesteps/timepoints
+            set_no_timesteps(0,0);
+        };
 	};
 	LatticeTraj::LatticeTraj(const LatticeTraj& other) {
 		_copy(other);

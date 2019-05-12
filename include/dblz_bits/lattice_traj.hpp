@@ -53,7 +53,7 @@ namespace dblz {
         // MARK: - Constructor
         // ***************
         
-        LatticeTraj(int no_dims, int box_length, std::vector<Sptr> species_visible);
+        LatticeTraj(int no_dims, int box_length, std::vector<Sptr> species_visible, bool create_lattice_at_zero=true);
 		LatticeTraj(const LatticeTraj& other);
 		LatticeTraj(LatticeTraj&& other);
 		LatticeTraj& operator=(const LatticeTraj& other);

@@ -32,7 +32,7 @@ namespace dblz {
 	Constructor
 	********************/
 
-    LatticeTrajAlternatingBinary::LatticeTrajAlternatingBinary(int no_dims, int box_length, std::vector<Sptr> species_visible) : LatticeTraj(no_dims, box_length, species_visible)
+    LatticeTrajAlternatingBinary::LatticeTrajAlternatingBinary(int no_dims, int box_length, std::vector<Sptr> species_visible) : LatticeTraj(no_dims, box_length, species_visible, false)
 	{
         _lattices_alternating_binary[0] = std::make_shared<LatticeAlternatingBinary>(no_dims,box_length,species_visible);
         _lattices[0] = _lattices_alternating_binary[0];

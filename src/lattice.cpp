@@ -30,7 +30,7 @@ namespace dblz {
 	Constructor
 	********************/
 
-    Lattice::Lattice(int no_dims, int box_length, std::vector<Sptr> species_visible) {
+    Lattice::Lattice(int no_dims, int box_length, std::vector<Sptr> species_visible, bool add_visible_layer) {
         
         if (no_dims != 1 && no_dims != 2 && no_dims != 3) {
             std::cerr << "ERROR: only dimensions 1,2,3 are supported for Lattice." << std::endl;
@@ -46,7 +46,9 @@ namespace dblz {
         set_no_markov_chains(MCType::ASLEEP, 1);
         
         // Visible layer
-        add_layer(0, _box_length, species_visible);
+        if (add_visible_layer) {
+            add_layer(0, _box_length, species_visible);
+        };
     };
 	Lattice::Lattice(const Lattice& other) {
 		_copy(other);

@@ -184,7 +184,7 @@ namespace dblz {
         // MARK: Constructor
         // ***************
         
-        Lattice(int no_dims, int box_length, std::vector<Sptr> species_visible);
+        Lattice(int no_dims, int box_length, std::vector<Sptr> species_visible, bool add_visible_layer=true);
         Lattice(const Lattice& other);
 		Lattice(Lattice&& other);
 		Lattice& operator=(const Lattice& other);

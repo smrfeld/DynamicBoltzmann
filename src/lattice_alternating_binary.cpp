@@ -30,7 +30,7 @@ namespace dblz {
 	Constructor
 	********************/
 
-    LatticeAlternatingBinary::LatticeAlternatingBinary(int no_dims, int box_length, std::vector<Sptr> species_visible) : Lattice(no_dims, box_length, species_visible) {
+    LatticeAlternatingBinary::LatticeAlternatingBinary(int no_dims, int box_length, std::vector<Sptr> species_visible) : Lattice(no_dims, box_length, species_visible, true) {
     };
     LatticeAlternatingBinary::LatticeAlternatingBinary(const LatticeAlternatingBinary& other) : Lattice(other) {
 		_copy(other);

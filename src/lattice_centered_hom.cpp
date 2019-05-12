@@ -31,7 +31,7 @@ namespace dblz {
 	Constructor
 	********************/
 
-    LatticeCenteredHom::LatticeCenteredHom(int no_dims, int box_length, std::vector<Sptr> species_visible, std::vector<Cptr> centers) : Lattice(no_dims,box_length,species_visible) {
+    LatticeCenteredHom::LatticeCenteredHom(int no_dims, int box_length, std::vector<Sptr> species_visible, std::vector<Cptr> centers) : Lattice(no_dims,box_length,species_visible,false) {
         
         // Visible layer
         add_layer(0, box_length, species_visible, centers);
@@ -94,7 +94,8 @@ namespace dblz {
     
     // This does nothing
     void LatticeCenteredHom::add_layer(int layer, int box_length, std::vector<Sptr> species) {
-        std::cout << ">>> LatticeCenteredHom::add_layer <<< Warning: this function does nothing without passing the centers. This may be OK, as it is called during the constructor." << std::endl;
+        std::cout << ">>> LatticeCenteredHom::add_layer <<< Error: this function does nothing without passing the centers." << std::endl;
+        exit(EXIT_FAILURE);
     };
 
     // This is the correct function

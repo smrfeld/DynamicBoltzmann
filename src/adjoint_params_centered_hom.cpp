@@ -371,6 +371,8 @@ namespace dblz {
     
     void AdjointParamsCenteredHomWeight::solve_diff_eq_at_timepoint_to_minus_one(int timepoint, double dt, bool form_abscissas) {
         
+        // std::cout << ">>> AdjointParamsCenteredHomWeight::solve_diff_eq_at_timepoint_to_minus_one <<< " << timepoint << std::endl;
+        
         // Difference in moments
         double moment_delta = -1.0 * _ixn_param_traj->get_ixn_param_at_timepoint(timepoint)->get_moment_diff()->get_moment_diff_awake_minus_asleep();
         

@@ -36,6 +36,7 @@ namespace dblz {
         // ***************
         
         Center(int layer, Sptr species);
+        Center(int layer, Sptr species, double val);
         Center(const Center& other);
         Center& operator=(const Center& other);
         Center(Center&& other);

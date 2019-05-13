@@ -21,12 +21,13 @@ namespace dblz {
     // MARK: - Constructor
     // ***************
     
-    Center::Center(int layer, Sptr species) {
-        _val = 0.5;
+    Center::Center(int layer, Sptr species, double val) {
+        _val = val;
         _val_new = 0.0;
         _layer = layer;
         _species = species;
     };
+    Center::Center(int layer, Sptr species) : Center(layer,species,0.5) {};
     Center::Center(const Center& other) {
         _copy(other);
     };

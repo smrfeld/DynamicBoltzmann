@@ -89,7 +89,13 @@ namespace dblz {
         _no_timepoints = _no_timesteps + 1;
         
         while (_centers.size() < _no_timepoints) {
-            _centers.push_back(std::make_shared<Center>(_layer,_species));
+            if (_centers.size() > 0) {
+                // Make new center at the latest value
+                _centers.push_back(std::make_shared<Center>(_layer,_species,_centers.back()->get_val()));
+            } else {
+                // Make new center at default 0.5
+                _centers.push_back(std::make_shared<Center>(_layer,_species));
+            };
         };
         while (_centers.size() > _no_timepoints) {
             _centers.pop_back();
@@ -113,8 +119,13 @@ namespace dblz {
     };
     
     // Time derivative
-    double CenterTraj::get_deriv_at_timepoint(int timepoint, double dt) const {
-        return (_centers.at(timepoint+1)->get_val() - _centers.at(timepoint)->get_val()) / dt;
+    double CenterTraj::get_deriv_at_timepoint(int timepoint, double dt, bool bkwd_diff) const {
+        // std::cout << ">>> CenterTraj::get_deriv_at_timepoint <<< " << timepoint << " " << _no_timesteps << " " << _no_timepoints << std::endl;
+        if (bkwd_diff) {
+            return (_centers.at(timepoint)->get_val() - _centers.at(timepoint-1)->get_val()) / dt;
+        } else {
+            return (_centers.at(timepoint+1)->get_val() - _centers.at(timepoint)->get_val()) / dt;
+        };
     };
     
     // ***************

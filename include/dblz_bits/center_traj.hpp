@@ -63,7 +63,7 @@ namespace dblz {
         double get_val_at_timepoint(int timepoint) const;
         
         // Time derivative
-        double get_deriv_at_timepoint(int timepoint, double dt) const;
+        double get_deriv_at_timepoint(int timepoint, double dt, bool bkwd_diff=true) const;
         
         // ***************
         // MARK: - Get layer/species

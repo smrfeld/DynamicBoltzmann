@@ -14,6 +14,7 @@ namespace dblz {
     class LatticeTraj;
     class LatticeTraj1DFullyVisible;
     class LatticeTrajAlternatingBinary;
+    class LatticeTrajCenteredHom;
     class FNameTrajColl;
     struct OptionsWakeSleep_BM_PCD;
     struct OptionsWakeSleep_RBM_CD;
@@ -133,6 +134,9 @@ namespace dblz {
         void solve_one_step_rbm_cd_params(std::shared_ptr<LatticeTrajAlternatingBinary> latt_traj, int i_opt_step, int timepoint_start_SIP, int no_timesteps_SIP, int timepoint_start_WS, int no_timesteps_WS, int timepoint_start_A, int no_timesteps_A, double dt, int no_cd_steps, FNameTrajColl &fname_traj_coll, OptionsSolveDynamic options, OptionsWakeSleep_RBM_CD options_wake_sleep);
         void solve_one_step_rbm_cd_params_without_committ(std::shared_ptr<LatticeTrajAlternatingBinary> latt_traj, int i_opt_step, int timepoint_start_SIP, int no_timesteps_SIP, int timepoint_start_WS, int no_timesteps_WS, int timepoint_start_A, int no_timesteps_A, double dt, int no_cd_steps, FNameTrajColl &fname_traj_coll, OptionsSolveDynamic options, OptionsWakeSleep_RBM_CD options_wake_sleep);
 
+        void solve_one_step_rbm_cd_params(std::shared_ptr<LatticeTrajCenteredHom> latt_traj, int i_opt_step, int timepoint_start_SIP, int no_timesteps_SIP, int timepoint_start_WS, int no_timesteps_WS, int timepoint_start_A, int no_timesteps_A, double dt, int no_cd_steps, FNameTrajColl &fname_traj_coll, OptionsSolveDynamic options, OptionsWakeSleep_RBM_CD options_wake_sleep);
+        void solve_one_step_rbm_cd_params_without_committ(std::shared_ptr<LatticeTrajCenteredHom> latt_traj, int i_opt_step, int timepoint_start_SIP, int no_timesteps_SIP, int timepoint_start_WS, int no_timesteps_WS, int timepoint_start_A, int no_timesteps_A, double dt, int no_cd_steps, FNameTrajColl &fname_traj_coll, OptionsSolveDynamic options, OptionsWakeSleep_RBM_CD options_wake_sleep);
+        
         // ***************
         // MARK: - RBM CD obs
         // ***************

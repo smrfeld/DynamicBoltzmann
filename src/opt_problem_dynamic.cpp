@@ -782,7 +782,7 @@ namespace dblz {
             // Solve diff eq
             for (auto ixn_param_traj: latt_traj->get_all_ixn_param_trajs()) {
                 if (!ixn_param_traj->get_is_val_fixed()) {
-                    ixn_param_traj->get_adjoint_params_centered_hom_bias()->solve_diff_eq_at_timepoint_to_minus_one(timepoint, dt);
+                    ixn_param_traj->get_adjoint()->solve_diff_eq_at_timepoint_to_minus_one(timepoint, dt);
                 };
             };
         };

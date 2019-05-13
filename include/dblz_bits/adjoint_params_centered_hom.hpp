@@ -160,7 +160,7 @@ namespace dblz {
         // MARK: - Constructor
         // ***************
         
-        AdjointParamsCenteredHomWeight(std::string name, ITptr ixn_param_traj, CtrDerivPtr deriv_term_weight, CtrDerivPtr deriv_term_bias_lower, CtrDerivPtr deriv_term_bias_upper, int conn_mult, CTptr center_lower, CTptr center_upper, std::shared_ptr<AdjointParamsCenteredHomBias> adjoint_bias_lower, std::shared_ptr<AdjointParamsCenteredHomBias> adjoint_bias_upper);
+        AdjointParamsCenteredHomWeight(std::string name, ITptr ixn_param_traj, CtrDerivPtr deriv_term_weight, CtrDerivPtr deriv_term_bias_lower, CtrDerivPtr deriv_term_bias_upper, int conn_mult, CTptr center_lower, CTptr center_upper, std::shared_ptr<AdjointParamsCenteredHomBias> adjoint_bias_lower, std::shared_ptr<AdjointParamsCenteredHomBias> adjoint_bias_upper, std::vector<CTptr> all_centers_lower, std::vector<CTptr> all_centers_upper);
         AdjointParamsCenteredHomWeight(const AdjointParamsCenteredHomWeight& other);
         AdjointParamsCenteredHomWeight& operator=(const AdjointParamsCenteredHomWeight& other);
         AdjointParamsCenteredHomWeight(AdjointParamsCenteredHomWeight&& other);

@@ -15,6 +15,8 @@ namespace dblz {
 	class Adjoint;
     class AdjointObs;
     class AdjointParams;
+    class AdjointParamsCenteredHomBias;
+    class AdjointParamsCenteredHomWeight;
     class MomentDiff;
     
 	/****************************************
@@ -32,6 +34,8 @@ namespace dblz {
         std::shared_ptr<Adjoint> _adjoint;
         std::shared_ptr<AdjointObs> _adjoint_obs;
         std::shared_ptr<AdjointParams> _adjoint_params;
+        std::shared_ptr<AdjointParamsCenteredHomBias> _adjoint_params_centered_hom_bias;
+        std::shared_ptr<AdjointParamsCenteredHomWeight> _adjoint_params_centered_hom_weight;
 
         // Diff eq RHS
         std::shared_ptr<DiffEqRHS> _diff_eq;
@@ -149,9 +153,14 @@ namespace dblz {
         
 		void set_adjoint(std::shared_ptr<AdjointObs> adjoint_obs);
         void set_adjoint(std::shared_ptr<AdjointParams> adjoint_params);
+        void set_adjoint(std::shared_ptr<AdjointParamsCenteredHomBias> adjoint_params_centered_hom_bias);
+        void set_adjoint(std::shared_ptr<AdjointParamsCenteredHomWeight> adjoint_params_centered_hom_weight);
+        
         std::shared_ptr<Adjoint> get_adjoint() const;
         std::shared_ptr<AdjointObs> get_adjoint_obs() const;
         std::shared_ptr<AdjointParams> get_adjoint_params() const;
+        std::shared_ptr<AdjointParamsCenteredHomBias> get_adjoint_params_centered_hom_bias() const;
+        std::shared_ptr<AdjointParamsCenteredHomWeight> get_adjoint_params_centered_hom_weight() const;
 
         // ***************
         // MARK: - Write to file

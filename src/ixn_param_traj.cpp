@@ -6,6 +6,7 @@
 #include "../include/dblz_bits/diff_eq_rhs.hpp"
 #include "../include/dblz_bits/adjoint_obs.hpp"
 #include "../include/dblz_bits/adjoint_params.hpp"
+#include "../include/dblz_bits/adjoint_params_centered_hom.hpp"
 #include "../include/dblz_bits/ixn_param.hpp"
 #include "../include/dblz_bits/moment_diff.hpp"
 
@@ -37,6 +38,8 @@ namespace dblz {
         _adjoint = nullptr;
         _adjoint_obs = nullptr;
         _adjoint_params = nullptr;
+        _adjoint_params_centered_hom_bias = nullptr;
+        _adjoint_params_centered_hom_weight = nullptr;
 
         // Diff eq
         _diff_eq = nullptr;
@@ -77,7 +80,9 @@ namespace dblz {
         _adjoint = other._adjoint;
         _adjoint_obs = other._adjoint_obs;
         _adjoint_params = other._adjoint_params;
-
+        _adjoint_params_centered_hom_bias = other._adjoint_params_centered_hom_bias;
+        _adjoint_params_centered_hom_weight = other._adjoint_params_centered_hom_weight;
+        
         _diff_eq = other._diff_eq;
         
         _diff_eq_dependencies = other._diff_eq_dependencies;
@@ -98,7 +103,9 @@ namespace dblz {
         _adjoint = other._adjoint;
         _adjoint_obs = other._adjoint_obs;
         _adjoint_params = other._adjoint_params;
-        
+        _adjoint_params_centered_hom_bias = other._adjoint_params_centered_hom_bias;
+        _adjoint_params_centered_hom_weight = other._adjoint_params_centered_hom_weight;
+
         _diff_eq = other._diff_eq;
         
         _diff_eq_dependencies = other._diff_eq_dependencies;
@@ -119,6 +126,8 @@ namespace dblz {
         other._adjoint = nullptr;
         other._adjoint_obs = nullptr;
         other._adjoint_params = nullptr;
+        other._adjoint_params_centered_hom_bias = nullptr;
+        other._adjoint_params_centered_hom_weight = nullptr;
         other._diff_eq = nullptr;
         other._diff_eq_dependencies.clear();
         other._ixn_params.clear();
@@ -326,11 +335,29 @@ namespace dblz {
 		_adjoint_obs = adjoint_obs;
         _adjoint = _adjoint_obs;
         _adjoint_params = nullptr;
+        _adjoint_params_centered_hom_bias = nullptr;
+        _adjoint_params_centered_hom_weight = nullptr;
 	};
     void IxnParamTraj::set_adjoint(std::shared_ptr<AdjointParams> adjoint_params) {
         _adjoint_obs = nullptr;
         _adjoint = adjoint_params;
         _adjoint_params = adjoint_params;
+        _adjoint_params_centered_hom_bias = nullptr;
+        _adjoint_params_centered_hom_weight = nullptr;
+    };
+    void IxnParamTraj::set_adjoint(std::shared_ptr<AdjointParamsCenteredHomBias> adjoint_params_centered_hom_bias) {
+        _adjoint_obs = nullptr;
+        _adjoint = adjoint_params_centered_hom_bias;
+        _adjoint_params = nullptr;
+        _adjoint_params_centered_hom_bias = adjoint_params_centered_hom_bias;
+        _adjoint_params_centered_hom_weight = nullptr;
+    };
+    void IxnParamTraj::set_adjoint(std::shared_ptr<AdjointParamsCenteredHomWeight> adjoint_params_centered_hom_weight) {
+        _adjoint_obs = nullptr;
+        _adjoint = adjoint_params_centered_hom_weight;
+        _adjoint_params = nullptr;
+        _adjoint_params_centered_hom_bias = nullptr;
+        _adjoint_params_centered_hom_weight = adjoint_params_centered_hom_weight;
     };
 	std::shared_ptr<Adjoint> IxnParamTraj::get_adjoint() const {
 		return _adjoint;
@@ -340,6 +367,12 @@ namespace dblz {
     };
     std::shared_ptr<AdjointParams> IxnParamTraj::get_adjoint_params() const {
         return _adjoint_params;
+    };
+    std::shared_ptr<AdjointParamsCenteredHomBias> IxnParamTraj::get_adjoint_params_centered_hom_bias() const {
+        return _adjoint_params_centered_hom_bias;
+    };
+    std::shared_ptr<AdjointParamsCenteredHomWeight> IxnParamTraj::get_adjoint_params_centered_hom_weight() const {
+        return _adjoint_params_centered_hom_weight;
     };
 
     // ***************

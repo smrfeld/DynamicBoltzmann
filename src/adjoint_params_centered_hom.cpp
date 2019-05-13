@@ -271,7 +271,7 @@ namespace dblz {
     // MARK: - Constructor
     // ***************
     
-    AdjointParamsCenteredHomWeight::AdjointParamsCenteredHomWeight(std::string name, ITptr ixn_param_traj, CtrDerivPtr deriv_term_weight, CtrDerivPtr deriv_term_bias_lower, CtrDerivPtr deriv_term_bias_upper, int conn_mult, CTptr center_lower, CTptr center_upper, std::shared_ptr<AdjointParamsCenteredHomBias> adjoint_bias_lower, std::shared_ptr<AdjointParamsCenteredHomBias> adjoint_bias_upper) : Adjoint(name,ixn_param_traj) {
+    AdjointParamsCenteredHomWeight::AdjointParamsCenteredHomWeight(std::string name, ITptr ixn_param_traj, CtrDerivPtr deriv_term_weight, CtrDerivPtr deriv_term_bias_lower, CtrDerivPtr deriv_term_bias_upper, int conn_mult, CTptr center_lower, CTptr center_upper, std::shared_ptr<AdjointParamsCenteredHomBias> adjoint_bias_lower, std::shared_ptr<AdjointParamsCenteredHomBias> adjoint_bias_upper, std::vector<CTptr> all_centers_lower, std::vector<CTptr> all_centers_upper) : Adjoint(name,ixn_param_traj) {
         if (ixn_param_traj->get_type() != IxnParamType::W && ixn_param_traj->get_type() != IxnParamType::X) {
             std::cerr << ">>> AdjointParamsCenteredHomWeight::AdjointParamsCenteredHomWeight <<< Error: this is the wrong constructor for bias terms." << std::endl;
             exit(EXIT_FAILURE);
@@ -283,6 +283,8 @@ namespace dblz {
         _conn_mult = conn_mult;
         _center_lower = center_lower;
         _center_upper = center_upper;
+        _all_centers_lower = all_centers_lower;
+        _all_centers_upper = all_centers_upper;
         _adjoint_bias_lower = adjoint_bias_lower;
         _adjoint_bias_upper = adjoint_bias_upper;
     };
@@ -320,6 +322,8 @@ namespace dblz {
         _conn_mult = other._conn_mult;
         _center_lower = other._center_lower;
         _center_upper = other._center_upper;
+        _all_centers_lower = other._all_centers_lower;
+        _all_centers_upper = other._all_centers_upper;
         _adjoint_bias_lower = other._adjoint_bias_lower;
         _adjoint_bias_upper = other._adjoint_bias_upper;
     };
@@ -330,6 +334,8 @@ namespace dblz {
         _conn_mult = other._conn_mult;
         _center_lower = other._center_lower;
         _center_upper = other._center_upper;
+        _all_centers_lower = other._all_centers_lower;
+        _all_centers_upper = other._all_centers_upper;
         _adjoint_bias_lower = other._adjoint_bias_lower;
         _adjoint_bias_upper = other._adjoint_bias_upper;
 
@@ -339,6 +345,8 @@ namespace dblz {
         other._conn_mult = 0;
         other._center_lower = nullptr;
         other._center_upper = nullptr;
+        other._all_centers_lower.clear();
+        other._all_centers_upper.clear();
         other._adjoint_bias_lower = nullptr;
         other._adjoint_bias_upper = nullptr;
     };

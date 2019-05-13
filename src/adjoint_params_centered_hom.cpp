@@ -120,7 +120,7 @@ namespace dblz {
     // MARK: - Vals
     // ***************
     
-    void AdjointParamsCenteredHomDerivTerm::calculate_val_at_timepoint(int timepoint) {
+    void AdjointParamsCenteredHomDerivTerm::calculate_val_at_timepoint(int timepoint, bool form_abscissas) {
         double val = 0.0;
         
         // Weights first term
@@ -132,7 +132,7 @@ namespace dblz {
                         continue;
                     };
                     for (auto const &pr4: pr3.second) {
-                        val += pr4.second->get_adjoint()->get_val_at_timepoint(timepoint) * pr4.second->get_diff_eq_rhs()->get_deriv_wrt_nu_at_timepoint(timepoint, _deriv_ixn_param_traj);
+                        val += pr4.second->get_adjoint()->get_val_at_timepoint(timepoint) * pr4.second->get_diff_eq_rhs()->get_deriv_wrt_nu_at_timepoint(timepoint, _deriv_ixn_param_traj,form_abscissas);
                     };
                 };
             };
@@ -148,7 +148,7 @@ namespace dblz {
                 adjoint_val = pr2.second->get_adjoint()->get_val_at_timepoint(timepoint);
                 
                 // First term
-                val += adjoint_val * pr2.second->get_diff_eq_rhs()->get_deriv_wrt_nu_at_timepoint(timepoint, _deriv_ixn_param_traj);
+                val += adjoint_val * pr2.second->get_diff_eq_rhs()->get_deriv_wrt_nu_at_timepoint(timepoint, _deriv_ixn_param_traj,form_abscissas);
                 
                 // Second term connecting l-1 and l
                 if (layer != 0) {
@@ -157,7 +157,7 @@ namespace dblz {
                     // iterate over species in l-1 layer
                     for (auto const &pr3: _all_weights.at(layer).at(pr2.first).at(layer-1)) {
                         center_val = _all_center_trajs.at(layer-1).at(pr3.first)->get_val_at_timepoint(timepoint);
-                        val += adjoint_val * conn_mult * center_val * pr3.second->get_diff_eq_rhs()->get_deriv_wrt_nu_at_timepoint(timepoint, _deriv_ixn_param_traj);
+                        val += adjoint_val * conn_mult * center_val * pr3.second->get_diff_eq_rhs()->get_deriv_wrt_nu_at_timepoint(timepoint, _deriv_ixn_param_traj,form_abscissas);
                     };
                 };
                 
@@ -167,7 +167,7 @@ namespace dblz {
                     
                     for (auto const &pr3: _all_weights.at(layer).at(pr2.first).at(layer+1)) {
                         center_val = _all_center_trajs.at(layer+1).at(pr3.first)->get_val_at_timepoint(timepoint);
-                        val += adjoint_val * conn_mult * center_val * pr3.second->get_diff_eq_rhs()->get_deriv_wrt_nu_at_timepoint(timepoint, _deriv_ixn_param_traj);
+                        val += adjoint_val * conn_mult * center_val * pr3.second->get_diff_eq_rhs()->get_deriv_wrt_nu_at_timepoint(timepoint, _deriv_ixn_param_traj,form_abscissas);
                     };
                 };
             };
@@ -363,6 +363,32 @@ namespace dblz {
     
     void AdjointParamsCenteredHomWeight::solve_diff_eq_at_timepoint_to_minus_one(int timepoint, double dt, bool form_abscissas) {
         
+        // Difference in moments
+        double moment_delta = -1.0 * _ixn_param_traj->get_ixn_param_at_timepoint(timepoint)->get_moment_diff()->get_moment_diff_awake_minus_asleep_plus_offset();
+        
+        // Derivative in centers terms
+        double deriv_centers_terms = 0.0;
+        double f;
+        
+        // Lower - upper
+        f = _adjoint_bias_lower->get_val_at_timepoint(timepoint) * _conn_mult;
+        for (auto center_upper: _all_centers_upper) {
+            deriv_centers_terms += f * center_upper->get_deriv_at_timepoint(timepoint, dt);
+        };
+        // Upper -lower
+        f = _adjoint_bias_upper->get_val_at_timepoint(timepoint) * _conn_mult;
+        for (auto center_lower: _all_centers_lower) {
+            deriv_centers_terms += f * center_lower->get_deriv_at_timepoint(timepoint, dt);
+        };
+        
+        // Deriv term weight
+        double deriv_term = _deriv_term_weight->get_val_at_timepoint(timepoint);
+        
+        // Other deriv terms
+        double deriv_mixing_terms = _conn_mult * _center_upper->get_val_at_timepoint(timepoint) * _deriv_term_bias_lower->get_val_at_timepoint(timepoint) + _conn_mult * _center_lower->get_val_at_timepoint(timepoint) * _deriv_term_bias_upper->get_val_at_timepoint(timepoint);
+        
+        // Step
+        _vals[timepoint-1] = _vals[timepoint] - dt * (moment_delta - deriv_centers_terms - deriv_term + deriv_mixing_terms);
     };
     void AdjointParamsCenteredHomWeight::solve_diff_eq_at_timepoint_to_minus_one_l2(int timepoint, double dt, double l2_lambda, double l2_center, bool form_abscissas) {
         

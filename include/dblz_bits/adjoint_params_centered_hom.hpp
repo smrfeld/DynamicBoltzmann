@@ -86,7 +86,7 @@ namespace dblz {
         // MARK: - Vals
         // ***************
         
-        void calculate_val_at_timepoint(int timepoint);
+        void calculate_val_at_timepoint(int timepoint, bool form_abscissas=true);
         double get_val_at_timepoint(int timepoint) const;
     };
     
@@ -144,6 +144,8 @@ namespace dblz {
         int _conn_mult;
         CTptr _center_lower;
         CTptr _center_upper;
+        std::vector<CTptr> _all_centers_lower;
+        std::vector<CTptr> _all_centers_upper;
         std::shared_ptr<AdjointParamsCenteredHomBias> _adjoint_bias_lower;
         std::shared_ptr<AdjointParamsCenteredHomBias> _adjoint_bias_upper;
         

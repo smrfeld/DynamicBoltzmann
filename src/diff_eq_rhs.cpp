@@ -649,7 +649,13 @@ namespace dblz {
         };
 	};
     double DiffEqRHS::get_deriv_wrt_nu_at_timepoint(int timepoint, ITptr deriv_ixn_param, bool form_abscissas) const {
-        return get_deriv_wrt_nu_at_timepoint(timepoint,_param_deriv_idxs.at(deriv_ixn_param),form_abscissas);
+        auto it = _param_deriv_idxs.find(deriv_ixn_param);
+        if (it != _param_deriv_idxs.end()) {
+            return get_deriv_wrt_nu_at_timepoint(timepoint,it->second,form_abscissas);
+        } else {
+            // Differentiating WRT a variable that does NOT appear!
+            return 0.0;
+        };
     };
 
     // Precompute abscissas

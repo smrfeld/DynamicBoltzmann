@@ -73,7 +73,7 @@ namespace dblz {
         // ***************
         
         // Add layer
-        void add_layer(int layer, int box_length, std::vector<Sptr> species, std::vector<CTptr> center_trajs);
+        void add_layer(int layer, int box_length, std::vector<Sptr> species, std::vector<CTptr> center_trajs, int conn_multiplicity_to_layer_below);
         // DO NOT USE THE FOLLOWING:
         void add_layer(int layer, int box_length, std::vector<Sptr> species);
         

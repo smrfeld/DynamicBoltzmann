@@ -70,7 +70,7 @@ namespace dblz {
         void add_layer(int layer, int box_length, std::vector<Sptr> species);
         
         // This is the correct function
-        void add_layer(int layer, int box_length, std::vector<Sptr> species, std::vector<Cptr> centers);
+        void add_layer(int layer, int box_length, std::vector<Sptr> species, std::vector<Cptr> centers, int conn_multiplicity_to_layer_below);
 
         // ***************
         // MARK: - Centers
@@ -78,12 +78,6 @@ namespace dblz {
         
         void clear_all_centers();
         void set_centers_in_layer(int layer, std::vector<Cptr> centers);
-        
-        // ***************
-        // MARK: Add connections
-        // ***************
-
-        void set_conn_multiplicity(int mult);
         
         // ***************
         // MARK: - Reap moments, both awake and asleep

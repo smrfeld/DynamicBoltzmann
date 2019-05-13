@@ -34,7 +34,7 @@ namespace dblz {
     LatticeCenteredHom::LatticeCenteredHom(int no_dims, int box_length, std::vector<Sptr> species_visible, std::vector<Cptr> centers) : Lattice(no_dims,box_length,species_visible,false) {
         
         // Visible layer
-        add_layer(0, box_length, species_visible, centers);
+        add_layer(0, box_length, species_visible, centers, 0);
         
         // Init
         _conn_mult = nullptr;
@@ -99,15 +99,28 @@ namespace dblz {
     };
 
     // This is the correct function
-    void LatticeCenteredHom::add_layer(int layer, int box_length, std::vector<Sptr> species, std::vector<Cptr> centers) {
+    void LatticeCenteredHom::add_layer(int layer, int box_length, std::vector<Sptr> species, std::vector<Cptr> centers, int conn_multiplicity_to_layer_below) {
         
         if (layer != _no_layers) {
             std::cerr << ">>> LatticeCenteredHom::add_layer <<< error: next layer must be: " << _no_layers << " not: " << layer << std::endl;
             exit(EXIT_FAILURE);
         };
         
+        // Conn mult
+        if (layer != 0) {
+            if (_conn_mult) {
+                delete _conn_mult;
+            };
+            _conn_mult = new int(conn_multiplicity_to_layer_below);
+        };
+
         // Increment no layers
         _no_layers += 1;
+        
+        if (_no_layers > 2) {
+            std::cerr << ">>> LatticeCenteredHom::add_layer <<< only RBM currently supported" << std::endl;
+            exit(EXIT_FAILURE);
+        };
         
         // Add random
         int no_units = pow(box_length,get_no_dims());
@@ -191,17 +204,6 @@ namespace dblz {
         for (auto center: centers) {
             _centers[layer][center->get_species()] = center;
         };
-    };
-    
-    // ***************
-    // MARK: - Connectivity
-    // ***************
-
-    void LatticeCenteredHom::set_conn_multiplicity(int mult) {
-        if (_conn_mult) {
-            delete _conn_mult;
-        };
-        _conn_mult = new int(mult);
     };
 
     // ***************

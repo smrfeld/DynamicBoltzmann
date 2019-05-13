@@ -180,7 +180,7 @@ namespace dblz {
     };
     
     // Add layer
-    void LatticeTrajCenteredHom::add_layer(int layer, int box_length, std::vector<Sptr> species, std::vector<CTptr> center_trajs) {
+    void LatticeTrajCenteredHom::add_layer(int layer, int box_length, std::vector<Sptr> species, std::vector<CTptr> center_trajs, int conn_multiplicity_to_layer_below) {
         _center_trajs[layer] = center_trajs;
         
         // Go through lattices at all times
@@ -193,7 +193,7 @@ namespace dblz {
             };
             
             // Add layer
-            l.second->add_layer(layer, box_length, species, centers);
+            l.second->add_layer(layer, box_length, species, centers, conn_multiplicity_to_layer_below);
         };
     };
     void LatticeTrajCenteredHom::add_layer(int layer, int box_length, std::vector<Sptr> species) {

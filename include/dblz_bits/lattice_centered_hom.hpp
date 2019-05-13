@@ -31,8 +31,9 @@ namespace dblz {
         // MARK: - Centering
         // ***************
         
-        // Connection multiplictiy
-        int *_conn_mult;
+        // Connection multiplicities between layers
+        // Layer l -> l+1 or l-1 -> conn mult
+        std::map<int,std::map<int,int>> _conn_mults;
         
         // Centers
         std::map<int, std::map<Sptr, Cptr>> _centers;

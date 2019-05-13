@@ -35,9 +35,6 @@ namespace dblz {
         
         // Visible layer
         add_layer(0, box_length, species_visible, centers, 0);
-        
-        // Init
-        _conn_mult = nullptr;
     };
     LatticeCenteredHom::LatticeCenteredHom(const LatticeCenteredHom& other) : Lattice(other) {
 		_copy(other);
@@ -65,26 +62,17 @@ namespace dblz {
 		_clean_up();
 	};
 
-	void LatticeCenteredHom::_clean_up() {
-        if (_conn_mult) {
-            delete _conn_mult;
-            _conn_mult = nullptr;
-        };
-	};
+	void LatticeCenteredHom::_clean_up() {};
 	void LatticeCenteredHom::_copy(const LatticeCenteredHom& other) {
-        if (other._conn_mult) {
-            _conn_mult = new int(*other._conn_mult);
-        } else {
-            _conn_mult = nullptr;
-        };
+        _conn_mults = other._conn_mults;
         _centers = other._centers;
     };
 	void LatticeCenteredHom::_move(LatticeCenteredHom& other) {
-        _conn_mult = other._conn_mult;
+        _conn_mults = other._conn_mults;
         _centers = other._centers;
     
 		// Reset other
-        other._conn_mult = nullptr;
+        other._conn_mults.clear();
         other._centers.clear();
 	};
     
@@ -108,19 +96,12 @@ namespace dblz {
         
         // Conn mult
         if (layer != 0) {
-            if (_conn_mult) {
-                delete _conn_mult;
-            };
-            _conn_mult = new int(conn_multiplicity_to_layer_below);
+            _conn_mults[layer-1][layer] = conn_multiplicity_to_layer_below;
+            _conn_mults[layer][layer-1] = conn_multiplicity_to_layer_below;
         };
 
         // Increment no layers
         _no_layers += 1;
-        
-        if (_no_layers > 2) {
-            std::cerr << ">>> LatticeCenteredHom::add_layer <<< only RBM currently supported" << std::endl;
-            exit(EXIT_FAILURE);
-        };
         
         // Add random
         int no_units = pow(box_length,get_no_dims());
@@ -128,9 +109,10 @@ namespace dblz {
         for (auto const &chain: chains) {
             for (auto i_chain=0; i_chain<get_no_markov_chains(chain); i_chain++) {
                 for (auto sp: species) {
-                    _mc_chains[chain][i_chain][layer][sp] = arma::vec(no_units,arma::fill::randu);
-                    _mc_chains_act[chain][i_chain][layer][sp] = arma::vec(no_units,arma::fill::randu);
+                    _mc_chains[chain][i_chain][layer][sp] = arma::vec(no_units,arma::fill::zeros);
+                    _mc_chains_act[chain][i_chain][layer][sp] = arma::vec(no_units,arma::fill::zeros);
                 };
+                set_random_all_units_in_layer(chain, i_chain, layer, false);
             };
         };
         
@@ -211,11 +193,6 @@ namespace dblz {
     // ***************
     
     void LatticeCenteredHom::reap_ixn_moment_diffs_and_slide_centers(double sliding_factor, bool calculate_offset) {
-        
-        if (!_conn_mult) {
-            std::cerr << ">>> Error: LatticeCenteredHom::reap_ixn_moment_diffs_and_slide_centers <<< connection multiplicity must be specified!" << std::endl;
-            exit(EXIT_FAILURE);
-        };
         
         // Reset all moments
         std::shared_ptr<MomentDiff> moment;
@@ -353,7 +330,7 @@ namespace dblz {
                             };
                             ixn = it2->second;
                             
-                            offset += (*_conn_mult) * ixn->get_val() * _centers.at(layer-1).at(sp_below)->get_val();
+                            offset += _conn_mults.at(layer-1).at(layer) * ixn->get_val() * _centers.at(layer-1).at(sp_below)->get_val();
                         };
                     };
 
@@ -375,7 +352,7 @@ namespace dblz {
                             ixn = it2->second;
                             
                             // Calculate offset
-                            offset += (*_conn_mult) * ixn->get_val() * _centers.at(layer+1).at(sp_above)->get_val();
+                            offset += _conn_mults.at(layer).at(layer+1) * ixn->get_val() * _centers.at(layer+1).at(sp_above)->get_val();
                         };
                     };
                     

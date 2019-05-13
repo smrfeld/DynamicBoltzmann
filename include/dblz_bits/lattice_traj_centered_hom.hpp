@@ -37,7 +37,7 @@ namespace dblz {
         std::map<int,std::shared_ptr<LatticeCenteredHom>> _lattices_centered_hom;
         
         // Center trajs
-        std::vector<CTptr> _center_trajs;
+        std::map<int,std::vector<CTptr>> _center_trajs;
         
         // ***************
         // MARK: - Constructor helpers
@@ -73,8 +73,10 @@ namespace dblz {
         // ***************
         
         // Add layer
+        void add_layer(int layer, int box_length, std::vector<Sptr> species, std::vector<CTptr> center_trajs);
+        // DO NOT USE THE FOLLOWING:
         void add_layer(int layer, int box_length, std::vector<Sptr> species);
-
+        
         // ***************
         // MARK: - Get lattice
         // ***************

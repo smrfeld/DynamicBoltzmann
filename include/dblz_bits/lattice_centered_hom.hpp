@@ -34,7 +34,7 @@ namespace dblz {
         // Connection multiplictiy
         int *_conn_mult;
         
-        // As above, but pointwise
+        // Centers
         std::map<int, std::map<Sptr, Cptr>> _centers;
         
         // ***************
@@ -72,6 +72,13 @@ namespace dblz {
         // This is the correct function
         void add_layer(int layer, int box_length, std::vector<Sptr> species, std::vector<Cptr> centers);
 
+        // ***************
+        // MARK: - Centers
+        // ***************
+        
+        void clear_all_centers();
+        void set_centers_in_layer(int layer, std::vector<Cptr> centers);
+        
         // ***************
         // MARK: Add connections
         // ***************

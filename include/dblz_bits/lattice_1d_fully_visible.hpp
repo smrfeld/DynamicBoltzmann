@@ -168,6 +168,9 @@ namespace dblz {
         // Get all ixns
         const std::vector<Iptr>& get_all_ixn_params() const;
         
+        // Clear biases and ixns
+        void clear_all_biases_and_ixns();
+
         // ***************
         // MARK: Clear/Random/Binarize to all units
         // ***************

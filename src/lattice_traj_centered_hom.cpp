@@ -37,11 +37,11 @@ namespace dblz {
 
     LatticeTrajCenteredHom::LatticeTrajCenteredHom(int no_dims, int box_length, std::vector<Sptr> species_visible, std::vector<CTptr> center_trajs) : LatticeTraj(no_dims, box_length, species_visible, false)
 	{
-        _center_trajs = center_trajs;
+        _center_trajs[0] = center_trajs;
         
         // Form centers at timepoint 0
         std::vector<Cptr> centers;
-        for (auto center_traj: _center_trajs) {
+        for (auto center_traj: _center_trajs.at(0)) {
             centers.push_back(center_traj->get_center_at_timepoint(0));
         };
         
@@ -140,15 +140,25 @@ namespace dblz {
             if (itf == _lattices_centered_hom.end()) {
                 // Does not exist; need to create
                 
-                // Form centers at timepoint
-                std::vector<Cptr> centers;
-                for (auto center_traj: _center_trajs) {
-                    centers.push_back(center_traj->get_center_at_timepoint(timepoint));
-                };
-                
                 // Create lattice
                 _lattices_centered_hom[timepoint] = std::make_shared<LatticeCenteredHom>(*lptr);
                 _lattices[timepoint] = _lattices_centered_hom.at(timepoint);
+                
+                // Clear existing centers
+                _lattices_centered_hom.at(timepoint)->clear_all_centers();
+                
+                // Set correct centers
+                for (auto pr1: _center_trajs) {
+                    std::vector<Cptr> centers;
+                    for (auto center_traj: pr1.second) {
+                        centers.push_back(center_traj->get_center_at_timepoint(timepoint));
+                    };
+                   
+                    _lattices_centered_hom.at(timepoint)->set_centers_in_layer(pr1.first, centers);
+                };
+                
+                // Clear existing ixns
+                _lattices_centered_hom.at(timepoint)->clear_all_biases_and_ixns();
                 
                 // Set correct ixns
                 for (auto pr1: _bias_dict) {
@@ -170,17 +180,25 @@ namespace dblz {
     };
     
     // Add layer
-    void LatticeTrajCenteredHom::add_layer(int layer, int box_length, std::vector<Sptr> species) {
+    void LatticeTrajCenteredHom::add_layer(int layer, int box_length, std::vector<Sptr> species, std::vector<CTptr> center_trajs) {
+        _center_trajs[layer] = center_trajs;
+        
+        // Go through lattices at all times
         for (auto l: _lattices_centered_hom) {
+            
             // Form centers at timepoint
             std::vector<Cptr> centers;
-            for (auto center_traj: _center_trajs) {
+            for (auto center_traj: center_trajs) {
                 centers.push_back(center_traj->get_center_at_timepoint(l.first));
             };
             
             // Add layer
             l.second->add_layer(layer, box_length, species, centers);
         };
+    };
+    void LatticeTrajCenteredHom::add_layer(int layer, int box_length, std::vector<Sptr> species) {
+        std::cerr << ">>> LatticeTrajCenteredHom::add_layer <<< must provide center trajs when adding layer" << std::endl;
+        exit(EXIT_FAILURE);
     };
 
     // ***************

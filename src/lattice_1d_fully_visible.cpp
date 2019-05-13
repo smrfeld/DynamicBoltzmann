@@ -315,6 +315,14 @@ namespace dblz {
         return _all_ixns;
     };
     
+    // Clear biases and ixns
+    void Lattice1DFullyVisible::clear_all_biases_and_ixns() {
+        _all_ixns.clear();
+        _o2_ixn_dict.clear();
+        _bias_dict.clear();
+        _o3_ixn_dict.clear();
+    };
+
 	/********************
 	Apply funcs to all units
 	********************/

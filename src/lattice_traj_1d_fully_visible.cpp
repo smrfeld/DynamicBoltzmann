@@ -139,6 +139,9 @@ namespace dblz {
                 // Does not exist; need to create
                 _lattices[timepoint] = std::make_shared<Lattice1DFullyVisible>(*lptr);
                 
+                // Clear existing ixns
+                _lattices.at(timepoint)->clear_all_biases_and_ixns();
+                
                 // Set correct ixns
                 for (auto pr: _bias_dict) {
                     _lattices[timepoint]->set_bias(pr.first, pr.second->get_ixn_param_at_timepoint(timepoint));

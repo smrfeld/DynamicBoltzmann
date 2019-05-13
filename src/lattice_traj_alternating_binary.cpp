@@ -127,6 +127,9 @@ namespace dblz {
                 _lattices_alternating_binary[timepoint] = std::make_shared<LatticeAlternatingBinary>(*lptr);
                 _lattices[timepoint] = _lattices_alternating_binary.at(timepoint);
                 
+                // Clear existing ixns
+                _lattices_alternating_binary.at(timepoint)->clear_all_biases_and_ixns();
+                
                 // Set correct ixns
                 for (auto pr1: _bias_dict) {
                     for (auto pr2: pr1.second) {

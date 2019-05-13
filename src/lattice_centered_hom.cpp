@@ -180,6 +180,20 @@ namespace dblz {
     };
     
     // ***************
+    // MARK: - Centers
+    // ***************
+    
+    void LatticeCenteredHom::clear_all_centers() {
+        _centers.clear();
+    };
+    void LatticeCenteredHom::set_centers_in_layer(int layer, std::vector<Cptr> centers) {
+        _centers[layer].clear();
+        for (auto center: centers) {
+            _centers[layer][center->get_species()] = center;
+        };
+    };
+    
+    // ***************
     // MARK: - Connectivity
     // ***************
 

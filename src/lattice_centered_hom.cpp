@@ -194,7 +194,7 @@ namespace dblz {
     // MARK: - Reap moments
     // ***************
     
-    void LatticeCenteredHom::reap_ixn_moment_diffs_and_slide_centers(double sliding_factor) {
+    void LatticeCenteredHom::reap_ixn_moment_diffs_and_slide_centers(double sliding_factor, bool calculate_offset) {
         
         if (!_conn_mult) {
             std::cerr << ">>> Error: LatticeCenteredHom::reap_ixn_moment_diffs_and_slide_centers <<< connection multiplicity must be specified!" << std::endl;
@@ -301,66 +301,68 @@ namespace dblz {
         };
         
         // Offset bias for centering
-        double offset;
-        arma::vec mean;
-        Iptr ixn;
-        // Go through all layers
-        for (auto layer=0; layer<_no_layers; layer++) {
+        if (calculate_offset) {
             
-            // Go through all species in this layer
-            for (auto sp: _species_possible_vec.at(layer)) {
+            double offset;
+            arma::vec mean;
+            Iptr ixn;
+            // Go through all layers
+            for (auto layer=0; layer<_no_layers; layer++) {
                 
-                // Reset offset
-                offset = 0.0;
-                
-                // Below
-                if (layer != 0) {
+                // Go through all species in this layer
+                for (auto sp: _species_possible_vec.at(layer)) {
                     
-                    // Go through all species in the layer below
-                    for (auto sp_below: _species_possible_vec.at(layer-1)) {
+                    // Reset offset
+                    offset = 0.0;
+                    
+                    // Below
+                    if (layer != 0) {
                         
-                        // Check that such an ixn exists
-                        auto it1 = _o2_ixn_dict.at(layer-1).at(sp_below).find(layer);
-                        if (it1 == _o2_ixn_dict.at(layer-1).at(sp_below).end()) {
-                            continue;
+                        // Go through all species in the layer below
+                        for (auto sp_below: _species_possible_vec.at(layer-1)) {
+                            
+                            // Check that such an ixn exists
+                            auto it1 = _o2_ixn_dict.at(layer-1).at(sp_below).find(layer);
+                            if (it1 == _o2_ixn_dict.at(layer-1).at(sp_below).end()) {
+                                continue;
+                            };
+                            auto it2 = it1->second.find(sp);
+                            if (it2 == it1->second.end()) {
+                                continue;
+                            };
+                            ixn = it2->second;
+                            
+                            offset += (*_conn_mult) * ixn->get_val() * _centers.at(layer-1).at(sp_below)->get_val();
                         };
-                        auto it2 = it1->second.find(sp);
-                        if (it2 == it1->second.end()) {
-                            continue;
-                        };
-                        ixn = it2->second;
-                        
-                        offset += (*_conn_mult) * ixn->get_val() * _centers.at(layer-1).at(sp_below)->get_val();
                     };
-                };
 
-                // Above
-                if (layer != _no_layers-1) {
-                    
-                    // Go through all species in the layer above
-                    for (auto sp_above: _species_possible_vec.at(layer+1)) {
+                    // Above
+                    if (layer != _no_layers-1) {
                         
-                        // Check that such an ixn exists
-                        auto it1 = _o2_ixn_dict.at(layer+1).at(sp_above).find(layer);
-                        if (it1 == _o2_ixn_dict.at(layer+1).at(sp_above).end()) {
-                            continue;
+                        // Go through all species in the layer above
+                        for (auto sp_above: _species_possible_vec.at(layer+1)) {
+                            
+                            // Check that such an ixn exists
+                            auto it1 = _o2_ixn_dict.at(layer+1).at(sp_above).find(layer);
+                            if (it1 == _o2_ixn_dict.at(layer+1).at(sp_above).end()) {
+                                continue;
+                            };
+                            auto it2 = it1->second.find(sp);
+                            if (it2 == it1->second.end()) {
+                                continue;
+                            };
+                            ixn = it2->second;
+                            
+                            // Calculate offset
+                            offset += (*_conn_mult) * ixn->get_val() * _centers.at(layer+1).at(sp_above)->get_val();
                         };
-                        auto it2 = it1->second.find(sp);
-                        if (it2 == it1->second.end()) {
-                            continue;
-                        };
-                        ixn = it2->second;
-                        
-                        // Calculate offset
-                        offset += (*_conn_mult) * ixn->get_val() * _centers.at(layer+1).at(sp_above)->get_val();
                     };
+                    
+                    // Adjust bias in this layer
+                    _bias_dict.at(layer).at(sp)->get_moment_diff()->set_moment_offset(offset);
                 };
-                
-                // Adjust bias in this layer
-                _bias_dict.at(layer).at(sp)->get_moment_diff()->set_moment_offset(offset);
             };
         };
-
     };
     
     // ***************

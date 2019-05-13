@@ -247,11 +247,11 @@ namespace dblz {
     
 	void AdjointParamsCenteredHomBias::solve_diff_eq_at_timepoint_to_minus_one(int timepoint, double dt, bool form_abscissas) {
         
+        // Difference in moments
+        double moment_delta = -1.0 * _ixn_param_traj->get_ixn_param_at_timepoint(timepoint)->get_moment_diff()->get_moment_diff_awake_minus_asleep();
+
 		// Deriv term
 		double deriv_term = _deriv_term_bias->get_val_at_timepoint(timepoint);
-        
-		// Difference in moments
-        double moment_delta = -1.0 * _ixn_param_traj->get_ixn_param_at_timepoint(timepoint)->get_moment_diff()->get_moment_diff_awake_minus_asleep_plus_offset();
         
         // Step
         _vals[timepoint-1] = _vals[timepoint] - dt * (moment_delta - deriv_term);
@@ -372,7 +372,7 @@ namespace dblz {
     void AdjointParamsCenteredHomWeight::solve_diff_eq_at_timepoint_to_minus_one(int timepoint, double dt, bool form_abscissas) {
         
         // Difference in moments
-        double moment_delta = -1.0 * _ixn_param_traj->get_ixn_param_at_timepoint(timepoint)->get_moment_diff()->get_moment_diff_awake_minus_asleep_plus_offset();
+        double moment_delta = -1.0 * _ixn_param_traj->get_ixn_param_at_timepoint(timepoint)->get_moment_diff()->get_moment_diff_awake_minus_asleep();
         
         // Derivative in centers terms
         double deriv_centers_terms = 0.0;

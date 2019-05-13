@@ -91,8 +91,9 @@ namespace dblz {
         void set_moment_offset(double val);
 
         // Get moment difference
+        double get_moment_diff_awake_minus_asleep() const;
         double get_moment_diff_awake_minus_asleep_plus_offset() const;
-        
+
 		/********************
 		Write
 		********************/

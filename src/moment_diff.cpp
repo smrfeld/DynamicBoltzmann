@@ -163,6 +163,9 @@ namespace dblz {
     };
 
     // Get moment difference
+    double MomentDiff::get_moment_diff_awake_minus_asleep() const {
+        return _val_averaged.at(MCType::AWAKE) - _val_averaged.at(MCType::ASLEEP);
+    };
     double MomentDiff::get_moment_diff_awake_minus_asleep_plus_offset() const {
         return _val_averaged.at(MCType::AWAKE) - _val_averaged.at(MCType::ASLEEP) + _val_diff_offset;
     };

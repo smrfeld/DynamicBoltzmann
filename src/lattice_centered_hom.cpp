@@ -217,6 +217,16 @@ namespace dblz {
             exit(EXIT_FAILURE);
         };
         
+        // Reset all moments
+        std::shared_ptr<MomentDiff> moment;
+        for (auto ixn: _all_ixns) {
+            moment = ixn->get_moment_diff();
+            if (!moment->get_is_awake_moment_fixed()) {
+                moment->reset_moment(MCType::AWAKE);
+            };
+            moment->reset_moment(MCType::ASLEEP);
+        };
+        
         // Calculate the centers from the awake moment, and then slide
         int no_units;
         for (auto layer=0; layer<_no_layers; layer++) {
@@ -243,7 +253,6 @@ namespace dblz {
         int layer1, layer2;
         Sptr sp1, sp2;
         arma::sp_mat::iterator mit, mit_end;
-        std::shared_ptr<MomentDiff> moment;
         for (auto &o2_ixn_layer_1: _o2_ixn_dict) {
             layer1 = o2_ixn_layer_1.first;
             for (auto &sp_pr_1: o2_ixn_layer_1.second) {
@@ -264,7 +273,6 @@ namespace dblz {
                         
                         // Awake
                         if (!moment->get_is_awake_moment_fixed()) {
-                            moment->reset_moment(MCType::AWAKE);
                             for (auto i_chain=0; i_chain<get_no_markov_chains(MCType::AWAKE); i_chain++) {
                                 mit = _adj.at(layer1).at(layer2).begin();
                                 mit_end = _adj.at(layer1).at(layer2).end();
@@ -275,7 +283,6 @@ namespace dblz {
                         };
                         
                         // Asleep phase
-                        moment->reset_moment(MCType::ASLEEP);
                         for (auto i_chain=0; i_chain<get_no_markov_chains(MCType::ASLEEP); i_chain++) {
                             mit = _adj.at(layer1).at(layer2).begin();
                             mit_end = _adj.at(layer1).at(layer2).end();
@@ -301,7 +308,6 @@ namespace dblz {
                 // Awake phase
                 
                 if (!moment->get_is_awake_moment_fixed()) {
-                    moment->reset_moment(MCType::AWAKE);
                     for (auto i_chain=0; i_chain<get_no_markov_chains(MCType::AWAKE); i_chain++) {
                         moment->increment_moment(MCType::AWAKE, arma::accu(_mc_chains.at(MCType::AWAKE).at(i_chain).at(layer).at(sp)) / get_no_markov_chains(MCType::AWAKE));
                     };
@@ -309,7 +315,6 @@ namespace dblz {
                 
                 // Asleep phase
                 
-                moment->reset_moment(MCType::ASLEEP);
                 for (auto i_chain=0; i_chain<get_no_markov_chains(MCType::ASLEEP); i_chain++) {
                     moment->increment_moment(MCType::ASLEEP, arma::accu(_mc_chains.at(MCType::ASLEEP).at(i_chain).at(layer).at(sp)) / get_no_markov_chains(MCType::ASLEEP));
                 };

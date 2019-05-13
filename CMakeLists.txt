@@ -45,6 +45,7 @@ add_library(bmla SHARED
 add_library(dblz SHARED 
 	src/adjoint.cpp
 	src/adjoint_params.cpp
+	src/adjoint_params_centered_hom.cpp
 	src/adjoint_obs.cpp
 	src/center.cpp
 	src/center_traj.cpp
@@ -66,6 +67,7 @@ add_library(dblz SHARED
 	src/species.cpp
 	include/dblz_bits/adjoint.hpp
 	include/dblz_bits/adjoint_params.hpp
+	include/dblz_bits/adjoint_params_centered_hom.hpp
 	include/dblz_bits/adjoint_obs.hpp
 	include/dblz_bits/center.hpp
 	include/dblz_bits/center_traj.hpp

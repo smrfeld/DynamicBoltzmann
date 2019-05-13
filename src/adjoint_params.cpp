@@ -101,7 +101,7 @@ namespace dblz {
         double moment_delta = -1.0 * _ixn_param_traj->get_ixn_param_at_timepoint(timepoint)->get_moment_diff()->get_moment_diff_awake_minus_asleep_plus_offset();
         
         // Step
-        _vals[timepoint-1] = _vals[timepoint] - dt * (moment_delta - deriv);
+        _vals[timepoint-1] = _vals[timepoint] - dt * (moment_delta - deriv_term);
 	};
     
     void AdjointParams::solve_diff_eq_at_timepoint_to_minus_one_l2(int timepoint, double dt, double l2_lambda, double l2_center, bool form_abscissas) {

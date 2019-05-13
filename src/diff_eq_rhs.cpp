@@ -284,6 +284,11 @@ namespace dblz {
         for (auto dom: domain) {
             domain_base.push_back(dom);
         };
+        
+        for (auto i=0; i<domain.size(); i++) {
+            _param_deriv_idxs[domain.at(i)->get_ixn_param_traj()] = i;
+        };
+        
         _shared_constructor(name, parent_ixn_param_traj, domain_base, lr);
     };
     DiffEqRHS::DiffEqRHS(std::string name, ITptr parent_ixn_param_traj, std::vector<Domain1DCenter*> domain, double lr) : q3c1::Grid(std::vector<q3c1::Dimension1D*>(domain.begin(),domain.end())) {
@@ -423,6 +428,7 @@ namespace dblz {
         _domain_param = other._domain_param;
         _domain_center = other._domain_center;
         _domain_obs = other._domain_obs;
+        _param_deriv_idxs = other._param_deriv_idxs;
         _parent_ixn_param_traj = other._parent_ixn_param_traj;
 		_updates = other._updates;
         _abscissas = other._abscissas;
@@ -465,6 +471,7 @@ namespace dblz {
         _domain_param = other._domain_param;
         _domain_center = other._domain_center;
         _domain_obs = other._domain_obs;
+        _param_deriv_idxs = other._param_deriv_idxs;
 		_parent_ixn_param_traj = other._parent_ixn_param_traj;
 		_updates = other._updates;
         _abscissas = other._abscissas;
@@ -488,6 +495,7 @@ namespace dblz {
         other._domain_param.clear();
         other._domain_center.clear();
         other._domain_obs.clear();
+        other._param_deriv_idxs.clear();
 		other._parent_ixn_param_traj = nullptr;
 		other._updates.clear();
         other._abscissas.clear();
@@ -640,6 +648,9 @@ namespace dblz {
             return Grid::get_deriv_wrt_abscissa(_abscissas_map.at(timepoint), deriv_dim);
         };
 	};
+    double DiffEqRHS::get_deriv_wrt_nu_at_timepoint(int timepoint, ITptr deriv_ixn_param, bool form_abscissas) const {
+        return get_deriv_wrt_nu_at_timepoint(timepoint,_param_deriv_idxs.at(deriv_ixn_param),form_abscissas);
+    };
 
     // Precompute abscissas
     // Endpoints inclusive

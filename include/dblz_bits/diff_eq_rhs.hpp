@@ -226,7 +226,8 @@ namespace dblz {
         std::vector<Domain1DParam*> _domain_param; // extra storage but wever
         std::vector<Domain1DCenter*> _domain_center; // extra storage but wever
         std::vector<Domain1DObs*> _domain_obs; // extra storage but wever
-
+        std::map<ITptr, int> _param_deriv_idxs;
+        
 		// Parent ixn param
 		ITptr _parent_ixn_param_traj;
 
@@ -314,6 +315,7 @@ namespace dblz {
 
 		// Spatial deriv
 		double get_deriv_wrt_nu_at_timepoint(int timepoint, int deriv_dim, bool form_abscissas=true) const;
+        double get_deriv_wrt_nu_at_timepoint(int timepoint, ITptr deriv_ixn_param, bool form_abscissas=true) const;
 
         // Precompute abscissas
         // Endpoints inclusive

@@ -103,8 +103,17 @@ namespace dblz {
         // Increment no layers
         _no_layers += 1;
         
-        // Add random
+        // No units
         int no_units = pow(box_length,get_no_dims());
+        _no_units_per_layer[layer] = no_units;
+
+        // Persistent data structures
+        _pst_prop[layer] = arma::vec(no_units);
+        _pst_r[layer] = arma::vec(no_units);
+        _pst_sign_of_r[layer] = arma::vec(no_units);
+        _pst_sign_of_r_new[layer] = arma::vec(no_units);
+        
+        // Add random
         std::vector<MCType> chains({MCType::AWAKE,MCType::ASLEEP});
         for (auto const &chain: chains) {
             for (auto i_chain=0; i_chain<get_no_markov_chains(chain); i_chain++) {
@@ -115,9 +124,6 @@ namespace dblz {
                 set_random_all_units_in_layer(chain, i_chain, layer, false);
             };
         };
-        
-        // No units
-        _no_units_per_layer[layer] = no_units;
         
         // Lookups
         int ctr=0;
@@ -166,12 +172,6 @@ namespace dblz {
         for (auto center: centers) {
             _centers[center->get_layer()][center->get_species()] = center;
         };
-        
-        // Persistent data structures
-        _pst_prop[layer] = arma::vec(no_units);
-        _pst_r[layer] = arma::vec(no_units);
-        _pst_sign_of_r[layer] = arma::vec(no_units);
-        _pst_sign_of_r_new[layer] = arma::vec(no_units);
     };
     
     // ***************

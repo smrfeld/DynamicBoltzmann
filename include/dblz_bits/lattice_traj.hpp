@@ -98,7 +98,7 @@ namespace dblz {
         // ***************
         
         // Add layer
-        void add_layer(int layer, int box_length, std::vector<Sptr> species);
+        virtual void add_layer(int layer, int box_length, std::vector<Sptr> species);
 
 		// Biases
         void set_bias_of_layer(int layer, Sptr sp, ITptr bias);

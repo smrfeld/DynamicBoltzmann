@@ -169,6 +169,20 @@ namespace dblz {
         };
     };
     
+    // Add layer
+    void LatticeTrajCenteredHom::add_layer(int layer, int box_length, std::vector<Sptr> species) {
+        for (auto l: _lattices_centered_hom) {
+            // Form centers at timepoint
+            std::vector<Cptr> centers;
+            for (auto center_traj: _center_trajs) {
+                centers.push_back(center_traj->get_center_at_timepoint(l.first));
+            };
+            
+            // Add layer
+            l.second->add_layer(layer, box_length, species, centers);
+        };
+    };
+
     // ***************
     // MARK: - Get lattice
     // ***************

@@ -73,18 +73,42 @@ namespace dblz {
     
     void OptProblemDynamic::solve_ixn_param_trajs_step(const std::vector<std::shared_ptr<IxnParamTraj>> &ixn_param_trajs, double dt, int timepoint) const {
         
+        // clock_t t0 = clock();
+
+        // Form abscissas
         for (auto ixn_param_traj: ixn_param_trajs) {
             if (!ixn_param_traj->get_is_val_fixed()) {
-                ixn_param_traj->solve_diff_eq_at_timepoint_to_plus_one(timepoint, dt);
+                ixn_param_traj->get_diff_eq_rhs()->form_abscissas(timepoint, timepoint);
             };
         };
+        
+        // clock_t t1 = clock();
+
+        // Solve
+        for (auto ixn_param_traj: ixn_param_trajs) {
+            if (!ixn_param_traj->get_is_val_fixed()) {
+                ixn_param_traj->solve_diff_eq_at_timepoint_to_plus_one(timepoint, dt,false);
+            };
+        };
+        
+        // clock_t t2 = clock();
+        /*
+        double dt1 = (t1-t0)  / (double) CLOCKS_PER_SEC;
+        double dt2 = (t2-t1)  / (double) CLOCKS_PER_SEC;
+        double dt_tot = dt1 + dt2;
+        std::cout << "[time " << dt_tot << "] [ " << dt1/dt_tot << "] [ " << dt2/dt_tot << "]" << std::endl;
+         */
     };
     void OptProblemDynamic::solve_ixn_param_trajs_step(const std::vector<std::shared_ptr<IxnParamTraj>> &ixn_param_trajs, double dt, int timepoint, int no_steps_per_step) const {
+        
+        // clock_t t0 = clock();
         
         // Get initial vals at this timepoint
         for (auto ixn_param_traj: ixn_param_trajs) {
             ixn_param_traj->set_substep_val_current(ixn_param_traj->get_ixn_param_at_timepoint(timepoint)->get_val());
         };
+        
+        // clock_t t1 = clock();
         
         // Calculate diff eqs to a new step
         for (auto i=0; i<no_steps_per_step; i++) {
@@ -105,11 +129,23 @@ namespace dblz {
             };
         };
         
+        // clock_t t2 = clock();
+        
         // Write final vals
         for (auto ixn_param_traj: ixn_param_trajs) {
             if (!ixn_param_traj->get_is_val_fixed()) {                ixn_param_traj->get_ixn_param_at_timepoint(timepoint+1)->set_val(ixn_param_traj->get_substep_val());
             };
         };
+        
+        // clock_t t3 = clock();
+        
+        /*
+        double dt1 = (t1-t0)  / (double) CLOCKS_PER_SEC;
+        double dt2 = (t2-t1)  / (double) CLOCKS_PER_SEC;
+        double dt3 = (t3-t2)  / (double) CLOCKS_PER_SEC;
+        double dt_tot = dt1 + dt2 + dt3;
+        std::cout << "[time " << dt_tot << "] [ " << dt1/dt_tot << "] [ " << dt2/dt_tot << "] [ " << dt3/dt_tot << "]" << std::endl;
+         */
     };
 
     void OptProblemDynamic::solve_ixn_param_trajs(const std::vector<std::shared_ptr<IxnParamTraj>> &ixn_param_trajs, double dt, int timepoint_start, int no_timesteps) const {
@@ -710,7 +746,11 @@ namespace dblz {
         
         clock_t t0 = clock();
         
-        solve_ixn_param_trajs(latt_traj->get_all_ixn_param_trajs(), dt, timepoint_start_SIP, no_timesteps_SIP, options.no_steps_per_step_IP);
+        if (options.no_steps_per_step_IP == 1) {
+            solve_ixn_param_trajs(latt_traj->get_all_ixn_param_trajs(), dt, timepoint_start_SIP, no_timesteps_SIP);
+        } else {
+            solve_ixn_param_trajs(latt_traj->get_all_ixn_param_trajs(), dt, timepoint_start_SIP, no_timesteps_SIP, options.no_steps_per_step_IP);
+        };
         
         /*****
          Wake/asleep loop

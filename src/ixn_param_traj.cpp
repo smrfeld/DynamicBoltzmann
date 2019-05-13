@@ -313,7 +313,8 @@ namespace dblz {
 		_diff_eq = diff_eq;
 	};
 
-	void IxnParamTraj::solve_diff_eq_at_timepoint_to_plus_one(int timepoint, double dt) {
+	void IxnParamTraj::solve_diff_eq_at_timepoint_to_plus_one(int timepoint, double dt, bool form_abscissas) {
+        /*
 		if (timepoint >= _no_timepoints) {
 			std::cerr << ">>> Error: IxnParamTraj::solve_diff_eq_at_timepoint_to_plus_one <<< " << timepoint << " is out of bounds: " << _no_timepoints << std::endl;
 			exit(EXIT_FAILURE);
@@ -323,8 +324,9 @@ namespace dblz {
 			std::cerr << ">>> Error: IxnParamTraj::solve_diff_eq_at_timepoint_to_plus_one <<< No diff eq set" << std::endl;
 			exit(EXIT_FAILURE);
 		};
+         */
 
-        _ixn_params.at(timepoint+1)->set_val(_ixn_params.at(timepoint)->get_val() + dt * _diff_eq->get_val_at_timepoint(timepoint));
+        _ixn_params.at(timepoint+1)->set_val(_ixn_params.at(timepoint)->get_val() + dt * _diff_eq->get_val_at_timepoint(timepoint,form_abscissas));
 	};
 
     // ***************

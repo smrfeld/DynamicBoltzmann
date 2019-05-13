@@ -139,7 +139,7 @@ namespace dblz {
 		std::shared_ptr<DiffEqRHS> get_diff_eq_rhs() const;
 		void set_diff_eq_rhs(std::shared_ptr<DiffEqRHS> diff_eq);
 
-		void solve_diff_eq_at_timepoint_to_plus_one(int timepoint, double dt);
+		void solve_diff_eq_at_timepoint_to_plus_one(int timepoint, double dt, bool form_abscissas=true);
 
         // ***************
         // MARK: - Ixn param

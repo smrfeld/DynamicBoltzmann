@@ -327,7 +327,7 @@ namespace dblz {
         // Moments for the adjoint terms
         double reap_moment_adjoint_obs_cov_cross_term_sample(int i_chain, Iptr ixn, int layer_domain, Sptr species_domain) const;
         double reap_moment_adjoint_obs_cov_cross_term(Iptr ixn, int layer_domain, Sptr species_domain) const;
-        
+                
         // ***************
         // MARK: - Wake/sleep
         // ***************

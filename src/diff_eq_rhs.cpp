@@ -868,4 +868,111 @@ namespace dblz {
             std::cout << std::endl;
         };
     };
+    
+    // ***************
+    // MARK: - DiffEqRHSCenteredHomWeight
+    // ***************
+    
+    DiffEqRHSCenteredHomWeight::DiffEqRHSCenteredHomWeight(std::string name, ITptr parent_ixn_param_traj, std::vector<Domain1DParam*> domain, double lr, int conn_mult, ITptr bias_lower, ITptr bias_upper, CTptr center_lower, CTptr center_upper) : DiffEqRHS(name,parent_ixn_param_traj,domain,lr) {
+        _conn_mult = conn_mult;
+        _bias_lower = bias_lower;
+        _bias_upper = bias_upper;
+        _center_lower = center_lower;
+        _center_upper = center_upper;
+    };
+    DiffEqRHSCenteredHomWeight::DiffEqRHSCenteredHomWeight(const DiffEqRHSCenteredHomWeight& other) : DiffEqRHS(other) {
+        _copy(other);
+    };
+    DiffEqRHSCenteredHomWeight::DiffEqRHSCenteredHomWeight(DiffEqRHSCenteredHomWeight&& other) : DiffEqRHS(std::move(other)) {
+        _move(other);
+    };
+    
+    DiffEqRHSCenteredHomWeight& DiffEqRHSCenteredHomWeight::operator=(const DiffEqRHSCenteredHomWeight& other) {
+        if (this != &other)
+        {
+            _clean_up();
+            DiffEqRHS::operator=(other);
+            _copy(other);
+        };
+        return *this;
+    };
+    DiffEqRHSCenteredHomWeight& DiffEqRHSCenteredHomWeight::operator=(DiffEqRHSCenteredHomWeight&& other) {
+        if (this != &other)
+        {
+            _clean_up();
+            DiffEqRHS::operator=(other);
+            _move(other);
+        };
+        return *this;
+    };
+    
+    DiffEqRHSCenteredHomWeight::~DiffEqRHSCenteredHomWeight() {
+        _clean_up();
+    };
+    void DiffEqRHSCenteredHomWeight::_copy(const DiffEqRHSCenteredHomWeight& other) {
+        _conn_mult = other._conn_mult;
+        _bias_lower = other._bias_lower;
+        _bias_upper = other._bias_upper;
+        _center_lower = other._center_lower;
+        _center_upper = other._center_upper;
+    };
+    void DiffEqRHSCenteredHomWeight::_move(DiffEqRHSCenteredHomWeight& other) {
+        _conn_mult = other._conn_mult;
+        _bias_lower = other._bias_lower;
+        _bias_upper = other._bias_upper;
+        _center_lower = other._center_lower;
+        _center_upper = other._center_upper;
+
+        other._conn_mult = 0;
+        other._bias_lower = nullptr;
+        other._bias_upper = nullptr;
+        other._center_upper = nullptr;
+        other._center_lower = nullptr;
+    };
+    void DiffEqRHSCenteredHomWeight::_clean_up() {};
+
+    // ***************
+    // MARK: - Update
+    // ***************
+    
+    void DiffEqRHSCenteredHomWeight::update_calculate_and_store(int timepoint_start, int timepoint_end, double dt) {
+        // Adjoint
+        double adjoint_val;
+        
+        // Updates
+        std::map<q3c1::Vertex*,std::vector<double>> updates;
+        
+        // Go through all times
+        for (auto timepoint=timepoint_start; timepoint<=timepoint_end; timepoint++) {
+            
+            // Adjoint
+            adjoint_val = _parent_ixn_param_traj->get_adjoint()->get_val_at_timepoint(timepoint);
+            
+            // Add corrections
+            adjoint_val += _conn_mult * _bias_lower->get_adjoint()->get_val_at_timepoint(timepoint) * _center_upper->get_val_at_timepoint(timepoint);
+            adjoint_val += _conn_mult * _bias_upper->get_adjoint()->get_val_at_timepoint(timepoint) * _center_lower->get_val_at_timepoint(timepoint);
+
+            // Form abscissas
+            _form_abscissas(timepoint);
+            
+            // Get updates for verts
+            updates = Grid::get_deriv_wrt_coeffs_for_all_surrounding_verts(_abscissas);
+            
+            // Append to any existing
+            for (auto &pr: updates) {
+                auto it = _updates.find(pr.first);
+                if (it == _updates.end()) {
+                    // new
+                    _updates[pr.first] = std::vector<double>(_no_coeffs,0.0);
+                };
+                // append
+                for (auto i=0; i<_no_coeffs; i++) {
+                    _updates[pr.first][i] -= dt * adjoint_val * pr.second[i];
+                    
+                    // std::cout << "update_calculate_and_store: timepoint = " << timepoint << " key ptr: " << pr.first << " idx: " << i << " val: " << dt * adjoint_val * pr.second[i] << std::endl;
+                    
+                };
+            };
+        };
+    };
 };

@@ -204,6 +204,23 @@ namespace dblz {
 
 	class DiffEqRHS : public q3c1::Grid {
 
+    protected:
+        
+        // No coeffs
+        int _no_coeffs;
+
+        // Parent ixn param
+        ITptr _parent_ixn_param_traj;
+        
+        // Updates
+        std::map<q3c1::Vertex*,std::vector<double>> _updates;
+
+        // Internal
+        mutable std::map<int,std::vector<double>> _abscissas_map;
+        mutable std::vector<double> _abscissas;
+        void _form_abscissas(int timepoint) const;
+        void _form_abscissas_substep() const;
+
 	private:
 
         // Learning rate
@@ -214,9 +231,6 @@ namespace dblz {
 
 		// No dims
 		int _no_dims;
-
-        // No coeffs
-        int _no_coeffs;
         
         // Coefficient order
         std::vector<std::vector<q3c1::DimType>> _coeff_order;
@@ -228,23 +242,11 @@ namespace dblz {
         std::vector<Domain1DObs*> _domain_obs; // extra storage but wever
         std::map<ITptr, int> _param_deriv_idxs;
         
-		// Parent ixn param
-		ITptr _parent_ixn_param_traj;
-
-		// Updates
-		std::map<q3c1::Vertex*,std::vector<double>> _updates;
-
 		// Nesterov
 		std::map<q3c1::Vertex*,std::vector<double>> *_nesterov_y_s, *_nesterov_y_sp1;
         
         // Adam
         std::map<q3c1::Vertex*,std::vector<double>> *_adam_m, *_adam_v;
-
-		// Internal
-        mutable std::map<int,std::vector<double>> _abscissas_map;
-        mutable std::vector<double> _abscissas;
-        void _form_abscissas(int timepoint) const;
-        void _form_abscissas_substep() const;
 
         // Maximum magnitude for update to coeffs
         double *_mag_max_update;
@@ -334,11 +336,9 @@ namespace dblz {
 		// Calculate the update
 		// t_start = inclusive
 		// t_end = inclusive
-		// void update_calculate_and_store(int timepoint_start, int timepoint_end, double dt, double dopt);
-        void update_calculate_and_store(int timepoint_start, int timepoint_end, double dt);
+        virtual void update_calculate_and_store(int timepoint_start, int timepoint_end, double dt);
 
 		// Committ the update
-		// void update_committ_stored(bool nesterov_mode=true, double nesterov_acc=0.5);
         void update_committ_stored_sgd();
         void update_committ_stored_nesterov(double nesterov_acc);
         void update_committ_stored_adam(int opt_step, double beta_1, double beta_2, double eps);
@@ -347,4 +347,50 @@ namespace dblz {
         void print_update_stored() const;
     };
 
+    
+    /****************************************
+     DiffEqRHSCenteredHomWeight
+     ****************************************/
+    
+    class DiffEqRHSCenteredHomWeight : public DiffEqRHS {
+        
+    private:
+
+        // Conn mult
+        int _conn_mult;
+        
+        // Biases
+        ITptr _bias_lower, _bias_upper;
+        
+        // Centers
+        CTptr _center_lower, _center_upper;
+        
+        // Internal copy/clean up function
+        void _copy(const DiffEqRHSCenteredHomWeight& other);
+        void _move(DiffEqRHSCenteredHomWeight& other);
+        void _clean_up();
+        
+    public:
+        
+        /********************
+         Constructor
+         ********************/
+        
+        // Note: ownership of domain is NOT transferred
+        DiffEqRHSCenteredHomWeight(std::string name, ITptr parent_ixn_param_traj, std::vector<Domain1DParam*> domain, double lr, int conn_mult, ITptr bias_lower, ITptr bias_upper, CTptr center_lower, CTptr center_upper);
+        DiffEqRHSCenteredHomWeight(const DiffEqRHSCenteredHomWeight& other);
+        DiffEqRHSCenteredHomWeight(DiffEqRHSCenteredHomWeight&& other);
+        DiffEqRHSCenteredHomWeight& operator=(const DiffEqRHSCenteredHomWeight& other);
+        DiffEqRHSCenteredHomWeight& operator=(DiffEqRHSCenteredHomWeight &&other);
+        ~DiffEqRHSCenteredHomWeight();
+
+        /********************
+         Update
+         ********************/
+        
+        // Calculate the update
+        // t_start = inclusive
+        // t_end = inclusive
+        void update_calculate_and_store(int timepoint_start, int timepoint_end, double dt);
+    };
 };

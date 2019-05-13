@@ -113,7 +113,7 @@ namespace dblz {
         _pst_sign_of_r[layer] = arma::vec(no_units);
         _pst_sign_of_r_new[layer] = arma::vec(no_units);
         
-        // Add random
+        // Add zeros
         std::vector<MCType> chains({MCType::AWAKE,MCType::ASLEEP});
         for (auto const &chain: chains) {
             for (auto i_chain=0; i_chain<get_no_markov_chains(chain); i_chain++) {
@@ -121,7 +121,6 @@ namespace dblz {
                     _mc_chains[chain][i_chain][layer][sp] = arma::vec(no_units,arma::fill::zeros);
                     _mc_chains_act[chain][i_chain][layer][sp] = arma::vec(no_units,arma::fill::zeros);
                 };
-                set_random_all_units_in_layer(chain, i_chain, layer, false);
             };
         };
         

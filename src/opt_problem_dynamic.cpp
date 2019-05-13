@@ -165,7 +165,7 @@ namespace dblz {
     // MARK: - BM PCD params
     // ***************
 
-    void OptProblemDynamic::solve_one_step_bm_pcd_params(std::shared_ptr<LatticeTraj> latt_traj, int i_opt_step, int timepoint_start_SIP, int no_timesteps_SIP, int timepoint_start_WS, int no_timesteps_WS, int timepoint_start_A, int no_timesteps_A, double dt, int no_mean_field_updates, int no_gibbs_sampling_steps, FNameTrajColl &fname_traj_coll, OptionsSolveDynamic options, OptionsWakeSleep_BM_PCD options_wake_sleep) {
+    void OptProblemDynamic::solve_one_step_bm_pcd_params(std::shared_ptr<LatticeTrajCenteredHom> latt_traj, int i_opt_step, int timepoint_start_SIP, int no_timesteps_SIP, int timepoint_start_WS, int no_timesteps_WS, int timepoint_start_A, int no_timesteps_A, double dt, int no_mean_field_updates, int no_gibbs_sampling_steps, FNameTrajColl &fname_traj_coll, OptionsSolveDynamic options, OptionsWakeSleep_BM_PCD options_wake_sleep) {
 
     solve_one_step_bm_pcd_params_without_committ(latt_traj,i_opt_step,timepoint_start_SIP,no_timesteps_SIP,timepoint_start_WS,no_timesteps_WS,timepoint_start_A,no_timesteps_A,dt,no_mean_field_updates,no_gibbs_sampling_steps,fname_traj_coll,options,options_wake_sleep);
         
@@ -173,7 +173,17 @@ namespace dblz {
     };
     
     
-    void OptProblemDynamic::solve_one_step_bm_pcd_params_without_committ(std::shared_ptr<LatticeTraj> latt_traj, int i_opt_step, int timepoint_start_SIP, int no_timesteps_SIP, int timepoint_start_WS, int no_timesteps_WS, int timepoint_start_A, int no_timesteps_A, double dt, int no_mean_field_updates, int no_gibbs_sampling_steps, FNameTrajColl &fname_traj_coll, OptionsSolveDynamic options, OptionsWakeSleep_BM_PCD options_wake_sleep) {
+    void OptProblemDynamic::solve_one_step_bm_pcd_params_without_committ(std::shared_ptr<LatticeTrajCenteredHom> latt_traj, int i_opt_step, int timepoint_start_SIP, int no_timesteps_SIP, int timepoint_start_WS, int no_timesteps_WS, int timepoint_start_A, int no_timesteps_A, double dt, int no_mean_field_updates, int no_gibbs_sampling_steps, FNameTrajColl &fname_traj_coll, OptionsSolveDynamic options, OptionsWakeSleep_BM_PCD options_wake_sleep) {
+        
+        if (options.locking_mode) {
+            std::cerr << ">>> OptProblemDynamic::solve_one_step_bm_pcd_params_without_committ <<< Locking mode not supported here" << std::endl;
+            exit(EXIT_FAILURE);
+        };
+        
+        if (options.l2_reg || options.l2_reg_traj) {
+            std::cerr << ">>> OptProblemDynamic::solve_one_step_bm_pcd_params_without_committ <<< L2 reg mode not supported here" << std::endl;
+            exit(EXIT_FAILURE);
+        };
         
         /*****
          Solve diff eq for F
@@ -181,68 +191,12 @@ namespace dblz {
         
         clock_t t0 = clock();
         
-        solve_ixn_param_trajs(latt_traj->get_all_ixn_param_trajs(), dt, timepoint_start_SIP, no_timesteps_SIP, options.no_steps_per_step_IP);
-        
-        /*****
-         Adjust adjoint range
-         *****/
-        
-        int timepoint_start_A_use = timepoint_start_A;
-        int no_timesteps_A_use = no_timesteps_A;
-        int timepoint_start_WS_use = timepoint_start_WS;
-        int no_timesteps_WS_use = no_timesteps_WS;
-        
-        if (options.locking_mode) {
-        
-            // Look at the cell in timepoint_start_A_use
-            // Extend adjoint range to any timesteps also in this cell
-            q3c1::Cell* cell = nullptr, *cell_prev = nullptr;
-            bool repeat = false;
-            if (timepoint_start_A_use != 0) {
-                do {
-                    // Dont repeat
-                    repeat = false;
-                    // Run through all ixn params
-                    for (auto ixn: latt_traj->get_all_ixn_param_trajs()) {
-                        // Get the cell at timepoint_start_A_use
-                        cell = ixn->get_diff_eq_rhs()->get_cell_at_timepoint(timepoint_start_A_use);
-                        cell_prev = ixn->get_diff_eq_rhs()->get_cell_at_timepoint(timepoint_start_A_use-1);
-                        if (cell == cell_prev) {
-                            // Same cell, extend adjoint domain
-                            timepoint_start_A_use -= 1;
-                            no_timesteps_A_use += 1;
-                            // Ensure that this is covered by the wake-sleep range
-                            if (timepoint_start_A_use < timepoint_start_WS_use) {
-                                timepoint_start_WS_use = timepoint_start_A_use;
-                            };
-                            if (timepoint_start_WS_use + no_timesteps_WS_use < timepoint_start_A_use + no_timesteps_A_use) {
-                                no_timesteps_WS_use = timepoint_start_A_use + no_timesteps_A_use - timepoint_start_WS_use;
-                            };
-                            // Restart the search
-                            repeat = true;
-                            break;
-                        };
-                    };
-                } while (repeat && timepoint_start_A_use != 0);
-            };
-            std::cout << "Adjoint range is: " << timepoint_start_A_use << " to: " << timepoint_start_A_use + no_timesteps_A_use << std::endl;
-            std::cout << "Wake/sleep range is: " << timepoint_start_WS_use << " to: " << timepoint_start_WS_use + no_timesteps_WS_use << std::endl;
-            
-            // Fix all cells before the adjoint timepoint start
-            for (auto timepoint=0; timepoint<timepoint_start_A_use; timepoint++) {
-                for (auto ixn: latt_traj->get_all_ixn_param_trajs()) {
-                    ixn->get_diff_eq_rhs()->fix_all_verts_around_at_timepoint(timepoint, true);
-                };
-            };
-            
-            // Free all cells at timepoint start and after
-            for (auto timepoint=timepoint_start_A_use; timepoint<=timepoint_start_A_use+no_timesteps_A_use; timepoint++) {
-                for (auto ixn: latt_traj->get_all_ixn_param_trajs()) {
-                    ixn->get_diff_eq_rhs()->fix_all_verts_around_at_timepoint(timepoint, false);
-                };
-            };
+        if (options.no_steps_per_step_IP == 1) {
+            solve_ixn_param_trajs(latt_traj->get_all_ixn_param_trajs(), dt, timepoint_start_SIP, no_timesteps_SIP);
+        } else {
+            solve_ixn_param_trajs(latt_traj->get_all_ixn_param_trajs(), dt, timepoint_start_SIP, no_timesteps_SIP, options.no_steps_per_step_IP);
         };
-        
+
         /*****
          Wake/asleep loop
          *****/
@@ -250,68 +204,63 @@ namespace dblz {
         clock_t t1 = clock();
         
         int no_awake_chains = latt_traj->get_no_markov_chains(MCType::AWAKE);
-        std::vector<std::vector<FName>> fname_coll = fname_traj_coll.get_random_subset_fnames(no_awake_chains, timepoint_start_WS_use, no_timesteps_WS_use);
+        std::vector<std::vector<FName>> fname_coll = fname_traj_coll.get_random_subset_fnames(no_awake_chains, timepoint_start_WS, no_timesteps_WS);
 
-        for (auto timepoint=timepoint_start_WS_use; timepoint<=timepoint_start_WS_use+no_timesteps_WS_use; timepoint++) {
-            latt_traj->get_lattice_at_timepoint(timepoint)->wake_sleep_loop_bm_pcd(i_opt_step, no_mean_field_updates, no_gibbs_sampling_steps, fname_coll.at(timepoint-timepoint_start_WS_use), options_wake_sleep);
+        for (auto timepoint=timepoint_start_WS; timepoint<=timepoint_start_WS+no_timesteps_WS; timepoint++) {
+            latt_traj->get_lattice_at_timepoint(timepoint)->wake_sleep_loop_bm_pcd(i_opt_step, no_mean_field_updates, no_gibbs_sampling_steps, fname_coll.at(timepoint-timepoint_start_WS), options_wake_sleep);
         };
         
         clock_t t2 = clock();
         
         // Reap the moments
-        // Before timepoint_start_A: don't slide means!
-        // At & afer timepoint_start_A: slide means!
-        // Never slide at timepoint_start_SIP (initial condition)
-        bool slide_means;
-        for (auto timepoint=timepoint_start_WS_use; timepoint<=timepoint_start_WS_use+no_timesteps_WS_use; timepoint++) {
-            if (timepoint < timepoint_start_A_use) {
-                slide_means = false;
-            } else {
-                slide_means = true;
-            };
-            if (timepoint == timepoint_start_SIP) {
-                slide_means = false;
-            };
-        latt_traj->get_lattice_at_timepoint(timepoint)->reap_ixn_moment_diffs();
+        bool calculate_offset = false;
+        for (auto timepoint=timepoint_start_WS; timepoint<=timepoint_start_WS+no_timesteps_WS; timepoint++) {
+            latt_traj->get_lattice_centered_hom_at_timepoint(timepoint)->reap_ixn_moment_diffs_and_slide_centers(options.sliding_factor,calculate_offset);
         };
         
         // Print
         if (options.verbose) {
             for (auto ixn_param_traj: latt_traj->get_all_ixn_param_trajs()) {
-                
-                // Print moment traj
-                if (ixn_param_traj->get_type() == IxnParamType::W || ixn_param_traj->get_type() == IxnParamType::X) {
-                    std::cout << ixn_param_traj->get_name() << " moments [" << timepoint_start_WS_use << "," << timepoint_start_WS_use+no_timesteps_WS_use << "]" << std::endl;
-                    ixn_param_traj->print_moment_diff_traj(timepoint_start_WS_use, no_timesteps_WS_use);
-                };
+                std::cout << ixn_param_traj->get_name() << " moments [" << timepoint_start_WS << "," << timepoint_start_WS+no_timesteps_WS << "]" << std::endl;
+                ixn_param_traj->print_moment_diff_traj(timepoint_start_WS, no_timesteps_WS);
             };
         };
-        
+
         /********************
          Solve diff eq for adjoint
          ********************/
         
         clock_t t3 = clock();
         
-        // Set zero endpoint
+        // For efficiency: compute all abscissa values
+        bool form_abscissas = false;
         for (auto ixn_param_traj: latt_traj->get_all_ixn_param_trajs()) {
-            ixn_param_traj->get_adjoint()->set_timepoint_zero_end_cond(timepoint_start_A_use + no_timesteps_A_use);
+            ixn_param_traj->get_diff_eq_rhs()->form_abscissas(timepoint_start_A, timepoint_start_A + no_timesteps_A);
         };
         
-        if (options.l2_reg) {
-            for (auto timepoint=timepoint_start_A_use + no_timesteps_A_use; timepoint>timepoint_start_A_use; timepoint--) {
-                for (auto ixn_param_traj: latt_traj->get_all_ixn_param_trajs()) {
-                    if (!ixn_param_traj->get_is_val_fixed()) {
-                        ixn_param_traj->get_adjoint()->solve_diff_eq_at_timepoint_to_minus_one_l2(timepoint,dt,options.l2_lambda.at(ixn_param_traj),options.l2_center.at(ixn_param_traj));
-                    };
+        // Set zero endpoint
+        for (auto ixn_param_traj: latt_traj->get_all_ixn_param_trajs()) {
+            ixn_param_traj->get_adjoint()->set_timepoint_zero_end_cond(timepoint_start_A + no_timesteps_A);
+        };
+
+        for (auto timepoint=timepoint_start_A + no_timesteps_A; timepoint>timepoint_start_A; timepoint--) {
+            // Calculate deriv terms
+            for (auto ixn_param_traj: latt_traj->get_all_ixn_param_trajs()) {
+                if (ixn_param_traj->get_type() == IxnParamType::H || ixn_param_traj->get_type() == IxnParamType::B) {
+                    // bias
+                    ixn_param_traj->get_adjoint_params_centered_hom_bias()->get_deriv_term_bias()->calculate_val_at_timepoint(timepoint,form_abscissas);
+                } else {
+                    // weight
+                    ixn_param_traj->get_adjoint_params_centered_hom_weight()->get_deriv_term_bias_lower()->calculate_val_at_timepoint(timepoint,form_abscissas);
+                    ixn_param_traj->get_adjoint_params_centered_hom_weight()->get_deriv_term_bias_upper()->calculate_val_at_timepoint(timepoint,form_abscissas);
+                    ixn_param_traj->get_adjoint_params_centered_hom_weight()->get_deriv_term_weight()->calculate_val_at_timepoint(timepoint,form_abscissas);
                 };
             };
-        } else {
-            for (auto timepoint=timepoint_start_A_use + no_timesteps_A_use; timepoint>timepoint_start_A_use; timepoint--) {
-                for (auto ixn_param_traj: latt_traj->get_all_ixn_param_trajs()) {
-                    if (!ixn_param_traj->get_is_val_fixed()) {
-                        ixn_param_traj->get_adjoint()->solve_diff_eq_at_timepoint_to_minus_one(timepoint,dt);
-                    };
+            
+            // Solve diff eq
+            for (auto ixn_param_traj: latt_traj->get_all_ixn_param_trajs()) {
+                if (!ixn_param_traj->get_is_val_fixed()) {
+                    ixn_param_traj->get_adjoint()->solve_diff_eq_at_timepoint_to_minus_one(timepoint, dt);
                 };
             };
         };
@@ -324,7 +273,7 @@ namespace dblz {
         
         for (auto ixn_param_traj: latt_traj->get_all_ixn_param_trajs()) {
             if (!ixn_param_traj->get_is_val_fixed()) {
-                ixn_param_traj->get_diff_eq_rhs()->update_calculate_and_store(timepoint_start_A_use,timepoint_start_A_use+no_timesteps_A_use,dt);
+                ixn_param_traj->get_diff_eq_rhs()->update_calculate_and_store(timepoint_start_A,timepoint_start_A+no_timesteps_A,dt);
             };
         };
         
@@ -769,10 +718,6 @@ namespace dblz {
         clock_t t2 = clock();
         
         // Reap the moments
-        // Before timepoint_start_A: don't slide means!
-        // At & afer timepoint_start_A: slide means!
-        // Never slide at timepoint_start_SIP (initial condition)
-        
         bool calculate_offset = false;
         for (auto timepoint=timepoint_start_WS; timepoint<=timepoint_start_WS+no_timesteps_WS; timepoint++) {
             latt_traj->get_lattice_centered_hom_at_timepoint(timepoint)->reap_ixn_moment_diffs_and_slide_centers(options.sliding_factor,calculate_offset);
@@ -781,8 +726,6 @@ namespace dblz {
         // Print
         if (options.verbose) {
             for (auto ixn_param_traj: latt_traj->get_all_ixn_param_trajs()) {
-                
-                // Print moment traj
                 std::cout << ixn_param_traj->get_name() << " moments [" << timepoint_start_WS << "," << timepoint_start_WS+no_timesteps_WS << "]" << std::endl;
                 ixn_param_traj->print_moment_diff_traj(timepoint_start_WS, no_timesteps_WS);
             };

@@ -162,7 +162,7 @@ namespace dblz {
                 };
                 
                 // Third term connecting l and l+1
-                if (layer != _conn_mults.size()-1) {
+                if (layer != _all_center_trajs.size()-1) {
                     conn_mult = _conn_mults.at(layer).at(layer+1);
                     
                     for (auto const &pr3: _all_weights.at(layer).at(pr2.first).at(layer+1)) {

@@ -1373,6 +1373,7 @@ namespace dblz {
          _latt->set_random_all_hidden_units(MCType::AWAKE, i_chain, false);
          };
          */
+        
         // Option (2): upward pass with 2x weights (DBM) to activate probabilitsic units
         // (faster to converge!!!)
         activate_upward_pass_with_2x_weights_1x_bias(MCType::AWAKE, false);
@@ -1385,7 +1386,6 @@ namespace dblz {
             for (auto i=0; i<no_mean_field_updates; i++) {
                 mean_field_hiddens_step();
             };
-            // gibbs_sampling_step_awake(true);
             
         } else {
             
@@ -1410,6 +1410,10 @@ namespace dblz {
         };
         
         // ASLEEP PHASE - PERSISTENT_CD
+        
+        for (auto i_chain=0; i_chain<_no_markov_chains.at(MCType::ASLEEP); i_chain++) {
+            set_random_all_units(MCType::ASLEEP, i_chain, true);
+        };
         
         // Run CD sampling
         

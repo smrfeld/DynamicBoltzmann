@@ -271,7 +271,7 @@ namespace dblz {
 		DiffEqRHS(DiffEqRHS&& other);
 		DiffEqRHS& operator=(const DiffEqRHS& other);
 		DiffEqRHS& operator=(DiffEqRHS &&other);
-		~DiffEqRHS();
+		virtual ~DiffEqRHS();
         
         // ***************
         // MARK: - Learning rate

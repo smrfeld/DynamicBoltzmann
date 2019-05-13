@@ -27,6 +27,9 @@ namespace dblz {
         int _layer;
         Sptr _species;
         
+        // Init val
+        double _init_val;
+        
         // Internal copy func/clean up
         void _clean_up();
         void _copy(const CenterTraj& other);
@@ -38,7 +41,7 @@ namespace dblz {
         // MARK: - Constructor
         // ***************
         
-        CenterTraj(int layer, Sptr species);
+        CenterTraj(int layer, Sptr species, double init_val);
         CenterTraj(const CenterTraj& other);
         CenterTraj& operator=(const CenterTraj& other);
         CenterTraj(CenterTraj&& other);

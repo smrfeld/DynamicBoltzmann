@@ -27,7 +27,6 @@ namespace dblz {
         _layer = layer;
         _species = species;
     };
-    Center::Center(int layer, Sptr species) : Center(layer,species,0.5) {};
     Center::Center(const Center& other) {
         _copy(other);
     };

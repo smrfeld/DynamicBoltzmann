@@ -22,7 +22,8 @@ namespace dblz {
     // MARK: - Constructor
     // ***************
     
-    CenterTraj::CenterTraj(int layer, Sptr species) {
+    CenterTraj::CenterTraj(int layer, Sptr species, double init_val) {
+        _init_val = init_val;
         _layer = layer;
         _species = species;
         
@@ -61,6 +62,7 @@ namespace dblz {
         _centers = other._centers;
         _layer = other._layer;
         _species = other._species;
+        _init_val = other._init_val;
     };
     void CenterTraj::_move(CenterTraj& other) {
         _no_timesteps = other._no_timesteps;
@@ -68,6 +70,7 @@ namespace dblz {
         _centers = other._centers;
         _layer = other._layer;
         _species = other._species;
+        _init_val = other._init_val;
 
         // Reset the other
         other._no_timesteps = 0;
@@ -75,6 +78,7 @@ namespace dblz {
         other._centers.clear();
         other._layer = 0;
         other._species = nullptr;
+        other._init_val = 0;
     };
     
     // ***************
@@ -93,8 +97,8 @@ namespace dblz {
                 // Make new center at the latest value
                 _centers.push_back(std::make_shared<Center>(_layer,_species,_centers.back()->get_val()));
             } else {
-                // Make new center at default 0.5
-                _centers.push_back(std::make_shared<Center>(_layer,_species));
+                // Make new center at init val
+                _centers.push_back(std::make_shared<Center>(_layer,_species,_init_val));
             };
         };
         while (_centers.size() > _no_timepoints) {

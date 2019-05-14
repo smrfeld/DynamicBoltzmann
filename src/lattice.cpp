@@ -883,14 +883,12 @@ namespace dblz {
     // (2) Convert activations to probs
     void Lattice::activate_layer_convert_to_probs(MCType chain, int layer, bool binary) {
         
-        // Starts at 1.0 = exp(0) for empty
-        _pst_prop.at(layer).fill(arma::fill::ones);
-
         // All chains
         for (auto i_chain=0; i_chain<_no_markov_chains.at(chain); i_chain++) {
         
             // Convert activations to propensities via exp
             // Also calculate total propensity
+            // Starts at 1.0 = exp(0) for empty
             _pst_prop.at(layer).fill(arma::fill::ones);
             for (auto sp: _species_possible_vec.at(layer)) {
                 _mc_chains_act[chain][i_chain][layer][sp].transform( [](double val) { return (exp(val)); } );
@@ -1411,9 +1409,11 @@ namespace dblz {
         
         // ASLEEP PHASE - PERSISTENT_CD
         
+        /*
         for (auto i_chain=0; i_chain<_no_markov_chains.at(MCType::ASLEEP); i_chain++) {
             set_random_all_units(MCType::ASLEEP, i_chain, true);
         };
+         */
         
         // Run CD sampling
         

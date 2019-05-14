@@ -20,34 +20,26 @@ namespace dblz {
      Sampling Options
      ****************************************/
     
-    struct OptionsWakeSleep_BM_PCD {
+    struct OptionsWakeSleep_BM {
+        
+        // PCD vs CD
+        bool persistent_chains = false;
         
         // Verbosity
         bool verbose_timing = true;
-        
-        // Sampling options
-        // Is the visible reconstruction binary, EXCEPT in the last phase?
-        bool is_asleep_visible_binary = true;
-        // Is the hidden reconstruction binary, EXCEPT in the last phase?
-        bool is_asleep_hidden_binary = true;
-        // Is the visible reconstruction binary in the last phase?
-        bool is_asleep_visible_binary_final = true;
-        // Is the hidden reconstruction binary in the last phase?
-        bool is_asleep_hidden_binary_final = false;
         
         // Write after awake/asleep
         bool write_after_awake = false;
         bool write_after_asleep = false;
         std::string write_after_awake_dir = "";
         std::string write_after_asleep_dir = "";
-        
-        // Gibbs sampling awake phase
-        bool gibbs_sample_awake_phase = false;
-        bool gibbs_sample_awake_phase_hidden_binary = true;
     };
     
-    struct OptionsWakeSleep_RBM_CD {
+    struct OptionsWakeSleep_RBM {
       
+        // PCD vs CD
+        bool persistent_chains = false;
+        
         // Verbosity
         bool verbose_timing = true;
 
@@ -152,10 +144,6 @@ namespace dblz {
         // No markov chains for both awake and asleep
         std::map<MCType,int> _no_markov_chains;
         
-        // Multipliers between layers for ixns - NOT bidirectional
-        std::map<int, std::map<int, double>> _o2_mults;
-        std::map<int, double> _bias_mults;
-        
         // ***************
         // MARK: - Private methods
         // ***************
@@ -227,10 +215,6 @@ namespace dblz {
         // Clear biases and ixns
         void clear_all_biases_and_ixns();
         
-        // Set multiplier
-        void set_multiplier_between_layers(int from_layer, int to_layer, double multiplier);
-        void set_multiplier_for_bias_in_layer(int layer, double multiplier);
-
         // Get ixns
         double get_bias_in_layer(int layer, Sptr sp) const;
         double get_ixn_between_layers(int from_layer, Sptr from_sp, int to_layer, Sptr to_sp) const;
@@ -279,34 +263,15 @@ namespace dblz {
         // For all chains:
         
         // 1. Calculate activation given layer above or below or both
-        void activate_layer_calculate_from_below(MCType chain, int layer);
-        void activate_layer_calculate_from_above(MCType chain, int layer);
-        void activate_layer_calculate_from_both(MCType chain, int layer);
+        void activate_layer_calculate_from_below(MCType chain, int layer, double weight_mult=1.0);
+        void activate_layer_calculate_from_above(MCType chain, int layer, double weight_mult=1.0);
+        void activate_layer_calculate_from_both(MCType chain, int layer, double weight_mult_from_below=1.0, double weight_mult_from_above=1.0);
 
         // (2) Convert activations to probs
         virtual void activate_layer_convert_to_probs(MCType chain, int layer, bool binary);
 
         // (3) Commit the new probabilities
         void activate_layer_committ(MCType chain, int layer);
-
-        // ***************
-        // MARK: - Mean field / gibbs sampling
-        // ***************
-        
-        // Variational inference ie mean field
-        void mean_field_hiddens_step();
-
-        // Gibbs sampling for awake phase
-        void gibbs_sampling_step_awake(bool binary_hidden);
-        void gibbs_sampling_step_parallel_awake(bool binary_hidden);
-
-        // Gibbs sampling
-        void gibbs_sampling_step(bool binary_visible, bool binary_hidden);
-        void gibbs_sampling_step_parallel(bool binary_visible, bool binary_hidden);
-
-        // Make a pass activating upwards
-        void activate_upward_pass(MCType chain, bool binary_hidden);
-        void activate_upward_pass_with_2x_weights_1x_bias(MCType chain, bool binary_hidden);
 
         // ***************
         // MARK: - Reap moments, both awake and asleep
@@ -332,8 +297,8 @@ namespace dblz {
         // MARK: - Wake/sleep
         // ***************
         
-        void wake_sleep_loop_bm_pcd(int i_opt_step, int no_mean_field_updates, int no_gibbs_sampling_steps, std::vector<FName> &fnames, OptionsWakeSleep_BM_PCD options);
-        void wake_sleep_loop_rbm_cd(int i_opt_step, int no_cd_steps, std::vector<FName> &fnames, OptionsWakeSleep_RBM_CD options);
+        void wake_sleep_loop_bm(int i_opt_step, int no_mean_field_updates, int no_gibbs_sampling_steps, std::vector<FName> &fnames, OptionsWakeSleep_BM options);
+        void wake_sleep_loop_rbm(int i_opt_step, int no_cd_steps, std::vector<FName> &fnames, OptionsWakeSleep_RBM options);
         
         // ***************
         // MARK: - Counts

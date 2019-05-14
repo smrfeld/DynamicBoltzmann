@@ -15,8 +15,8 @@ namespace dblz {
     class Lattice1DFullyVisible;
     class LatticeCenteredHom;
     class FNameColl;
-    struct OptionsWakeSleep_BM_PCD;
-    struct OptionsWakeSleep_RBM_CD;
+    struct OptionsWakeSleep_BM;
+    struct OptionsWakeSleep_RBM;
     struct OptionsWakeSleep_1DFV_CD;
 
     /****************************************
@@ -90,12 +90,12 @@ namespace dblz {
          ********************/
         
         // One step
-        void solve_one_step_bm_pcd(std::shared_ptr<Lattice> latt, int i_opt_step, int no_mean_field_updates, int no_gibbs_sampling_steps, FNameColl &fname_coll, OptionsSolveStatic options, OptionsWakeSleep_BM_PCD options_wake_sleep);
+        void solve_one_step_bm_pcd(std::shared_ptr<Lattice> latt, int i_opt_step, int no_mean_field_updates, int no_gibbs_sampling_steps, FNameColl &fname_coll, OptionsSolveStatic options, OptionsWakeSleep_BM options_wake_sleep);
 
-        void solve_one_step_rbm_cd(std::shared_ptr<Lattice> latt, int i_opt_step, int no_cd_steps, FNameColl &fname_coll, OptionsSolveStatic options, OptionsWakeSleep_RBM_CD options_wake_sleep);
+        void solve_one_step_rbm_cd(std::shared_ptr<Lattice> latt, int i_opt_step, int no_cd_steps, FNameColl &fname_coll, OptionsSolveStatic options, OptionsWakeSleep_RBM options_wake_sleep);
         
         void solve_one_step_1d_fully_visible(std::shared_ptr<Lattice1DFullyVisible> latt1dfv, int i_opt_step, int no_cd_steps, FNameColl &fname_coll, OptionsSolveStatic options, OptionsWakeSleep_1DFV_CD options_wake_sleep);
 
-        void solve_one_step_rbm_cd_centered_hom(std::shared_ptr<LatticeCenteredHom> lattch, int i_opt_step, int no_cd_steps, FNameColl &fname_coll, OptionsSolveStatic options, OptionsWakeSleep_RBM_CD options_wake_sleep);
+        void solve_one_step_rbm_cd_centered_hom(std::shared_ptr<LatticeCenteredHom> lattch, int i_opt_step, int no_cd_steps, FNameColl &fname_coll, OptionsSolveStatic options, OptionsWakeSleep_RBM options_wake_sleep);
     };
 };

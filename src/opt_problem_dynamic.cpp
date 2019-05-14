@@ -165,23 +165,23 @@ namespace dblz {
     // MARK: - BM PCD params
     // ***************
 
-    void OptProblemDynamic::solve_one_step_bm_pcd_params(std::shared_ptr<LatticeTrajCenteredHom> latt_traj, int i_opt_step, int timepoint_start_SIP, int no_timesteps_SIP, int timepoint_start_WS, int no_timesteps_WS, int timepoint_start_A, int no_timesteps_A, double dt, int no_mean_field_updates, int no_gibbs_sampling_steps, FNameTrajColl &fname_traj_coll, OptionsSolveDynamic options, OptionsWakeSleep_BM_PCD options_wake_sleep) {
+    void OptProblemDynamic::solve_one_step_bm_params(std::shared_ptr<LatticeTrajCenteredHom> latt_traj, int i_opt_step, int timepoint_start_SIP, int no_timesteps_SIP, int timepoint_start_WS, int no_timesteps_WS, int timepoint_start_A, int no_timesteps_A, double dt, int no_mean_field_updates, int no_gibbs_sampling_steps, FNameTrajColl &fname_traj_coll, OptionsSolveDynamic options, OptionsWakeSleep_BM options_wake_sleep) {
 
-    solve_one_step_bm_pcd_params_without_committ(latt_traj,i_opt_step,timepoint_start_SIP,no_timesteps_SIP,timepoint_start_WS,no_timesteps_WS,timepoint_start_A,no_timesteps_A,dt,no_mean_field_updates,no_gibbs_sampling_steps,fname_traj_coll,options,options_wake_sleep);
+    solve_one_step_bm_params_without_committ(latt_traj,i_opt_step,timepoint_start_SIP,no_timesteps_SIP,timepoint_start_WS,no_timesteps_WS,timepoint_start_A,no_timesteps_A,dt,no_mean_field_updates,no_gibbs_sampling_steps,fname_traj_coll,options,options_wake_sleep);
         
         committ_step(latt_traj->get_all_ixn_param_trajs(), i_opt_step, options);
     };
     
     
-    void OptProblemDynamic::solve_one_step_bm_pcd_params_without_committ(std::shared_ptr<LatticeTrajCenteredHom> latt_traj, int i_opt_step, int timepoint_start_SIP, int no_timesteps_SIP, int timepoint_start_WS, int no_timesteps_WS, int timepoint_start_A, int no_timesteps_A, double dt, int no_mean_field_updates, int no_gibbs_sampling_steps, FNameTrajColl &fname_traj_coll, OptionsSolveDynamic options, OptionsWakeSleep_BM_PCD options_wake_sleep) {
+    void OptProblemDynamic::solve_one_step_bm_params_without_committ(std::shared_ptr<LatticeTrajCenteredHom> latt_traj, int i_opt_step, int timepoint_start_SIP, int no_timesteps_SIP, int timepoint_start_WS, int no_timesteps_WS, int timepoint_start_A, int no_timesteps_A, double dt, int no_mean_field_updates, int no_gibbs_sampling_steps, FNameTrajColl &fname_traj_coll, OptionsSolveDynamic options, OptionsWakeSleep_BM options_wake_sleep) {
         
         if (options.locking_mode) {
-            std::cerr << ">>> OptProblemDynamic::solve_one_step_bm_pcd_params_without_committ <<< Locking mode not supported here" << std::endl;
+            std::cerr << ">>> OptProblemDynamic::solve_one_step_bm_params_without_committ <<< Locking mode not supported here" << std::endl;
             exit(EXIT_FAILURE);
         };
         
         if (options.l2_reg || options.l2_reg_traj) {
-            std::cerr << ">>> OptProblemDynamic::solve_one_step_bm_pcd_params_without_committ <<< L2 reg mode not supported here" << std::endl;
+            std::cerr << ">>> OptProblemDynamic::solve_one_step_bm_params_without_committ <<< L2 reg mode not supported here" << std::endl;
             exit(EXIT_FAILURE);
         };
         
@@ -207,7 +207,7 @@ namespace dblz {
         std::vector<std::vector<FName>> fname_coll = fname_traj_coll.get_random_subset_fnames(no_awake_chains, timepoint_start_WS, no_timesteps_WS);
 
         for (auto timepoint=timepoint_start_WS; timepoint<=timepoint_start_WS+no_timesteps_WS; timepoint++) {
-            latt_traj->get_lattice_at_timepoint(timepoint)->wake_sleep_loop_bm_pcd(i_opt_step, no_mean_field_updates, no_gibbs_sampling_steps, fname_coll.at(timepoint-timepoint_start_WS), options_wake_sleep);
+            latt_traj->get_lattice_at_timepoint(timepoint)->wake_sleep_loop_bm(i_opt_step, no_mean_field_updates, no_gibbs_sampling_steps, fname_coll.at(timepoint-timepoint_start_WS), options_wake_sleep);
         };
         
         clock_t t2 = clock();
@@ -294,18 +294,18 @@ namespace dblz {
     // MARK: - RBM CD params
     // ***************
     
-    void OptProblemDynamic::solve_one_step_rbm_cd_params(std::shared_ptr<LatticeTraj> latt_traj, int i_opt_step, int timepoint_start_SIP, int no_timesteps_SIP, int timepoint_start_WS, int no_timesteps_WS, int timepoint_start_A, int no_timesteps_A, double dt, int no_cd_steps, FNameTrajColl &fname_traj_coll, OptionsSolveDynamic options, OptionsWakeSleep_RBM_CD options_wake_sleep) {
+    void OptProblemDynamic::solve_one_step_rbm_params(std::shared_ptr<LatticeTraj> latt_traj, int i_opt_step, int timepoint_start_SIP, int no_timesteps_SIP, int timepoint_start_WS, int no_timesteps_WS, int timepoint_start_A, int no_timesteps_A, double dt, int no_cd_steps, FNameTrajColl &fname_traj_coll, OptionsSolveDynamic options, OptionsWakeSleep_RBM options_wake_sleep) {
         
-        solve_one_step_rbm_cd_params_without_committ(latt_traj,i_opt_step,timepoint_start_SIP,no_timesteps_SIP,timepoint_start_WS,no_timesteps_WS,timepoint_start_A,no_timesteps_A,dt,no_cd_steps,fname_traj_coll,options,options_wake_sleep);
+        solve_one_step_rbm_params_without_committ(latt_traj,i_opt_step,timepoint_start_SIP,no_timesteps_SIP,timepoint_start_WS,no_timesteps_WS,timepoint_start_A,no_timesteps_A,dt,no_cd_steps,fname_traj_coll,options,options_wake_sleep);
         
         committ_step(latt_traj->get_all_ixn_param_trajs(), i_opt_step, options);
     };
     
     
-    void OptProblemDynamic::solve_one_step_rbm_cd_params_without_committ(std::shared_ptr<LatticeTraj> latt_traj, int i_opt_step, int timepoint_start_SIP, int no_timesteps_SIP, int timepoint_start_WS, int no_timesteps_WS, int timepoint_start_A, int no_timesteps_A, double dt, int no_cd_steps, FNameTrajColl &fname_traj_coll, OptionsSolveDynamic options, OptionsWakeSleep_RBM_CD options_wake_sleep) {
+    void OptProblemDynamic::solve_one_step_rbm_params_without_committ(std::shared_ptr<LatticeTraj> latt_traj, int i_opt_step, int timepoint_start_SIP, int no_timesteps_SIP, int timepoint_start_WS, int no_timesteps_WS, int timepoint_start_A, int no_timesteps_A, double dt, int no_cd_steps, FNameTrajColl &fname_traj_coll, OptionsSolveDynamic options, OptionsWakeSleep_RBM options_wake_sleep) {
         
         if (latt_traj->get_no_markov_chains(MCType::AWAKE) != latt_traj->get_no_markov_chains(MCType::ASLEEP)) {
-            std::cerr << ">>> OptProblemDynamic::solve_one_step_rbm_cd_params_without_committ <<< asleep chains must equal awake chains" << std::endl;
+            std::cerr << ">>> OptProblemDynamic::solve_one_step_rbm_params_without_committ <<< asleep chains must equal awake chains" << std::endl;
             exit(EXIT_FAILURE);
         };
         
@@ -390,7 +390,7 @@ namespace dblz {
         
         for (auto timepoint=timepoint_start_WS_use; timepoint<=timepoint_start_WS_use+no_timesteps_WS_use; timepoint++) {
             // std::cout << "SAMPLING AT TIME: " << timepoint << std::endl;
-            latt_traj->get_lattice_at_timepoint(timepoint)->wake_sleep_loop_rbm_cd(i_opt_step, no_cd_steps, fname_coll.at(timepoint-timepoint_start_WS_use), options_wake_sleep);
+            latt_traj->get_lattice_at_timepoint(timepoint)->wake_sleep_loop_rbm(i_opt_step, no_cd_steps, fname_coll.at(timepoint-timepoint_start_WS_use), options_wake_sleep);
         };
         
         clock_t t2 = clock();
@@ -482,18 +482,18 @@ namespace dblz {
         };
     };
     
-    void OptProblemDynamic::solve_one_step_rbm_cd_params(std::shared_ptr<LatticeTrajAlternatingBinary> latt_traj, int i_opt_step, int timepoint_start_SIP, int no_timesteps_SIP, int timepoint_start_WS, int no_timesteps_WS, int timepoint_start_A, int no_timesteps_A, double dt, int no_cd_steps, FNameTrajColl &fname_traj_coll, OptionsSolveDynamic options, OptionsWakeSleep_RBM_CD options_wake_sleep) {
+    void OptProblemDynamic::solve_one_step_rbm_params(std::shared_ptr<LatticeTrajAlternatingBinary> latt_traj, int i_opt_step, int timepoint_start_SIP, int no_timesteps_SIP, int timepoint_start_WS, int no_timesteps_WS, int timepoint_start_A, int no_timesteps_A, double dt, int no_cd_steps, FNameTrajColl &fname_traj_coll, OptionsSolveDynamic options, OptionsWakeSleep_RBM options_wake_sleep) {
         
-        solve_one_step_rbm_cd_params_without_committ(latt_traj,i_opt_step,timepoint_start_SIP,no_timesteps_SIP,timepoint_start_WS,no_timesteps_WS,timepoint_start_A,no_timesteps_A,dt,no_cd_steps,fname_traj_coll,options,options_wake_sleep);
+        solve_one_step_rbm_params_without_committ(latt_traj,i_opt_step,timepoint_start_SIP,no_timesteps_SIP,timepoint_start_WS,no_timesteps_WS,timepoint_start_A,no_timesteps_A,dt,no_cd_steps,fname_traj_coll,options,options_wake_sleep);
         
         committ_step(latt_traj->get_all_ixn_param_trajs(), i_opt_step, options);
     };
     
     
-    void OptProblemDynamic::solve_one_step_rbm_cd_params_without_committ(std::shared_ptr<LatticeTrajAlternatingBinary> latt_traj, int i_opt_step, int timepoint_start_SIP, int no_timesteps_SIP, int timepoint_start_WS, int no_timesteps_WS, int timepoint_start_A, int no_timesteps_A, double dt, int no_cd_steps, FNameTrajColl &fname_traj_coll, OptionsSolveDynamic options, OptionsWakeSleep_RBM_CD options_wake_sleep) {
+    void OptProblemDynamic::solve_one_step_rbm_params_without_committ(std::shared_ptr<LatticeTrajAlternatingBinary> latt_traj, int i_opt_step, int timepoint_start_SIP, int no_timesteps_SIP, int timepoint_start_WS, int no_timesteps_WS, int timepoint_start_A, int no_timesteps_A, double dt, int no_cd_steps, FNameTrajColl &fname_traj_coll, OptionsSolveDynamic options, OptionsWakeSleep_RBM options_wake_sleep) {
         
         if (latt_traj->get_no_markov_chains(MCType::AWAKE) != latt_traj->get_no_markov_chains(MCType::ASLEEP)) {
-            std::cerr << ">>> OptProblemDynamic::solve_one_step_rbm_cd_params_without_committ <<< asleep chains must equal awake chains" << std::endl;
+            std::cerr << ">>> OptProblemDynamic::solve_one_step_rbm_params_without_committ <<< asleep chains must equal awake chains" << std::endl;
             exit(EXIT_FAILURE);
         };
         
@@ -577,7 +577,7 @@ namespace dblz {
         std::vector<std::vector<FName>> fname_coll = fname_traj_coll.get_random_subset_fnames(no_awake_chains, timepoint_start_WS_use, no_timesteps_WS_use);
         
         for (auto timepoint=timepoint_start_WS_use; timepoint<=timepoint_start_WS_use+no_timesteps_WS_use; timepoint++) {
-            latt_traj->get_lattice_at_timepoint(timepoint)->wake_sleep_loop_rbm_cd(i_opt_step, no_cd_steps, fname_coll.at(timepoint-timepoint_start_WS_use), options_wake_sleep);
+            latt_traj->get_lattice_at_timepoint(timepoint)->wake_sleep_loop_rbm(i_opt_step, no_cd_steps, fname_coll.at(timepoint-timepoint_start_WS_use), options_wake_sleep);
         };
         
         clock_t t2 = clock();
@@ -664,28 +664,28 @@ namespace dblz {
         };
     };
 
-    void OptProblemDynamic::solve_one_step_rbm_cd_params(std::shared_ptr<LatticeTrajCenteredHom> latt_traj, int i_opt_step, int timepoint_start_SIP, int no_timesteps_SIP, int timepoint_start_WS, int no_timesteps_WS, int timepoint_start_A, int no_timesteps_A, double dt, int no_cd_steps, FNameTrajColl &fname_traj_coll, OptionsSolveDynamic options, OptionsWakeSleep_RBM_CD options_wake_sleep) {
+    void OptProblemDynamic::solve_one_step_rbm_params(std::shared_ptr<LatticeTrajCenteredHom> latt_traj, int i_opt_step, int timepoint_start_SIP, int no_timesteps_SIP, int timepoint_start_WS, int no_timesteps_WS, int timepoint_start_A, int no_timesteps_A, double dt, int no_cd_steps, FNameTrajColl &fname_traj_coll, OptionsSolveDynamic options, OptionsWakeSleep_RBM options_wake_sleep) {
         
-        solve_one_step_rbm_cd_params_without_committ(latt_traj,i_opt_step,timepoint_start_SIP,no_timesteps_SIP,timepoint_start_WS,no_timesteps_WS,timepoint_start_A,no_timesteps_A,dt,no_cd_steps,fname_traj_coll,options,options_wake_sleep);
+        solve_one_step_rbm_params_without_committ(latt_traj,i_opt_step,timepoint_start_SIP,no_timesteps_SIP,timepoint_start_WS,no_timesteps_WS,timepoint_start_A,no_timesteps_A,dt,no_cd_steps,fname_traj_coll,options,options_wake_sleep);
         
         committ_step(latt_traj->get_all_ixn_param_trajs(), i_opt_step, options);
     };
     
     
-    void OptProblemDynamic::solve_one_step_rbm_cd_params_without_committ(std::shared_ptr<LatticeTrajCenteredHom> latt_traj, int i_opt_step, int timepoint_start_SIP, int no_timesteps_SIP, int timepoint_start_WS, int no_timesteps_WS, int timepoint_start_A, int no_timesteps_A, double dt, int no_cd_steps, FNameTrajColl &fname_traj_coll, OptionsSolveDynamic options, OptionsWakeSleep_RBM_CD options_wake_sleep) {
+    void OptProblemDynamic::solve_one_step_rbm_params_without_committ(std::shared_ptr<LatticeTrajCenteredHom> latt_traj, int i_opt_step, int timepoint_start_SIP, int no_timesteps_SIP, int timepoint_start_WS, int no_timesteps_WS, int timepoint_start_A, int no_timesteps_A, double dt, int no_cd_steps, FNameTrajColl &fname_traj_coll, OptionsSolveDynamic options, OptionsWakeSleep_RBM options_wake_sleep) {
         
         if (latt_traj->get_no_markov_chains(MCType::AWAKE) != latt_traj->get_no_markov_chains(MCType::ASLEEP)) {
-            std::cerr << ">>> OptProblemDynamic::solve_one_step_rbm_cd_params_without_committ <<< asleep chains must equal awake chains" << std::endl;
+            std::cerr << ">>> OptProblemDynamic::solve_one_step_rbm_params_without_committ <<< asleep chains must equal awake chains" << std::endl;
             exit(EXIT_FAILURE);
         };
         
         if (options.locking_mode) {
-            std::cerr << ">>> OptProblemDynamic::solve_one_step_rbm_cd_params_without_committ <<< Locking mode not supported here" << std::endl;
+            std::cerr << ">>> OptProblemDynamic::solve_one_step_rbm_params_without_committ <<< Locking mode not supported here" << std::endl;
             exit(EXIT_FAILURE);
         };
         
         if (options.l2_reg || options.l2_reg_traj) {
-            std::cerr << ">>> OptProblemDynamic::solve_one_step_rbm_cd_params_without_committ <<< L2 reg mode not supported here" << std::endl;
+            std::cerr << ">>> OptProblemDynamic::solve_one_step_rbm_params_without_committ <<< L2 reg mode not supported here" << std::endl;
             exit(EXIT_FAILURE);
         };
 
@@ -712,7 +712,7 @@ namespace dblz {
         
         for (auto timepoint=timepoint_start_WS; timepoint<=timepoint_start_WS+no_timesteps_WS; timepoint++) {
             // std::cout << "SAMPLING AT TIME: " << timepoint << std::endl;
-            latt_traj->get_lattice_at_timepoint(timepoint)->wake_sleep_loop_rbm_cd(i_opt_step, no_cd_steps, fname_coll.at(timepoint-timepoint_start_WS), options_wake_sleep);
+            latt_traj->get_lattice_at_timepoint(timepoint)->wake_sleep_loop_rbm(i_opt_step, no_cd_steps, fname_coll.at(timepoint-timepoint_start_WS), options_wake_sleep);
         };
         
         clock_t t2 = clock();
@@ -801,33 +801,33 @@ namespace dblz {
     // MARK: - RBM CD obs
     // ***************
 
-    void OptProblemDynamic::solve_one_step_rbm_cd_obs(std::shared_ptr<LatticeTraj> latt_traj, int i_opt_step, int timepoint_start_SIP, int no_timesteps_SIP, int timepoint_start_WS, int no_timesteps_WS, int timepoint_start_A, int no_timesteps_A, double dt, int no_cd_steps, FNameTrajColl &fname_traj_coll, OptionsSolveDynamic options, OptionsWakeSleep_RBM_CD options_wake_sleep) {
+    void OptProblemDynamic::solve_one_step_rbm_obs(std::shared_ptr<LatticeTraj> latt_traj, int i_opt_step, int timepoint_start_SIP, int no_timesteps_SIP, int timepoint_start_WS, int no_timesteps_WS, int timepoint_start_A, int no_timesteps_A, double dt, int no_cd_steps, FNameTrajColl &fname_traj_coll, OptionsSolveDynamic options, OptionsWakeSleep_RBM options_wake_sleep) {
         
-        solve_one_step_rbm_cd_obs_without_committ(latt_traj,i_opt_step,timepoint_start_SIP,no_timesteps_SIP,timepoint_start_WS,no_timesteps_WS,timepoint_start_A,no_timesteps_A,dt,no_cd_steps,fname_traj_coll,options,options_wake_sleep);
+        solve_one_step_rbm_obs_without_committ(latt_traj,i_opt_step,timepoint_start_SIP,no_timesteps_SIP,timepoint_start_WS,no_timesteps_WS,timepoint_start_A,no_timesteps_A,dt,no_cd_steps,fname_traj_coll,options,options_wake_sleep);
         
         committ_step(latt_traj->get_all_ixn_param_trajs(), i_opt_step, options);
     };
     
     
-    void OptProblemDynamic::solve_one_step_rbm_cd_obs_without_committ(std::shared_ptr<LatticeTraj> latt_traj, int i_opt_step, int timepoint_start_SIP, int no_timesteps_SIP, int timepoint_start_WS, int no_timesteps_WS, int timepoint_start_A, int no_timesteps_A, double dt, int no_cd_steps, FNameTrajColl &fname_traj_coll, OptionsSolveDynamic options, OptionsWakeSleep_RBM_CD options_wake_sleep) {
+    void OptProblemDynamic::solve_one_step_rbm_obs_without_committ(std::shared_ptr<LatticeTraj> latt_traj, int i_opt_step, int timepoint_start_SIP, int no_timesteps_SIP, int timepoint_start_WS, int no_timesteps_WS, int timepoint_start_A, int no_timesteps_A, double dt, int no_cd_steps, FNameTrajColl &fname_traj_coll, OptionsSolveDynamic options, OptionsWakeSleep_RBM options_wake_sleep) {
         
         if (latt_traj->get_no_markov_chains(MCType::AWAKE) != latt_traj->get_no_markov_chains(MCType::ASLEEP)) {
-            std::cerr << ">>> OptProblemDynamic::solve_one_step_rbm_cd_obs_without_committ <<< asleep chains must equal awake chains" << std::endl;
+            std::cerr << ">>> OptProblemDynamic::solve_one_step_rbm_obs_without_committ <<< asleep chains must equal awake chains" << std::endl;
             exit(EXIT_FAILURE);
         };
         
         if (options.locking_mode) {
-            std::cerr << ">>> OptProblemDynamic::solve_one_step_rbm_cd_obs_without_committ <<< locking mode not supported" << std::endl;
+            std::cerr << ">>> OptProblemDynamic::solve_one_step_rbm_obs_without_committ <<< locking mode not supported" << std::endl;
             exit(EXIT_FAILURE);
         };
         
         if (options.l2_reg) {
-            std::cerr << ">>> OptProblemDynamic::solve_one_step_rbm_cd_obs_without_committ <<< l2_reg mode not supported" << std::endl;
+            std::cerr << ">>> OptProblemDynamic::solve_one_step_rbm_obs_without_committ <<< l2_reg mode not supported" << std::endl;
             exit(EXIT_FAILURE);
         };
         
         if (options.l2_reg_traj) {
-            std::cerr << ">>> OptProblemDynamic::solve_one_step_rbm_cd_obs_without_committ <<< l2_reg_traj mode not supported" << std::endl;
+            std::cerr << ">>> OptProblemDynamic::solve_one_step_rbm_obs_without_committ <<< l2_reg_traj mode not supported" << std::endl;
             exit(EXIT_FAILURE);
         };
 
@@ -903,7 +903,7 @@ namespace dblz {
             if (timepoint >= timepoint_start_WS && timepoint<=timepoint_start_WS+no_timesteps_WS) {
                
                // Sample
-                latt->wake_sleep_loop_rbm_cd(i_opt_step, no_cd_steps, fname_coll.at(timepoint-timepoint_start_WS), options_wake_sleep);
+                latt->wake_sleep_loop_rbm(i_opt_step, no_cd_steps, fname_coll.at(timepoint-timepoint_start_WS), options_wake_sleep);
                 
                 // Reap moments
                 latt->reap_ixn_moment_diffs();

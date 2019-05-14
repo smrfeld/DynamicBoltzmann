@@ -16,8 +16,8 @@ namespace dblz {
     class LatticeTrajAlternatingBinary;
     class LatticeTrajCenteredHom;
     class FNameTrajColl;
-    struct OptionsWakeSleep_BM_PCD;
-    struct OptionsWakeSleep_RBM_CD;
+    struct OptionsWakeSleep_BM;
+    struct OptionsWakeSleep_RBM;
     struct OptionsWakeSleep_1DFV_CD;
 
     /****************************************
@@ -121,28 +121,28 @@ namespace dblz {
         // One step
         // SIP = solve ixn params
         // WSA = wake/sleep/adjoint
-        void solve_one_step_bm_pcd_params(std::shared_ptr<LatticeTrajCenteredHom> latt_traj, int i_opt_step, int timepoint_start_SIP, int no_timesteps_SIP, int timepoint_start_WS, int no_timesteps_WS, int timepoint_start_A, int no_timesteps_A, double dt, int no_mean_field_updates, int no_gibbs_sampling_steps, FNameTrajColl &fname_traj_coll, OptionsSolveDynamic options, OptionsWakeSleep_BM_PCD options_wake_sleep);
-        void solve_one_step_bm_pcd_params_without_committ(std::shared_ptr<LatticeTrajCenteredHom> latt_traj, int i_opt_step, int timepoint_start_SIP, int no_timesteps_SIP, int timepoint_start_WS, int no_timesteps_WS, int timepoint_start_A, int no_timesteps_A, double dt, int no_mean_field_updates, int no_gibbs_sampling_steps, FNameTrajColl &fname_traj_coll, OptionsSolveDynamic options, OptionsWakeSleep_BM_PCD options_wake_sleep);
+        void solve_one_step_bm_params(std::shared_ptr<LatticeTrajCenteredHom> latt_traj, int i_opt_step, int timepoint_start_SIP, int no_timesteps_SIP, int timepoint_start_WS, int no_timesteps_WS, int timepoint_start_A, int no_timesteps_A, double dt, int no_mean_field_updates, int no_gibbs_sampling_steps, FNameTrajColl &fname_traj_coll, OptionsSolveDynamic options, OptionsWakeSleep_BM options_wake_sleep);
+        void solve_one_step_bm_params_without_committ(std::shared_ptr<LatticeTrajCenteredHom> latt_traj, int i_opt_step, int timepoint_start_SIP, int no_timesteps_SIP, int timepoint_start_WS, int no_timesteps_WS, int timepoint_start_A, int no_timesteps_A, double dt, int no_mean_field_updates, int no_gibbs_sampling_steps, FNameTrajColl &fname_traj_coll, OptionsSolveDynamic options, OptionsWakeSleep_BM options_wake_sleep);
         
         // ***************
         // MARK: - RBM CD params
         // ***************
         
-        void solve_one_step_rbm_cd_params(std::shared_ptr<LatticeTraj> latt_traj, int i_opt_step, int timepoint_start_SIP, int no_timesteps_SIP, int timepoint_start_WS, int no_timesteps_WS, int timepoint_start_A, int no_timesteps_A, double dt, int no_cd_steps, FNameTrajColl &fname_traj_coll, OptionsSolveDynamic options, OptionsWakeSleep_RBM_CD options_wake_sleep);
-        void solve_one_step_rbm_cd_params_without_committ(std::shared_ptr<LatticeTraj> latt_traj, int i_opt_step, int timepoint_start_SIP, int no_timesteps_SIP, int timepoint_start_WS, int no_timesteps_WS, int timepoint_start_A, int no_timesteps_A, double dt, int no_cd_steps, FNameTrajColl &fname_traj_coll, OptionsSolveDynamic options, OptionsWakeSleep_RBM_CD options_wake_sleep);
+        void solve_one_step_rbm_params(std::shared_ptr<LatticeTraj> latt_traj, int i_opt_step, int timepoint_start_SIP, int no_timesteps_SIP, int timepoint_start_WS, int no_timesteps_WS, int timepoint_start_A, int no_timesteps_A, double dt, int no_cd_steps, FNameTrajColl &fname_traj_coll, OptionsSolveDynamic options, OptionsWakeSleep_RBM options_wake_sleep);
+        void solve_one_step_rbm_params_without_committ(std::shared_ptr<LatticeTraj> latt_traj, int i_opt_step, int timepoint_start_SIP, int no_timesteps_SIP, int timepoint_start_WS, int no_timesteps_WS, int timepoint_start_A, int no_timesteps_A, double dt, int no_cd_steps, FNameTrajColl &fname_traj_coll, OptionsSolveDynamic options, OptionsWakeSleep_RBM options_wake_sleep);
 
-        void solve_one_step_rbm_cd_params(std::shared_ptr<LatticeTrajAlternatingBinary> latt_traj, int i_opt_step, int timepoint_start_SIP, int no_timesteps_SIP, int timepoint_start_WS, int no_timesteps_WS, int timepoint_start_A, int no_timesteps_A, double dt, int no_cd_steps, FNameTrajColl &fname_traj_coll, OptionsSolveDynamic options, OptionsWakeSleep_RBM_CD options_wake_sleep);
-        void solve_one_step_rbm_cd_params_without_committ(std::shared_ptr<LatticeTrajAlternatingBinary> latt_traj, int i_opt_step, int timepoint_start_SIP, int no_timesteps_SIP, int timepoint_start_WS, int no_timesteps_WS, int timepoint_start_A, int no_timesteps_A, double dt, int no_cd_steps, FNameTrajColl &fname_traj_coll, OptionsSolveDynamic options, OptionsWakeSleep_RBM_CD options_wake_sleep);
+        void solve_one_step_rbm_params(std::shared_ptr<LatticeTrajAlternatingBinary> latt_traj, int i_opt_step, int timepoint_start_SIP, int no_timesteps_SIP, int timepoint_start_WS, int no_timesteps_WS, int timepoint_start_A, int no_timesteps_A, double dt, int no_cd_steps, FNameTrajColl &fname_traj_coll, OptionsSolveDynamic options, OptionsWakeSleep_RBM options_wake_sleep);
+        void solve_one_step_rbm_params_without_committ(std::shared_ptr<LatticeTrajAlternatingBinary> latt_traj, int i_opt_step, int timepoint_start_SIP, int no_timesteps_SIP, int timepoint_start_WS, int no_timesteps_WS, int timepoint_start_A, int no_timesteps_A, double dt, int no_cd_steps, FNameTrajColl &fname_traj_coll, OptionsSolveDynamic options, OptionsWakeSleep_RBM options_wake_sleep);
 
-        void solve_one_step_rbm_cd_params(std::shared_ptr<LatticeTrajCenteredHom> latt_traj, int i_opt_step, int timepoint_start_SIP, int no_timesteps_SIP, int timepoint_start_WS, int no_timesteps_WS, int timepoint_start_A, int no_timesteps_A, double dt, int no_cd_steps, FNameTrajColl &fname_traj_coll, OptionsSolveDynamic options, OptionsWakeSleep_RBM_CD options_wake_sleep);
-        void solve_one_step_rbm_cd_params_without_committ(std::shared_ptr<LatticeTrajCenteredHom> latt_traj, int i_opt_step, int timepoint_start_SIP, int no_timesteps_SIP, int timepoint_start_WS, int no_timesteps_WS, int timepoint_start_A, int no_timesteps_A, double dt, int no_cd_steps, FNameTrajColl &fname_traj_coll, OptionsSolveDynamic options, OptionsWakeSleep_RBM_CD options_wake_sleep);
+        void solve_one_step_rbm_params(std::shared_ptr<LatticeTrajCenteredHom> latt_traj, int i_opt_step, int timepoint_start_SIP, int no_timesteps_SIP, int timepoint_start_WS, int no_timesteps_WS, int timepoint_start_A, int no_timesteps_A, double dt, int no_cd_steps, FNameTrajColl &fname_traj_coll, OptionsSolveDynamic options, OptionsWakeSleep_RBM options_wake_sleep);
+        void solve_one_step_rbm_params_without_committ(std::shared_ptr<LatticeTrajCenteredHom> latt_traj, int i_opt_step, int timepoint_start_SIP, int no_timesteps_SIP, int timepoint_start_WS, int no_timesteps_WS, int timepoint_start_A, int no_timesteps_A, double dt, int no_cd_steps, FNameTrajColl &fname_traj_coll, OptionsSolveDynamic options, OptionsWakeSleep_RBM options_wake_sleep);
         
         // ***************
         // MARK: - RBM CD obs
         // ***************
         
-        void solve_one_step_rbm_cd_obs(std::shared_ptr<LatticeTraj> latt_traj, int i_opt_step, int timepoint_start_SIP, int no_timesteps_SIP, int timepoint_start_WS, int no_timesteps_WS, int timepoint_start_A, int no_timesteps_A, double dt, int no_cd_steps, FNameTrajColl &fname_traj_coll, OptionsSolveDynamic options, OptionsWakeSleep_RBM_CD options_wake_sleep);
-        void solve_one_step_rbm_cd_obs_without_committ(std::shared_ptr<LatticeTraj> latt_traj, int i_opt_step, int timepoint_start_SIP, int no_timesteps_SIP, int timepoint_start_WS, int no_timesteps_WS, int timepoint_start_A, int no_timesteps_A, double dt, int no_cd_steps, FNameTrajColl &fname_traj_coll, OptionsSolveDynamic options, OptionsWakeSleep_RBM_CD options_wake_sleep);
+        void solve_one_step_rbm_obs(std::shared_ptr<LatticeTraj> latt_traj, int i_opt_step, int timepoint_start_SIP, int no_timesteps_SIP, int timepoint_start_WS, int no_timesteps_WS, int timepoint_start_A, int no_timesteps_A, double dt, int no_cd_steps, FNameTrajColl &fname_traj_coll, OptionsSolveDynamic options, OptionsWakeSleep_RBM options_wake_sleep);
+        void solve_one_step_rbm_obs_without_committ(std::shared_ptr<LatticeTraj> latt_traj, int i_opt_step, int timepoint_start_SIP, int no_timesteps_SIP, int timepoint_start_WS, int no_timesteps_WS, int timepoint_start_A, int no_timesteps_A, double dt, int no_cd_steps, FNameTrajColl &fname_traj_coll, OptionsSolveDynamic options, OptionsWakeSleep_RBM options_wake_sleep);
         
         // ***************
         // MARK: - 1D fully visible lattice

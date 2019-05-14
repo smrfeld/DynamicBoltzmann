@@ -106,10 +106,6 @@ namespace dblz {
 		// Ixns between layers
         // Always bidirectional
         void set_ixn_between_layers(int layer1, Sptr sp1, int layer2, Sptr sp2, ITptr ixn);
-
-        // Set multiplier
-        void set_multiplier_between_layers(int from_layer, int to_layer, double multiplier);
-        void set_multiplier_for_bias_in_layer(int layer, double multiplier);
         
         // Add connections
         void add_conn(int layer1, int x1, int layer2, int x2);

@@ -235,18 +235,6 @@ namespace dblz {
         };
     };
     
-    // Set multiplier
-    void LatticeTraj::set_multiplier_between_layers(int from_layer, int to_layer, double multiplier) {
-        for (auto l: _lattices) {
-            l.second->set_multiplier_between_layers(from_layer, to_layer, multiplier);
-        };
-    };
-    void LatticeTraj::set_multiplier_for_bias_in_layer(int layer, double multiplier) {
-        for (auto l: _lattices) {
-            l.second->set_multiplier_for_bias_in_layer(layer, multiplier);
-        };
-    };
-    
     // Add connections
     void LatticeTraj::add_conn(int layer1, int x1, int layer2, int x2) {
         for (auto l: _lattices) {

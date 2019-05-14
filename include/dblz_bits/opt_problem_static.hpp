@@ -90,8 +90,8 @@ namespace dblz {
          ********************/
         
         // One step
-        void solve_one_step_bm(std::shared_ptr<Lattice> latt, int i_opt_step, int no_mean_field_updates, int no_gibbs_sampling_steps, FNameColl &fname_coll, OptionsSolveStatic options, OptionsWakeSleep_BM options_wake_sleep);
-        void solve_one_step_bm(std::shared_ptr<LatticeCenteredHom> lattch, int i_opt_step, int no_mean_field_updates, int no_gibbs_sampling_steps, FNameColl &fname_coll, OptionsSolveStatic options, OptionsWakeSleep_BM options_wake_sleep);
+        void solve_one_step_bm(std::shared_ptr<Lattice> latt, int i_opt_step, int no_steps_awake, int no_steps_asleep, FNameColl &fname_coll, OptionsSolveStatic options, OptionsWakeSleep_BM options_wake_sleep);
+        void solve_one_step_bm(std::shared_ptr<LatticeCenteredHom> lattch, int i_opt_step, int no_steps_awake, int no_steps_asleep, FNameColl &fname_coll, OptionsSolveStatic options, OptionsWakeSleep_BM options_wake_sleep);
 
         void solve_one_step_rbm(std::shared_ptr<Lattice> latt, int i_opt_step, int no_cd_steps, FNameColl &fname_coll, OptionsSolveStatic options, OptionsWakeSleep_RBM options_wake_sleep);
         void solve_one_step_rbm(std::shared_ptr<LatticeCenteredHom> lattch, int i_opt_step, int no_cd_steps, FNameColl &fname_coll, OptionsSolveStatic options, OptionsWakeSleep_RBM options_wake_sleep);

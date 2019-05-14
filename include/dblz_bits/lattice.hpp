@@ -20,10 +20,15 @@ namespace dblz {
      Sampling Options
      ****************************************/
     
+    enum class AwakePhaseMode : unsigned int { MEAN_FIELD, GIBBS_SAMPLING };
+    
     struct OptionsWakeSleep_BM {
         
         // PCD vs CD
         bool persistent_chains = false;
+        
+        // Mode to estimate awake phase moments
+        AwakePhaseMode awake_phase_mode = AwakePhaseMode::GIBBS_SAMPLING;
         
         // Verbosity
         bool verbose_timing = true;
@@ -297,7 +302,7 @@ namespace dblz {
         // MARK: - Wake/sleep
         // ***************
         
-        void wake_sleep_loop_bm(int i_opt_step, int no_mean_field_updates, int no_gibbs_sampling_steps, std::vector<FName> &fnames, OptionsWakeSleep_BM options);
+        void wake_sleep_loop_bm(int i_opt_step, int no_steps_awake, int no_steps_asleep, std::vector<FName> &fnames, OptionsWakeSleep_BM options);
         void wake_sleep_loop_rbm(int i_opt_step, int no_cd_steps, std::vector<FName> &fnames, OptionsWakeSleep_RBM options);
         
         // ***************

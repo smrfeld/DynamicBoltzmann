@@ -1158,7 +1158,7 @@ namespace dblz {
     // MARK: - Wake/sleep loop
     // ***************
     
-    void Lattice::wake_sleep_loop_bm(int i_opt_step, int no_mean_field_updates, int no_gibbs_sampling_steps, std::vector<FName> &fnames, OptionsWakeSleep_BM options) {
+    void Lattice::wake_sleep_loop_bm(int i_opt_step, int no_steps_awake, int no_steps_asleep, std::vector<FName> &fnames, OptionsWakeSleep_BM options) {
         
         // AWAKE PHASE
         
@@ -1172,39 +1172,79 @@ namespace dblz {
         
         clock_t t1 = clock();
         
-        // Option (1): init MF with random hidden layers with prob units
-        /*
-         for (int i_chain=0; i_chain<_no_markov_chains[MCType::AWAKE]; i_chain++) {
-         _latt->set_random_all_hidden_units(MCType::AWAKE, i_chain, false);
-         };
-         */
+        if (options.awake_phase_mode == AwakePhaseMode::MEAN_FIELD) {
         
-        // Option (2): upward pass with 2x weights (DBM) to activate probabilitsic units
-        // (faster to converge!!!)
-        for (auto layer=1; layer<_no_layers; layer++) {
-            activate_layer_calculate_from_below(MCType::AWAKE, layer, 2.0);
-            activate_layer_convert_to_probs(MCType::AWAKE, layer, true); // binary upward bass
-            activate_layer_committ(MCType::AWAKE, layer);
-        };
-        
-        clock_t t2 = clock();
-        
-        // Variational inference
-        for (auto i=0; i<no_mean_field_updates; i++) {
+            // Option (1): init MF with random hidden layers with prob units
+            /*
+             for (int i_chain=0; i_chain<_no_markov_chains[MCType::AWAKE]; i_chain++) {
+             _latt->set_random_all_hidden_units(MCType::AWAKE, i_chain, false);
+             };
+             */
             
-            // Iterate over hidden layers
+            // Option (2): upward pass with 2x weights (DBM) to activate probabilitsic units
+            // (faster to converge!!!)
             for (auto layer=1; layer<_no_layers; layer++) {
-                if (layer != _no_layers-1) {
-                    activate_layer_calculate_from_both(MCType::AWAKE, layer);
-                } else {
-                    activate_layer_calculate_from_below(MCType::AWAKE, layer);
+                activate_layer_calculate_from_below(MCType::AWAKE, layer, 2.0);
+                activate_layer_convert_to_probs(MCType::AWAKE, layer, true); // binary upward bass
+                activate_layer_committ(MCType::AWAKE, layer);
+            };
+            
+            // Variational inference
+            for (auto i=0; i<no_steps_awake; i++) {
+                
+                // Iterate over hidden layers
+                for (auto layer=1; layer<_no_layers; layer++) {
+                    if (layer != _no_layers-1) {
+                        activate_layer_calculate_from_both(MCType::AWAKE, layer);
+                    } else {
+                        activate_layer_calculate_from_below(MCType::AWAKE, layer);
+                    };
+                    activate_layer_convert_to_probs(MCType::AWAKE, layer, false); // keep probabilities
+                    activate_layer_committ(MCType::AWAKE, layer);
                 };
-                activate_layer_convert_to_probs(MCType::AWAKE, layer, false); // keep probabilities
+            };
+            
+        } else if (options.awake_phase_mode == AwakePhaseMode::GIBBS_SAMPLING) {
+            
+            // Sample vis, hidden
+            for (int i_sampling_step=0; i_sampling_step<no_steps_awake-1; i_sampling_step++)
+            {
+                // Do odd layers
+                for (auto layer=1; layer<_no_layers; layer+=2) {
+                    if (layer != _no_layers-1) {
+                        activate_layer_calculate_from_both(MCType::AWAKE, layer);
+                    } else {
+                        activate_layer_calculate_from_below(MCType::AWAKE, layer);
+                    };
+                    activate_layer_convert_to_probs(MCType::AWAKE, layer, true);
+                    activate_layer_committ(MCType::AWAKE, layer);
+                };
+                
+                // Do even layers
+                for (auto layer=2; layer<_no_layers; layer+=2) {
+                    if (layer == _no_layers-1) {
+                        activate_layer_calculate_from_below(MCType::AWAKE, layer);
+                    } else {
+                        activate_layer_calculate_from_both(MCType::AWAKE, layer);
+                    };
+                    activate_layer_convert_to_probs(MCType::AWAKE, layer, true);
+                    activate_layer_committ(MCType::AWAKE, layer);
+                };
+            };
+            
+            // Final: in parallel, use probs for hidden layers, binary for visible
+            for (auto layer=1; layer<_no_layers; layer++) {
+                if (layer == _no_layers-1) {
+                    activate_layer_calculate_from_below(MCType::AWAKE, layer);
+                } else {
+                    activate_layer_calculate_from_both(MCType::AWAKE, layer);
+                };
+                activate_layer_convert_to_probs(MCType::AWAKE, layer, false);
                 activate_layer_committ(MCType::AWAKE, layer);
             };
         };
         
-        clock_t t3 = clock();
+        clock_t t2 = clock();
         
         // Write out the lattices
         if (options.write_after_awake) {
@@ -1221,17 +1261,19 @@ namespace dblz {
         
         // ASLEEP PHASE - PERSISTENT_CD
         
-        // Reset chains (visible layer)
+        // Reset all chains (visible layer)
         if (!options.persistent_chains) {
             for (auto i_chain=0; i_chain<_no_markov_chains.at(MCType::ASLEEP); i_chain++) {
-                set_random_all_units_in_layer(MCType::ASLEEP, i_chain, 0, true);
+                for (auto layer=0; layer<_no_layers; layer++) {
+                    set_random_all_units_in_layer(MCType::ASLEEP, i_chain, layer, true);
+                };
             };
         };
 
         // Run CD sampling
         
         // Sample vis, hidden
-        for (int i_sampling_step=0; i_sampling_step<no_gibbs_sampling_steps; i_sampling_step++)
+        for (int i_sampling_step=0; i_sampling_step<no_steps_asleep-1; i_sampling_step++)
         {
             // Do odd layers
             for (auto layer=1; layer<_no_layers; layer+=2) {
@@ -1258,7 +1300,24 @@ namespace dblz {
             };
         };
         
-        clock_t t4 = clock();
+        // Final: in parallel, use probs for hidden layers, binary for visible
+        for (auto layer=0; layer<_no_layers; layer++) {
+            if (layer == 0) {
+                activate_layer_calculate_from_above(MCType::ASLEEP, layer);
+            } else if (layer == _no_layers-1) {
+                activate_layer_calculate_from_below(MCType::ASLEEP, layer);
+            } else {
+                activate_layer_calculate_from_both(MCType::ASLEEP, layer);
+            };
+            if (layer == 0) {
+                activate_layer_convert_to_probs(MCType::ASLEEP, layer, true);
+            } else {
+                activate_layer_convert_to_probs(MCType::ASLEEP, layer, false);
+            };
+            activate_layer_committ(MCType::ASLEEP, layer);
+        };
+
+        clock_t t3 = clock();
         
         // Write out the lattices
         if (options.write_after_asleep) {
@@ -1276,10 +1335,9 @@ namespace dblz {
         double dt1 = (t1-t0)  / (double) CLOCKS_PER_SEC;
         double dt2 = (t2-t1)  / (double) CLOCKS_PER_SEC;
         double dt3 = (t3-t2)  / (double) CLOCKS_PER_SEC;
-        double dt4 = (t4-t3)  / (double) CLOCKS_PER_SEC;
-        double dt_tot = dt1 + dt2 + dt3 + dt4;
+        double dt_tot = dt1 + dt2 + dt3;
         if (options.verbose_timing) {
-            std::cout << "[time " << dt_tot << "] [read " << dt1/dt_tot << "] [up " << dt2/dt_tot << "] [mf " << dt3/dt_tot << "] [gibbs " << dt4/dt_tot << "]" << std::endl;
+            std::cout << "[time " << dt_tot << "] [read " << dt1/dt_tot << "] [awake " << dt2/dt_tot << "] [asleep " << dt3/dt_tot << "]" << std::endl;
         };
     };
     

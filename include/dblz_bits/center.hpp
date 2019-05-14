@@ -64,5 +64,11 @@ namespace dblz {
         
         int get_layer() const;
         Sptr get_species() const;
+        
+        // ***************
+        // MARK: - Write
+        // ***************
+        
+        void write_to_file(std::string fname, bool append=false) const;
     };
 };

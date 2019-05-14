@@ -78,7 +78,7 @@ namespace dblz {
     // ***************
     
     std::string Center::get_name() const {
-        return _species->get_name() + "_layer_" + pad_str(_layer, 2);
+        return _species->get_name();
     };
     
     void Center::set_val(double val) {
@@ -118,5 +118,29 @@ namespace dblz {
     };
     Sptr Center::get_species() const {
         return _species;
+    };
+    
+    // ***************
+    // MARK: - Write
+    // ***************
+    
+    void Center::write_to_file(std::string fname, bool append) const {
+        std::ofstream f;
+        
+        if (append) {
+            f.open(fname, std::ofstream::out | std::ofstream::app);
+        } else {
+            f.open(fname);
+        };
+        
+        if (!f.is_open()) { // make sure we found it
+            std::cerr << ">>> Center::write_to_file <<< Error: could not open file: " << fname << " for writing" << std::endl;
+            exit(EXIT_FAILURE);
+        };
+        
+        f << _val << "\n";
+        
+        // Close!!!
+        f.close();
     };
 };

@@ -363,61 +363,7 @@ namespace dblz {
     };
     
     // ***************
-    // MARK: - Write out centers
-    // ***************
-    
-    void LatticeCenteredHom::read_center_pts_from_file(std::string fname) {
-        // Open
-        std::ifstream f;
-        f.open(fname);
-        if (!f.is_open()) { // make sure we found it
-            std::cerr << ">>> Error: LatticeCenteredHom::read_center_pt_from_file <<< could not find file: " << fname << std::endl;
-            exit(EXIT_FAILURE);
-        };
-        
-        std::string sp="", center="", layer_str="";
-        std::string line;
-        std::istringstream iss;
-        Sptr species;
-        int layer;
-
-        while (getline(f,line)) {
-            if (line == "") { continue; };
-            iss = std::istringstream(line);
-            iss >> layer_str >> sp >> center;
-            if (sp != "") {
-                layer = atoi(layer_str.c_str());
-                species = _species_possible_map.at(layer).at(sp);
-                _centers.at(layer).at(species)->set_val(atof(center.c_str()));
-                // std::cout << "LatticeCenteredHom::read_center_pt_from_file: Set layer: " << layer << " species: " << species->get_name() << " to center: " << _centers.at(layer).at(species) << std::endl;
-            };
-            sp=""; center=""; layer_str="";
-        };
-        
-        // Close!!!
-        f.close();
-    };
-    
-    void LatticeCenteredHom::write_center_pts_to_file(std::string fname) const {
-        std::ofstream f;
-        f.open (fname);
-        if (!f.is_open()) { // make sure we found it
-            std::cerr << ">>> LatticeCenteredHom::write_center_pt_to_file <<< Error: could not open file: " << fname << " for writing" << std::endl;
-            exit(EXIT_FAILURE);
-        };
-
-        for (auto layer=0; layer<_no_layers; layer++) {
-            for (auto pr: _centers.at(layer)) {
-                f << layer << " " << pr.first->get_name() << " " << pr.second << "\n";
-            };
-        };
-        
-        // Close!!!
-        f.close();
-    };
-    
-    // ***************
-    // MARK: - Set centers
+    // MARK: - Get centers
     // ***************
     
     std::shared_ptr<Center> LatticeCenteredHom::get_center_for_species_in_layer(int layer, Sptr species) const {

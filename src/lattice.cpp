@@ -1074,11 +1074,7 @@ namespace dblz {
             };
             moment->reset_moment(MCType::ASLEEP);
             
-            /*
-            if (ixn->get_name() == "hX") {
-                std::cout << "RESET hX: " << ixn << " " << moment->get_moment(MCType::ASLEEP) << std::endl;
-            };
-             */
+            std::cout << "RESET: " << ixn->get_name() << " " << moment->get_moment(MCType::ASLEEP) << std::endl;
         };
         
         // Reap ixns
@@ -1135,11 +1131,7 @@ namespace dblz {
                 };
                 moment->increment_moment(MCType::ASLEEP, reap_moment(MCType::ASLEEP, layer, sp));
                 
-                /*
-                if (sp_pr.second->get_name() == "hX") {
-                    std::cout << "INCREMENTED hX: " << sp_pr.second << " " << moment->get_moment(MCType::ASLEEP) << std::endl;
-                };
-                 */
+                std::cout << "INCREMENTED: " << sp_pr.second->get_name() << " " << moment->get_moment(MCType::ASLEEP) << std::endl;
             };
         };
     };
@@ -1201,14 +1193,15 @@ namespace dblz {
         for (auto i=0; i<no_mean_field_updates; i++) {
             
             // Iterate over hidden layers
-            for (auto layer=1; layer<_no_layers-1; layer++) {
-                activate_layer_calculate_from_both(MCType::AWAKE, layer);
+            for (auto layer=1; layer<_no_layers; layer++) {
+                if (layer != _no_layers-1) {
+                    activate_layer_calculate_from_both(MCType::AWAKE, layer);
+                } else {
+                    activate_layer_calculate_from_below(MCType::AWAKE, layer);
+                };
                 activate_layer_convert_to_probs(MCType::AWAKE, layer, false); // keep probabilities
                 activate_layer_committ(MCType::AWAKE, layer);
             };
-            activate_layer_calculate_from_below(MCType::AWAKE, _no_layers-1);
-            activate_layer_convert_to_probs(MCType::AWAKE, _no_layers-1, false); // keep probabilities
-            activate_layer_committ(MCType::AWAKE, _no_layers-1);
         };
         
         clock_t t3 = clock();
@@ -1242,14 +1235,24 @@ namespace dblz {
         {
             // Do odd layers
             for (auto layer=1; layer<_no_layers; layer+=2) {
-                activate_layer_calculate_from_both(MCType::ASLEEP, layer);
+                if (layer != _no_layers-1) {
+                    activate_layer_calculate_from_both(MCType::ASLEEP, layer);
+                } else {
+                    activate_layer_calculate_from_below(MCType::ASLEEP, layer);
+                };
                 activate_layer_convert_to_probs(MCType::ASLEEP, layer, true);
                 activate_layer_committ(MCType::ASLEEP, layer);
             };
             
             // Do even layers
             for (auto layer=0; layer<_no_layers; layer+=2) {
-                activate_layer_calculate_from_both(MCType::ASLEEP, layer);
+                if (layer == 0) {
+                    activate_layer_calculate_from_above(MCType::ASLEEP, layer);
+                } else if (layer == _no_layers-1) {
+                    activate_layer_calculate_from_below(MCType::ASLEEP, layer);
+                } else {
+                    activate_layer_calculate_from_both(MCType::ASLEEP, layer);
+                };
                 activate_layer_convert_to_probs(MCType::ASLEEP, layer, true);
                 activate_layer_committ(MCType::ASLEEP, layer);
             };

@@ -87,14 +87,7 @@ namespace dblz {
         void reap_ixn_moment_diffs_and_slide_centers(double sliding_factor, bool calculate_offset=true);
 
         // ***************
-        // MARK: - Write out centers
-        // ***************
-        
-        void read_center_pts_from_file(std::string fname);
-        void write_center_pts_to_file(std::string fname) const;
-        
-        // ***************
-        // MARK: - Set centers
+        // MARK: - Get centers
         // ***************
         
         Cptr get_center_for_species_in_layer(int layer, Sptr species) const;

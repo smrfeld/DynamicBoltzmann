@@ -61,7 +61,7 @@ namespace dblz {
     // ***************
     
     // One step
-    void OptProblemStatic::solve_one_step_bm_pcd(std::shared_ptr<Lattice> latt, int i_opt_step, int no_mean_field_updates, int no_gibbs_sampling_steps, FNameColl &fname_coll, OptionsSolveStatic options, OptionsWakeSleep_BM options_wake_sleep) {
+    void OptProblemStatic::solve_one_step_bm(std::shared_ptr<Lattice> latt, int i_opt_step, int no_mean_field_updates, int no_gibbs_sampling_steps, FNameColl &fname_coll, OptionsSolveStatic options, OptionsWakeSleep_BM options_wake_sleep) {
         
         /*****
          Wake/asleep loop
@@ -135,10 +135,88 @@ namespace dblz {
     };
     
     // ***************
+    // MARK: - DBM CD centered homogenous params
+    // ***************
+    
+    void OptProblemStatic::solve_one_step_bm(std::shared_ptr<LatticeCenteredHom> lattch, int i_opt_step, int no_mean_field_updates, int no_gibbs_sampling_steps, FNameColl &fname_coll, OptionsSolveStatic options, OptionsWakeSleep_BM options_wake_sleep) {
+        
+        /*****
+         Wake/asleep loop
+         *****/
+        
+        int no_markov_awake = lattch->get_no_markov_chains(MCType::AWAKE);
+        auto fnames = fname_coll.get_random_subset_fnames(no_markov_awake);
+        
+        lattch->wake_sleep_loop_bm(i_opt_step, no_mean_field_updates, no_gibbs_sampling_steps, fnames, options_wake_sleep);
+        
+        // Reap the moments
+        lattch->reap_ixn_moment_diffs_and_slide_centers(options.sliding_factor);
+        
+        if (options.verbose_moment) {
+            for (auto &ixn_param: lattch->get_all_ixn_params()) {
+                std::cout << ixn_param->get_name() << " " << std::flush;
+                ixn_param->get_moment_diff()->print_moment_comparison();
+            };
+        };
+        
+        /********************
+         Form the update
+         ********************/
+        
+        if (options.verbose_update) {
+            std::cout << "--- Calculating update ---" << std::endl;
+        };
+        
+        for (auto &ixn_param: lattch->get_all_ixn_params()) {
+            if (!ixn_param->get_is_val_fixed()) {
+                // Update
+                if (options.l2_reg) {
+                    ixn_param->update_calculate_and_store_l2(options.l2_lambda[ixn_param],options.l2_center[ixn_param]);
+                } else {
+                    ixn_param->update_calculate_and_store();
+                };
+            };
+        };
+        
+        if (options.verbose_update) {
+            std::cout << "--- [Finished] Calculating update ---" << std::endl;
+            std::cout << std::endl;
+        };
+        
+        /********************
+         Committ the update
+         ********************/
+        
+        if (options.verbose_update) {
+            std::cout << "--- Committing update ---" << std::endl;
+        };
+        
+        if (options.solver == Solver::SGD) {
+            for (auto &ixn_param: lattch->get_all_ixn_params()) {
+                if (!ixn_param->get_is_val_fixed()) {
+                    ixn_param->update_committ_stored_sgd();
+                };
+            };
+        } else if (options.solver == Solver::ADAM) {
+            for (auto &ixn_param: lattch->get_all_ixn_params()) {
+                if (!ixn_param->get_is_val_fixed()) {
+                    ixn_param->update_committ_stored_adam(i_opt_step,options.adam_beta_1,options.adam_beta_2,options.adam_eps);
+                };
+            };
+        };
+        
+        if (options.verbose_update) {
+            std::cout << "--- [Finished] Committing update ---" << std::endl;
+            std::cout << std::endl;
+        };
+    };
+
+    
+    // ***************
     // MARK: - RBM CD
     // ***************
     
-    void OptProblemStatic::solve_one_step_rbm_cd(std::shared_ptr<Lattice> latt, int i_opt_step, int no_cd_steps, FNameColl &fname_coll, OptionsSolveStatic options, OptionsWakeSleep_RBM options_wake_sleep) {
+    void OptProblemStatic::solve_one_step_rbm(std::shared_ptr<Lattice> latt, int i_opt_step, int no_cd_steps, FNameColl &fname_coll, OptionsSolveStatic options, OptionsWakeSleep_RBM options_wake_sleep) {
         
         if (latt->get_no_markov_chains(MCType::AWAKE) != latt->get_no_markov_chains(MCType::ASLEEP)) {
             std::cerr << ">>> OptProblemStatic::solve_one_step_cd <<< Error: no awake and asleep chains must be the same" << std::endl;
@@ -217,6 +295,88 @@ namespace dblz {
     };
 
     // ***************
+    // MARK: - RBM CD centered homogenous params
+    // ***************
+    
+    void OptProblemStatic::solve_one_step_rbm(std::shared_ptr<LatticeCenteredHom> lattch, int i_opt_step, int no_cd_steps, FNameColl &fname_coll, OptionsSolveStatic options, OptionsWakeSleep_RBM options_wake_sleep) {
+        
+        if (lattch->get_no_markov_chains(MCType::AWAKE) != lattch->get_no_markov_chains(MCType::ASLEEP)) {
+            std::cerr << ">>> OptProblemStatic::solve_one_step_rbm_centered_hom <<< Error: no awake and asleep chains must be the same" << std::endl;
+            exit(EXIT_FAILURE);
+        };
+        
+        /*****
+         Wake/asleep loop
+         *****/
+        
+        int no_markov_awake = lattch->get_no_markov_chains(MCType::AWAKE);
+        auto fnames = fname_coll.get_random_subset_fnames(no_markov_awake);
+        
+        lattch->wake_sleep_loop_rbm(i_opt_step, no_cd_steps, fnames, options_wake_sleep);
+        
+        // Reap the moments
+        lattch->reap_ixn_moment_diffs_and_slide_centers(options.sliding_factor);
+        
+        if (options.verbose_moment) {
+            for (auto &ixn_param: lattch->get_all_ixn_params()) {
+                std::cout << ixn_param->get_name() << " " << std::flush;
+                ixn_param->get_moment_diff()->print_moment_comparison();
+            };
+        };
+        
+        /********************
+         Form the update
+         ********************/
+        
+        if (options.verbose_update) {
+            std::cout << "--- Calculating update ---" << std::endl;
+        };
+        
+        for (auto &ixn_param: lattch->get_all_ixn_params()) {
+            if (!ixn_param->get_is_val_fixed()) {
+                // Update
+                if (options.l2_reg) {
+                    ixn_param->update_calculate_and_store_l2(options.l2_lambda[ixn_param],options.l2_center[ixn_param]);
+                } else {
+                    ixn_param->update_calculate_and_store();
+                };
+            };
+        };
+        
+        if (options.verbose_update) {
+            std::cout << "--- [Finished] Calculating update ---" << std::endl;
+            std::cout << std::endl;
+        };
+        
+        /********************
+         Committ the update
+         ********************/
+        
+        if (options.verbose_update) {
+            std::cout << "--- Committing update ---" << std::endl;
+        };
+        
+        if (options.solver == Solver::SGD) {
+            for (auto &ixn_param: lattch->get_all_ixn_params()) {
+                if (!ixn_param->get_is_val_fixed()) {
+                    ixn_param->update_committ_stored_sgd();
+                };
+            };
+        } else if (options.solver == Solver::ADAM) {
+            for (auto &ixn_param: lattch->get_all_ixn_params()) {
+                if (!ixn_param->get_is_val_fixed()) {
+                    ixn_param->update_committ_stored_adam(i_opt_step,options.adam_beta_1,options.adam_beta_2,options.adam_eps);
+                };
+            };
+        };
+        
+        if (options.verbose_update) {
+            std::cout << "--- [Finished] Committing update ---" << std::endl;
+            std::cout << std::endl;
+        };
+    };
+    
+    // ***************
     // MARK: - 1D Fully visible
     // ***************
     
@@ -286,88 +446,6 @@ namespace dblz {
             };
         } else if (options.solver == Solver::ADAM) {
             for (auto &ixn_param: latt1dfv->get_all_ixn_params()) {
-                if (!ixn_param->get_is_val_fixed()) {
-                    ixn_param->update_committ_stored_adam(i_opt_step,options.adam_beta_1,options.adam_beta_2,options.adam_eps);
-                };
-            };
-        };
-        
-        if (options.verbose_update) {
-            std::cout << "--- [Finished] Committing update ---" << std::endl;
-            std::cout << std::endl;
-        };
-    };
-    
-    // ***************
-    // MARK: - RBM CD centered homogenous params
-    // ***************
-    
-    void OptProblemStatic::solve_one_step_rbm_cd_centered_hom(std::shared_ptr<LatticeCenteredHom> lattch, int i_opt_step, int no_cd_steps, FNameColl &fname_coll, OptionsSolveStatic options, OptionsWakeSleep_RBM options_wake_sleep) {
-        
-        if (lattch->get_no_markov_chains(MCType::AWAKE) != lattch->get_no_markov_chains(MCType::ASLEEP)) {
-            std::cerr << ">>> OptProblemStatic::solve_one_step_rbm_cd_centered_hom <<< Error: no awake and asleep chains must be the same" << std::endl;
-            exit(EXIT_FAILURE);
-        };
-        
-        /*****
-         Wake/asleep loop
-         *****/
-        
-        int no_markov_awake = lattch->get_no_markov_chains(MCType::AWAKE);
-        auto fnames = fname_coll.get_random_subset_fnames(no_markov_awake);
-        
-        lattch->wake_sleep_loop_rbm(i_opt_step, no_cd_steps, fnames, options_wake_sleep);
-        
-        // Reap the moments
-        lattch->reap_ixn_moment_diffs_and_slide_centers(options.sliding_factor);
-        
-        if (options.verbose_moment) {
-            for (auto &ixn_param: lattch->get_all_ixn_params()) {
-                std::cout << ixn_param->get_name() << " " << std::flush;
-                ixn_param->get_moment_diff()->print_moment_comparison();
-            };
-        };
-        
-        /********************
-         Form the update
-         ********************/
-        
-        if (options.verbose_update) {
-            std::cout << "--- Calculating update ---" << std::endl;
-        };
-        
-        for (auto &ixn_param: lattch->get_all_ixn_params()) {
-            if (!ixn_param->get_is_val_fixed()) {
-                // Update
-                if (options.l2_reg) {
-                    ixn_param->update_calculate_and_store_l2(options.l2_lambda[ixn_param],options.l2_center[ixn_param]);
-                } else {
-                    ixn_param->update_calculate_and_store();
-                };
-            };
-        };
-        
-        if (options.verbose_update) {
-            std::cout << "--- [Finished] Calculating update ---" << std::endl;
-            std::cout << std::endl;
-        };
-        
-        /********************
-         Committ the update
-         ********************/
-        
-        if (options.verbose_update) {
-            std::cout << "--- Committing update ---" << std::endl;
-        };
-        
-        if (options.solver == Solver::SGD) {
-            for (auto &ixn_param: lattch->get_all_ixn_params()) {
-                if (!ixn_param->get_is_val_fixed()) {
-                    ixn_param->update_committ_stored_sgd();
-                };
-            };
-        } else if (options.solver == Solver::ADAM) {
-            for (auto &ixn_param: lattch->get_all_ixn_params()) {
                 if (!ixn_param->get_is_val_fixed()) {
                     ixn_param->update_committ_stored_adam(i_opt_step,options.adam_beta_1,options.adam_beta_2,options.adam_eps);
                 };

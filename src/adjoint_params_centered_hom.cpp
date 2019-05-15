@@ -274,7 +274,7 @@ namespace dblz {
     // MARK: - Constructor
     // ***************
     
-    AdjointParamsCenteredHomWeight::AdjointParamsCenteredHomWeight(std::string name, ITptr ixn_param_traj, CtrDerivPtr deriv_term_weight, CtrDerivPtr deriv_term_bias_lower, CtrDerivPtr deriv_term_bias_upper, int conn_mult, CTptr center_lower, CTptr center_upper, std::shared_ptr<AdjointParamsCenteredHomBias> adjoint_bias_lower, std::shared_ptr<AdjointParamsCenteredHomBias> adjoint_bias_upper, std::vector<CTptr> all_centers_lower, std::vector<CTptr> all_centers_upper) : Adjoint(name,ixn_param_traj) {
+    AdjointParamsCenteredHomWeight::AdjointParamsCenteredHomWeight(std::string name, ITptr ixn_param_traj, CtrDerivPtr deriv_term_weight, CtrDerivPtr deriv_term_bias_lower, CtrDerivPtr deriv_term_bias_upper, int conn_mult, CTptr center_lower, CTptr center_upper, std::shared_ptr<AdjointParamsCenteredHomBias> adjoint_bias_lower, std::shared_ptr<AdjointParamsCenteredHomBias> adjoint_bias_upper) : Adjoint(name,ixn_param_traj) {
         if (ixn_param_traj->get_type() != IxnParamType::W && ixn_param_traj->get_type() != IxnParamType::X) {
             std::cerr << ">>> AdjointParamsCenteredHomWeight::AdjointParamsCenteredHomWeight <<< Error: this is the wrong constructor for bias terms." << std::endl;
             exit(EXIT_FAILURE);
@@ -286,8 +286,6 @@ namespace dblz {
         _conn_mult = conn_mult;
         _center_lower = center_lower;
         _center_upper = center_upper;
-        _all_centers_lower = all_centers_lower;
-        _all_centers_upper = all_centers_upper;
         _adjoint_bias_lower = adjoint_bias_lower;
         _adjoint_bias_upper = adjoint_bias_upper;
     };
@@ -325,8 +323,6 @@ namespace dblz {
         _conn_mult = other._conn_mult;
         _center_lower = other._center_lower;
         _center_upper = other._center_upper;
-        _all_centers_lower = other._all_centers_lower;
-        _all_centers_upper = other._all_centers_upper;
         _adjoint_bias_lower = other._adjoint_bias_lower;
         _adjoint_bias_upper = other._adjoint_bias_upper;
     };
@@ -337,8 +333,6 @@ namespace dblz {
         _conn_mult = other._conn_mult;
         _center_lower = other._center_lower;
         _center_upper = other._center_upper;
-        _all_centers_lower = other._all_centers_lower;
-        _all_centers_upper = other._all_centers_upper;
         _adjoint_bias_lower = other._adjoint_bias_lower;
         _adjoint_bias_upper = other._adjoint_bias_upper;
 
@@ -348,8 +342,6 @@ namespace dblz {
         other._conn_mult = 0;
         other._center_lower = nullptr;
         other._center_upper = nullptr;
-        other._all_centers_lower.clear();
-        other._all_centers_upper.clear();
         other._adjoint_bias_lower = nullptr;
         other._adjoint_bias_upper = nullptr;
     };
@@ -379,21 +371,6 @@ namespace dblz {
         // Difference in moments
         double moment_delta = -1.0 * _ixn_param_traj->get_ixn_param_at_timepoint(timepoint)->get_moment_diff()->get_moment_diff_awake_minus_asleep();
         
-        // Derivative in centers terms
-        double deriv_centers_terms = 0.0;
-        double f;
-        
-        // Lower - upper
-        f = _adjoint_bias_lower->get_val_at_timepoint(timepoint) * _conn_mult;
-        for (auto center_upper: _all_centers_upper) {
-            deriv_centers_terms += f * center_upper->get_deriv_at_timepoint(timepoint, dt);
-        };
-        // Upper -lower
-        f = _adjoint_bias_upper->get_val_at_timepoint(timepoint) * _conn_mult;
-        for (auto center_lower: _all_centers_lower) {
-            deriv_centers_terms += f * center_lower->get_deriv_at_timepoint(timepoint, dt);
-        };
-        
         // Deriv term weight
         double deriv_term = 0.0;
         if (_deriv_term_weight) {
@@ -409,8 +386,15 @@ namespace dblz {
             deriv_mixing_terms += _conn_mult * _center_lower->get_val_at_timepoint(timepoint) * _deriv_term_bias_upper->get_val_at_timepoint(timepoint);
         };
         
+        // Derivative in centers terms
+        double deriv_centers_terms = 0.0;
+        // Lower - upper
+        deriv_centers_terms += _adjoint_bias_lower->get_val_at_timepoint(timepoint) * _conn_mult * _center_upper->get_deriv_at_timepoint(timepoint, dt);
+        // Upper -lower
+        deriv_centers_terms += _adjoint_bias_upper->get_val_at_timepoint(timepoint) * _conn_mult * _center_lower->get_deriv_at_timepoint(timepoint, dt);
+        
         // Step
-        _vals[timepoint-1] = _vals[timepoint] - dt * (moment_delta - deriv_centers_terms - deriv_term + deriv_mixing_terms);
+        _vals[timepoint-1] = _vals[timepoint] - dt * (moment_delta - deriv_term + deriv_mixing_terms - deriv_centers_terms);
     };
     void AdjointParamsCenteredHomWeight::solve_diff_eq_at_timepoint_to_minus_one_l2(int timepoint, double dt, double l2_lambda, double l2_center, bool form_abscissas) {
         

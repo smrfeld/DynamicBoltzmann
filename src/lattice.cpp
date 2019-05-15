@@ -1240,6 +1240,8 @@ namespace dblz {
                     activate_layer_calculate_from_both(MCType::AWAKE, layer);
                 };
                 activate_layer_convert_to_probs(MCType::AWAKE, layer, false);
+            };
+            for (auto layer=1; layer<_no_layers; layer++) {
                 activate_layer_committ(MCType::AWAKE, layer);
             };
         };
@@ -1314,6 +1316,8 @@ namespace dblz {
             } else {
                 activate_layer_convert_to_probs(MCType::ASLEEP, layer, false);
             };
+        };
+        for (auto layer=0; layer<_no_layers; layer++) {
             activate_layer_committ(MCType::ASLEEP, layer);
         };
 

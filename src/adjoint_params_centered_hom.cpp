@@ -251,7 +251,10 @@ namespace dblz {
         double moment_delta = -1.0 * _ixn_param_traj->get_ixn_param_at_timepoint(timepoint)->get_moment_diff()->get_moment_diff_awake_minus_asleep();
 
 		// Deriv term
-		double deriv_term = _deriv_term_bias->get_val_at_timepoint(timepoint);
+        double deriv_term = 0.0;
+        if (_deriv_term_bias) {
+            deriv_term = _deriv_term_bias->get_val_at_timepoint(timepoint);
+        };
         
         // Step
         _vals[timepoint-1] = _vals[timepoint] - dt * (moment_delta - deriv_term);
@@ -392,10 +395,19 @@ namespace dblz {
         };
         
         // Deriv term weight
-        double deriv_term = _deriv_term_weight->get_val_at_timepoint(timepoint);
+        double deriv_term = 0.0;
+        if (_deriv_term_weight) {
+            deriv_term = _deriv_term_weight->get_val_at_timepoint(timepoint);
+        };
         
         // Other deriv terms
-        double deriv_mixing_terms = _conn_mult * _center_upper->get_val_at_timepoint(timepoint) * _deriv_term_bias_lower->get_val_at_timepoint(timepoint) + _conn_mult * _center_lower->get_val_at_timepoint(timepoint) * _deriv_term_bias_upper->get_val_at_timepoint(timepoint);
+        double deriv_mixing_terms = 0.0;
+        if (_deriv_term_bias_lower) {
+            deriv_mixing_terms += _conn_mult * _center_upper->get_val_at_timepoint(timepoint) * _deriv_term_bias_lower->get_val_at_timepoint(timepoint);
+        };
+        if (_deriv_term_bias_upper) {
+            deriv_mixing_terms += _conn_mult * _center_lower->get_val_at_timepoint(timepoint) * _deriv_term_bias_upper->get_val_at_timepoint(timepoint);
+        };
         
         // Step
         _vals[timepoint-1] = _vals[timepoint] - dt * (moment_delta - deriv_centers_terms - deriv_term + deriv_mixing_terms);

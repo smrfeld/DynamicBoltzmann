@@ -252,12 +252,21 @@ namespace dblz {
             _adjoint->set_no_timesteps(no_timesteps);
         };
         if (_adjoint_params_centered_hom_bias) {
-            _adjoint_params_centered_hom_bias->get_deriv_term_bias()->set_no_timesteps(no_timesteps);
+            if (_adjoint_params_centered_hom_bias->get_deriv_term_bias()) { _adjoint_params_centered_hom_bias->get_deriv_term_bias()->set_no_timesteps(no_timesteps);
+            };
         };
         if (_adjoint_params_centered_hom_weight) {
-            _adjoint_params_centered_hom_weight->get_deriv_term_weight()->set_no_timesteps(no_timesteps);
-            _adjoint_params_centered_hom_weight->get_deriv_term_bias_upper()->set_no_timesteps(no_timesteps);
-            _adjoint_params_centered_hom_weight->get_deriv_term_bias_lower()->set_no_timesteps(no_timesteps);
+            if (_adjoint_params_centered_hom_weight->get_deriv_term_weight()) {
+                _adjoint_params_centered_hom_weight->get_deriv_term_weight()->set_no_timesteps(no_timesteps);
+            };
+           
+            if (_adjoint_params_centered_hom_weight->get_deriv_term_bias_upper()) {
+               _adjoint_params_centered_hom_weight->get_deriv_term_bias_upper()->set_no_timesteps(no_timesteps);
+            };
+            
+            if (_adjoint_params_centered_hom_weight->get_deriv_term_bias_lower()) {
+                _adjoint_params_centered_hom_weight->get_deriv_term_bias_lower()->set_no_timesteps(no_timesteps);
+            };
         };
         
         // Set for domain of diff eq rhs if needed

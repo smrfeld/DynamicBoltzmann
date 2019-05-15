@@ -165,15 +165,15 @@ namespace dblz {
     // MARK: - BM PCD params
     // ***************
 
-    void OptProblemDynamic::solve_one_step_bm_params(std::shared_ptr<LatticeTrajCenteredHom> latt_traj, int i_opt_step, int timepoint_start_SIP, int no_timesteps_SIP, int timepoint_start_WS, int no_timesteps_WS, int timepoint_start_A, int no_timesteps_A, double dt, int no_steps_awake, int no_steps_asleep, FNameTrajColl &fname_traj_coll, OptionsSolveDynamic options, OptionsWakeSleep_BM options_wake_sleep) {
+    void OptProblemDynamic::solve_one_step_bm_params(std::shared_ptr<LatticeTrajCenteredHom> latt_traj, int i_opt_step, int timepoint_start_SIP, int no_timesteps_SIP, int timepoint_start_WS, int no_timesteps_WS, int timepoint_start_A, int no_timesteps_A, double dt, int no_steps_awake, int no_steps_asleep, FNameTrajColl &fname_traj_coll, const std::vector<std::shared_ptr<AdjointParamsCenteredHomDerivTerm>> &all_deriv_terms, OptionsSolveDynamic options, OptionsWakeSleep_BM options_wake_sleep) {
 
-    solve_one_step_bm_params_without_committ(latt_traj,i_opt_step,timepoint_start_SIP,no_timesteps_SIP,timepoint_start_WS,no_timesteps_WS,timepoint_start_A,no_timesteps_A,dt,no_steps_awake,no_steps_asleep,fname_traj_coll,options,options_wake_sleep);
+    solve_one_step_bm_params_without_committ(latt_traj,i_opt_step,timepoint_start_SIP,no_timesteps_SIP,timepoint_start_WS,no_timesteps_WS,timepoint_start_A,no_timesteps_A,dt,no_steps_awake,no_steps_asleep,fname_traj_coll,all_deriv_terms,options,options_wake_sleep);
         
         committ_step(latt_traj->get_all_ixn_param_trajs(), i_opt_step, options);
     };
     
     
-    void OptProblemDynamic::solve_one_step_bm_params_without_committ(std::shared_ptr<LatticeTrajCenteredHom> latt_traj, int i_opt_step, int timepoint_start_SIP, int no_timesteps_SIP, int timepoint_start_WS, int no_timesteps_WS, int timepoint_start_A, int no_timesteps_A, double dt, int no_steps_awake, int no_steps_asleep, FNameTrajColl &fname_traj_coll, OptionsSolveDynamic options, OptionsWakeSleep_BM options_wake_sleep) {
+    void OptProblemDynamic::solve_one_step_bm_params_without_committ(std::shared_ptr<LatticeTrajCenteredHom> latt_traj, int i_opt_step, int timepoint_start_SIP, int no_timesteps_SIP, int timepoint_start_WS, int no_timesteps_WS, int timepoint_start_A, int no_timesteps_A, double dt, int no_steps_awake, int no_steps_asleep, FNameTrajColl &fname_traj_coll, const std::vector<std::shared_ptr<AdjointParamsCenteredHomDerivTerm>> &all_deriv_terms, OptionsSolveDynamic options, OptionsWakeSleep_BM options_wake_sleep) {
         
         if (options.locking_mode) {
             std::cerr << ">>> OptProblemDynamic::solve_one_step_bm_params_without_committ <<< Locking mode not supported here" << std::endl;
@@ -245,18 +245,10 @@ namespace dblz {
 
         for (auto timepoint=timepoint_start_A + no_timesteps_A; timepoint>timepoint_start_A; timepoint--) {
             // Calculate deriv terms
-            for (auto ixn_param_traj: latt_traj->get_all_ixn_param_trajs()) {
-                if (ixn_param_traj->get_type() == IxnParamType::H || ixn_param_traj->get_type() == IxnParamType::B) {
-                    // bias
-                    ixn_param_traj->get_adjoint_params_centered_hom_bias()->get_deriv_term_bias()->calculate_val_at_timepoint(timepoint,form_abscissas);
-                } else {
-                    // weight
-                    ixn_param_traj->get_adjoint_params_centered_hom_weight()->get_deriv_term_bias_lower()->calculate_val_at_timepoint(timepoint,form_abscissas);
-                    ixn_param_traj->get_adjoint_params_centered_hom_weight()->get_deriv_term_bias_upper()->calculate_val_at_timepoint(timepoint,form_abscissas);
-                    ixn_param_traj->get_adjoint_params_centered_hom_weight()->get_deriv_term_weight()->calculate_val_at_timepoint(timepoint,form_abscissas);
-                };
+            for (auto deriv_term: all_deriv_terms) {
+                deriv_term->calculate_val_at_timepoint(timepoint,form_abscissas);
             };
-            
+                        
             // Solve diff eq
             for (auto ixn_param_traj: latt_traj->get_all_ixn_param_trajs()) {
                 if (!ixn_param_traj->get_is_val_fixed()) {

@@ -662,7 +662,10 @@ namespace dblz {
     // Endpoints inclusive
     void DiffEqRHS::form_abscissas(int timepoint_start, int timepoint_end) const {
         for (auto timepoint=timepoint_start; timepoint<=timepoint_end; timepoint++) {
-            _abscissas_map[timepoint] = std::vector<double>(_no_dims,0.0);
+            auto it = _abscissas_map.find(timepoint);
+            if (it == _abscissas_map.end()) {
+                _abscissas_map[timepoint] = std::vector<double>(_no_dims,0.0); // add
+            };
             for (auto dim=0; dim<_no_dims; dim++) {
                 _abscissas_map[timepoint][dim] = _domain.at(dim)->get_val_at_timepoint(timepoint);
             };

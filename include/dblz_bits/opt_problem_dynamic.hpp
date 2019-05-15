@@ -19,6 +19,7 @@ namespace dblz {
     struct OptionsWakeSleep_BM;
     struct OptionsWakeSleep_RBM;
     struct OptionsWakeSleep_1DFV_CD;
+    class AdjointParamsCenteredHomDerivTerm;
 
     /****************************************
     Misc options
@@ -121,8 +122,8 @@ namespace dblz {
         // One step
         // SIP = solve ixn params
         // WSA = wake/sleep/adjoint
-        void solve_one_step_bm_params(std::shared_ptr<LatticeTrajCenteredHom> latt_traj, int i_opt_step, int timepoint_start_SIP, int no_timesteps_SIP, int timepoint_start_WS, int no_timesteps_WS, int timepoint_start_A, int no_timesteps_A, double dt, int no_steps_awake, int no_steps_asleep, FNameTrajColl &fname_traj_coll, OptionsSolveDynamic options, OptionsWakeSleep_BM options_wake_sleep);
-        void solve_one_step_bm_params_without_committ(std::shared_ptr<LatticeTrajCenteredHom> latt_traj, int i_opt_step, int timepoint_start_SIP, int no_timesteps_SIP, int timepoint_start_WS, int no_timesteps_WS, int timepoint_start_A, int no_timesteps_A, double dt, int no_steps_awake, int no_steps_asleep, FNameTrajColl &fname_traj_coll, OptionsSolveDynamic options, OptionsWakeSleep_BM options_wake_sleep);
+        void solve_one_step_bm_params(std::shared_ptr<LatticeTrajCenteredHom> latt_traj, int i_opt_step, int timepoint_start_SIP, int no_timesteps_SIP, int timepoint_start_WS, int no_timesteps_WS, int timepoint_start_A, int no_timesteps_A, double dt, int no_steps_awake, int no_steps_asleep, FNameTrajColl &fname_traj_coll, const std::vector<std::shared_ptr<AdjointParamsCenteredHomDerivTerm>> &all_deriv_terms, OptionsSolveDynamic options, OptionsWakeSleep_BM options_wake_sleep);
+        void solve_one_step_bm_params_without_committ(std::shared_ptr<LatticeTrajCenteredHom> latt_traj, int i_opt_step, int timepoint_start_SIP, int no_timesteps_SIP, int timepoint_start_WS, int no_timesteps_WS, int timepoint_start_A, int no_timesteps_A, double dt, int no_steps_awake, int no_steps_asleep, FNameTrajColl &fname_traj_coll, const std::vector<std::shared_ptr<AdjointParamsCenteredHomDerivTerm>> &all_deriv_terms, OptionsSolveDynamic options, OptionsWakeSleep_BM options_wake_sleep);
         
         // ***************
         // MARK: - RBM CD params

@@ -1207,7 +1207,7 @@ namespace dblz {
         } else if (options.awake_phase_mode == AwakePhaseMode::GIBBS_SAMPLING) {
             
             // Sample vis, hidden
-            for (int i_sampling_step=0; i_sampling_step<no_steps_awake-1; i_sampling_step++)
+            for (int i_sampling_step=0; i_sampling_step<no_steps_awake; i_sampling_step++)
             {
                 // Do odd layers
                 for (auto layer=1; layer<_no_layers; layer+=2) {
@@ -1233,6 +1233,7 @@ namespace dblz {
             };
             
             // Final: in parallel, use probs for hidden layers, binary for visible
+            /*
             for (auto layer=1; layer<_no_layers; layer++) {
                 if (layer == _no_layers-1) {
                     activate_layer_calculate_from_below(MCType::AWAKE, layer);
@@ -1244,6 +1245,7 @@ namespace dblz {
             for (auto layer=1; layer<_no_layers; layer++) {
                 activate_layer_committ(MCType::AWAKE, layer);
             };
+             */
         };
         
         clock_t t2 = clock();
@@ -1275,7 +1277,7 @@ namespace dblz {
         // Run CD sampling
         
         // Sample vis, hidden
-        for (int i_sampling_step=0; i_sampling_step<no_steps_asleep-1; i_sampling_step++)
+        for (int i_sampling_step=0; i_sampling_step<no_steps_asleep; i_sampling_step++)
         {
             // Do odd layers
             for (auto layer=1; layer<_no_layers; layer+=2) {
@@ -1303,6 +1305,7 @@ namespace dblz {
         };
         
         // Final: in parallel, use probs for hidden layers, binary for visible
+        /*
         for (auto layer=0; layer<_no_layers; layer++) {
             if (layer == 0) {
                 activate_layer_calculate_from_above(MCType::ASLEEP, layer);
@@ -1320,6 +1323,7 @@ namespace dblz {
         for (auto layer=0; layer<_no_layers; layer++) {
             activate_layer_committ(MCType::ASLEEP, layer);
         };
+         */
 
         clock_t t3 = clock();
         

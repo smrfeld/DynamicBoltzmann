@@ -756,7 +756,7 @@ namespace dblz {
         if (form_abscissas) {
             _domain->calculate_val_at_timepoint(timepoint);
         };
-        std::pair<q3c1::Cell*,const std::vector<double>&> cell_pr = get_cell(_domain->get_val_at_timepoint(timepoint));
+        std::pair<q3c1::Cell*,const std::vector<double>*> cell_pr = get_cell(_domain->get_val_at_timepoint(timepoint));
         for (auto vert_pr: cell_pr.first->get_all_vertices()) {
             for (auto bf: vert_pr.second->get_bfs()) {
                 bf->set_is_val_fixed(fixed);

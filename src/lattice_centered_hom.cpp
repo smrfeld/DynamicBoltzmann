@@ -237,7 +237,7 @@ namespace dblz {
             // Determine means
             for (auto sp: _species_possible_vec.at(layer)) {
                 // Set new val for center
-                _centers.at(layer).at(sp)->set_val_new(_bias_dict.at(layer).at(sp)->get_moment_diff()->get_moment(MCType::ASLEEP) / no_units);
+                _centers.at(layer).at(sp)->set_val_new(_bias_dict.at(layer).at(sp)->get_moment_diff()->get_moment(MCType::AWAKE) / no_units);
                 
                 // Slide
                 _centers.at(layer).at(sp)->slide(sliding_factor);

@@ -31,8 +31,9 @@ namespace dblz {
         AwakePhaseMode awake_phase_mode = AwakePhaseMode::GIBBS_SAMPLING;
         
         // Hidden layers prob
-        bool hidden_layers_final_prob = true;
-        
+        bool awake_hidden_layers_final_prob = false; // only whin gibbs sampling
+        bool asleep_hidden_layers_final_prob = false;
+
         // Verbosity
         bool verbose_timing = true;
         

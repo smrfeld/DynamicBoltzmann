@@ -956,10 +956,10 @@ namespace dblz {
     // MARK: - DiffEqRHSCenteredHomWeight
     // ***************
     
-    DiffEqRHSCenteredHomWeight::DiffEqRHSCenteredHomWeight(std::string name, ITptr parent_ixn_param_traj, std::shared_ptr<Domain> domain, double lr, int conn_mult, ITptr bias_lower, ITptr bias_upper, CTptr center_lower, CTptr center_upper) : DiffEqRHS(name,parent_ixn_param_traj,domain,lr) {
+    DiffEqRHSCenteredHomWeight::DiffEqRHSCenteredHomWeight(std::string name, ITptr parent_ixn_param_traj, std::shared_ptr<Domain> domain, double lr, int conn_mult, std::shared_ptr<Adjoint> bias_lower_adjoint, std::shared_ptr<Adjoint> bias_upper_adjoint, CTptr center_lower, CTptr center_upper) : DiffEqRHS(name,parent_ixn_param_traj,domain,lr) {
         _conn_mult = conn_mult;
-        _bias_lower = bias_lower;
-        _bias_upper = bias_upper;
+        _bias_lower_adjoint = bias_lower_adjoint;
+        _bias_upper_adjoint = bias_upper_adjoint;
         _center_lower = center_lower;
         _center_upper = center_upper;
     };
@@ -994,21 +994,21 @@ namespace dblz {
     };
     void DiffEqRHSCenteredHomWeight::_copy(const DiffEqRHSCenteredHomWeight& other) {
         _conn_mult = other._conn_mult;
-        _bias_lower = other._bias_lower;
-        _bias_upper = other._bias_upper;
+        _bias_lower_adjoint = other._bias_lower_adjoint;
+        _bias_upper_adjoint = other._bias_upper_adjoint;
         _center_lower = other._center_lower;
         _center_upper = other._center_upper;
     };
     void DiffEqRHSCenteredHomWeight::_move(DiffEqRHSCenteredHomWeight& other) {
         _conn_mult = other._conn_mult;
-        _bias_lower = other._bias_lower;
-        _bias_upper = other._bias_upper;
+        _bias_lower_adjoint = other._bias_lower_adjoint;
+        _bias_upper_adjoint = other._bias_upper_adjoint;
         _center_lower = other._center_lower;
         _center_upper = other._center_upper;
 
         other._conn_mult = 0;
-        other._bias_lower = nullptr;
-        other._bias_upper = nullptr;
+        other._bias_lower_adjoint = nullptr;
+        other._bias_upper_adjoint = nullptr;
         other._center_upper = nullptr;
         other._center_lower = nullptr;
     };
@@ -1032,8 +1032,8 @@ namespace dblz {
             adjoint_val = _parent_ixn_param_traj->get_adjoint()->get_val_at_timepoint(timepoint);
             
             // Add corrections
-            adjoint_val += _conn_mult * _bias_lower->get_adjoint()->get_val_at_timepoint(timepoint) * _center_upper->get_val_at_timepoint(timepoint);
-            adjoint_val += _conn_mult * _bias_upper->get_adjoint()->get_val_at_timepoint(timepoint) * _center_lower->get_val_at_timepoint(timepoint);
+            adjoint_val += _conn_mult * _bias_lower_adjoint->get_val_at_timepoint(timepoint) * _center_upper->get_val_at_timepoint(timepoint);
+            adjoint_val += _conn_mult * _bias_upper_adjoint->get_val_at_timepoint(timepoint) * _center_lower->get_val_at_timepoint(timepoint);
 
             // Form abscissas
             if (form_abscissas) {

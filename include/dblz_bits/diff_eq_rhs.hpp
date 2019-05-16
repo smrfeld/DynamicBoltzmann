@@ -393,6 +393,8 @@ namespace dblz {
      DiffEqRHSCenteredHomWeight
      ****************************************/
     
+    class Adjoint;
+    
     class DiffEqRHSCenteredHomWeight : public DiffEqRHS {
         
     private:
@@ -400,8 +402,8 @@ namespace dblz {
         // Conn mult
         int _conn_mult;
         
-        // Biases
-        ITptr _bias_lower, _bias_upper;
+        // Biases adjoints
+        std::shared_ptr<Adjoint> _bias_lower_adjoint, _bias_upper_adjoint;
         
         // Centers
         CTptr _center_lower, _center_upper;
@@ -418,7 +420,7 @@ namespace dblz {
          ********************/
         
         // Note: ownership of domain is NOT transferred
-        DiffEqRHSCenteredHomWeight(std::string name, ITptr parent_ixn_param_traj, std::shared_ptr<Domain> domain, double lr, int conn_mult, ITptr bias_lower, ITptr bias_upper, CTptr center_lower, CTptr center_upper);
+        DiffEqRHSCenteredHomWeight(std::string name, ITptr parent_ixn_param_traj, std::shared_ptr<Domain> domain, double lr, int conn_mult, std::shared_ptr<Adjoint> bias_lower_adjoint, std::shared_ptr<Adjoint> bias_upper_adjoint, CTptr center_lower, CTptr center_upper);
         DiffEqRHSCenteredHomWeight(const DiffEqRHSCenteredHomWeight& other);
         DiffEqRHSCenteredHomWeight(DiffEqRHSCenteredHomWeight&& other);
         DiffEqRHSCenteredHomWeight& operator=(const DiffEqRHSCenteredHomWeight& other);

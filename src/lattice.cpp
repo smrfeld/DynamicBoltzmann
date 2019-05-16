@@ -1208,7 +1208,7 @@ namespace dblz {
             
             // Sample vis, hidden
             int no_steps_awake_use = no_steps_awake;
-            if (options.hidden_layers_final_prob) {
+            if (options.awake_hidden_layers_final_prob) {
                 no_steps_awake_use -= 1;
             };
             for (int i_sampling_step=0; i_sampling_step<no_steps_awake_use; i_sampling_step++)
@@ -1236,7 +1236,7 @@ namespace dblz {
                 };
             };
             
-            if (options.hidden_layers_final_prob) {
+            if (options.awake_hidden_layers_final_prob) {
                 // Final: in parallel, use probs for hidden layers, binary for visible
                 for (auto layer=1; layer<_no_layers; layer++) {
                     if (layer == _no_layers-1) {
@@ -1282,7 +1282,7 @@ namespace dblz {
         
         // Sample vis, hidden
         int no_steps_asleep_use = no_steps_asleep;
-        if (options.hidden_layers_final_prob) {
+        if (options.asleep_hidden_layers_final_prob) {
             no_steps_asleep_use -= 1;
         };
         for (int i_sampling_step=0; i_sampling_step<no_steps_asleep_use; i_sampling_step++)
@@ -1312,7 +1312,7 @@ namespace dblz {
             };
         };
         
-        if (options.hidden_layers_final_prob) {
+        if (options.asleep_hidden_layers_final_prob) {
             // Final: in parallel, use probs for hidden layers, binary for visible
             for (auto layer=0; layer<_no_layers; layer++) {
                 if (layer == 0) {

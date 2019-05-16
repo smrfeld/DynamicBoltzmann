@@ -272,7 +272,7 @@ namespace dblz {
             // Solve diff eq
             for (auto ixn_param_traj: latt_traj->get_all_ixn_param_trajs()) {
                 if (!ixn_param_traj->get_is_val_fixed()) {
-                    ixn_param_traj->get_adjoint()->solve_diff_eq_at_timepoint_to_minus_one(timepoint, dt);
+                    ixn_param_traj->get_adjoint()->solve_diff_eq_at_timepoint_to_minus_one(timepoint, dt, form_abscissas);
                 };
             };
         };
@@ -645,7 +645,7 @@ namespace dblz {
             for (auto timepoint=timepoint_start_A_use + no_timesteps_A_use; timepoint>timepoint_start_A_use; timepoint--) {
                 for (auto ixn_param_traj: latt_traj->get_all_ixn_param_trajs()) {
                     if (!ixn_param_traj->get_is_val_fixed()) {
-                        ixn_param_traj->get_adjoint()->solve_diff_eq_at_timepoint_to_minus_one(timepoint,dt);
+                        ixn_param_traj->get_adjoint()->solve_diff_eq_at_timepoint_to_minus_one(timepoint,dt,form_abscissas);
                     };
                 };
             };
@@ -766,7 +766,7 @@ namespace dblz {
             // Solve diff eq
             for (auto ixn_param_traj: latt_traj->get_all_ixn_param_trajs()) {
                 if (!ixn_param_traj->get_is_val_fixed()) {
-                    ixn_param_traj->get_adjoint()->solve_diff_eq_at_timepoint_to_minus_one(timepoint, dt);
+                    ixn_param_traj->get_adjoint()->solve_diff_eq_at_timepoint_to_minus_one(timepoint, dt, form_abscissas);
                 };
             };
         };

@@ -678,7 +678,7 @@ namespace dblz {
     
     void DiffEqRHS::fix_all_verts_around_at_timepoint(int timepoint, bool fixed) const {
         _form_abscissas(timepoint);
-        std::pair<q3c1::Cell*,std::vector<double>> cell_pr = get_cell(_abscissas);
+        std::pair<q3c1::Cell*,const std::vector<double>&> cell_pr = get_cell(_abscissas);
         for (auto vert_pr: cell_pr.first->get_all_vertices()) {
             for (auto bf: vert_pr.second->get_bfs()) {
                 bf->set_is_val_fixed(fixed);

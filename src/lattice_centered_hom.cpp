@@ -203,6 +203,32 @@ namespace dblz {
             moment->reset_moment(MCType::ASLEEP);
         };
         
+        // Reap biases
+        // All biases
+        int layer;
+        Sptr sp;
+        for (auto &bias_layer: _bias_dict) {
+            layer = bias_layer.first;
+            for (auto &sp_pr: bias_layer.second) {
+                sp = sp_pr.first;
+                moment = sp_pr.second->get_moment_diff();
+                
+                // Awake phase
+                
+                if (!moment->get_is_awake_moment_fixed()) {
+                    for (auto i_chain=0; i_chain<get_no_markov_chains(MCType::AWAKE); i_chain++) {
+                        moment->increment_moment(MCType::AWAKE, arma::accu(_mc_chains.at(MCType::AWAKE).at(i_chain).at(layer).at(sp)) / get_no_markov_chains(MCType::AWAKE));
+                    };
+                };
+                
+                // Asleep phase
+                
+                for (auto i_chain=0; i_chain<get_no_markov_chains(MCType::ASLEEP); i_chain++) {
+                    moment->increment_moment(MCType::ASLEEP, arma::accu(_mc_chains.at(MCType::ASLEEP).at(i_chain).at(layer).at(sp)) / get_no_markov_chains(MCType::ASLEEP));
+                };
+            };
+        };
+        
         // Calculate the centers from the awake moment, and then slide
         int no_units;
         for (auto layer=0; layer<_no_layers; layer++) {
@@ -210,17 +236,10 @@ namespace dblz {
             
             // Determine means
             for (auto sp: _species_possible_vec.at(layer)) {
-                // Reset
-                _centers.at(layer).at(sp)->reset_val_new();
+                // Set new val for center
+                _centers.at(layer).at(sp)->set_val_new(_bias_dict.at(layer).at(sp)->get_moment_diff()->get_moment(MCType::ASLEEP) / no_units);
                 
-                // Get batch mean from all chains
-                for (auto i_chain=0; i_chain<get_no_markov_chains(MCType::AWAKE); i_chain++) {
-                    _centers.at(layer).at(sp)->increment_val_new(arma::accu(_mc_chains.at(MCType::AWAKE).at(i_chain).at(layer).at(sp)) / no_units / get_no_markov_chains(MCType::AWAKE));
-                };
-            };
-            
-            // Slide
-            for (auto sp: _species_possible_vec.at(layer)) {
+                // Slide
                 _centers.at(layer).at(sp)->slide(sliding_factor);
             };
         };
@@ -267,32 +286,6 @@ namespace dblz {
                             };
                         };
                     };
-                };
-            };
-        };
-        
-        // Reap biases
-        // All biases
-        int layer;
-        Sptr sp;
-        for (auto &bias_layer: _bias_dict) {
-            layer = bias_layer.first;
-            for (auto &sp_pr: bias_layer.second) {
-                sp = sp_pr.first;
-                moment = sp_pr.second->get_moment_diff();
-                
-                // Awake phase
-                
-                if (!moment->get_is_awake_moment_fixed()) {
-                    for (auto i_chain=0; i_chain<get_no_markov_chains(MCType::AWAKE); i_chain++) {
-                        moment->increment_moment(MCType::AWAKE, arma::accu(_mc_chains.at(MCType::AWAKE).at(i_chain).at(layer).at(sp)) / get_no_markov_chains(MCType::AWAKE));
-                    };
-                };
-                
-                // Asleep phase
-                
-                for (auto i_chain=0; i_chain<get_no_markov_chains(MCType::ASLEEP); i_chain++) {
-                    moment->increment_moment(MCType::ASLEEP, arma::accu(_mc_chains.at(MCType::ASLEEP).at(i_chain).at(layer).at(sp)) / get_no_markov_chains(MCType::ASLEEP));
                 };
             };
         };

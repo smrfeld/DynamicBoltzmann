@@ -1207,7 +1207,11 @@ namespace dblz {
         } else if (options.awake_phase_mode == AwakePhaseMode::GIBBS_SAMPLING) {
             
             // Sample vis, hidden
-            for (int i_sampling_step=0; i_sampling_step<no_steps_awake; i_sampling_step++)
+            int no_steps_awake_use = no_steps_awake;
+            if (options.hidden_layers_final_prob) {
+                no_steps_awake_use -= 1;
+            };
+            for (int i_sampling_step=0; i_sampling_step<no_steps_awake_use; i_sampling_step++)
             {
                 // Do odd layers
                 for (auto layer=1; layer<_no_layers; layer+=2) {
@@ -1232,20 +1236,20 @@ namespace dblz {
                 };
             };
             
-            // Final: in parallel, use probs for hidden layers, binary for visible
-            /*
-            for (auto layer=1; layer<_no_layers; layer++) {
-                if (layer == _no_layers-1) {
-                    activate_layer_calculate_from_below(MCType::AWAKE, layer);
-                } else {
-                    activate_layer_calculate_from_both(MCType::AWAKE, layer);
+            if (options.hidden_layers_final_prob) {
+                // Final: in parallel, use probs for hidden layers, binary for visible
+                for (auto layer=1; layer<_no_layers; layer++) {
+                    if (layer == _no_layers-1) {
+                        activate_layer_calculate_from_below(MCType::AWAKE, layer);
+                    } else {
+                        activate_layer_calculate_from_both(MCType::AWAKE, layer);
+                    };
+                    activate_layer_convert_to_probs(MCType::AWAKE, layer, false);
                 };
-                activate_layer_convert_to_probs(MCType::AWAKE, layer, false);
+                for (auto layer=1; layer<_no_layers; layer++) {
+                    activate_layer_committ(MCType::AWAKE, layer);
+                };
             };
-            for (auto layer=1; layer<_no_layers; layer++) {
-                activate_layer_committ(MCType::AWAKE, layer);
-            };
-             */
         };
         
         clock_t t2 = clock();
@@ -1277,7 +1281,11 @@ namespace dblz {
         // Run CD sampling
         
         // Sample vis, hidden
-        for (int i_sampling_step=0; i_sampling_step<no_steps_asleep; i_sampling_step++)
+        int no_steps_asleep_use = no_steps_asleep;
+        if (options.hidden_layers_final_prob) {
+            no_steps_asleep_use -= 1;
+        };
+        for (int i_sampling_step=0; i_sampling_step<no_steps_asleep_use; i_sampling_step++)
         {
             // Do odd layers
             for (auto layer=1; layer<_no_layers; layer+=2) {
@@ -1304,26 +1312,26 @@ namespace dblz {
             };
         };
         
-        // Final: in parallel, use probs for hidden layers, binary for visible
-        /*
-        for (auto layer=0; layer<_no_layers; layer++) {
-            if (layer == 0) {
-                activate_layer_calculate_from_above(MCType::ASLEEP, layer);
-            } else if (layer == _no_layers-1) {
-                activate_layer_calculate_from_below(MCType::ASLEEP, layer);
-            } else {
-                activate_layer_calculate_from_both(MCType::ASLEEP, layer);
+        if (options.hidden_layers_final_prob) {
+            // Final: in parallel, use probs for hidden layers, binary for visible
+            for (auto layer=0; layer<_no_layers; layer++) {
+                if (layer == 0) {
+                    activate_layer_calculate_from_above(MCType::ASLEEP, layer);
+                } else if (layer == _no_layers-1) {
+                    activate_layer_calculate_from_below(MCType::ASLEEP, layer);
+                } else {
+                    activate_layer_calculate_from_both(MCType::ASLEEP, layer);
+                };
+                if (layer == 0) {
+                    activate_layer_convert_to_probs(MCType::ASLEEP, layer, true);
+                } else {
+                    activate_layer_convert_to_probs(MCType::ASLEEP, layer, false);
+                };
             };
-            if (layer == 0) {
-                activate_layer_convert_to_probs(MCType::ASLEEP, layer, true);
-            } else {
-                activate_layer_convert_to_probs(MCType::ASLEEP, layer, false);
+            for (auto layer=0; layer<_no_layers; layer++) {
+                activate_layer_committ(MCType::ASLEEP, layer);
             };
         };
-        for (auto layer=0; layer<_no_layers; layer++) {
-            activate_layer_committ(MCType::ASLEEP, layer);
-        };
-         */
 
         clock_t t3 = clock();
         
@@ -1418,13 +1426,17 @@ namespace dblz {
             activate_layer_convert_to_probs(MCType::ASLEEP, 1, true);
             activate_layer_committ(MCType::ASLEEP, 1);
         };
-        // Final step: use probs for hidden layer
+        // Final step
         activate_layer_calculate_from_above(MCType::ASLEEP, 0);
         activate_layer_convert_to_probs(MCType::ASLEEP, 0, true);
         activate_layer_committ(MCType::ASLEEP, 0);
         
         activate_layer_calculate_from_below(MCType::ASLEEP, 1);
-        activate_layer_convert_to_probs(MCType::ASLEEP, 1, false);
+        if (options.hidden_layers_final_prob) {
+            activate_layer_convert_to_probs(MCType::ASLEEP, 1, false);
+        } else {
+            activate_layer_convert_to_probs(MCType::ASLEEP, 1, true);
+        };
         activate_layer_committ(MCType::ASLEEP, 1);
         
         clock_t t3 = clock();

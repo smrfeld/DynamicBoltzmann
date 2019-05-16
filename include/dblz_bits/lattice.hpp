@@ -30,6 +30,9 @@ namespace dblz {
         // Mode to estimate awake phase moments
         AwakePhaseMode awake_phase_mode = AwakePhaseMode::GIBBS_SAMPLING;
         
+        // Hidden layers prob
+        bool hidden_layers_final_prob = true;
+        
         // Verbosity
         bool verbose_timing = true;
         
@@ -44,6 +47,9 @@ namespace dblz {
       
         // PCD vs CD
         bool persistent_chains = false;
+        
+        // Hidden layers prob
+        bool hidden_layers_final_prob = true;
         
         // Verbosity
         bool verbose_timing = true;

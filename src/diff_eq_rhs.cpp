@@ -252,6 +252,164 @@ namespace dblz {
 
 
 
+    
+    // ***************
+    // MARK: - Domain
+    // ***************
+    
+    Domain::Domain(std::vector<Domain1DParam*> domains) {
+        std::vector<Domain1D*> domain_base;
+        for (auto dom: domains) {
+            domain_base.push_back(dom);
+        };
+        _domain_param = domains;
+        
+        for (auto i=0; i<domains.size(); i++) {
+            _param_deriv_idxs[domains.at(i)->get_ixn_param_traj()] = i;
+        };
+
+        _shared_constructor(domain_base);
+    };
+    Domain::Domain(std::vector<Domain1DCenter*> domains) {
+        std::vector<Domain1D*> domain_base;
+        for (auto dom: domains) {
+            domain_base.push_back(dom);
+        };
+        _domain_center = domains;
+        
+        _shared_constructor(domain_base);
+    };
+    Domain::Domain(std::vector<Domain1DObs*> domains) {
+        std::vector<Domain1D*> domain_base;
+        for (auto dom: domains) {
+            domain_base.push_back(dom);
+        };
+        _domain_obs = domains;
+        
+        _shared_constructor(domain_base);
+    };
+    void Domain::_shared_constructor(std::vector<Domain1D*> domain) {
+        _domain = domain;
+        _no_dims = _domain.size();
+        
+        if (_no_dims == 0 || _no_dims > 6) {
+            std::cerr << ">>> Error: Domain::_shared_constructor <<< Only dims 1,2,3,4,5,6 are supported" << std::endl;
+            exit(EXIT_FAILURE);
+        };
+        
+        _val_substep = std::vector<double>(_no_dims);
+    };
+    Domain::Domain(const Domain& other) {
+        _copy(other);
+    };
+    Domain::Domain(Domain&& other) {
+        _move(other);
+    };
+    Domain& Domain::operator=(const Domain& other) {
+        if (this != &other)
+        {
+            _clean_up();
+            _copy(other);
+        };
+        return *this;
+    };
+    Domain& Domain::operator=(Domain&& other) {
+        if (this != &other)
+        {
+            _clean_up();
+            _move(other);
+        };
+        return *this;
+    };
+    Domain::~Domain() {
+        _clean_up();
+    };
+    void Domain::_copy(const Domain& other)
+    {
+        _no_dims = other._no_dims;
+        _domain = other._domain;
+        _domain_param = other._domain_param;
+        _domain_center = other._domain_center;
+        _domain_obs = other._domain_obs;
+        _param_deriv_idxs = other._param_deriv_idxs;
+        _vals = other._vals;
+        _val_substep = other._val_substep;
+    };
+    void Domain::_move(Domain& other)
+    {
+        _no_dims = other._no_dims;
+        _domain = other._domain;
+        _domain_param = other._domain_param;
+        _domain_center = other._domain_center;
+        _domain_obs = other._domain_obs;
+        _param_deriv_idxs = other._param_deriv_idxs;
+        _vals = other._vals;
+        _val_substep = other._val_substep;
+
+        other._no_dims = 0;
+        other._domain.clear();
+        other._domain_param.clear();
+        other._domain_center.clear();
+        other._domain_obs.clear();
+        other._param_deriv_idxs.clear();
+        other._vals.clear();
+        other._val_substep.clear();
+    };
+    void Domain::_clean_up() {
+    };
+    
+    // ***************
+    // MARK: Getters
+    // ***************
+    
+    int Domain::get_no_dims() const {
+        return _no_dims;
+    };
+    const std::vector<Domain1D*>& Domain::get_domain() const {
+        return _domain;
+    };
+    const std::vector<Domain1DParam*>& Domain::get_domain_param() const {
+        return _domain_param;
+    };
+    const std::vector<Domain1DCenter*>& Domain::get_domain_center() const {
+        return _domain_center;
+    };
+    const std::vector<Domain1DObs*>& Domain::get_domain_obs() const {
+        return _domain_obs;
+    };
+
+    void Domain::calculate_val_at_timepoint(int timepoint) {
+        auto it = _vals.find(timepoint);
+        if (it == _vals.end()) {
+            _vals[timepoint] = std::vector<double>(_domain.size());
+        };
+        
+        for (auto i=0; i<_domain.size(); i++) {
+            _vals[timepoint][i] = _domain[i]->get_val_at_timepoint(timepoint);
+        };
+    };
+    void Domain::calculate_substep_val() {
+        for (auto i=0; i<_domain_param.size(); i++) {
+            _val_substep[i] = _domain_param[i]->get_ixn_param_traj()->get_substep_val();
+        };
+    };
+
+    const std::vector<double>& Domain::get_val_at_timepoint(int timepoint) const {
+        return _vals.at(timepoint);
+    };
+    const std::vector<double>& Domain::get_substep_val() const {
+        return _val_substep;
+    };
+
+    int* Domain::get_idx_of_ixn_param(ITptr ixn) const {
+        auto it = _param_deriv_idxs.find(ixn);
+        if (it == _param_deriv_idxs.end()) {
+            return nullptr;
+        } else {
+            return new int(_param_deriv_idxs.at(ixn));
+        };
+    };
+
 
 
 
@@ -278,47 +436,19 @@ namespace dblz {
 	Constructor
 	********************/
 
-    DiffEqRHS::DiffEqRHS(std::string name, ITptr parent_ixn_param_traj, std::vector<Domain1DParam*> domain, double lr) : q3c1::Grid(std::vector<q3c1::Dimension1D*>(domain.begin(),domain.end())) {
-        _domain_param = domain;
-        std::vector<Domain1D*> domain_base;
-        for (auto dom: domain) {
-            domain_base.push_back(dom);
-        };
+    DiffEqRHS::DiffEqRHS(std::string name, ITptr parent_ixn_param_traj, std::shared_ptr<Domain> domain, double lr) : q3c1::Grid(std::vector<q3c1::Dimension1D*>(domain->get_domain().begin(),domain->get_domain().end())) {
+        _domain = domain;
         
-        for (auto i=0; i<domain.size(); i++) {
-            _param_deriv_idxs[domain.at(i)->get_ixn_param_traj()] = i;
-        };
-        
-        _shared_constructor(name, parent_ixn_param_traj, domain_base, lr);
-    };
-    DiffEqRHS::DiffEqRHS(std::string name, ITptr parent_ixn_param_traj, std::vector<Domain1DCenter*> domain, double lr) : q3c1::Grid(std::vector<q3c1::Dimension1D*>(domain.begin(),domain.end())) {
-        _domain_center = domain;
-        std::vector<Domain1D*> domain_base;
-        for (auto dom: domain) {
-            domain_base.push_back(dom);
-        };
-        _shared_constructor(name, parent_ixn_param_traj, domain_base, lr);
-    };
-    DiffEqRHS::DiffEqRHS(std::string name, ITptr parent_ixn_param_traj, std::vector<Domain1DObs*> domain, double lr) : q3c1::Grid(std::vector<q3c1::Dimension1D*>(domain.begin(),domain.end())) {
-        _domain_obs = domain;
-        std::vector<Domain1D*> domain_base;
-        for (auto dom: domain) {
-            domain_base.push_back(dom);
-        };
-        _shared_constructor(name, parent_ixn_param_traj, domain_base, lr);
-    };
-	void DiffEqRHS::_shared_constructor(std::string name, ITptr parent_ixn_param_traj, std::vector<Domain1D*> domain, double lr) {
-		_name = name;
-		_domain = domain;
-		_no_dims = _domain.size();
-		_parent_ixn_param_traj = parent_ixn_param_traj;
-        _abscissas = std::vector<double>(_no_dims,0.0);
+        _name = name;
+        _domain = domain;
+        _no_dims = _domain->get_no_dims();
+        _parent_ixn_param_traj = parent_ixn_param_traj;
         _lr = lr;
         
-		if (_no_dims == 0 || _no_dims > 6) {
-			std::cerr << ">>> Error: DiffEqRHS::DiffEqRHS <<< Only dims 1,2,3,4,5,6 are supported" << std::endl;
-			exit(EXIT_FAILURE);
-		};
+        if (_no_dims == 0 || _no_dims > 6) {
+            std::cerr << ">>> Error: DiffEqRHS::DiffEqRHS <<< Only dims 1,2,3,4,5,6 are supported" << std::endl;
+            exit(EXIT_FAILURE);
+        };
         
         // Number coeffs
         _no_coeffs = pow(2,_no_dims);
@@ -380,7 +510,7 @@ namespace dblz {
                 };
             };
         };
-
+        
         // Nullptr for adams/nesterovs
         _nesterov_y_s = nullptr;
         _nesterov_y_sp1 = nullptr;
@@ -425,14 +555,8 @@ namespace dblz {
         _no_coeffs = other._no_coeffs;
         _coeff_order = other._coeff_order;
 		_domain = other._domain;
-        _domain_param = other._domain_param;
-        _domain_center = other._domain_center;
-        _domain_obs = other._domain_obs;
-        _param_deriv_idxs = other._param_deriv_idxs;
         _parent_ixn_param_traj = other._parent_ixn_param_traj;
 		_updates = other._updates;
-        _abscissas = other._abscissas;
-        _abscissas_map = other._abscissas_map;
         _lr = other._lr;
         
         if (other._nesterov_y_s) {
@@ -468,14 +592,8 @@ namespace dblz {
         _no_coeffs = other._no_coeffs;
         _coeff_order = other._coeff_order;
 		_domain = other._domain;
-        _domain_param = other._domain_param;
-        _domain_center = other._domain_center;
-        _domain_obs = other._domain_obs;
-        _param_deriv_idxs = other._param_deriv_idxs;
 		_parent_ixn_param_traj = other._parent_ixn_param_traj;
 		_updates = other._updates;
-        _abscissas = other._abscissas;
-        _abscissas_map = other._abscissas_map;
         _lr = other._lr;
 
 		_nesterov_y_s = other._nesterov_y_s;
@@ -491,15 +609,9 @@ namespace dblz {
 		other._no_dims = 0;
         other._no_coeffs = 0;
         other._coeff_order.clear();
-		other._domain.clear();
-        other._domain_param.clear();
-        other._domain_center.clear();
-        other._domain_obs.clear();
-        other._param_deriv_idxs.clear();
+		other._domain = nullptr;
 		other._parent_ixn_param_traj = nullptr;
 		other._updates.clear();
-        other._abscissas.clear();
-        other._abscissas_map.clear();
         other._lr = 0.0;
         
         other._nesterov_y_s = nullptr;
@@ -582,6 +694,10 @@ namespace dblz {
 	Getters
 	********************/
 
+    std::shared_ptr<Domain> DiffEqRHS::get_domain() const {
+        return _domain;
+    };
+    
 	std::string DiffEqRHS::get_name() const {
 		return _name;
 	};
@@ -590,95 +706,57 @@ namespace dblz {
 		return _parent_ixn_param_traj;
 	};
 
-	const std::vector<Domain1D*>& DiffEqRHS::get_domain() const {
-		return _domain;
-	};
-    const std::vector<Domain1DParam*>& DiffEqRHS::get_domain_param() const {
-        return _domain_param;
-    };
-    const std::vector<Domain1DCenter*>& DiffEqRHS::get_domain_center() const {
-        return _domain_center;
-    };
-    const std::vector<Domain1DObs*>& DiffEqRHS::get_domain_obs() const {
-        return _domain_obs;
-    };
-
-    void DiffEqRHS::_form_abscissas(int timepoint) const {
-		for (auto dim=0; dim<_no_dims; dim++) {
-            _abscissas[dim] = _domain.at(dim)->get_val_at_timepoint(timepoint);
-		};
-	};
-    void DiffEqRHS::_form_abscissas_substep() const {
-        for (auto dim=0; dim<_no_dims; dim++) {
-            _abscissas[dim] = _domain_param.at(dim)->get_ixn_param_traj()->get_substep_val();
+    q3c1::Cell* DiffEqRHS::get_cell_at_timepoint(int timepoint, bool form_abscissas) const {
+        if (form_abscissas) {
+            _domain->calculate_val_at_timepoint(timepoint);
         };
-    };
-
-    q3c1::Cell* DiffEqRHS::get_cell_at_timepoint(int timepoint) const {
-        _form_abscissas(timepoint);
-        return get_cell(_abscissas).first;
+        return get_cell(_domain->get_val_at_timepoint(timepoint)).first;
     };
     
 	double DiffEqRHS::get_val_at_timepoint(int timepoint, bool form_abscissas) const {
         if (form_abscissas) {
-            _form_abscissas(timepoint);
-            return Grid::get_val(_abscissas);
-        } else {
-            return Grid::get_val(_abscissas_map.at(timepoint));
+            _domain->calculate_val_at_timepoint(timepoint);
         };
+        return Grid::get_val(_domain->get_val_at_timepoint(timepoint));
 	};
-    double DiffEqRHS::get_substep_val() const {
-        _form_abscissas_substep();
-        return Grid::get_val(_abscissas);
+    double DiffEqRHS::get_substep_val(bool form_abscissas) const {
+        if (form_abscissas) {
+            _domain->calculate_substep_val();
+        };
+        return Grid::get_val(_domain->get_substep_val());
     };
     
 	double DiffEqRHS::get_deriv_wrt_u_at_timepoint(int timepoint, q3c1::IdxSet global_vertex_idxs, std::vector<q3c1::DimType> dim_types, bool form_abscissas) const {
         if (form_abscissas) {
-            _form_abscissas(timepoint);
-            return Grid::get_deriv_wrt_coeff(_abscissas, global_vertex_idxs, dim_types);
-        } else {
-            return Grid::get_deriv_wrt_coeff(_abscissas_map.at(timepoint), global_vertex_idxs, dim_types);
+            _domain->calculate_val_at_timepoint(timepoint);
         };
+        return Grid::get_deriv_wrt_coeff(_domain->get_val_at_timepoint(timepoint), global_vertex_idxs, dim_types);
 	};
 	double DiffEqRHS::get_deriv_wrt_nu_at_timepoint(int timepoint, int deriv_dim, bool form_abscissas) const {
         if (form_abscissas) {
-            _form_abscissas(timepoint);
-            return Grid::get_deriv_wrt_abscissa(_abscissas, deriv_dim);
-        } else {
-            return Grid::get_deriv_wrt_abscissa(_abscissas_map.at(timepoint), deriv_dim);
+            _domain->calculate_val_at_timepoint(timepoint);
         };
+        return Grid::get_deriv_wrt_abscissa(_domain->get_val_at_timepoint(timepoint), deriv_dim);
 	};
     double DiffEqRHS::get_deriv_wrt_nu_at_timepoint(int timepoint, ITptr deriv_ixn_param, bool form_abscissas) const {
-        auto it = _param_deriv_idxs.find(deriv_ixn_param);
-        if (it != _param_deriv_idxs.end()) {
-            return get_deriv_wrt_nu_at_timepoint(timepoint,it->second,form_abscissas);
-        } else {
-            // Differentiating WRT a variable that does NOT appear!
-            return 0.0;
+        double val = 0.0;
+        int* idx = _domain->get_idx_of_ixn_param(deriv_ixn_param);
+        if (idx) {
+            val = get_deriv_wrt_nu_at_timepoint(timepoint,*idx,form_abscissas);
+            delete idx;
         };
-    };
-
-    // Precompute abscissas
-    // Endpoints inclusive
-    void DiffEqRHS::form_abscissas(int timepoint_start, int timepoint_end) const {
-        for (auto timepoint=timepoint_start; timepoint<=timepoint_end; timepoint++) {
-            auto it = _abscissas_map.find(timepoint);
-            if (it == _abscissas_map.end()) {
-                _abscissas_map[timepoint] = std::vector<double>(_no_dims,0.0); // add
-            };
-            for (auto dim=0; dim<_no_dims; dim++) {
-                _abscissas_map[timepoint][dim] = _domain.at(dim)->get_val_at_timepoint(timepoint);
-            };
-        };
+        return val;
     };
 
     // ***************
     // MARK: - Fix vertices at some timepoint
     // ***************
     
-    void DiffEqRHS::fix_all_verts_around_at_timepoint(int timepoint, bool fixed) const {
-        _form_abscissas(timepoint);
-        std::pair<q3c1::Cell*,const std::vector<double>&> cell_pr = get_cell(_abscissas);
+    void DiffEqRHS::fix_all_verts_around_at_timepoint(int timepoint, bool fixed, bool form_abscissas) const {
+        if (form_abscissas) {
+            _domain->calculate_val_at_timepoint(timepoint);
+        };
+        std::pair<q3c1::Cell*,const std::vector<double>&> cell_pr = get_cell(_domain->get_val_at_timepoint(timepoint));
         for (auto vert_pr: cell_pr.first->get_all_vertices()) {
             for (auto bf: vert_pr.second->get_bfs()) {
                 bf->set_is_val_fixed(fixed);
@@ -690,7 +768,7 @@ namespace dblz {
 	Update
 	********************/
 
-    void DiffEqRHS::update_calculate_and_store(int timepoint_start, int timepoint_end, double dt) {
+    void DiffEqRHS::update_calculate_and_store(int timepoint_start, int timepoint_end, double dt, bool form_abscissas) {
         
 		// Adjoint
 		double adjoint_val;
@@ -705,10 +783,12 @@ namespace dblz {
 			adjoint_val = _parent_ixn_param_traj->get_adjoint()->get_val_at_timepoint(timepoint);
 
 			// Form abscissas
-            _form_abscissas(timepoint);
-
+            if (form_abscissas) {
+                _domain->calculate_val_at_timepoint(timepoint);
+            };
+            
 			// Get updates for verts
-			updates = Grid::get_deriv_wrt_coeffs_for_all_surrounding_verts(_abscissas);
+			updates = Grid::get_deriv_wrt_coeffs_for_all_surrounding_verts(_domain->get_val_at_timepoint(timepoint));
 
 			// Append to any existing
 			for (auto &pr: updates) {
@@ -876,7 +956,7 @@ namespace dblz {
     // MARK: - DiffEqRHSCenteredHomWeight
     // ***************
     
-    DiffEqRHSCenteredHomWeight::DiffEqRHSCenteredHomWeight(std::string name, ITptr parent_ixn_param_traj, std::vector<Domain1DParam*> domain, double lr, int conn_mult, ITptr bias_lower, ITptr bias_upper, CTptr center_lower, CTptr center_upper) : DiffEqRHS(name,parent_ixn_param_traj,domain,lr) {
+    DiffEqRHSCenteredHomWeight::DiffEqRHSCenteredHomWeight(std::string name, ITptr parent_ixn_param_traj, std::shared_ptr<Domain> domain, double lr, int conn_mult, ITptr bias_lower, ITptr bias_upper, CTptr center_lower, CTptr center_upper) : DiffEqRHS(name,parent_ixn_param_traj,domain,lr) {
         _conn_mult = conn_mult;
         _bias_lower = bias_lower;
         _bias_upper = bias_upper;
@@ -938,7 +1018,7 @@ namespace dblz {
     // MARK: - Update
     // ***************
     
-    void DiffEqRHSCenteredHomWeight::update_calculate_and_store(int timepoint_start, int timepoint_end, double dt) {
+    void DiffEqRHSCenteredHomWeight::update_calculate_and_store(int timepoint_start, int timepoint_end, double dt, bool form_abscissas) {
         // Adjoint
         double adjoint_val;
         
@@ -956,10 +1036,12 @@ namespace dblz {
             adjoint_val += _conn_mult * _bias_upper->get_adjoint()->get_val_at_timepoint(timepoint) * _center_lower->get_val_at_timepoint(timepoint);
 
             // Form abscissas
-            _form_abscissas(timepoint);
+            if (form_abscissas) {
+                _domain->calculate_val_at_timepoint(timepoint);
+            };
             
             // Get updates for verts
-            updates = Grid::get_deriv_wrt_coeffs_for_all_surrounding_verts(_abscissas);
+            updates = Grid::get_deriv_wrt_coeffs_for_all_surrounding_verts(_domain->get_val_at_timepoint(timepoint));
             
             // Append to any existing
             for (auto &pr: updates) {

@@ -71,15 +71,13 @@ namespace dblz {
     // MARK: - Solve ixn params
     // ***************
     
-    void OptProblemDynamic::solve_ixn_param_trajs_step(const std::vector<std::shared_ptr<IxnParamTraj>> &ixn_param_trajs, double dt, int timepoint) const {
+    void OptProblemDynamic::solve_ixn_param_trajs_step(const std::vector<std::shared_ptr<IxnParamTraj>> &ixn_param_trajs, const std::vector<std::shared_ptr<Domain>> &domains, double dt, int timepoint) const {
         
         // clock_t t0 = clock();
 
         // Form abscissas
-        for (auto ixn_param_traj: ixn_param_trajs) {
-            if (!ixn_param_traj->get_is_val_fixed()) {
-                ixn_param_traj->get_diff_eq_rhs()->form_abscissas(timepoint, timepoint);
-            };
+        for (auto domain: domains) {
+            domain->calculate_val_at_timepoint(timepoint);
         };
         
         // clock_t t1 = clock();
@@ -99,7 +97,7 @@ namespace dblz {
         std::cout << "[time " << dt_tot << "] [ " << dt1/dt_tot << "] [ " << dt2/dt_tot << "]" << std::endl;
          */
     };
-    void OptProblemDynamic::solve_ixn_param_trajs_step(const std::vector<std::shared_ptr<IxnParamTraj>> &ixn_param_trajs, double dt, int timepoint, int no_steps_per_step) const {
+    void OptProblemDynamic::solve_ixn_param_trajs_step(const std::vector<std::shared_ptr<IxnParamTraj>> &ixn_param_trajs, const std::vector<std::shared_ptr<Domain>> &domains, double dt, int timepoint, int no_steps_per_step) const {
         
         // clock_t t0 = clock();
         
@@ -113,11 +111,16 @@ namespace dblz {
         // Calculate diff eqs to a new step
         for (auto i=0; i<no_steps_per_step; i++) {
             
+            // Calculate domain vals
+            for (auto domain: domains) {
+                domain->calculate_substep_val();
+            };
+            
             // New substep vals
             for (auto ixn_param_traj: ixn_param_trajs) {
                 if (!ixn_param_traj->get_is_val_fixed()) {
                     // std::cout << ixn_param_traj->get_name() << " " << timepoint << " " << i << " " << ixn_param_traj->get_diff_eq_rhs()->get_val_from_map(vals, i) << std::endl;
-                    ixn_param_traj->set_substep_val_new(ixn_param_traj->get_substep_val() + (dt / no_steps_per_step) * ixn_param_traj->get_diff_eq_rhs()->get_substep_val());
+                    ixn_param_traj->set_substep_val_new(ixn_param_traj->get_substep_val() + (dt / no_steps_per_step) * ixn_param_traj->get_diff_eq_rhs()->get_substep_val(false));
                 };
             };
             
@@ -148,32 +151,52 @@ namespace dblz {
          */
     };
 
-    void OptProblemDynamic::solve_ixn_param_trajs(const std::vector<std::shared_ptr<IxnParamTraj>> &ixn_param_trajs, double dt, int timepoint_start, int no_timesteps) const {
+    void OptProblemDynamic::solve_ixn_param_trajs(const std::vector<std::shared_ptr<IxnParamTraj>> &ixn_param_trajs, const std::vector<std::shared_ptr<Domain>> &domains, double dt, int timepoint_start, int no_timesteps) const {
         
         for (auto timepoint=timepoint_start; timepoint<timepoint_start+no_timesteps; timepoint++) {
-            solve_ixn_param_trajs_step(ixn_param_trajs, dt, timepoint);
+            solve_ixn_param_trajs_step(ixn_param_trajs, domains, dt, timepoint);
         };
+        
+        // Set domain val at final timestep
+        for (auto domain: domains) {
+            domain->calculate_val_at_timepoint(timepoint_start+no_timesteps);
+        };
+        
+        // Now all the domain vals have been calculated!
     };
-    void OptProblemDynamic::solve_ixn_param_trajs(const std::vector<std::shared_ptr<IxnParamTraj>> &ixn_param_trajs, double dt, int timepoint_start, int no_timesteps, int no_steps_per_step) const {
+    void OptProblemDynamic::solve_ixn_param_trajs(const std::vector<std::shared_ptr<IxnParamTraj>> &ixn_param_trajs, const std::vector<std::shared_ptr<Domain>> &domains, double dt, int timepoint_start, int no_timesteps, int no_steps_per_step) const {
         
         for (auto timepoint=timepoint_start; timepoint<timepoint_start+no_timesteps; timepoint++) {
-            solve_ixn_param_trajs_step(ixn_param_trajs, dt, timepoint, no_steps_per_step);
+            // Set domain val
+            for (auto domain: domains) {
+                domain->calculate_val_at_timepoint(timepoint);
+            };
+
+            // Solve forward
+            solve_ixn_param_trajs_step(ixn_param_trajs, domains, dt, timepoint, no_steps_per_step);
         };
+        
+        // Set domain val at final timestep
+        for (auto domain: domains) {
+            domain->calculate_val_at_timepoint(timepoint_start+no_timesteps);
+        };
+        
+        // Now all the domain vals have been calculated!
     };
 
     // ***************
     // MARK: - BM PCD params
     // ***************
 
-    void OptProblemDynamic::solve_one_step_bm_params(std::shared_ptr<LatticeTrajCenteredHom> latt_traj, int i_opt_step, int timepoint_start_SIP, int no_timesteps_SIP, int timepoint_start_WS, int no_timesteps_WS, int timepoint_start_A, int no_timesteps_A, double dt, int no_steps_awake, int no_steps_asleep, FNameTrajColl &fname_traj_coll, const std::vector<std::shared_ptr<AdjointParamsCenteredHomDerivTerm>> &all_deriv_terms, OptionsSolveDynamic options, OptionsWakeSleep_BM options_wake_sleep) {
+    void OptProblemDynamic::solve_one_step_bm_params(std::shared_ptr<LatticeTrajCenteredHom> latt_traj, const std::vector<std::shared_ptr<IxnParamTraj>> &all_ixn_param_trajs, const std::vector<std::shared_ptr<Domain>> &all_domains, int i_opt_step, int timepoint_start_SIP, int no_timesteps_SIP, int timepoint_start_WS, int no_timesteps_WS, int timepoint_start_A, int no_timesteps_A, double dt, int no_steps_awake, int no_steps_asleep, FNameTrajColl &fname_traj_coll, const std::vector<std::shared_ptr<AdjointParamsCenteredHomDerivTerm>> &all_deriv_terms, OptionsSolveDynamic options, OptionsWakeSleep_BM options_wake_sleep) {
 
-    solve_one_step_bm_params_without_committ(latt_traj,i_opt_step,timepoint_start_SIP,no_timesteps_SIP,timepoint_start_WS,no_timesteps_WS,timepoint_start_A,no_timesteps_A,dt,no_steps_awake,no_steps_asleep,fname_traj_coll,all_deriv_terms,options,options_wake_sleep);
+    solve_one_step_bm_params_without_committ(latt_traj,all_ixn_param_trajs,all_domains,i_opt_step,timepoint_start_SIP,no_timesteps_SIP,timepoint_start_WS,no_timesteps_WS,timepoint_start_A,no_timesteps_A,dt,no_steps_awake,no_steps_asleep,fname_traj_coll,all_deriv_terms,options,options_wake_sleep);
         
         committ_step(latt_traj->get_all_ixn_param_trajs(), i_opt_step, options);
     };
     
     
-    void OptProblemDynamic::solve_one_step_bm_params_without_committ(std::shared_ptr<LatticeTrajCenteredHom> latt_traj, int i_opt_step, int timepoint_start_SIP, int no_timesteps_SIP, int timepoint_start_WS, int no_timesteps_WS, int timepoint_start_A, int no_timesteps_A, double dt, int no_steps_awake, int no_steps_asleep, FNameTrajColl &fname_traj_coll, const std::vector<std::shared_ptr<AdjointParamsCenteredHomDerivTerm>> &all_deriv_terms, OptionsSolveDynamic options, OptionsWakeSleep_BM options_wake_sleep) {
+    void OptProblemDynamic::solve_one_step_bm_params_without_committ(std::shared_ptr<LatticeTrajCenteredHom> latt_traj, const std::vector<std::shared_ptr<IxnParamTraj>> &all_ixn_param_trajs, const std::vector<std::shared_ptr<Domain>> &all_domains, int i_opt_step, int timepoint_start_SIP, int no_timesteps_SIP, int timepoint_start_WS, int no_timesteps_WS, int timepoint_start_A, int no_timesteps_A, double dt, int no_steps_awake, int no_steps_asleep, FNameTrajColl &fname_traj_coll, const std::vector<std::shared_ptr<AdjointParamsCenteredHomDerivTerm>> &all_deriv_terms, OptionsSolveDynamic options, OptionsWakeSleep_BM options_wake_sleep) {
         
         if (options.locking_mode) {
             std::cerr << ">>> OptProblemDynamic::solve_one_step_bm_params_without_committ <<< Locking mode not supported here" << std::endl;
@@ -192,11 +215,14 @@ namespace dblz {
         clock_t t0 = clock();
         
         if (options.no_steps_per_step_IP == 1) {
-            solve_ixn_param_trajs(latt_traj->get_all_ixn_param_trajs(), dt, timepoint_start_SIP, no_timesteps_SIP);
+            solve_ixn_param_trajs(all_ixn_param_trajs, all_domains, dt, timepoint_start_SIP, no_timesteps_SIP);
         } else {
-            solve_ixn_param_trajs(latt_traj->get_all_ixn_param_trajs(), dt, timepoint_start_SIP, no_timesteps_SIP, options.no_steps_per_step_IP);
+            solve_ixn_param_trajs(all_ixn_param_trajs, all_domains, dt, timepoint_start_SIP, no_timesteps_SIP, options.no_steps_per_step_IP);
         };
 
+        // After now, no more need to reform coordinates
+        bool form_abscissas = false;
+        
         /*****
          Wake/asleep loop
          *****/
@@ -232,12 +258,6 @@ namespace dblz {
         
         clock_t t3 = clock();
         
-        // For efficiency: compute all abscissa values
-        bool form_abscissas = false;
-        for (auto ixn_param_traj: latt_traj->get_all_ixn_param_trajs()) {
-            ixn_param_traj->get_diff_eq_rhs()->form_abscissas(timepoint_start_A, timepoint_start_A + no_timesteps_A);
-        };
-        
         // Set zero endpoint
         for (auto ixn_param_traj: latt_traj->get_all_ixn_param_trajs()) {
             ixn_param_traj->get_adjoint()->set_timepoint_zero_end_cond(timepoint_start_A + no_timesteps_A);
@@ -265,7 +285,7 @@ namespace dblz {
         
         for (auto ixn_param_traj: latt_traj->get_all_ixn_param_trajs()) {
             if (!ixn_param_traj->get_is_val_fixed()) {
-                ixn_param_traj->get_diff_eq_rhs()->update_calculate_and_store(timepoint_start_A,timepoint_start_A+no_timesteps_A,dt);
+                ixn_param_traj->get_diff_eq_rhs()->update_calculate_and_store(timepoint_start_A,timepoint_start_A+no_timesteps_A,dt, form_abscissas);
             };
         };
         
@@ -286,15 +306,15 @@ namespace dblz {
     // MARK: - RBM CD params
     // ***************
     
-    void OptProblemDynamic::solve_one_step_rbm_params(std::shared_ptr<LatticeTraj> latt_traj, int i_opt_step, int timepoint_start_SIP, int no_timesteps_SIP, int timepoint_start_WS, int no_timesteps_WS, int timepoint_start_A, int no_timesteps_A, double dt, int no_cd_steps, FNameTrajColl &fname_traj_coll, OptionsSolveDynamic options, OptionsWakeSleep_RBM options_wake_sleep) {
+    void OptProblemDynamic::solve_one_step_rbm_params(std::shared_ptr<LatticeTraj> latt_traj, const std::vector<std::shared_ptr<IxnParamTraj>> &all_ixn_param_trajs, const std::vector<std::shared_ptr<Domain>> &all_domains, int i_opt_step, int timepoint_start_SIP, int no_timesteps_SIP, int timepoint_start_WS, int no_timesteps_WS, int timepoint_start_A, int no_timesteps_A, double dt, int no_cd_steps, FNameTrajColl &fname_traj_coll, OptionsSolveDynamic options, OptionsWakeSleep_RBM options_wake_sleep) {
         
-        solve_one_step_rbm_params_without_committ(latt_traj,i_opt_step,timepoint_start_SIP,no_timesteps_SIP,timepoint_start_WS,no_timesteps_WS,timepoint_start_A,no_timesteps_A,dt,no_cd_steps,fname_traj_coll,options,options_wake_sleep);
+        solve_one_step_rbm_params_without_committ(latt_traj,all_ixn_param_trajs,all_domains,i_opt_step,timepoint_start_SIP,no_timesteps_SIP,timepoint_start_WS,no_timesteps_WS,timepoint_start_A,no_timesteps_A,dt,no_cd_steps,fname_traj_coll,options,options_wake_sleep);
         
         committ_step(latt_traj->get_all_ixn_param_trajs(), i_opt_step, options);
     };
     
     
-    void OptProblemDynamic::solve_one_step_rbm_params_without_committ(std::shared_ptr<LatticeTraj> latt_traj, int i_opt_step, int timepoint_start_SIP, int no_timesteps_SIP, int timepoint_start_WS, int no_timesteps_WS, int timepoint_start_A, int no_timesteps_A, double dt, int no_cd_steps, FNameTrajColl &fname_traj_coll, OptionsSolveDynamic options, OptionsWakeSleep_RBM options_wake_sleep) {
+    void OptProblemDynamic::solve_one_step_rbm_params_without_committ(std::shared_ptr<LatticeTraj> latt_traj, const std::vector<std::shared_ptr<IxnParamTraj>> &all_ixn_param_trajs, const std::vector<std::shared_ptr<Domain>> &all_domains, int i_opt_step, int timepoint_start_SIP, int no_timesteps_SIP, int timepoint_start_WS, int no_timesteps_WS, int timepoint_start_A, int no_timesteps_A, double dt, int no_cd_steps, FNameTrajColl &fname_traj_coll, OptionsSolveDynamic options, OptionsWakeSleep_RBM options_wake_sleep) {
         
         if (latt_traj->get_no_markov_chains(MCType::AWAKE) != latt_traj->get_no_markov_chains(MCType::ASLEEP)) {
             std::cerr << ">>> OptProblemDynamic::solve_one_step_rbm_params_without_committ <<< asleep chains must equal awake chains" << std::endl;
@@ -307,8 +327,11 @@ namespace dblz {
         
         clock_t t0 = clock();
         
-        solve_ixn_param_trajs(latt_traj->get_all_ixn_param_trajs(), dt, timepoint_start_SIP, no_timesteps_SIP, options.no_steps_per_step_IP);
+        solve_ixn_param_trajs(all_ixn_param_trajs,all_domains, dt, timepoint_start_SIP, no_timesteps_SIP, options.no_steps_per_step_IP);
 
+        // After now, no more need to reform coordinates
+        bool form_abscissas = false;
+        
         /*****
          Adjust adjoint range
          *****/
@@ -412,12 +435,6 @@ namespace dblz {
         
         clock_t t3 = clock();
         
-        // For efficiency: compute all abscissa values
-        bool form_abscissas = false;
-        for (auto ixn_param_traj: latt_traj->get_all_ixn_param_trajs()) {
-            ixn_param_traj->get_diff_eq_rhs()->form_abscissas(timepoint_start_A_use, timepoint_start_A_use + no_timesteps_A_use);
-        };
-        
         // Set zero endpoint
         for (auto ixn_param_traj: latt_traj->get_all_ixn_param_trajs()) {
             ixn_param_traj->get_adjoint()->set_timepoint_zero_end_cond(timepoint_start_A_use + no_timesteps_A_use);
@@ -457,7 +474,7 @@ namespace dblz {
         
         for (auto ixn_param_traj: latt_traj->get_all_ixn_param_trajs()) {
             if (!ixn_param_traj->get_is_val_fixed()) {
-                ixn_param_traj->get_diff_eq_rhs()->update_calculate_and_store(timepoint_start_A_use,timepoint_start_A_use+no_timesteps_A_use,dt);
+                ixn_param_traj->get_diff_eq_rhs()->update_calculate_and_store(timepoint_start_A_use,timepoint_start_A_use+no_timesteps_A_use,dt,form_abscissas);
             };
         };
         
@@ -474,15 +491,15 @@ namespace dblz {
         };
     };
     
-    void OptProblemDynamic::solve_one_step_rbm_params(std::shared_ptr<LatticeTrajAlternatingBinary> latt_traj, int i_opt_step, int timepoint_start_SIP, int no_timesteps_SIP, int timepoint_start_WS, int no_timesteps_WS, int timepoint_start_A, int no_timesteps_A, double dt, int no_cd_steps, FNameTrajColl &fname_traj_coll, OptionsSolveDynamic options, OptionsWakeSleep_RBM options_wake_sleep) {
+    void OptProblemDynamic::solve_one_step_rbm_params(std::shared_ptr<LatticeTrajAlternatingBinary> latt_traj, const std::vector<std::shared_ptr<IxnParamTraj>> &all_ixn_param_trajs, const std::vector<std::shared_ptr<Domain>> &all_domains, int i_opt_step, int timepoint_start_SIP, int no_timesteps_SIP, int timepoint_start_WS, int no_timesteps_WS, int timepoint_start_A, int no_timesteps_A, double dt, int no_cd_steps, FNameTrajColl &fname_traj_coll, OptionsSolveDynamic options, OptionsWakeSleep_RBM options_wake_sleep) {
         
-        solve_one_step_rbm_params_without_committ(latt_traj,i_opt_step,timepoint_start_SIP,no_timesteps_SIP,timepoint_start_WS,no_timesteps_WS,timepoint_start_A,no_timesteps_A,dt,no_cd_steps,fname_traj_coll,options,options_wake_sleep);
+        solve_one_step_rbm_params_without_committ(latt_traj,all_ixn_param_trajs,all_domains,i_opt_step,timepoint_start_SIP,no_timesteps_SIP,timepoint_start_WS,no_timesteps_WS,timepoint_start_A,no_timesteps_A,dt,no_cd_steps,fname_traj_coll,options,options_wake_sleep);
         
         committ_step(latt_traj->get_all_ixn_param_trajs(), i_opt_step, options);
     };
     
     
-    void OptProblemDynamic::solve_one_step_rbm_params_without_committ(std::shared_ptr<LatticeTrajAlternatingBinary> latt_traj, int i_opt_step, int timepoint_start_SIP, int no_timesteps_SIP, int timepoint_start_WS, int no_timesteps_WS, int timepoint_start_A, int no_timesteps_A, double dt, int no_cd_steps, FNameTrajColl &fname_traj_coll, OptionsSolveDynamic options, OptionsWakeSleep_RBM options_wake_sleep) {
+    void OptProblemDynamic::solve_one_step_rbm_params_without_committ(std::shared_ptr<LatticeTrajAlternatingBinary> latt_traj, const std::vector<std::shared_ptr<IxnParamTraj>> &all_ixn_param_trajs, const std::vector<std::shared_ptr<Domain>> &all_domains, int i_opt_step, int timepoint_start_SIP, int no_timesteps_SIP, int timepoint_start_WS, int no_timesteps_WS, int timepoint_start_A, int no_timesteps_A, double dt, int no_cd_steps, FNameTrajColl &fname_traj_coll, OptionsSolveDynamic options, OptionsWakeSleep_RBM options_wake_sleep) {
         
         if (latt_traj->get_no_markov_chains(MCType::AWAKE) != latt_traj->get_no_markov_chains(MCType::ASLEEP)) {
             std::cerr << ">>> OptProblemDynamic::solve_one_step_rbm_params_without_committ <<< asleep chains must equal awake chains" << std::endl;
@@ -495,8 +512,11 @@ namespace dblz {
         
         clock_t t0 = clock();
         
-        solve_ixn_param_trajs(latt_traj->get_all_ixn_param_trajs(), dt, timepoint_start_SIP, no_timesteps_SIP, options.no_steps_per_step_IP);
+        solve_ixn_param_trajs(all_ixn_param_trajs,all_domains, dt, timepoint_start_SIP, no_timesteps_SIP, options.no_steps_per_step_IP);
         
+        // After now, no more need to reform coordinates
+        bool form_abscissas = false;
+
         /*****
          Adjust adjoint range
          *****/
@@ -639,7 +659,7 @@ namespace dblz {
         
         for (auto ixn_param_traj: latt_traj->get_all_ixn_param_trajs()) {
             if (!ixn_param_traj->get_is_val_fixed()) {
-                ixn_param_traj->get_diff_eq_rhs()->update_calculate_and_store(timepoint_start_A_use,timepoint_start_A_use+no_timesteps_A_use,dt);
+                ixn_param_traj->get_diff_eq_rhs()->update_calculate_and_store(timepoint_start_A_use,timepoint_start_A_use+no_timesteps_A_use,dt, form_abscissas);
             };
         };
         
@@ -656,15 +676,15 @@ namespace dblz {
         };
     };
 
-    void OptProblemDynamic::solve_one_step_rbm_params(std::shared_ptr<LatticeTrajCenteredHom> latt_traj, int i_opt_step, int timepoint_start_SIP, int no_timesteps_SIP, int timepoint_start_WS, int no_timesteps_WS, int timepoint_start_A, int no_timesteps_A, double dt, int no_cd_steps, FNameTrajColl &fname_traj_coll, const std::vector<std::shared_ptr<AdjointParamsCenteredHomDerivTerm>> &all_deriv_terms, OptionsSolveDynamic options, OptionsWakeSleep_RBM options_wake_sleep) {
+    void OptProblemDynamic::solve_one_step_rbm_params(std::shared_ptr<LatticeTrajCenteredHom> latt_traj, const std::vector<std::shared_ptr<IxnParamTraj>> &all_ixn_param_trajs, const std::vector<std::shared_ptr<Domain>> &all_domains, int i_opt_step, int timepoint_start_SIP, int no_timesteps_SIP, int timepoint_start_WS, int no_timesteps_WS, int timepoint_start_A, int no_timesteps_A, double dt, int no_cd_steps, FNameTrajColl &fname_traj_coll, const std::vector<std::shared_ptr<AdjointParamsCenteredHomDerivTerm>> &all_deriv_terms, OptionsSolveDynamic options, OptionsWakeSleep_RBM options_wake_sleep) {
         
-        solve_one_step_rbm_params_without_committ(latt_traj,i_opt_step,timepoint_start_SIP,no_timesteps_SIP,timepoint_start_WS,no_timesteps_WS,timepoint_start_A,no_timesteps_A,dt,no_cd_steps,fname_traj_coll,all_deriv_terms,options,options_wake_sleep);
+        solve_one_step_rbm_params_without_committ(latt_traj,all_ixn_param_trajs,all_domains,i_opt_step,timepoint_start_SIP,no_timesteps_SIP,timepoint_start_WS,no_timesteps_WS,timepoint_start_A,no_timesteps_A,dt,no_cd_steps,fname_traj_coll,all_deriv_terms,options,options_wake_sleep);
         
         committ_step(latt_traj->get_all_ixn_param_trajs(), i_opt_step, options);
     };
     
     
-    void OptProblemDynamic::solve_one_step_rbm_params_without_committ(std::shared_ptr<LatticeTrajCenteredHom> latt_traj, int i_opt_step, int timepoint_start_SIP, int no_timesteps_SIP, int timepoint_start_WS, int no_timesteps_WS, int timepoint_start_A, int no_timesteps_A, double dt, int no_cd_steps, FNameTrajColl &fname_traj_coll, const std::vector<std::shared_ptr<AdjointParamsCenteredHomDerivTerm>> &all_deriv_terms, OptionsSolveDynamic options, OptionsWakeSleep_RBM options_wake_sleep) {
+    void OptProblemDynamic::solve_one_step_rbm_params_without_committ(std::shared_ptr<LatticeTrajCenteredHom> latt_traj, const std::vector<std::shared_ptr<IxnParamTraj>> &all_ixn_param_trajs, const std::vector<std::shared_ptr<Domain>> &all_domains, int i_opt_step, int timepoint_start_SIP, int no_timesteps_SIP, int timepoint_start_WS, int no_timesteps_WS, int timepoint_start_A, int no_timesteps_A, double dt, int no_cd_steps, FNameTrajColl &fname_traj_coll, const std::vector<std::shared_ptr<AdjointParamsCenteredHomDerivTerm>> &all_deriv_terms, OptionsSolveDynamic options, OptionsWakeSleep_RBM options_wake_sleep) {
         
         if (latt_traj->get_no_markov_chains(MCType::AWAKE) != latt_traj->get_no_markov_chains(MCType::ASLEEP)) {
             std::cerr << ">>> OptProblemDynamic::solve_one_step_rbm_params_without_committ <<< asleep chains must equal awake chains" << std::endl;
@@ -688,11 +708,14 @@ namespace dblz {
         clock_t t0 = clock();
         
         if (options.no_steps_per_step_IP == 1) {
-            solve_ixn_param_trajs(latt_traj->get_all_ixn_param_trajs(), dt, timepoint_start_SIP, no_timesteps_SIP);
+            solve_ixn_param_trajs(all_ixn_param_trajs, all_domains, dt, timepoint_start_SIP, no_timesteps_SIP);
         } else {
-            solve_ixn_param_trajs(latt_traj->get_all_ixn_param_trajs(), dt, timepoint_start_SIP, no_timesteps_SIP, options.no_steps_per_step_IP);
+            solve_ixn_param_trajs(all_ixn_param_trajs, all_domains, dt, timepoint_start_SIP, no_timesteps_SIP, options.no_steps_per_step_IP);
         };
         
+        // After now, no more need to reform coordinates
+        bool form_abscissas = false;
+
         /*****
          Wake/asleep loop
          *****/
@@ -729,12 +752,6 @@ namespace dblz {
         
         clock_t t3 = clock();
         
-        // For efficiency: compute all abscissa values
-        bool form_abscissas = false;
-        for (auto ixn_param_traj: latt_traj->get_all_ixn_param_trajs()) {
-            ixn_param_traj->get_diff_eq_rhs()->form_abscissas(timepoint_start_A, timepoint_start_A + no_timesteps_A);
-        };
-        
         // Set zero endpoint
         for (auto ixn_param_traj: latt_traj->get_all_ixn_param_trajs()) {
             ixn_param_traj->get_adjoint()->set_timepoint_zero_end_cond(timepoint_start_A + no_timesteps_A);
@@ -762,7 +779,7 @@ namespace dblz {
         
         for (auto ixn_param_traj: latt_traj->get_all_ixn_param_trajs()) {
             if (!ixn_param_traj->get_is_val_fixed()) {
-                ixn_param_traj->get_diff_eq_rhs()->update_calculate_and_store(timepoint_start_A,timepoint_start_A+no_timesteps_A,dt);
+                ixn_param_traj->get_diff_eq_rhs()->update_calculate_and_store(timepoint_start_A,timepoint_start_A+no_timesteps_A,dt,form_abscissas);
             };
         };
         
@@ -785,15 +802,15 @@ namespace dblz {
     // MARK: - RBM CD obs
     // ***************
 
-    void OptProblemDynamic::solve_one_step_rbm_obs(std::shared_ptr<LatticeTraj> latt_traj, int i_opt_step, int timepoint_start_SIP, int no_timesteps_SIP, int timepoint_start_WS, int no_timesteps_WS, int timepoint_start_A, int no_timesteps_A, double dt, int no_cd_steps, FNameTrajColl &fname_traj_coll, OptionsSolveDynamic options, OptionsWakeSleep_RBM options_wake_sleep) {
+    void OptProblemDynamic::solve_one_step_rbm_obs(std::shared_ptr<LatticeTraj> latt_traj, const std::vector<std::shared_ptr<IxnParamTraj>> &all_ixn_param_trajs, const std::vector<std::shared_ptr<Domain>> &all_domains, int i_opt_step, int timepoint_start_SIP, int no_timesteps_SIP, int timepoint_start_WS, int no_timesteps_WS, int timepoint_start_A, int no_timesteps_A, double dt, int no_cd_steps, FNameTrajColl &fname_traj_coll, OptionsSolveDynamic options, OptionsWakeSleep_RBM options_wake_sleep) {
         
-        solve_one_step_rbm_obs_without_committ(latt_traj,i_opt_step,timepoint_start_SIP,no_timesteps_SIP,timepoint_start_WS,no_timesteps_WS,timepoint_start_A,no_timesteps_A,dt,no_cd_steps,fname_traj_coll,options,options_wake_sleep);
+        solve_one_step_rbm_obs_without_committ(latt_traj,all_ixn_param_trajs,all_domains,i_opt_step,timepoint_start_SIP,no_timesteps_SIP,timepoint_start_WS,no_timesteps_WS,timepoint_start_A,no_timesteps_A,dt,no_cd_steps,fname_traj_coll,options,options_wake_sleep);
         
         committ_step(latt_traj->get_all_ixn_param_trajs(), i_opt_step, options);
     };
     
     
-    void OptProblemDynamic::solve_one_step_rbm_obs_without_committ(std::shared_ptr<LatticeTraj> latt_traj, int i_opt_step, int timepoint_start_SIP, int no_timesteps_SIP, int timepoint_start_WS, int no_timesteps_WS, int timepoint_start_A, int no_timesteps_A, double dt, int no_cd_steps, FNameTrajColl &fname_traj_coll, OptionsSolveDynamic options, OptionsWakeSleep_RBM options_wake_sleep) {
+    void OptProblemDynamic::solve_one_step_rbm_obs_without_committ(std::shared_ptr<LatticeTraj> latt_traj, const std::vector<std::shared_ptr<IxnParamTraj>> &all_ixn_param_trajs, const std::vector<std::shared_ptr<Domain>> &all_domains, int i_opt_step, int timepoint_start_SIP, int no_timesteps_SIP, int timepoint_start_WS, int no_timesteps_WS, int timepoint_start_A, int no_timesteps_A, double dt, int no_cd_steps, FNameTrajColl &fname_traj_coll, OptionsSolveDynamic options, OptionsWakeSleep_RBM options_wake_sleep) {
         
         if (latt_traj->get_no_markov_chains(MCType::AWAKE) != latt_traj->get_no_markov_chains(MCType::ASLEEP)) {
             std::cerr << ">>> OptProblemDynamic::solve_one_step_rbm_obs_without_committ <<< asleep chains must equal awake chains" << std::endl;
@@ -848,13 +865,13 @@ namespace dblz {
          Get unique domains
          *****/
         
-        std::vector<Domain1DObs*> all_domains;
+        std::vector<Domain1DObs*> all_domain_obs;
 
-        for (auto ixn: latt_traj->get_all_ixn_param_trajs()) {
-            for (auto domain_obs: ixn->get_diff_eq_rhs()->get_domain_obs()) {
-                auto it = std::find(all_domains.begin(), all_domains.end(), domain_obs);
-                if (it == all_domains.end()) {
-                    all_domains.push_back(domain_obs);
+        for (auto domain: all_domains) {
+            for (auto domain_obs: domain->get_domain_obs()) {
+                auto it = std::find(all_domain_obs.begin(), all_domain_obs.end(), domain_obs);
+                if (it == all_domain_obs.end()) {
+                    all_domain_obs.push_back(domain_obs);
                 };
             };
         };
@@ -877,7 +894,7 @@ namespace dblz {
              *****/
             
             if (timepoint != timepoint_start_SIP+no_timesteps_SIP) { // except at the very end
-                solve_ixn_param_trajs_step(latt_traj->get_all_ixn_param_trajs(), dt, timepoint);
+                solve_ixn_param_trajs_step(all_ixn_param_trajs,all_domains, dt, timepoint);
             };
             
             /*****
@@ -908,7 +925,7 @@ namespace dblz {
                 };
                 
                 // Get the new moments for the diff eq RHS
-                for (auto domain_obs: all_domains) {
+                for (auto domain_obs: all_domain_obs) {
                     domain_val = latt->reap_moment(MCType::ASLEEP, domain_obs->get_layer(), domain_obs->get_species());
                     domain_obs->set_val_at_timepoint(timepoint, domain_val);
                     
@@ -946,6 +963,9 @@ namespace dblz {
         };
         */
         
+        // After now, no more need to reform coordinates
+        bool form_abscissas = false;
+        
         clock_t t1 = clock();
 
         /*****
@@ -967,7 +987,7 @@ namespace dblz {
             // Solve diff eq
             for (auto ixn_param_traj: latt_traj->get_all_ixn_param_trajs()) {
                 if (!ixn_param_traj->get_is_val_fixed()) {
-                    ixn_param_traj->get_adjoint_obs()->solve_diff_eq_at_timepoint_to_minus_one(timepoint,dt);
+                    ixn_param_traj->get_adjoint_obs()->solve_diff_eq_at_timepoint_to_minus_one(timepoint,dt,form_abscissas);
                 };
             };
         };
@@ -980,7 +1000,7 @@ namespace dblz {
         
         for (auto ixn_param_traj: latt_traj->get_all_ixn_param_trajs()) {
             if (!ixn_param_traj->get_is_val_fixed()) {
-                ixn_param_traj->get_diff_eq_rhs()->update_calculate_and_store(timepoint_start_A,timepoint_start_A+no_timesteps_A,dt);
+                ixn_param_traj->get_diff_eq_rhs()->update_calculate_and_store(timepoint_start_A,timepoint_start_A+no_timesteps_A,dt,form_abscissas);
             };
         };
         
@@ -999,15 +1019,15 @@ namespace dblz {
     // MARK: - 1D fully visible lattice
     // ***************
     
-    void OptProblemDynamic::solve_one_step_1d_fully_visible(std::shared_ptr<LatticeTraj1DFullyVisible> latt_traj, int i_opt_step, int timepoint_start_SIP, int no_timesteps_SIP, int timepoint_start_WS, int no_timesteps_WS, int timepoint_start_A, int no_timesteps_A, double dt, int no_cd_steps, FNameTrajColl &fname_traj_coll, OptionsSolveDynamic options, OptionsWakeSleep_1DFV_CD options_wake_sleep) {
+    void OptProblemDynamic::solve_one_step_1d_fully_visible(std::shared_ptr<LatticeTraj1DFullyVisible> latt_traj, const std::vector<std::shared_ptr<IxnParamTraj>> &all_ixn_param_trajs, const std::vector<std::shared_ptr<Domain>> &all_domains, int i_opt_step, int timepoint_start_SIP, int no_timesteps_SIP, int timepoint_start_WS, int no_timesteps_WS, int timepoint_start_A, int no_timesteps_A, double dt, int no_cd_steps, FNameTrajColl &fname_traj_coll, OptionsSolveDynamic options, OptionsWakeSleep_1DFV_CD options_wake_sleep) {
         
-        solve_one_step_1d_fully_visible_without_committ(latt_traj, i_opt_step, timepoint_start_SIP, no_timesteps_SIP, timepoint_start_WS, no_timesteps_WS, timepoint_start_A, no_timesteps_A, dt, no_cd_steps, fname_traj_coll, options, options_wake_sleep);
+        solve_one_step_1d_fully_visible_without_committ(latt_traj, all_ixn_param_trajs, all_domains, i_opt_step, timepoint_start_SIP, no_timesteps_SIP, timepoint_start_WS, no_timesteps_WS, timepoint_start_A, no_timesteps_A, dt, no_cd_steps, fname_traj_coll, options, options_wake_sleep);
         
         committ_step(latt_traj->get_all_ixn_param_trajs(), i_opt_step, options);
         
     };
     
-    void OptProblemDynamic::solve_one_step_1d_fully_visible_without_committ(std::shared_ptr<LatticeTraj1DFullyVisible> latt_traj, int i_opt_step, int timepoint_start_SIP, int no_timesteps_SIP, int timepoint_start_WS, int no_timesteps_WS, int timepoint_start_A, int no_timesteps_A, double dt, int no_cd_steps, FNameTrajColl &fname_traj_coll, OptionsSolveDynamic options, OptionsWakeSleep_1DFV_CD options_wake_sleep) {
+    void OptProblemDynamic::solve_one_step_1d_fully_visible_without_committ(std::shared_ptr<LatticeTraj1DFullyVisible> latt_traj, const std::vector<std::shared_ptr<IxnParamTraj>> &all_ixn_param_trajs, const std::vector<std::shared_ptr<Domain>> &all_domains, int i_opt_step, int timepoint_start_SIP, int no_timesteps_SIP, int timepoint_start_WS, int no_timesteps_WS, int timepoint_start_A, int no_timesteps_A, double dt, int no_cd_steps, FNameTrajColl &fname_traj_coll, OptionsSolveDynamic options, OptionsWakeSleep_1DFV_CD options_wake_sleep) {
         
         if (latt_traj->get_no_markov_chains(MCType::AWAKE) != latt_traj->get_no_markov_chains(MCType::ASLEEP)) {
             std::cerr << ">>> OptProblemDynamic::solve_one_step_1d_fully_visible_without_committ <<< asleep chains must equal awake chains" << std::endl;
@@ -1020,7 +1040,10 @@ namespace dblz {
         
         clock_t t0 = clock();
         
-        solve_ixn_param_trajs(latt_traj->get_all_ixn_param_trajs(), dt, timepoint_start_SIP, no_timesteps_SIP, options.no_steps_per_step_IP);
+        solve_ixn_param_trajs(all_ixn_param_trajs, all_domains, dt, timepoint_start_SIP, no_timesteps_SIP, options.no_steps_per_step_IP);
+        
+        // After now, no more need to reform coordinates
+        bool form_abscissas = false;
         
         /*****
          Adjust adjoint range
@@ -1143,7 +1166,7 @@ namespace dblz {
             for (auto timepoint=timepoint_start_A_use + no_timesteps_A_use; timepoint>timepoint_start_A_use; timepoint--) {
                 for (auto ixn_param_traj: latt_traj->get_all_ixn_param_trajs()) {
                     if (!ixn_param_traj->get_is_val_fixed()) {
-                        ixn_param_traj->get_adjoint()->solve_diff_eq_at_timepoint_to_minus_one(timepoint,dt);
+                        ixn_param_traj->get_adjoint()->solve_diff_eq_at_timepoint_to_minus_one(timepoint,dt,form_abscissas);
                     };
                 };
             };
@@ -1157,7 +1180,7 @@ namespace dblz {
         
         for (auto ixn_param_traj: latt_traj->get_all_ixn_param_trajs()) {
             if (!ixn_param_traj->get_is_val_fixed()) {
-                ixn_param_traj->get_diff_eq_rhs()->update_calculate_and_store(timepoint_start_A_use,timepoint_start_A_use+no_timesteps_A_use,dt);
+                ixn_param_traj->get_diff_eq_rhs()->update_calculate_and_store(timepoint_start_A_use,timepoint_start_A_use+no_timesteps_A_use,dt,form_abscissas);
             };
         };
         

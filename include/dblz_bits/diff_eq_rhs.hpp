@@ -178,7 +178,68 @@ namespace dblz {
 
 
 
+    /****************************************
+     Domain
+     ****************************************/
+    
+    class Domain {
+        
+    private:
 
+        // No coeffs
+        int _no_dims;
+        
+        // All my domains
+        std::vector<Domain1D*> _domain;
+        std::vector<Domain1DParam*> _domain_param; // extra storage but wever
+        std::vector<Domain1DCenter*> _domain_center; // extra storage but wever
+        std::vector<Domain1DObs*> _domain_obs; // extra storage but wever
+        std::map<ITptr, int> _param_deriv_idxs;
+
+        // Vals at different timepoints
+        std::map<int,std::vector<double>> _vals;
+        std::vector<double> _val_substep;
+        
+        // Internal copy func/clean up
+        void _clean_up();
+        void _move(Domain& other);
+        void _copy(const Domain& other);
+        void _shared_constructor(std::vector<Domain1D*> domain);
+
+    public:
+        
+        /********************
+         Constructor
+         ********************/
+        
+        Domain(std::vector<Domain1DParam*> domains);
+        Domain(std::vector<Domain1DCenter*> domains);
+        Domain(std::vector<Domain1DObs*> domains);
+        Domain(const Domain& other);
+        Domain& operator=(const Domain& other);
+        Domain(Domain&& other);
+        Domain& operator=(Domain&& other);
+        ~Domain();
+        
+        /********************
+         Getters
+         ********************/
+        
+        int get_no_dims() const;
+        
+        const std::vector<Domain1D*>& get_domain() const;
+        const std::vector<Domain1DParam*>& get_domain_param() const;
+        const std::vector<Domain1DCenter*>& get_domain_center() const;
+        const std::vector<Domain1DObs*>& get_domain_obs() const;
+
+        void calculate_val_at_timepoint(int timepoint);
+        void calculate_substep_val();
+
+        const std::vector<double>& get_val_at_timepoint(int timepoint) const;
+        const std::vector<double>& get_substep_val() const;
+
+        int* get_idx_of_ixn_param(ITptr ixn) const;
+    };
 
 
 
@@ -209,17 +270,14 @@ namespace dblz {
         // No coeffs
         int _no_coeffs;
 
+        // Domain - the domain in dcu::Grid does not store the ixn funcs
+        std::shared_ptr<Domain> _domain;
+
         // Parent ixn param
         ITptr _parent_ixn_param_traj;
         
         // Updates
         std::map<q3c1::Vertex*,std::vector<double>> _updates;
-
-        // Internal
-        mutable std::map<int,std::vector<double>> _abscissas_map;
-        mutable std::vector<double> _abscissas;
-        void _form_abscissas(int timepoint) const;
-        void _form_abscissas_substep() const;
 
 	private:
 
@@ -235,13 +293,6 @@ namespace dblz {
         // Coefficient order
         std::vector<std::vector<q3c1::DimType>> _coeff_order;
         
-		// Domain - the domain in dcu::Grid does not store the ixn funcs
-		std::vector<Domain1D*> _domain;
-        std::vector<Domain1DParam*> _domain_param; // extra storage but wever
-        std::vector<Domain1DCenter*> _domain_center; // extra storage but wever
-        std::vector<Domain1DObs*> _domain_obs; // extra storage but wever
-        std::map<ITptr, int> _param_deriv_idxs;
-        
 		// Nesterov
 		std::map<q3c1::Vertex*,std::vector<double>> *_nesterov_y_s, *_nesterov_y_sp1;
         
@@ -252,7 +303,6 @@ namespace dblz {
         double *_mag_max_update;
         
 		// Internal copy/clean up function
-        void _shared_constructor(std::string name, ITptr parent_ixn_param_traj, std::vector<Domain1D*> domain, double lr);
 		void _copy(const DiffEqRHS& other);
 		void _move(DiffEqRHS& other);
 		void _clean_up();
@@ -264,9 +314,7 @@ namespace dblz {
 		********************/
 
 		// Note: ownership of domain is NOT transferred
-        DiffEqRHS(std::string name, ITptr parent_ixn_param_traj, std::vector<Domain1DParam*> domain, double lr);
-        DiffEqRHS(std::string name, ITptr parent_ixn_param_traj, std::vector<Domain1DCenter*> domain, double lr);
-        DiffEqRHS(std::string name, ITptr parent_ixn_param_traj, std::vector<Domain1DObs*> domain, double lr);
+        DiffEqRHS(std::string name, ITptr parent_ixn_param_traj, std::shared_ptr<Domain> domain, double lr);
         DiffEqRHS(const DiffEqRHS& other);
 		DiffEqRHS(DiffEqRHS&& other);
 		DiffEqRHS& operator=(const DiffEqRHS& other);
@@ -295,22 +343,19 @@ namespace dblz {
 		/********************
 		Getters
 		********************/
+        
+        std::shared_ptr<Domain> get_domain() const;
 
 		std::string get_name() const;
 
 		ITptr get_parent_ixn_param_traj() const;
 
-		const std::vector<Domain1D*>& get_domain() const;
-        const std::vector<Domain1DParam*>& get_domain_param() const;
-        const std::vector<Domain1DCenter*>& get_domain_center() const;
-        const std::vector<Domain1DObs*>& get_domain_obs() const;
-
         // Get cell at timepoint
-        q3c1::Cell* get_cell_at_timepoint(int timepoint) const;
+        q3c1::Cell* get_cell_at_timepoint(int timepoint, bool form_abscissas=true) const;
         
         // Get val
 		double get_val_at_timepoint(int timepoint, bool form_abscissas=true) const;
-        double get_substep_val() const;
+        double get_substep_val(bool form_abscissas=true) const;
 
 		// Deriv wrt specific coefficient of some basis
 		double get_deriv_wrt_u_at_timepoint(int timepoint, q3c1::IdxSet global_vertex_idxs, std::vector<q3c1::DimType> dim_types, bool form_abscissas=true) const;
@@ -318,16 +363,12 @@ namespace dblz {
 		// Spatial deriv
 		double get_deriv_wrt_nu_at_timepoint(int timepoint, int deriv_dim, bool form_abscissas=true) const;
         double get_deriv_wrt_nu_at_timepoint(int timepoint, ITptr deriv_ixn_param, bool form_abscissas=true) const;
-
-        // Precompute abscissas
-        // Endpoints inclusive
-        void form_abscissas(int timepoint_start, int timepoint_end) const;
         
         // ***************
         // MARK: - Fix vertices at some timepoint
         // ***************
         
-        void fix_all_verts_around_at_timepoint(int timepoint, bool fixed) const;
+        void fix_all_verts_around_at_timepoint(int timepoint, bool fixed, bool form_abscissas=true) const;
         
 		/********************
 		Update
@@ -336,7 +377,7 @@ namespace dblz {
 		// Calculate the update
 		// t_start = inclusive
 		// t_end = inclusive
-        virtual void update_calculate_and_store(int timepoint_start, int timepoint_end, double dt);
+        virtual void update_calculate_and_store(int timepoint_start, int timepoint_end, double dt, bool form_abscissas=true);
 
 		// Committ the update
         void update_committ_stored_sgd();
@@ -377,7 +418,7 @@ namespace dblz {
          ********************/
         
         // Note: ownership of domain is NOT transferred
-        DiffEqRHSCenteredHomWeight(std::string name, ITptr parent_ixn_param_traj, std::vector<Domain1DParam*> domain, double lr, int conn_mult, ITptr bias_lower, ITptr bias_upper, CTptr center_lower, CTptr center_upper);
+        DiffEqRHSCenteredHomWeight(std::string name, ITptr parent_ixn_param_traj, std::shared_ptr<Domain> domain, double lr, int conn_mult, ITptr bias_lower, ITptr bias_upper, CTptr center_lower, CTptr center_upper);
         DiffEqRHSCenteredHomWeight(const DiffEqRHSCenteredHomWeight& other);
         DiffEqRHSCenteredHomWeight(DiffEqRHSCenteredHomWeight&& other);
         DiffEqRHSCenteredHomWeight& operator=(const DiffEqRHSCenteredHomWeight& other);
@@ -391,6 +432,6 @@ namespace dblz {
         // Calculate the update
         // t_start = inclusive
         // t_end = inclusive
-        void update_calculate_and_store(int timepoint_start, int timepoint_end, double dt);
+        void update_calculate_and_store(int timepoint_start, int timepoint_end, double dt, bool form_abscissas=true);
     };
 };

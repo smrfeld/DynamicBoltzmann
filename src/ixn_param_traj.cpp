@@ -271,7 +271,7 @@ namespace dblz {
         
         // Set for domain of diff eq rhs if needed
         if (_diff_eq) {
-            for (auto domain_obs: _diff_eq->get_domain_obs()) {
+            for (auto domain_obs: _diff_eq->get_domain()->get_domain_obs()) {
                 domain_obs->set_no_timesteps(no_timesteps);
             };
         };

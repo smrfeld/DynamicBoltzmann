@@ -32,6 +32,28 @@ namespace dblz {
         _all_center_trajs = all_center_trajs;
         _conn_mults = conn_mults;
         
+        // Add all ixns to _ixn_deriv_values
+        for (auto const &pr1: _all_weights) {
+            for (auto const &pr2: pr1.second) {
+                for (auto const &pr3: pr2.second) {
+                    for (auto const &pr4: pr3.second) {
+                        auto it = _ixn_deriv_values.find(pr4.second);
+                        if (it == _ixn_deriv_values.end()) {
+                            _ixn_deriv_values[pr4.second] = 0.0;
+                        };
+                    };
+                };
+            };
+        };
+        for (auto const &pr1: all_biases) {
+            for (auto const &pr2: pr1.second) {
+                auto it = _ixn_deriv_values.find(pr2.second);
+                if (it == _ixn_deriv_values.end()) {
+                    _ixn_deriv_values[pr2.second] = 0.0;
+                };
+            };
+        };
+
         set_no_timesteps(0);
     };
     AdjointParamsCenteredHomDerivTerm::AdjointParamsCenteredHomDerivTerm(const AdjointParamsCenteredHomDerivTerm& other) {
@@ -63,6 +85,7 @@ namespace dblz {
         _deriv_ixn_param_traj = other._deriv_ixn_param_traj;
         _all_biases = other._all_biases;
         _all_weights = other._all_weights;
+        _ixn_deriv_values = other._ixn_deriv_values;
         _all_center_trajs = other._all_center_trajs;
         _no_timesteps = other._no_timesteps;
         _no_timepoints = other._no_timepoints;
@@ -73,6 +96,7 @@ namespace dblz {
         _deriv_ixn_param_traj = other._deriv_ixn_param_traj;
         _all_biases = other._all_biases;
         _all_weights = other._all_weights;
+        _ixn_deriv_values = other._ixn_deriv_values;
         _all_center_trajs = other._all_center_trajs;
         _no_timesteps = other._no_timesteps;
         _no_timepoints = other._no_timepoints;
@@ -82,6 +106,7 @@ namespace dblz {
         other._deriv_ixn_param_traj = nullptr;
         other._all_biases.clear();
         other._all_weights.clear();
+        other._ixn_deriv_values.clear();
         other._all_center_trajs.clear();
         other._no_timepoints = 0;
         other._no_timesteps = 0;
@@ -123,6 +148,11 @@ namespace dblz {
     void AdjointParamsCenteredHomDerivTerm::calculate_val_at_timepoint(int timepoint, bool form_abscissas) {
         double val = 0.0;
         
+        // Calculate derivatives
+        for (auto ixn_pr: _ixn_deriv_values) {
+            _ixn_deriv_values[ixn_pr.first] = ixn_pr.first->get_diff_eq_rhs()->get_deriv_wrt_nu_at_timepoint(timepoint, _deriv_ixn_param_traj,form_abscissas);
+        };
+        
         // Weights first term
         for (auto const &pr1: _all_weights) {
             for (auto const &pr2: pr1.second) {
@@ -132,7 +162,7 @@ namespace dblz {
                         continue;
                     };
                     for (auto const &pr4: pr3.second) {
-                        val += pr4.second->get_adjoint()->get_val_at_timepoint(timepoint) * pr4.second->get_diff_eq_rhs()->get_deriv_wrt_nu_at_timepoint(timepoint, _deriv_ixn_param_traj,form_abscissas);
+                        val += pr4.second->get_adjoint()->get_val_at_timepoint(timepoint) * _ixn_deriv_values.at(pr4.second);
                     };
                 };
             };
@@ -148,7 +178,7 @@ namespace dblz {
                 adjoint_val = pr2.second->get_adjoint()->get_val_at_timepoint(timepoint);
                 
                 // First term
-                val += adjoint_val * pr2.second->get_diff_eq_rhs()->get_deriv_wrt_nu_at_timepoint(timepoint, _deriv_ixn_param_traj,form_abscissas);
+                val += adjoint_val * _ixn_deriv_values.at(pr2.second);
                 
                 // Second term connecting l-1 and l
                 if (layer != 0) {
@@ -157,7 +187,7 @@ namespace dblz {
                     // iterate over species in l-1 layer
                     for (auto const &pr3: _all_weights.at(layer).at(pr2.first).at(layer-1)) {
                         center_val = _all_center_trajs.at(layer-1).at(pr3.first)->get_val_at_timepoint(timepoint);
-                        val += adjoint_val * conn_mult * center_val * pr3.second->get_diff_eq_rhs()->get_deriv_wrt_nu_at_timepoint(timepoint, _deriv_ixn_param_traj,form_abscissas);
+                        val += adjoint_val * conn_mult * center_val * _ixn_deriv_values.at(pr3.second);
                     };
                 };
                 
@@ -167,7 +197,7 @@ namespace dblz {
                     
                     for (auto const &pr3: _all_weights.at(layer).at(pr2.first).at(layer+1)) {
                         center_val = _all_center_trajs.at(layer+1).at(pr3.first)->get_val_at_timepoint(timepoint);
-                        val += adjoint_val * conn_mult * center_val * pr3.second->get_diff_eq_rhs()->get_deriv_wrt_nu_at_timepoint(timepoint, _deriv_ixn_param_traj,form_abscissas);
+                        val += adjoint_val * conn_mult * center_val * _ixn_deriv_values.at(pr3.second);
                     };
                 };
             };

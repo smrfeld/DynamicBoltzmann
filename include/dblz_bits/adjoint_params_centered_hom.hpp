@@ -36,6 +36,9 @@ namespace dblz {
         // Layer l -> species layer l -> species layer l+1 -> ixn and idx of deriv
         // weight l->l+1
         std::map<int, std::map<Sptr, std::map<int, std::map<Sptr,ITptr>>>> _all_weights;
+        
+        // Deriv values
+        std::map<ITptr,double> _ixn_deriv_values;
 
         // All centers
         // Layer -> species -> center

@@ -1136,6 +1136,134 @@ namespace dblz {
         };
     };
     
+    // NNs
+    double Lattice::reap_moment_nn(MCType type, Sptr species1, Sptr species2) const {
+        // Check dim
+        if (_no_dims != 2) {
+            std::cerr << ">>> Lattice::reap_moment_nn <<< Error: this was only coded for 2D lattices" << std::endl;
+            exit(EXIT_FAILURE);
+        };
+        
+        // Displacements with manhattan distance 1
+        std::vector<std::pair<int,int>> disps;
+        disps.push_back(std::make_pair(0,1));
+        disps.push_back(std::make_pair(1,0));
+
+        double val = 0.0;
+        for (auto i_chain=0; i_chain<_no_markov_chains.at(type); i_chain++) {
+            val += reap_moment_sample_from_displacement(type, i_chain, species1, species2, disps);
+        };
+        return val / _no_markov_chains.at(type);
+    };
+    
+    double Lattice::reap_moment_nn_sample(MCType type, int i_chain, Sptr species1, Sptr species2) const {
+        // Check dim
+        if (_no_dims != 2) {
+            std::cerr << ">>> Lattice::reap_moment_nn <<< Error: this was only coded for 2D lattices" << std::endl;
+            exit(EXIT_FAILURE);
+        };
+        
+        // Displacements with manhattan distance 1
+        std::vector<std::pair<int,int>> disps;
+        disps.push_back(std::make_pair(0,1));
+        disps.push_back(std::make_pair(1,0));
+        
+        return reap_moment_sample_from_displacement(type, i_chain, species1, species2, disps);
+    };
+    
+    // NNNs
+    double Lattice::reap_moment_nnn(MCType type, Sptr species1, Sptr species2) const {
+        
+        // Check dim
+        if (_no_dims != 2) {
+            std::cerr << ">>> Lattice::reap_moment_nn <<< Error: this was only coded for 2D lattices" << std::endl;
+            exit(EXIT_FAILURE);
+        };
+        
+        // Displacements with manhattan distance 2
+        std::vector<std::pair<int,int>> disps;
+        disps.push_back(std::make_pair(0,2));
+        disps.push_back(std::make_pair(1,1));
+        disps.push_back(std::make_pair(2,0));
+
+        double val = 0.0;
+        for (auto i_chain=0; i_chain<_no_markov_chains.at(type); i_chain++) {
+            val += reap_moment_sample_from_displacement(type, i_chain, species1, species2, disps);
+        };
+        return val / _no_markov_chains.at(type);
+    };
+    double Lattice::reap_moment_nnn_sample(MCType type, int i_chain, Sptr species1, Sptr species2) const {
+        
+        // Check dim
+        if (_no_dims != 2) {
+            std::cerr << ">>> Lattice::reap_moment_nn <<< Error: this was only coded for 2D lattices" << std::endl;
+            exit(EXIT_FAILURE);
+        };
+        
+        // Displacements with manhattan distance 2
+        std::vector<std::pair<int,int>> disps;
+        disps.push_back(std::make_pair(0,2));
+        disps.push_back(std::make_pair(1,1));
+        disps.push_back(std::make_pair(2,0));
+        
+        return reap_moment_sample_from_displacement(type, i_chain, species1, species2, disps);
+    };
+
+    double Lattice::reap_moment_sample_from_displacement(MCType type, int i_chain, Sptr species1, Sptr species2, const std::vector<std::pair<int,int>> &disps) const {
+        // Check dim
+        if (_no_dims != 2) {
+            std::cerr << ">>> Lattice::reap_moment_from_displacement <<< Error: this was only coded for 2D lattices" << std::endl;
+            exit(EXIT_FAILURE);
+        };
+        
+        double val = 0.0;
+        
+        // Whether to check species labels in both directions
+        bool both_dirs = true;
+        if (species1 == species2) {
+            both_dirs = false;
+        };
+        
+        // All sites
+        int i2, j2;
+        double val1, val1_reverse, val2, val2_reverse;
+        for (int i1=1; i1<=_box_length; i1++) {
+            for (int j1=1; j1<=_box_length; j1++) {
+                
+                // Val at this unit
+                val1 =                         _mc_chains.at(type).at(i_chain).at(0).at(species1).at(_look_up_unit(0,i1,j1));
+                if (both_dirs) {
+                    val1_reverse =                         _mc_chains.at(type).at(i_chain).at(0).at(species2).at(_look_up_unit(0,i1,j1));
+                };
+                if (val1 < 1.0e-6  && val1_reverse == 1.0e-6) {
+                    continue; // empty, skip for efficiency!
+                };
+                
+                // All NNS in positive direction (so as not to double count)
+                for (auto const &disp: disps) {
+                    i2 = i1 + disp.first;
+                    j2 = j1 + disp.second;
+                    if (i2 > _box_length) { i2 -= _box_length; }; // periodic bc
+                    if (j2 > _box_length) { j2 -= _box_length; }; // periodic bc
+                    
+                    // Val at this unit
+                    val2 =                         _mc_chains.at(type).at(i_chain).at(0).at(species2).at(_look_up_unit(0,i2,j2));
+                    if (both_dirs) {
+                        val2_reverse =                         _mc_chains.at(type).at(i_chain).at(0).at(species1).at(_look_up_unit(0,i2,j2));
+                    };
+                    
+                    // Increment
+                    val += val1 * val2;
+                    if (both_dirs) {
+                        val += val1_reverse * val2_reverse;
+                    };
+                };
+            };
+        };
+        
+        return val;
+    };
+    
     // ***************
     // MARK: - Add ixn to all ixns vec
     // ***************

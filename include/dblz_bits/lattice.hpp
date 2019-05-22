@@ -297,6 +297,15 @@ namespace dblz {
         double reap_moment(MCType type, int layer, Sptr species) const;
         double reap_moment(MCType type, int layer_lower, Sptr species_lower, int layer_upper, Sptr species_upper) const;
         
+        // NNs
+        double reap_moment_nn(MCType type, Sptr species1, Sptr species2) const;
+        double reap_moment_nn_sample(MCType type, int i_chain, Sptr species1, Sptr species2) const;
+        // NNNs
+        double reap_moment_nnn(MCType type, Sptr species1, Sptr species2) const;
+        double reap_moment_nnn_sample(MCType type, int i_chain, Sptr species1, Sptr species2) const;
+        // Any displacements
+        double reap_moment_sample_from_displacement(MCType type, int i_chain, Sptr species1, Sptr species2, const std::vector<std::pair<int,int>> &disps) const;
+        
         // Query moments for particular ixns
         double reap_moment_sample(MCType type, int i_chain, Iptr ixn) const;
         double reap_moment(MCType type, Iptr ixn) const;

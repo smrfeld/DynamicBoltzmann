@@ -97,14 +97,14 @@ target_include_directories(dblz PRIVATE include/dblz_bits include/dblz_bits/fwds
 include(cmake/CPM.cmake)
 CPMAddPackage(
 	URL "https://sourceforge.net/projects/arma/files/armadillo-9.200.8.tar.xz"
-	NAME armadillo9.200.8
+	NAME armadillo
 	VERSION 9.200.8
 	)
 CPMAddPackage("gh:smrfeld/Q3-C1-Finite-Elements#3.0@3.0")
 
 # Link
-target_link_libraries(bmla PUBLIC armadillo9.200.8)
-target_link_libraries(dblz PUBLIC armadillo9.200.8)
+target_link_libraries(bmla PUBLIC armadillo)
+target_link_libraries(dblz PUBLIC armadillo)
 target_link_libraries(dblz PUBLIC q3c1)
 
 install(TARGETS bmla DESTINATION lib)

@@ -4,9 +4,11 @@
 
 ### Dependencies
 
-`armadillo` library.
+Dependencies are automatically handled using the [CPM.cmake](https://github.com/cpm-cmake/CPM.cmake) package manager. **There is no need to install anything extra, simply building the library through CMake will install the needed dependencies**.
 
-`q3c1` library for the Q3 C1 finite elements. Get it from [here](https://github.com/smrfeld/Q3-C1-Finite-Elements). 
+For the record, the dependencies installed are:
+* The [armadillo](http://arma.sourceforge.net) library.
+* The [q3c1](https://github.com/smrfeld/Q3-C1-Finite-Elements) library for the Q3 C1 finite elements.
 
 ### Building
 

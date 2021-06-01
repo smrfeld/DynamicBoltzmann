@@ -69,12 +69,25 @@ add_library(dblz SHARED
 target_include_directories(bmla PRIVATE include/dblz_bits include/dblz_bits/fwds)
 target_include_directories(dblz PRIVATE include/dblz_bits include/dblz_bits/fwds)
 
-find_library(ARMADILLO_LIB armadillo HINTS /usr/local/lib/)
-target_link_libraries(bmla PUBLIC ${ARMADILLO_LIB})
-target_link_libraries(dblz PUBLIC ${ARMADILLO_LIB})
+# Dependencies
+include(cmake/CPM.cmake)
+CPMAddPackage(
+	URL "https://sourceforge.net/projects/arma/files/armadillo-10.5.1.tar.xz"
+	NAME armadillo
+	VERSION 10.5.1
+	)
+CPMAddPackage(
+    GITHUB_REPOSITORY "smrfeld/Q3-C1-Finite-Elements"
+    NAME q3c1
+    GIT_TAG 2.0
+    )
 
-find_library(Q3C1_LIB q3c1 HINTS /usr/local/lib)
-target_link_libraries(dblz PUBLIC ${Q3C1_LIB})
+# Include dirs for q3c1
+target_include_directories(dblz PRIVATE ${q3c1_SOURCE_DIR}/include/)
+
+target_link_libraries(bmla PUBLIC armadillo)
+target_link_libraries(dblz PUBLIC armadillo)
+target_link_libraries(dblz PUBLIC q3c1)
 
 install(TARGETS bmla DESTINATION lib)
 install(TARGETS dblz DESTINATION lib)

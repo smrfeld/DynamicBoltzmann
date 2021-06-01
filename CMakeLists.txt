@@ -96,9 +96,9 @@ target_include_directories(dblz PRIVATE include/dblz_bits include/dblz_bits/fwds
 # Dependencies
 include(cmake/CPM.cmake)
 CPMAddPackage(
-	URL "https://sourceforge.net/projects/arma/files/armadillo-9.200.8.tar.xz"
+	URL "https://sourceforge.net/projects/arma/files/armadillo-10.5.1.tar.xz"
 	NAME armadillo
-	VERSION 9.200.8
+	VERSION 10.5.1
 	)
 CPMAddPackage("gh:smrfeld/Q3-C1-Finite-Elements#3.0@3.0")
 

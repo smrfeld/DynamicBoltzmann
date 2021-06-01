@@ -100,7 +100,11 @@ CPMAddPackage(
 	NAME armadillo
 	VERSION 10.5.1
 	)
-CPMAddPackage("gh:smrfeld/Q3-C1-Finite-Elements#3.0@3.0")
+CPMAddPackage(
+    GITHUB_REPOSITORY "smrfeld/Q3-C1-Finite-Elements"
+    NAME q3c1
+    GIT_TAG 3.0
+    )
 
 # Link
 target_link_libraries(bmla PUBLIC armadillo)

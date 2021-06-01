@@ -106,6 +106,9 @@ CPMAddPackage(
     GIT_TAG 3.0
     )
 
+# Include dirs for q3c1
+target_include_directories(dblz PRIVATE ${q3c1_SOURCE_DIR}/include/)
+	
 # Link
 target_link_libraries(bmla PUBLIC armadillo)
 target_link_libraries(dblz PUBLIC armadillo)
